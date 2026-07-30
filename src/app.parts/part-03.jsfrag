@@ -1,0 +1,174 @@
+list">
+        ${visible.map((message) => `
+          <article class="message ${message.isMine ? 'mine' : ''}">
+            <input type="checkbox" data-action="toggle-message" data-id="${escapeHtml(message.id)}" ${selected.has(message.id) ? 'checked' : ''} ${message.isMine ? '' : 'disabled'} aria-label="Select message">
+            <div>
+              <div class="meta">${escapeHtml(message.conversationName)} · ${escapeHtml(message.senderName)} · ${escapeHtml(message.type)}</div>
+              <div class="content">${escapeHtml(message.content)}</div>
+            </div>
+            <time>${formatDate(message.timestamp)}</time>
+          </article>
+        `).join('')}
+      </div>` : '<div class="empty">No messages match the current filters.</div>'}
+    </section>
+  `;
+}
+
+function renderImports() {
+  const ordered = [...state.snapshots].sort((a, b) => new Date(b.capturedAt) - new Date(a.capturedAt));
+  return pageHead(
+    'Import / Export',
+    'Import extracted JSON files from Instagram data exports, legacy helper data, or SimpleInstaBot history.',
+    '<button class="primary" data-action="pick-data-files">Import JSON files</button><button data-action="pick-data-folder">Import extracted folder</button><button data-action="export-state">Export workspace backup</button>',
+  ) + `
+    <section class="panel">
+      <div class="panel-head"><div><h2>Supported imports</h2></div></div>
+      <div class="notice">
+        Supported: <span class="code">followers_*.json</span>, <span class="code">following.json</span>, Meta <span class="code">message_*.json</span> files, InstagramHelper message-data JSON, SimpleInstaBot <span class="code">*-followed.json</span>/<span class="code">*-unfollowed.json</span>, and Insta AIO exports. Select multiple files or an extracted export folder. Direct ZIP import is listed under Codex-Handoff.
+      </div>
+      <div class="toolbar" style="margin-top:14px">
+        <button data-action="pick-state-file">Restore workspace backup</button>
+        <button data-action="export-current-snapshot">Export active snapshot JSON</button>
+        <button data-action="export-companion-queue">Export manual queue JSON</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Snapshot history</h2><p>${ordered.length} stored snapshots.</p></div></div>
+      ${ordered.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Date</th><th>Source</th><th>Followers</th><th>Following</th><th>Active</th></tr></thead>
+        <tbody>${ordered.map((snapshot) => `
+          <tr>
+            <td>${formatDate(snapshot.capturedAt)}</td>
+            <td>${escapeHtml(snapshot.source)}</td>
+            <td>${snapshot.followers.length}</td>
+            <td>${snapshot.following.length}</td>
+            <td>${snapshot.id === activeSnapshot()?.id ? '<span class="badge completed">active</span>' : `<button class="small" data-action="activate-snapshot" data-id="${escapeHtml(snapshot.id)}">Use</button>`}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>` : '<div class="empty">No snapshots imported.</div>'}
+    </section>
+  `;
+}
+
+function renderSettings() {
+  return pageHead(
+    'Settings',
+    'Configure local classification, scheduling, and protection rules.',
+    '<button class="primary" data-action="save-settings">Save settings</button>',
+  ) + `
+    <section class="panel">
+      <div class="form-grid">
+        <div class="field"><label for="waiting-days">Waiting period before unfollow review</label><input id="waiting-days" type="number" min="1" max="365" value="${escapeHtml(state.settings.waitingDays)}"></div>
+        <div class="field"><label for="daily-follow-limit">Daily follow planning limit</label><input id="daily-follow-limit" type="number" min="1" max="500" value="${escapeHtml(state.settings.dailyFollowLimit)}"></div>
+        <div class="field"><label for="daily-unfollow-limit">Daily unfollow planning limit</label><input id="daily-unfollow-limit" type="number" min="1" max="500" value="${escapeHtml(state.settings.dailyUnfollowLimit)}"></div>
+        <div class="field"><label for="owner-names">Your sender/display names in message exports</label><input id="owner-names" value="${escapeHtml(state.settings.ownerNames.join(', '))}" placeholder="Your Instagram display name, username"></div>
+        <div class="field full"><label for="whitelist">Whitelist usernames</label><textarea id="whitelist" placeholder="one username per line">${escapeHtml(state.settings.whitelist.join('\n'))}</textarea></div>
+        <div class="field full"><label for="preexisting">Protected accounts followed before this tool</label><textarea id="preexisting" placeholder="one username per line">${escapeHtml(state.settings.preexistingFollowing.join('\n'))}</textarea></div>
+        <label class="checkbox"><input id="protect-mutuals" type="checkbox" ${state.settings.protectMutuals ? 'checked' : ''}> Protect mutual followers from unfollow review</label>
+        <label class="checkbox"><input id="dry-run" type="checkbox" ${state.settings.dryRun ? 'checked' : ''}> Dry-run planning mode</label>
+      </div>
+      <div class="toolbar" style="margin-top:14px">
+        <button data-action="protect-current-following">Protect all accounts in active following snapshot</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Data controls</h2><p>Export a backup before clearing local data.</p></div></div>
+      <div class="toolbar">
+        <button data-action="export-state">Export backup</button>
+        <button class="danger" data-action="reset-workspace">Clear local workspace</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderActivity() {
+  return pageHead(
+    'Activity',
+    'Local audit history for imports, queue changes, exports, and settings.',
+    '<button data-action="export-activity">Export activity JSON</button>',
+  ) + `
+    <section class="panel">
+      ${state.activity.length ? `<div class="log">
+        ${state.activity.slice(0, 500).map((entry) => `
+          <div class="log-entry"><time>${formatDate(entry.timestamp)}</time><div class="kind">${escapeHtml(entry.kind)}</div><div>${escapeHtml(entry.message)}</div></div>
+        `).join('')}
+      </div>` : '<div class="empty">No activity recorded.</div>'}
+    </section>
+  `;
+}
+
+function render() {
+  const renderers = {
+    overview: renderOverview,
+    relationships: renderRelationships,
+    queue: renderQueue,
+    messages: renderMessages,
+    imports: renderImports,
+    settings: renderSettings,
+    activity: renderActivity,
+  };
+  app.innerHTML = renderShell((renderers[activeView] || renderOverview)());
+}
+
+function currentRelationshipAccounts() {
+  const snapshot = activeSnapshot();
+  const relationships = classifyRelationships(snapshot || { followers: [], following: [] });
+  const diff = activeDiff();
+  return ({
+    mutuals: relationships.mutuals,
+    notFollowingBack: relationships.notFollowingBack,
+    iDoNotFollowBack: relationships.iDoNotFollowBack,
+    newFollowers: diff.newFollowers,
+    lostFollowers: diff.lostFollowers,
+    newlyFollowing: diff.newlyFollowing,
+    noLongerFollowing: diff.noLongerFollowing,
+  })[relationshipTab] || [];
+}
+
+async function handleDataImport(fileList) {
+  const files = [...fileList].filter((file) => file.name.toLowerCase().endsWith('.json'));
+  if (!files.length) return;
+
+  const records = await Promise.all(files.map(async (file) => ({
+    name: file.webkitRelativePath || file.name,
+    text: await file.text(),
+    lastModified: file.lastModified,
+  })));
+
+  const result = importFileRecords(records, { ownerNames: state.settings.ownerNames });
+  const wasEmpty = state.snapshots.length === 0;
+  if (result.snapshot) {
+    state.snapshots.push(result.snapshot);
+    state.activeSnapshotId = result.snapshot.id;
+    if (wasEmpty && !state.settings.preexistingFollowing.length) {
+      state.settings.preexistingFollowing = result.snapshot.following.map((account) => account.username);
+    }
+  }
+
+  state.messages = dedupeMessages([...state.messages, ...result.messages]);
+
+  for (const legacy of result.legacyActions) {
+    const item = createQueueItem(legacy.account, legacy.action, {
+      reason: 'migrated-simpleinstabot-history',
+      createdAt: legacy.timestamp,
+      scheduledFor: legacy.timestamp,
+      status: legacy.status,
+    });
+    item.completedAt = legacy.status === 'completed' ? new Date(legacy.timestamp).toISOString() : null;
+    if (!state.queue.some((existing) => existing.id === item.id)) state.queue.push(item);
+  }
+
+  state.importWarnings = result.warnings;
+  state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
+  logActivity('import', `Imported ${files.length} JSON file${files.length === 1 ? '' : 's'}.`, {
+    snapshot: Boolean(result.snapshot),
+    messages: result.messages.length,
+    legacyActions: result.legacyActions.length,
+    warnings: result.warnings.length,
+  });
+  await persist();
+}
+
+function addAccountsToUnfoll

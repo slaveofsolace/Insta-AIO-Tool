@@ -1,0 +1,211 @@
+import { normalizeUsername } from './core/accounts.js';
+import { importFileRecords } from './core/imports.js';
+import {
+  conversationSummary,
+  createUnsendPlan,
+  dedupeMessages,
+  filterMessages,
+} from './core/messages.js';
+import {
+  addFollowTargets,
+  createQueueItem,
+  getQueueSummary,
+  markQueueItem,
+  refreshQueue,
+} from './core/queue.js';
+import {
+  classifyRelationships,
+  compareSnapshots,
+  latestSnapshot,
+  previousSnapshot,
+} from './core/snapshots.js';
+import { clearState, loadState, migrateState, saveState } from './core/storage.js';
+
+const app = document.querySelector('#app');
+let state = await loadState();
+let activeView = 'overview';
+let relationshipTab = 'notFollowingBack';
+let messageFilters = { keyword: '', onlyMine: true, type: '' };
+
+const views = [
+  ['overview', 'Overview'],
+  ['relationships', 'Relationships'],
+  ['queue', 'Action Queue'],
+  ['messages', 'Messages'],
+  ['imports', 'Import / Export'],
+  ['settings', 'Settings'],
+  ['activity', 'Activity'],
+];
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function formatDate(value, includeTime = true) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return includeTime
+    ? date.toLocaleString()
+    : date.toLocaleDateString();
+}
+
+function profileUrl(username) {
+  return `https://www.instagram.com/${encodeURIComponent(normalizeUsername(username))}/`;
+}
+
+function activeSnapshot() {
+  return state.snapshots.find((snapshot) => snapshot.id === state.activeSnapshotId)
+    || latestSnapshot(state.snapshots);
+}
+
+function activeDiff() {
+  const current = activeSnapshot();
+  return compareSnapshots(previousSnapshot(state.snapshots, current?.id), current);
+}
+
+function logActivity(kind, message, details = {}) {
+  state.activity.unshift({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: new Date().toISOString(),
+    kind,
+    message,
+    details,
+  });
+  state.activity = state.activity.slice(0, 5000);
+}
+
+async function persist({ rerender = true } = {}) {
+  await saveState(state);
+  if (rerender) render();
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  downloadBlob(filename, blob);
+}
+
+function downloadText(filename, text, type = 'text/plain') {
+  downloadBlob(filename, new Blob([text], { type }));
+}
+
+function downloadBlob(filename, blob) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? '');
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function accountsToCsv(accounts) {
+  const rows = [['username', 'id', 'displayName', 'profileUrl', 'source']];
+  for (const account of accounts || []) {
+    rows.push([
+      account.username,
+      account.id || '',
+      account.displayName || '',
+      account.profileUrl || profileUrl(account.username),
+      account.source || '',
+    ]);
+  }
+  return rows.map((row) => row.map(csvEscape).join(',')).join('\n');
+}
+
+function pageHead(title, description, actions = '') {
+  return `
+    <header class="page-head">
+      <div>
+        <h1>${escapeHtml(title)}</h1>
+        <p>${escapeHtml(description)}</p>
+      </div>
+      ${actions ? `<div class="toolbar">${actions}</div>` : ''}
+    </header>
+  `;
+}
+
+function metric(label, value, detail = '') {
+  return `
+    <article class="metric">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value">${escapeHtml(value)}</div>
+      ${detail ? `<div class="detail">${escapeHtml(detail)}</div>` : ''}
+    </article>
+  `;
+}
+
+function renderShell(content) {
+  return `
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">IA</div>
+          <div class="brand-copy"><strong>Insta AIO Tool</strong><span>Local-first workspace</span></div>
+        </div>
+        <nav class="nav" aria-label="Primary navigation">
+          ${views.map(([id, label]) => `
+            <button type="button" data-action="navigate" data-view="${id}" class="${activeView === id ? 'active' : ''}">${escapeHtml(label)}</button>
+          `).join('')}
+        </nav>
+        <div class="sidebar-foot">
+          Data remains in this browser unless you export it.<br>
+          Live account-changing actions are not enabled in this build.
+        </div>
+      </aside>
+      <main class="main">${content}</main>
+      <input id="data-file-input" class="hidden" type="file" accept=".json,application/json" multiple>
+      <input id="data-folder-input" class="hidden" type="file" accept=".json,application/json" multiple webkitdirectory>
+      <input id="state-file-input" class="hidden" type="file" accept=".json,application/json">
+    </div>
+  `;
+}
+
+function renderOverview() {
+  const snapshot = activeSnapshot();
+  const relationships = classifyRelationships(snapshot || { followers: [], following: [] });
+  const diff = activeDiff();
+  const queue = getQueueSummary(state.queue);
+  const sentMessages = state.messages.filter((message) => message.isMine).length;
+
+  return pageHead(
+    'Overview',
+    'Relationship history, scheduled reviews, and message-data planning in one local workspace.',
+    '<button class="primary" data-action="pick-data-files">Import Instagram data</button>',
+  ) + `
+    <section class="grid metrics">
+      ${metric('Followers', snapshot?.followers.length || 0, snapshot ? `Snapshot ${formatDate(snapshot.capturedAt, false)}` : 'No snapshot imported')}
+      ${metric('Following', snapshot?.following.length || 0, `${relationships.mutuals.length} mutual`)}
+      ${metric('Not following back', relationships.notFollowingBack.length, `${diff.lostFollowers.length} newly lost since prior snapshot`)}
+      ${metric('Queue ready', queue.ready || 0, `${queue.waiting || 0} waiting`)}
+      ${metric('New followers', diff.newFollowers.length, 'Compared with prior snapshot')}
+      ${metric('Recent unfollows', diff.lostFollowers.length, 'Detected by snapshot comparison')}
+      ${metric('Messages loaded', state.messages.length, `${sentMessages} identified as sent by you`)}
+      ${metric('Unsend selected', state.selectedMessageIds.length, 'Preview/export only in this build')}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Current status</h2><p>Implemented capability and remaining execution work.</p></div>
+      </div>
+      <div class="notice">
+        Snapshot comparison, historical unfollower detection, queue scheduling, migration, message viewing, filtering, and unsend-plan exports are functional. Automated follow, unfollow, and live DM unsend execution remain <strong>Codex-Handoff</strong> tasks.
+      </div>
+      <div class="kpi-row" style="margin-top:14px">
+        <span><strong>${state.snapshots.length}</strong> snapshots</span>
+        <span><strong>${state.queue.length}</strong> queue records</span>
+        <span><strong>${conversationSummary(state.messages).length}</strong> conversations</span>
+        <span><strong>${state.activity.length}</strong> activity records</span>
+      </div>
+    <

@@ -1,0 +1,164 @@
+a><span>${escapeHtml(account.displayName || '')}</span></div></td>
+              <td class="code">${escapeHtml(account.id || '—')}</td>
+              <td>${escapeHtml(account.source || '—')}</td>
+              <td>${formatDate(account.timestamp)}</td>
+              <td>
+                <div class="toolbar">
+                  <a class="button small" href="${profileUrl(account.username)}" target="_blank" rel="noreferrer">Open</a>
+                  ${showQueueAction ? `<button class="small" data-action="queue-account" data-queue-action="${queueAction}" data-username="${escapeHtml(account.username)}">Add ${queueAction}</button>` : ''}
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderRelationships() {
+  const snapshot = activeSnapshot();
+  const relationships = classifyRelationships(snapshot || { followers: [], following: [] });
+  const diff = activeDiff();
+  const tabs = {
+    mutuals: ['Mutuals', relationships.mutuals],
+    notFollowingBack: ['Not following back', relationships.notFollowingBack],
+    iDoNotFollowBack: ['I do not follow back', relationships.iDoNotFollowBack],
+    newFollowers: ['New followers', diff.newFollowers],
+    lostFollowers: ['Recent unfollows', diff.lostFollowers],
+    newlyFollowing: ['Newly following', diff.newlyFollowing],
+    noLongerFollowing: ['No longer following', diff.noLongerFollowing],
+  };
+  const [label, accounts] = tabs[relationshipTab] || tabs.notFollowingBack;
+  const canBulkQueue = ['notFollowingBack', 'lostFollowers'].includes(relationshipTab);
+
+  return pageHead(
+    'Relationships',
+    'Compare imported follower and following snapshots without sending account credentials anywhere.',
+    '<button class="primary" data-action="pick-data-files">Import snapshot</button>',
+  ) + `
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Snapshot</h2><p>Select the snapshot used for the relationship view and historical comparison.</p></div>
+        <select id="snapshot-select" aria-label="Active snapshot" style="max-width:330px">
+          ${state.snapshots.length ? [...state.snapshots].sort((a, b) => new Date(b.capturedAt) - new Date(a.capturedAt)).map((item) => `
+            <option value="${item.id}" ${item.id === snapshot?.id ? 'selected' : ''}>${escapeHtml(item.label || formatDate(item.capturedAt))}</option>
+          `).join('') : '<option>No snapshots</option>'}
+        </select>
+      </div>
+      <div class="segmented">
+        ${Object.entries(tabs).map(([id, [tabLabel, tabAccounts]]) => `
+          <button class="small ${relationshipTab === id ? 'active' : ''}" data-action="relationship-tab" data-tab="${id}">${escapeHtml(tabLabel)} (${tabAccounts.length})</button>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>${escapeHtml(label)}</h2><p>${accounts.length} account${accounts.length === 1 ? '' : 's'}.</p></div>
+        <div class="toolbar">
+          <button class="small" data-action="export-current-list">Export CSV</button>
+          ${canBulkQueue && accounts.length ? '<button class="small" data-action="queue-current-list">Add all to unfollow review</button>' : ''}
+        </div>
+      </div>
+      ${accountTable(accounts, { showQueueAction: canBulkQueue, queueAction: 'unfollow' })}
+    </section>
+  `;
+}
+
+function renderQueue() {
+  const summary = getQueueSummary(state.queue);
+  const sorted = [...state.queue].sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
+
+  return pageHead(
+    'Action Queue',
+    'Plan follow and unfollow reviews, preserve history, and export a manual companion queue.',
+    '<button class="primary" data-action="refresh-queue">Refresh schedules</button><button data-action="export-companion-queue">Export companion queue</button>',
+  ) + `
+    <section class="grid metrics">
+      ${metric('Pending', summary.pending || 0)}
+      ${metric('Waiting', summary.waiting || 0)}
+      ${metric('Ready', summary.ready || 0)}
+      ${metric('Protected', summary.protected || 0)}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Add follow targets</h2><p>One username per line or separated by commas. Actions are queued, not executed.</p></div></div>
+      <div class="field">
+        <textarea id="follow-targets" placeholder="username_one\nusername_two"></textarea>
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="primary" data-action="add-follow-targets">Add to queue</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Queue records</h2><p>${sorted.length} total records. Mark completion only after performing the action yourself.</p></div></div>
+      ${sorted.length ? `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Account</th><th>Action</th><th>Status</th><th>Reason</th><th>Scheduled</th><th>Controls</th></tr></thead>
+          <tbody>
+            ${sorted.map((item) => `
+              <tr>
+                <td><div class="account"><a href="${profileUrl(item.account.username)}" target="_blank" rel="noreferrer">@${escapeHtml(item.account.username)}</a><span>${escapeHtml(item.account.displayName || '')}</span></div></td>
+                <td>${escapeHtml(item.action)}</td>
+                <td><span class="badge ${escapeHtml(item.status)}">${escapeHtml(item.status)}</span></td>
+                <td>${escapeHtml(item.reason)}</td>
+                <td>${formatDate(item.scheduledFor)}</td>
+                <td><div class="toolbar">
+                  <a class="button small" href="${profileUrl(item.account.username)}" target="_blank" rel="noreferrer">Open</a>
+                  ${!['completed', 'removed', 'protected'].includes(item.status) ? `<button class="small" data-action="queue-status" data-id="${escapeHtml(item.id)}" data-status="completed">Complete</button>` : ''}
+                  ${!['removed'].includes(item.status) ? `<button class="small" data-action="queue-status" data-id="${escapeHtml(item.id)}" data-status="skipped">Skip</button>` : ''}
+                  <button class="small danger" data-action="queue-status" data-id="${escapeHtml(item.id)}" data-status="removed">Remove</button>
+                </div></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table></div>
+      ` : '<div class="empty">No queue items yet.</div>'}
+    </section>
+  `;
+}
+
+function messageTypeOptions() {
+  const types = [...new Set(state.messages.map((message) => message.type))].sort();
+  return `<option value="">All types</option>${types.map((type) => `<option value="${escapeHtml(type)}" ${messageFilters.type === type ? 'selected' : ''}>${escapeHtml(type)}</option>`).join('')}`;
+}
+
+function renderMessages() {
+  const filtered = filterMessages(state.messages, {
+    keyword: messageFilters.keyword,
+    onlyMine: messageFilters.onlyMine,
+    types: messageFilters.type ? [messageFilters.type] : [],
+  });
+  const visible = filtered.slice(0, 250);
+  const selected = new Set(state.selectedMessageIds);
+  const sentTotal = state.messages.filter((message) => message.isMine).length;
+
+  return pageHead(
+    'Messages',
+    'View imported Instagram message data, filter messages you sent, and create a reviewed unsend plan.',
+    '<button class="primary" data-action="pick-data-files">Import message JSON</button><button data-action="export-unsend-plan">Export unsend plan</button>',
+  ) + `
+    <section class="grid metrics">
+      ${metric('All messages', state.messages.length)}
+      ${metric('Sent by you', sentTotal, state.settings.ownerNames.length ? `Owner names: ${state.settings.ownerNames.join(', ')}` : 'Set owner names before importing Meta exports')}
+      ${metric('Filtered', filtered.length)}
+      ${metric('Selected', state.selectedMessageIds.length)}
+    </section>
+
+    <section class="panel">
+      <div class="form-grid">
+        <div class="field"><label for="message-search">Search</label><input id="message-search" value="${escapeHtml(messageFilters.keyword)}" placeholder="Keyword, sender, or conversation"></div>
+        <div class="field"><label for="message-type">Message type</label><select id="message-type">${messageTypeOptions()}</select></div>
+        <label class="checkbox"><input id="only-mine" type="checkbox" ${messageFilters.onlyMine ? 'checked' : ''}> Show only messages identified as mine</label>
+        <div class="toolbar">
+          <button class="small" data-action="select-visible-messages">Select visible sent messages</button>
+          <button class="small" data-action="clear-message-selection">Clear selection</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Message preview</h2><p>Showing ${visible.length} of ${filtered.length}. Received messages cannot be selected for unsend.</p></div></div>
+      ${visible.length ? `<div class="message-

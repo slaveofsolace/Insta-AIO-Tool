@@ -1,0 +1,235 @@
+owQueue(accounts) {
+  const existing = new Set(state.queue
+    .filter((item) => item.action === 'unfollow' && item.status !== 'removed')
+    .map((item) => normalizeUsername(item.account.username)));
+  let count = 0;
+  for (const account of accounts) {
+    if (existing.has(account.username)) continue;
+    state.queue.push(createQueueItem(account, 'unfollow', {
+      reason: 'not-following-back-review',
+      status: 'ready',
+    }));
+    existing.add(account.username);
+    count += 1;
+  }
+  logActivity('queue', `Added ${count} account${count === 1 ? '' : 's'} to unfollow review.`);
+}
+
+app.addEventListener('click', async (event) => {
+  const target = event.target.closest('[data-action]');
+  if (!target) return;
+  const action = target.dataset.action;
+
+  if (action === 'navigate') {
+    activeView = target.dataset.view;
+    render();
+    return;
+  }
+  if (action === 'relationship-tab') {
+    relationshipTab = target.dataset.tab;
+    render();
+    return;
+  }
+  if (action === 'pick-data-files') {
+    document.querySelector('#data-file-input').click();
+    return;
+  }
+  if (action === 'pick-data-folder') {
+    document.querySelector('#data-folder-input').click();
+    return;
+  }
+  if (action === 'pick-state-file') {
+    document.querySelector('#state-file-input').click();
+    return;
+  }
+  if (action === 'clear-warnings') {
+    state.importWarnings = [];
+    await persist();
+    return;
+  }
+  if (action === 'activate-snapshot') {
+    state.activeSnapshotId = target.dataset.id;
+    state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
+    await persist();
+    return;
+  }
+  if (action === 'queue-account') {
+    const account = { username: target.dataset.username, source: 'relationship-review' };
+    if (target.dataset.queueAction === 'unfollow') addAccountsToUnfollowQueue([account]);
+    else state.queue = addFollowTargets(state.queue, [account.username]);
+    await persist();
+    return;
+  }
+  if (action === 'queue-current-list') {
+    addAccountsToUnfollowQueue(currentRelationshipAccounts());
+    await persist();
+    return;
+  }
+  if (action === 'export-current-list') {
+    downloadText(`insta-aio-${relationshipTab}.csv`, accountsToCsv(currentRelationshipAccounts()), 'text/csv');
+    logActivity('export', `Exported ${relationshipTab} CSV.`);
+    await persist({ rerender: false });
+    return;
+  }
+  if (action === 'add-follow-targets') {
+    const value = document.querySelector('#follow-targets').value;
+    const usernames = value.split(/[\n,\s]+/).map(normalizeUsername).filter(Boolean);
+    const before = state.queue.length;
+    state.queue = addFollowTargets(state.queue, usernames, { reason: 'manual-follow-target' });
+    logActivity('queue', `Added ${state.queue.length - before} follow target${state.queue.length - before === 1 ? '' : 's'}.`);
+    await persist();
+    return;
+  }
+  if (action === 'refresh-queue') {
+    state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
+    logActivity('queue', 'Refreshed queue scheduling and protections.');
+    await persist();
+    return;
+  }
+  if (action === 'queue-status') {
+    state.queue = markQueueItem(state.queue, target.dataset.id, target.dataset.status);
+    state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
+    logActivity('queue', `Marked queue item ${target.dataset.status}.`, { id: target.dataset.id });
+    await persist();
+    return;
+  }
+  if (action === 'select-visible-messages') {
+    const filtered = filterMessages(state.messages, {
+      keyword: messageFilters.keyword,
+      onlyMine: messageFilters.onlyMine,
+      types: messageFilters.type ? [messageFilters.type] : [],
+    }).filter((message) => message.isMine).slice(0, 250);
+    state.selectedMessageIds = [...new Set([...state.selectedMessageIds, ...filtered.map((message) => message.id)])];
+    await persist();
+    return;
+  }
+  if (action === 'clear-message-selection') {
+    state.selectedMessageIds = [];
+    await persist();
+    return;
+  }
+  if (action === 'export-unsend-plan') {
+    const plan = createUnsendPlan(state.messages, state.selectedMessageIds);
+    downloadJson(`insta-aio-unsend-plan-${Date.now()}.json`, plan);
+    logActivity('export', `Exported unsend plan containing ${plan.total} sent messages.`);
+    await persist({ rerender: false });
+    return;
+  }
+  if (action === 'export-companion-queue') {
+    const queue = state.queue.filter((item) => ['pending', 'ready', 'waiting', 'paused', 'failed'].includes(item.status));
+    downloadJson(`insta-aio-manual-queue-${Date.now()}.json`, {
+      schemaVersion: 1,
+      kind: 'insta-aio-manual-queue',
+      exportedAt: new Date().toISOString(),
+      queue,
+    });
+    logActivity('export', `Exported ${queue.length} queue items for the Tampermonkey companion.`);
+    await persist({ rerender: false });
+    return;
+  }
+  if (action === 'export-state') {
+    downloadJson(`insta-aio-workspace-${Date.now()}.json`, { kind: 'insta-aio-workspace', state });
+    logActivity('export', 'Exported full workspace backup.');
+    await persist({ rerender: false });
+    return;
+  }
+  if (action === 'export-current-snapshot') {
+    const snapshot = activeSnapshot();
+    if (snapshot) downloadJson(`insta-aio-snapshot-${Date.now()}.json`, { kind: 'insta-aio-snapshot', snapshot });
+    return;
+  }
+  if (action === 'export-activity') {
+    downloadJson(`insta-aio-activity-${Date.now()}.json`, state.activity);
+    return;
+  }
+  if (action === 'save-settings') {
+    const lines = (value) => value.split(/[\n,]+/).map(normalizeUsername).filter(Boolean);
+    state.settings.waitingDays = Math.max(1, Number(document.querySelector('#waiting-days').value || 7));
+    state.settings.dailyFollowLimit = Math.max(1, Number(document.querySelector('#daily-follow-limit').value || 25));
+    state.settings.dailyUnfollowLimit = Math.max(1, Number(document.querySelector('#daily-unfollow-limit').value || 25));
+    state.settings.ownerNames = document.querySelector('#owner-names').value.split(',').map((name) => name.trim()).filter(Boolean);
+    state.settings.whitelist = lines(document.querySelector('#whitelist').value);
+    state.settings.preexistingFollowing = lines(document.querySelector('#preexisting').value);
+    state.settings.protectMutuals = document.querySelector('#protect-mutuals').checked;
+    state.settings.dryRun = document.querySelector('#dry-run').checked;
+    state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
+    logActivity('settings', 'Updated local settings and queue protections.');
+    await persist();
+    return;
+  }
+  if (action === 'protect-current-following') {
+    const snapshot = activeSnapshot();
+    state.settings.preexistingFollowing = [...new Set([
+      ...state.settings.preexistingFollowing,
+      ...(snapshot?.following || []).map((account) => account.username),
+    ])].sort();
+    logActivity('settings', 'Protected all accounts in the active following snapshot.');
+    await persist();
+    return;
+  }
+  if (action === 'reset-workspace') {
+    if (!window.confirm('Clear all local Insta AIO data in this browser?')) return;
+    await clearState();
+    state = await loadState();
+    activeView = 'overview';
+    render();
+  }
+});
+
+app.addEventListener('change', async (event) => {
+  const target = event.target;
+  if (target.id === 'data-file-input' || target.id === 'data-folder-input') {
+    await handleDataImport(target.files);
+    return;
+  }
+  if (target.id === 'state-file-input') {
+    const file = target.files?.[0];
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data?.state || data.kind !== 'insta-aio-workspace') throw new Error('Not an Insta AIO workspace backup.');
+      state = migrateState(data.state);
+      logActivity('import', 'Restored workspace backup.');
+      await persist();
+    } catch (error) {
+      window.alert(error.message);
+    }
+    return;
+  }
+  if (target.id === 'snapshot-select') {
+    state.activeSnapshotId = target.value;
+    state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
+    await persist();
+    return;
+  }
+  if (target.id === 'message-type') {
+    messageFilters.type = target.value;
+    render();
+    return;
+  }
+  if (target.id === 'only-mine') {
+    messageFilters.onlyMine = target.checked;
+    render();
+    return;
+  }
+  if (target.dataset.action === 'toggle-message') {
+    const selected = new Set(state.selectedMessageIds);
+    if (target.checked) selected.add(target.dataset.id);
+    else selected.delete(target.dataset.id);
+    state.selectedMessageIds = [...selected];
+    await persist();
+  }
+});
+
+app.addEventListener('input', (event) => {
+  if (event.target.id !== 'message-search') return;
+  messageFilters.keyword = event.target.value;
+  clearTimeout(globalThis.__instaAioSearchTimer);
+  globalThis.__instaAioSearchTimer = setTimeout(render, 120);
+});
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+render();

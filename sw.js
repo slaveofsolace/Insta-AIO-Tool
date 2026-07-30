@@ -1,6 +1,8 @@
 const CACHE_NAME = 'insta-aio-v1';
 const ASSETS = [
-  './', './index.html', './manifest.webmanifest', './assets/icon.svg', './src/styles.css', './src/app.js',
+  './', './index.html', './manifest.webmanifest', './assets/icon.svg', './src/styles.css', './src/app-loader.js',
+  './src/app.parts/part-01.jsfrag', './src/app.parts/part-02.jsfrag',
+  './src/app.parts/part-03.jsfrag', './src/app.parts/part-04.jsfrag',
   './src/core/accounts.js', './src/core/snapshots.js', './src/core/queue.js',
   './src/core/messages.js', './src/core/imports.js', './src/core/storage.js',
 ];
