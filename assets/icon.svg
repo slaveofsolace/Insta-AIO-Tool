@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Insta AIO Tool</title>
+  <rect width="512" height="512" rx="112" fill="#101114"/>
+  <rect x="72" y="72" width="368" height="368" rx="92" fill="#c6ff4a"/>
+  <path d="M156 350V162h52v188zm74 0V162h50l76 105V162h52v188h-48l-78-108v108z" fill="#12140d"/>
+</svg>

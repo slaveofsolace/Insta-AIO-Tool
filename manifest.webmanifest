@@ -1,0 +1,17 @@
+{
+  "name": "Insta AIO Tool",
+  "short_name": "Insta AIO",
+  "description": "Local-first Instagram relationship, queue, and message-data manager.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#101114",
+  "theme_color": "#101114",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
