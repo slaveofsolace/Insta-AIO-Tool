@@ -38,6 +38,12 @@ npm test
 npm run serve
 ```
 
+For a materialized development copy of the assembled UI module:
+
+```bash
+npm run assemble
+```
+
 Open `http://localhost:4173`.
 
 A direct `file://` launch may work for basic use, but serving the folder is recommended so the service worker and module imports behave consistently.
@@ -118,8 +124,13 @@ It deliberately does not auto-scroll lists, click Follow/Unfollow, click Unsend,
 ├── index.html
 ├── manifest.webmanifest
 ├── sw.js
+├── scripts/
+│   └── assemble-app.mjs
 ├── src/
-│   ├── app.js
+│   ├── app-loader.js
+│   ├── app.parts/
+│   │   ├── part-01.jsfrag
+│   │   └── ...
 │   ├── styles.css
 │   └── core/
 │       ├── accounts.js
@@ -139,6 +150,11 @@ It deliberately does not auto-scroll lists, click Follow/Unfollow, click Unsend,
     ├── PROJECT_SPEC.md
     └── SOURCE_AUDIT.md
 ```
+
+
+## Source assembly
+
+The main UI module is checked in as deterministic source segments under `src/app.parts/` so the repository API can preserve the complete module without truncation. `src/app-loader.js` reconstructs the module in memory when the PWA runs. `npm run assemble` materializes the same source as `src/app.js` for local inspection or editing; that generated file is ignored by Git.
 
 ## Tests
 
