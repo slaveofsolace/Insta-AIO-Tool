@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Assemble browser module
+        run: npm run assemble
       - name: Syntax checks
         run: |
           find src userscripts tests -name '*.js' -print0 | xargs -0 -n1 node --check
