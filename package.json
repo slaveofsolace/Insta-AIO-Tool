@@ -1,0 +1,15 @@
+{
+  "name": "insta-aio-tool",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first Instagram relationship, queue, and message-data management suite.",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 4173"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
