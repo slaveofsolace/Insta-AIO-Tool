@@ -101,6 +101,19 @@ test('protects a completed follow when the account followed back', () => {
   assert.equal(queue.some((item) => item.action === 'unfollow'), false);
 });
 
+test('does not turn migration-only history into a new action', () => {
+  const startedAt = Date.UTC(2026, 0, 1);
+  let queue = addFollowTargets([], ['historical_target'], { createdAt: startedAt });
+  queue = markQueueItem(queue, queue[0].id, 'completed', startedAt);
+  queue[0].migrationOnly = true;
+  const snapshot = createSnapshot({ followers: [], following: ['historical_target'] });
+
+  queue = refreshQueue(queue, snapshot, { waitingDays: 7 }, startedAt + 30 * 86_400_000);
+
+  assert.equal(queue[0].status, 'completed');
+  assert.equal(queue.some((item) => item.action === 'unfollow'), false);
+});
+
 test('imports Meta follower and following JSON formats', () => {
   const result = importFileRecords([
     {

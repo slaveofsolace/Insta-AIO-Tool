@@ -1,304 +1,181 @@
-# Unified Instagram Account Management Suite — project specification
+# Product specification
 
-## Objective
+## Purpose
 
-Combine the user's three existing tools into one local-first application with a shared interface, storage model, history, import/migration layer, queue system, and audit log.
+Insta AIO Tool provides a private, local workspace for understanding Instagram relationship exports, planning account reviews, migrating supported legacy data, and preparing exact message-removal reviews.
 
-The product must support three domains:
+The product favors verifiable local data processing over unattended page automation.
 
-1. Follow/unfollow review scheduling
-2. Follower/following comparison and unfollower history
-3. Direct-message data viewing, selection, and reviewed unsend planning
+## Supported data
 
-Existing implementations should be adapted where source is available. Working code should not be rewritten solely for appearance. Missing or unstable integrations must be isolated behind adapters and labeled `Codex-Handoff` until completed and verified.
+### Current Instagram exports
 
-## Delivery architecture
+- Original ZIP archives containing JSON data
+- Split follower files
+- Following files
+- Split conversation message files
 
-### Current delivery
+### Legacy sources
 
-- Installable local PWA
-- Tampermonkey manual companion
-- Zero runtime dependencies
-- IndexedDB persistence with LocalStorage fallback
-- Node built-in test suite
+- Instagram Helper message data with `allMessagesItemsArray`
+- SimpleInstaBot followed and unfollowed history
+- Saved follower-checker output containing both non-mutual arrays
+- Insta AIO workspace, snapshot, queue, and plan exports
 
-### Future delivery options
+Every import must preserve its source path or file name and produce explicit warnings or migration dispositions. Unsupported records must not disappear silently.
 
-- Browser extension with an explicit message bridge
-- Electron or Tauri desktop package
-- SQLite-backed multi-account workspace
+## Relationship requirements
 
-## Component A — relationship snapshots
+The application shall:
 
-### Inputs
+- Normalize usernames and profile URLs
+- Prefer stable account IDs when present
+- Deduplicate accounts deterministically
+- Store multiple dated snapshots
+- Compare the active and preceding snapshot
+- Identify mutuals and both non-mutual directions
+- Identify new and lost followers
+- Identify following additions and removals
+- Report ID-backed username changes without false unfollow events
 
-- Meta followers JSON
-- Meta following JSON
-- Insta AIO snapshots
-- Read-only visible-DOM captures
-- Future approved collection adapters
+## Queue requirements
 
-### Required outputs
+The queue shall:
 
-- Followers
-- Following
-- Mutuals
-- Accounts not following the user back
-- Accounts the user does not follow back
-- New followers
-- Detected unfollowers
-- Newly followed accounts
-- Accounts no longer followed
-- Username changes when stable IDs are available
+- Support follow and unfollow review records
+- Preserve status history and scheduling
+- Apply a configurable waiting period
+- Protect mutuals when enabled
+- Protect whitelisted and preexisting accounts
+- Prevent migration history from becoming a new action
+- Prevent duplicates
+- Allow pause, skip, completion, failure, and removal states
+- Export a manual companion queue
+
+## Reviewed account-action requirements
 
-### Historical rules
+A reviewed job shall:
 
-- Preserve every snapshot with capture time and source.
-- Compare a selected snapshot with the immediately prior snapshot.
-- Do not silently overwrite historical snapshots.
-- Use stable user IDs when available.
-- When no stable ID exists, document that rename/deletion/suspension distinctions may be uncertain.
+- Contain exact usernames and actions
+- Exclude protected or non-actionable records
+- Bind confirmation to a preview digest
+- Default to dry-run mode
+- Require explicit confirmation
+- Support durable checkpoints and resume
+- Revalidate profile identity, relationship state, and protections immediately before execution
+- Reserve live attempts transactionally
+- Enforce daily limits and duplicate prevention
+- Stop on uncertain identity, ambiguous controls, session expiry, challenge, rate limit, or action block
+- Record before/after evidence and results
 
-## Component B — follow/unfollow review queue
+Live action flags default to false and the default live batch limit is one.
 
-### Follow target creation
+## Message requirements
+
+The application shall:
 
-Allow targets to be added from:
+- Normalize Meta and supported legacy message records
+- Identify sender ownership from configured owner names and source metadata
+- Filter by keyword, conversation, sender, and type
+- Use windowed rendering for large result sets
+- Allow selection only for messages identified as sent by the owner
+- Preserve conversation ID, message ID, timestamp, type, sender, content digest, and preview
+- Export a simple plan or reviewed job
 
-- Manual username input
-- Imported lists
-- Relationship views
-- Existing tool migrations
+## Reviewed DM requirements
 
-### Follow workflow
+A reviewed DM job shall:
 
-1. Create a pending follow record.
-2. Require the user or future executor to report completion.
-3. Record exact completion time.
-4. Place the account in waiting status.
-5. Reevaluate after the configured waiting period.
-6. If the account follows back, protect it.
-7. If no follow-back is present, create a ready unfollow-review item.
+- Block received, duplicate, or incomplete records
+- Bind review to a digest and exact phrase
+- Require a second destructive phrase for live mode
+- Reconfirm exact conversation, exact message, and sender ownership
+- Reserve a destructive attempt before the driver call
+- Checkpoint every message
+- Prevent duplicate attempts
+- Verify removal after a driver call
+- Stop on missing or ambiguous messages, changed content, session expiry, challenge, rate limit, or action block
 
-### Protections
+No adapter may guess which rendered message corresponds to an export record.
 
-Never produce an actionable unfollow item for:
-
-- Whitelisted accounts
-- Protected preexisting follows
-- Mutuals when mutual protection is enabled
-- Records manually marked protected
-- Duplicate queue entries
-- Removed/skipped records
-
-### Queue statuses
-
-- Pending
-- Waiting
-- Ready
-- Processing
-- Completed
-- Paused
-- Skipped
-- Failed
-- Protected
-- Removed
-
-### Queue fields
-
-- Account ID and username
-- Action
-- Reason
-- Created time
-- Scheduled time
-- Status
-- Source action
-- Preexisting flag
-- Attempt count
-- Last attempt time
-- Completion time
-- Error
-- Notes
-
-### Limits
-
-Store configurable daily planning limits for follow and unfollow work. A future executor must enforce them transactionally.
-
-## Component C — messages and unsend planning
-
-### Imports
-
-- Meta `message_*.json` files
-- InstagramHelper `allMessagesItemsArray` JSON
-- Future direct ZIP import
-- Future user's existing DM-unsender job format
-
-### Viewer
-
-Display:
-
-- Conversation
-- Sender
-- Timestamp
-- Message type
-- Content/placeholder
-- Sent-by-me status
-
-Recognize at minimum:
-
-- Text
-- Links
-- Shared media
-- Photos
-- Videos
-- Audio
-- GIFs
-- Stickers
-- Calls
-- Unknown/placeholder records
-
-### Filters
-
-- Keyword
-- Conversation
-- Sender
-- Date range
-- Message type
-- Only messages sent by the user
-
-### Unsend plan
-
-- Only messages identified as sent by the user are eligible.
-- Received messages must never enter the plan.
-- The user must explicitly select or bulk-select reviewed messages.
-- Export message ID, conversation ID, timestamp, type, and a limited preview.
-- Preserve status and future checkpoint fields.
-
-### Live execution
-
-Live unsending remains an adapter task until it can reliably:
-
-- Resolve the exact conversation
-- Resolve the exact message
-- Confirm it was sent by the user
-- Preview the final batch
-- Pause, resume, stop, skip, and retry
-- Persist checkpoints
-- Avoid duplicate attempts
-- Report per-message results
-
-## Unified interface
-
-Views:
-
-- Overview
-- Relationships
-- Action Queue
-- Messages
-- Import / Export
-- Settings
-- Activity
-
-### Overview metrics
-
-- Followers
-- Following
-- Mutuals
-- Not following back
-- New followers
-- Detected unfollowers
-- Queue pending/waiting/ready/protected
-- Loaded messages
-- Sent messages
-- Selected unsend messages
-
-## Migration
-
-### InstagramHelper
-
-Import its downloaded message JSON and normalize messages into the unified model.
-
-### SimpleInstaBot
-
-Import followed and unfollowed history arrays, preserving:
-
-- Username
-- Time
-- Follow/unfollow action
-- Failed flag
-- No-action-taken flag
-
-### Existing user tools
-
-Once supplied, create source-specific adapters rather than copying their state directly into UI code.
-
-Every migration must produce:
-
-- Imported count
-- Duplicate count
-- Skipped count
-- Warning list
-- Records requiring manual correction
-
-## Privacy and account constraints
-
-- Local processing by default
-- No password storage
-- No password logging
-- No cookie/session export
-- No proxy rotation
-- No fingerprint spoofing
-- No CAPTCHA bypassing
-- No challenge bypassing
-- No circumvention of Instagram restrictions
-- No silent destructive actions
-- No unreviewed mass action
-
-## Testing requirements
-
-### Implemented domain tests
-
-- Username normalization
-- Snapshot comparison
-- Rename handling
-- Relationship classification
-- Waiting-period queue creation
-- Waiting-item reevaluation
-- Mutual protection
-- Relationship import parsing
-- Legacy action migration
-- Message import parsing
-- Sent-only unsend planning
-
-### Codex-Handoff tests
-
-- Browser interaction tests
-- Responsive UI tests
-- Direct ZIP import fixtures
-- Very large export performance
-- Interrupted executor recovery
-- Session expiration
-- Login challenge detection
-- Rate-limit/action-block detection
-- Exact DM message resolution
-- Duplicate destructive-action prevention
-- Packaged desktop install/uninstall
-
-## Acceptance criteria
-
-The initial build is accepted when:
-
-- It runs from a local static server.
-- Core tests pass without installing dependencies.
-- Followers/following imports produce correct relationship views.
-- Multiple snapshots produce historical changes.
-- Queue waiting logic creates protected or ready records correctly.
-- SimpleInstaBot history imports.
-- InstagramHelper and Meta message formats import.
-- Received messages cannot be exported in an unsend plan.
-- Workspace state persists locally.
-- Queue and state exports can be downloaded.
-- Tampermonkey companion imports a queue and records manual status updates.
-- All unfinished work is explicitly labeled `Codex-Handoff`.
-
-Full product completion requires the separate handoff items in `CODEX_HANDOFF.md` to pass their own acceptance criteria.
+## ZIP requirements
+
+ZIP import shall:
+
+- Operate locally
+- Display a reviewed manifest before extraction
+- Recursively identify supported JSON paths
+- Preserve source paths
+- Support stored and deflated entries
+- Validate CRC and header agreement
+- Reject encryption, unsafe paths, duplicate paths, multidisk archives, ZIP64, unsupported compression, and configured size-limit violations
+- Support cancellation and progress
+- Yield UI work during large imports
+- Leave extracted file/folder import available
+
+## Extension requirements
+
+The bridge shall:
+
+- Use a versioned schema
+- Pair one exact origin through a one-time code
+- Rotate the pairing secret during handshake
+- Separate read and action permissions
+- Sign every message
+- Enforce age and nonce replay limits
+- Reject session and authorization material
+- Preserve JSON exchange as a fallback
+
+The shipped extension shall not perform live Instagram clicks.
+
+## Desktop requirements
+
+The desktop shell shall:
+
+- Package the existing PWA without replacing its contracts
+- Use an app-specific local data directory
+- Preserve data across approved upgrades
+- Create bounded startup backups
+- Restrict renderer capabilities
+- Confine asset paths
+- Deny unneeded permissions
+- Provide Windows installer and macOS build configuration
+- Document installation, removal, and rollback
+
+## Accessibility and responsive requirements
+
+- Primary workflows must be keyboard reachable
+- Interactive controls need visible focus
+- Status changes must use accessible live regions where appropriate
+- Tables and windowed lists must expose position/count metadata
+- Layouts must support desktop, tablet, and narrow mobile widths
+- Reduced-motion preferences must be honored
+- Destructive confirmations and errors must be understandable without color alone
+
+## Privacy and security requirements
+
+- No Instagram password collection or logging
+- No Instagram session export
+- No hidden remote analytics
+- No imported-data upload
+- No proxy rotation or fingerprint spoofing
+- No challenge or CAPTCHA bypass
+- No private endpoint reverse engineering
+- No unreviewed destructive actions
+
+## Release gates
+
+A releasable change must satisfy:
+
+```bash
+pnpm run assemble
+pnpm test
+```
+
+Changes affecting ZIP performance must also run:
+
+```bash
+pnpm run benchmark:zip
+```
+
+Changes affecting desktop delivery must build and smoke-test the target platform artifact. Changes affecting interactive UI behavior require browser verification at representative viewports before visual acceptance is claimed.

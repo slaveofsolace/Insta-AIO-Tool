@@ -1,4 +1,34 @@
-a><span>${escapeHtml(account.displayName || '')}</span></div></td>
+/section>
+
+    ${state.importWarnings.length ? `
+      <section class="panel">
+        <div class="panel-head"><div><h2>Latest import warnings</h2></div><button class="small" data-action="clear-warnings">Clear</button></div>
+        <div class="notice warning">${state.importWarnings.slice(0, 8).map(escapeHtml).join('<br>')}</div>
+      </section>
+    ` : ''}
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Quick actions</h2><p>All account changes require a separate manual step.</p></div></div>
+      <div class="toolbar">
+        <button data-action="navigate" data-view="relationships">Review relationships</button>
+        <button data-action="navigate" data-view="queue">Open action queue</button>
+        <button data-action="navigate" data-view="messages">Review sent messages</button>
+        <button data-action="export-companion-queue">Export Tampermonkey queue</button>
+      </div>
+    </section>
+  `;
+}
+
+function accountTable(accounts, { showQueueAction = false, queueAction = 'unfollow' } = {}) {
+  if (!accounts.length) return '<div class="empty">No accounts in this view.</div>';
+  return `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Account</th><th>ID</th><th>Source</th><th>Detected</th><th>Action</th></tr></thead>
+        <tbody>
+          ${accounts.map((account) => `
+            <tr>
+              <td><div class="account"><a href="${profileUrl(account.username)}" target="_blank" rel="noreferrer">@${escapeHtml(account.username)}</a><span>${escapeHtml(account.displayName || '')}</span></div></td>
               <td class="code">${escapeHtml(account.id || '—')}</td>
               <td>${escapeHtml(account.source || '—')}</td>
               <td>${formatDate(account.timestamp)}</td>
@@ -42,7 +72,7 @@ function renderRelationships() {
         <div><h2>Snapshot</h2><p>Select the snapshot used for the relationship view and historical comparison.</p></div>
         <select id="snapshot-select" aria-label="Active snapshot" style="max-width:330px">
           ${state.snapshots.length ? [...state.snapshots].sort((a, b) => new Date(b.capturedAt) - new Date(a.capturedAt)).map((item) => `
-            <option value="${item.id}" ${item.id === snapshot?.id ? 'selected' : ''}>${escapeHtml(item.label || formatDate(item.capturedAt))}</option>
+            <option value="${escapeHtml(item.id)}" ${item.id === snapshot?.id ? 'selected' : ''}>${escapeHtml(item.label || formatDate(item.capturedAt))}</option>
           `).join('') : '<option>No snapshots</option>'}
         </select>
       </div>
@@ -69,11 +99,19 @@ function renderRelationships() {
 function renderQueue() {
   const summary = getQueueSummary(state.queue);
   const sorted = [...state.queue].sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
+  const queueWindow = virtualWindow(sorted, {
+    scrollTop: queueScrollTop,
+    rowHeight: 72,
+    viewportHeight: 520,
+    overscan: 6,
+  });
+  const selectedQueueIds = new Set(state.selectedQueueItemIds || []);
+  const latestActionJob = (state.actionJobs || [])[0] || null;
 
   return pageHead(
     'Action Queue',
     'Plan follow and unfollow reviews, preserve history, and export a manual companion queue.',
-    '<button class="primary" data-action="refresh-queue">Refresh schedules</button><button data-action="export-companion-queue">Export companion queue</button>',
+    '<button class="primary" data-action="create-action-preview">Create reviewed preview</button><button data-action="refresh-queue">Refresh schedules</button><button data-action="export-companion-queue">Export companion queue</button>',
   ) + `
     <section class="grid metrics">
       ${metric('Pending', summary.pending || 0)}
@@ -92,14 +130,64 @@ function renderQueue() {
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head"><div><h2>Queue records</h2><p>${sorted.length} total records. Mark completion only after performing the action yourself.</p></div></div>
-      ${sorted.length ? `
-        <div class="table-wrap"><table>
-          <thead><tr><th>Account</th><th>Action</th><th>Status</th><th>Reason</th><th>Scheduled</th><th>Controls</th></tr></thead>
-          <tbody>
-            ${sorted.map((item) => `
+    ${latestActionJob ? `
+      <section class="panel" aria-labelledby="action-preview-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="action-preview-heading">Reviewed action preview</h2>
+            <p>${latestActionJob.items.length} actionable · ${latestActionJob.blockedItems.length} blocked · ${escapeHtml(latestActionJob.status)}</p>
+          </div>
+          <span class="badge ${latestActionJob.mode === 'live' ? 'failed' : 'protected'}">${escapeHtml(latestActionJob.mode)}</span>
+        </div>
+        ${latestActionJob.items.length ? `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Account</th><th>Action</th><th>Source status</th><th>Job status</th></tr></thead>
+            <tbody>${latestActionJob.items.map((item) => `
               <tr>
+                <td>@${escapeHtml(item.username)}</td>
+                <td>${escapeHtml(item.action)}</td>
+                <td>${escapeHtml(item.sourceStatus)}</td>
+                <td>${escapeHtml(item.status)}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table></div>
+        ` : '<div class="empty">The selected records produced no actionable items.</div>'}
+        ${latestActionJob.blockedItems.length ? `
+          <div class="notice warning" style="margin-top:14px">
+            Blocked: ${latestActionJob.blockedItems.map((item) => `@${escapeHtml(item.username || 'invalid')} (${escapeHtml(item.blockReason)})`).join(', ')}
+          </div>
+        ` : ''}
+        ${latestActionJob.status === 'awaiting-confirmation' && latestActionJob.items.length ? `
+          <div class="notice" style="margin-top:14px">
+            Confirmation phrase: <span class="code">${escapeHtml(latestActionJob.confirmationPhrase)}</span>
+          </div>
+        ` : ''}
+        <div class="toolbar" style="margin-top:14px">
+          ${latestActionJob.status === 'awaiting-confirmation' && latestActionJob.items.length ? '<button class="primary" data-action="confirm-action-dry-run">Confirm no-click dry run</button>' : ''}
+          ${latestActionJob.status === 'awaiting-confirmation' && latestActionJob.items.length && state.settings.liveActionEnabled ? '<button class="danger" data-action="confirm-action-live">Confirm live batch</button>' : ''}
+          ${latestActionJob.status === 'ready' && latestActionJob.mode === 'dry-run' && state.bridgePairing?.pairedAt && state.bridgePairing.permissions?.includes('action') ? '<button class="primary" data-action="run-action-extension-dry-run">Inspect current Instagram profile</button>' : ''}
+          ${latestActionJob.confirmedAt ? '<button data-action="export-reviewed-action-job">Export reviewed job</button>' : ''}
+          <button data-action="discard-action-job">Discard preview</button>
+        </div>
+      </section>
+    ` : ''}
+
+    <section class="panel">
+      <div class="panel-head">
+        <div><h2>Queue records</h2><p>${sorted.length} total records. Select exact records before creating a reviewed batch.</p></div>
+        <div class="toolbar">
+          <button class="small" data-action="select-actionable-queue">Select actionable</button>
+          <button class="small" data-action="clear-queue-selection">Clear selection</button>
+        </div>
+      </div>
+      ${sorted.length ? `
+        <div class="table-wrap virtual-scroll" data-virtual-list="queue"><table class="virtual-table" aria-rowcount="${sorted.length + 1}">
+          <thead><tr><th><span class="sr-only">Select</span></th><th>Account</th><th>Action</th><th>Status</th><th>Reason</th><th>Scheduled</th><th>Controls</th></tr></thead>
+          <tbody>
+            ${queueWindow.topPadding ? `<tr class="virtual-spacer" aria-hidden="true"><td colspan="7" style="height:${queueWindow.topPadding}px"></td></tr>` : ''}
+            ${queueWindow.items.map((item, index) => `
+              <tr class="data-row" aria-rowindex="${queueWindow.start + index + 2}">
+                <td><input type="checkbox" data-action="toggle-queue-selection" data-id="${escapeHtml(item.id)}" ${selectedQueueIds.has(item.id) ? 'checked' : ''} ${['pending', 'ready', 'paused', 'failed'].includes(item.status) && !item.migrationOnly ? '' : 'disabled'} aria-label="Select @${escapeHtml(item.account.username)} ${escapeHtml(item.action)}"></td>
                 <td><div class="account"><a href="${profileUrl(item.account.username)}" target="_blank" rel="noreferrer">@${escapeHtml(item.account.username)}</a><span>${escapeHtml(item.account.displayName || '')}</span></div></td>
                 <td>${escapeHtml(item.action)}</td>
                 <td><span class="badge ${escapeHtml(item.status)}">${escapeHtml(item.status)}</span></td>
@@ -113,6 +201,7 @@ function renderQueue() {
                 </div></td>
               </tr>
             `).join('')}
+            ${queueWindow.bottomPadding ? `<tr class="virtual-spacer" aria-hidden="true"><td colspan="7" style="height:${queueWindow.bottomPadding}px"></td></tr>` : ''}
           </tbody>
         </table></div>
       ` : '<div class="empty">No queue items yet.</div>'}
@@ -131,14 +220,21 @@ function renderMessages() {
     onlyMine: messageFilters.onlyMine,
     types: messageFilters.type ? [messageFilters.type] : [],
   });
-  const visible = filtered.slice(0, 250);
+  const messageWindow = virtualWindow(filtered, {
+    scrollTop: messageScrollTop,
+    rowHeight: 96,
+    viewportHeight: 620,
+    overscan: 6,
+  });
+  const visible = messageWindow.items;
   const selected = new Set(state.selectedMessageIds);
   const sentTotal = state.messages.filter((message) => message.isMine).length;
+  const latestDmJob = (state.dmJobs || [])[0] || null;
 
   return pageHead(
     'Messages',
     'View imported Instagram message data, filter messages you sent, and create a reviewed unsend plan.',
-    '<button class="primary" data-action="pick-data-files">Import message JSON</button><button data-action="export-unsend-plan">Export unsend plan</button>',
+    '<button class="primary" data-action="create-dm-preview">Create reviewed unsend preview</button><button data-action="pick-data-files">Import message JSON</button><button data-action="export-unsend-plan">Export simple plan</button>',
   ) + `
     <section class="grid metrics">
       ${metric('All messages', state.messages.length)}
@@ -146,6 +242,56 @@ function renderMessages() {
       ${metric('Filtered', filtered.length)}
       ${metric('Selected', state.selectedMessageIds.length)}
     </section>
+
+    ${latestDmJob ? `
+      <section class="panel" aria-labelledby="dm-preview-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="dm-preview-heading">Reviewed DM unsend preview</h2>
+            <p>${latestDmJob.items.length} eligible sent message${latestDmJob.items.length === 1 ? '' : 's'} · ${latestDmJob.blockedItems.length} blocked · ${escapeHtml(latestDmJob.status)}</p>
+          </div>
+          <span class="badge ${latestDmJob.mode === 'live' ? 'failed' : 'protected'}">${escapeHtml(latestDmJob.mode)}</span>
+        </div>
+        ${latestDmJob.items.length ? `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Conversation</th><th>Message ID</th><th>Timestamp</th><th>Type</th><th>Preview</th><th>Status</th></tr></thead>
+            <tbody>${latestDmJob.items.map((item) => `
+              <tr>
+                <td>${escapeHtml(item.conversationName)}</td>
+                <td class="code">${escapeHtml(item.messageId)}</td>
+                <td>${formatDate(item.timestamp)}</td>
+                <td>${escapeHtml(item.type)}</td>
+                <td>${escapeHtml(item.preview)}</td>
+                <td>${escapeHtml(item.status)}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table></div>
+        ` : '<div class="empty">No sent messages are eligible for this job.</div>'}
+        ${latestDmJob.blockedItems.length ? `
+          <div class="notice warning" style="margin-top:14px">
+            ${latestDmJob.blockedItems.length} selected message${latestDmJob.blockedItems.length === 1 ? ' was' : 's were'} blocked, including received or incomplete records.
+          </div>
+        ` : ''}
+        ${latestDmJob.status === 'awaiting-review-confirmation' && latestDmJob.items.length ? `
+          <div class="notice" style="margin-top:14px">
+            Review phrase: <span class="code">${escapeHtml(latestDmJob.reviewConfirmationPhrase)}</span>
+          </div>
+        ` : ''}
+        ${latestDmJob.status === 'awaiting-destructive-confirmation' ? `
+          <div class="notice warning" style="margin-top:14px">
+            Second confirmation phrase: <span class="code">${escapeHtml(latestDmJob.destructiveConfirmationPhrase)}</span>
+          </div>
+        ` : ''}
+        <div class="toolbar" style="margin-top:14px">
+          ${latestDmJob.status === 'awaiting-review-confirmation' && latestDmJob.items.length ? '<button class="primary" data-action="confirm-dm-dry-run">Confirm no-click dry run</button>' : ''}
+          ${latestDmJob.status === 'awaiting-review-confirmation' && latestDmJob.items.length && state.settings.liveDmUnsendEnabled ? '<button class="danger" data-action="review-dm-live">Review live unsend batch</button>' : ''}
+          ${latestDmJob.status === 'awaiting-destructive-confirmation' ? '<button class="danger" data-action="confirm-dm-destructive">Confirm destructive batch</button>' : ''}
+          ${latestDmJob.status === 'ready' && latestDmJob.mode === 'dry-run' && state.bridgePairing?.pairedAt && state.bridgePairing.permissions?.includes('action') ? '<button data-action="run-dm-extension-dry-run">Check extension resolution</button>' : ''}
+          ${latestDmJob.reviewConfirmedAt ? '<button data-action="export-reviewed-dm-job">Export reviewed DM job</button>' : ''}
+          <button data-action="discard-dm-job">Discard preview</button>
+        </div>
+      </section>
+    ` : ''}
 
     <section class="panel">
       <div class="form-grid">
@@ -160,5 +306,6 @@ function renderMessages() {
     </section>
 
     <section class="panel">
-      <div class="panel-head"><div><h2>Message preview</h2><p>Showing ${visible.length} of ${filtered.length}. Received messages cannot be selected for unsend.</p></div></div>
-      ${visible.length ? `<div class="message-
+      <div class="panel-head"><div><h2>Message preview</h2><p>Rendering rows ${messageWindow.start + 1}-${messageWindow.end} of ${filtered.length}. Received messages cannot be selected for unsend.</p></div></div>
+      ${visible.length ? `<div class="message-list virtual-scroll" data-virtual-list="messages" role="list" aria-setsize="${filtered.length}">
+        ${messageWindow.topPadding ? `<div class="virtual-block-spacer" aria-hidden="true" style="height:${messageWindow.topPadding}px"></div>` : ''}

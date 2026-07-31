@@ -22,11 +22,19 @@
     const username = String(value || '')
       .replace(/^https?:\/\/www\.instagram\.com\//i, '')
       .replace(/^@/, '')
+      .replace(/^\/+/, '')
       .split(/[/?#]/)[0]
       .trim()
       .toLowerCase();
     return /^[a-z0-9._]{1,30}$/i.test(username) && !RESERVED.has(username) ? username : '';
   };
+
+  const escapeHtml = (value) => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 
   const downloadJson = (filename, data) => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
@@ -122,6 +130,10 @@
       <div data-ia-body>
         <p style="margin:0 0 12px;color:#aab1bd">Manual navigation and read-only visible-list capture. This script does not click Follow, Unfollow, or Unsend.</p>
         <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+          <select data-ia-list-type aria-label="Visible account list type" style="border:1px solid #363b46;border-radius:8px;padding:8px;background:#181b21;color:#f4f5f7">
+            <option value="following">Following</option>
+            <option value="followers">Followers</option>
+          </select>
           ${button('Capture visible accounts', 'capture')}
           ${button('Import queue', 'import', true)}
           ${button('Export queue state', 'export', true)}
@@ -131,8 +143,8 @@
           <div style="color:#9ca3af;font-size:11px;text-transform:uppercase;letter-spacing:.08em">Next manual item · ${remaining} remaining</div>
           ${item ? `
             <div style="margin-top:8px;padding:10px;border:1px solid #2a2e37;border-radius:9px;background:#171a20">
-              <strong>@${item.account?.username || 'unknown'}</strong>
-              <div style="color:#9ca3af;margin:3px 0 9px">${item.action} · ${item.status} · ${item.reason || 'manual'}</div>
+              <strong>@${escapeHtml(item.account?.username || 'unknown')}</strong>
+              <div style="color:#9ca3af;margin:3px 0 9px">${escapeHtml(item.action)} · ${escapeHtml(item.status)} · ${escapeHtml(item.reason || 'manual')}</div>
               <div style="display:flex;flex-wrap:wrap;gap:7px">
                 ${button('Open profile', 'open')}
                 ${button('Mark complete', 'complete', true)}
@@ -160,13 +172,12 @@
     }
     if (action === 'capture') {
       const accounts = captureVisibleAccounts();
-      const listType = window.prompt('Type followers or following for this visible capture:', 'following');
-      if (!['followers', 'following'].includes(String(listType).toLowerCase())) return;
+      const listType = panel.querySelector('[data-ia-list-type]').value;
       downloadJson(`insta-aio-visible-${listType}-${Date.now()}.json`, {
         schemaVersion: 1,
         kind: 'insta-aio-visible-list',
         capturedAt: new Date().toISOString(),
-        [String(listType).toLowerCase()]: accounts,
+        [listType]: accounts,
         note: 'Only rows currently rendered in the Instagram page were captured. Scroll the list manually and capture again if needed.',
       });
       return;
@@ -185,7 +196,12 @@
     }
     if (!item) return;
     if (action === 'open') {
-      window.location.href = `https://www.instagram.com/${encodeURIComponent(item.account.username)}/`;
+      const username = normalizeUsername(item.account?.username);
+      if (!username) {
+        window.alert('The selected queue item does not contain a valid Instagram username.');
+        return;
+      }
+      window.location.href = `https://www.instagram.com/${encodeURIComponent(username)}/`;
       return;
     }
     if (action === 'complete') updateItem(item.id, 'completed');

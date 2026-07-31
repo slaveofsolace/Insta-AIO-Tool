@@ -1,82 +1,85 @@
 # Source audit
 
-## 1. `pishangujeniya/instagram-helper`
+This document records the external source versions reviewed for the current migrations and adapter boundaries. Source review does not imply wholesale code inclusion.
 
-Repository: `https://github.com/pishangujeniya/instagram-helper`
+## Instagram Helper
 
-### Useful ideas retained
+- Repository: <https://github.com/pishangujeniya/instagram-helper>
+- Reviewed revision: `5853d856a18a395aab7c8b8c7e3633175e23ddaf`
+- License: MIT
+- Relevant data: local message data containing `allMessagesItemsArray`
 
-- Local JSON loading through the browser File API.
-- Rendering downloaded message history as a readable conversation.
-- Recognizing multiple message item types, including text, links, shared media, clips, and private media placeholders.
-- Keeping message-data viewing separate from authenticated Instagram actions.
+Adopted:
 
-### Problems not carried forward
+- Recognition of the archived message-data shape
+- Preservation of conversation, sender, timestamp, type, and content fields
+- Explicit migration dispositions for malformed or duplicate records
 
-- The repository is archived.
-- Its README states that the main automation stopped working after Instagram changes in May 2023.
-- Its original setup disabled browser web security and required a CSP-disabling extension.
-- Its older viewer uses direct HTML string composition and remote placeholder images.
-- The original stop mechanism was browser refresh/close rather than persistent jobs and checkpoints.
+Rejected:
 
-### New implementation
+- Coupling the current PWA to archived server routes or templates
+- Reusing obsolete authenticated request behavior
+- Treating legacy DOM assumptions as current Instagram selectors
 
-Insta AIO parses the old `allMessagesItemsArray` format for migration, but uses escaped rendering, IndexedDB storage, explicit sent-message classification, filters, selection, and exportable plans.
+## SimpleInstaBot
 
-## 2. `mifi/SimpleInstaBot`
+- Repository: <https://github.com/mifi/SimpleInstaBot>
+- Reviewed revision: `5eed7e4ac7ac7db6922eb9e5ed6db36ad9f18fca`
+- License: MIT
+- Relevant data: per-owner followed, unfollowed, and liked-photo history files
 
-Repository: `https://github.com/mifi/SimpleInstaBot`
+Adopted:
 
-### Useful ideas retained
+- Migration of followed/unfollowed history into non-actionable queue history
+- Preservation of timestamps, owner context, and outcome metadata
+- Explicit unsupported-record reporting for liked-photo history
 
-- Persistent history of followed and unfollowed accounts.
-- A configurable age before an account becomes eligible for unfollow review.
-- Exclusion/protection lists.
-- Dry-run planning.
-- Separate follow-list and unfollow-list workflows.
-- Local execution and local logs.
-- Resume-friendly history that survives app restarts.
+Rejected:
 
-### Problems not carried forward
+- Credential entry or persistence
+- Reusing browser-session files
+- Fingerprint rotation
+- Unreviewed page automation
+- Conversion of historical records into fresh actions
 
-- The desktop app and automation library are tightly coupled to Electron/Puppeteer and Instagram DOM behavior.
-- Its JSON persistence model is too limited for snapshot history, relationships, DM jobs, and migrations.
-- The project includes randomized user-agent/browser-signature behavior; Insta AIO explicitly excludes fingerprint spoofing.
-- The live browser-action layer is fragile and can become incompatible whenever Instagram changes its UI.
+## Follower/following checker Gist
 
-### New implementation
+- Reference: <https://gist.github.com/abir-taheer/0d3f1313def5eec6b78399c0fb69e4b1>
+- Reviewed revision: `3876d9a67bc8255a79990a1616c20cae296d7194`
+- License: no explicit license identified
+- Relevant data: `PeopleIDontFollowBack` and `PeopleNotFollowingMeBack`
 
-Insta AIO independently implements a normalized account model, snapshot history, queue statuses, waiting schedules, protections, migrations, and local audit records. SimpleInstaBot history arrays can be imported without adopting its live browser automation engine.
+Because no license was identified, source code was not copied. The project independently implements normalized set comparison.
 
-## 3. `abir-taheer/instagram-follower-following.js`
+Saved checker results migrate as partial, read-only reports. They do not contain a complete snapshot and cannot create queue actions.
 
-Gist: `https://gist.github.com/abir-taheer/0d3f1313def5eec6b78399c0fb69e4b1`
+## instagram-dm-unsender
 
-### Useful ideas retained
+- Repository: <https://github.com/thoughtsunificator/instagram-dm-unsender>
+- Reviewed release: `0.7.2`
+- Supplied artifact SHA-256: `2DC5D357B6C3BBFE1F9E10E8D2F9252E7446C490FB3C16DF1B59719CB1D1FE2C`
+- License: MIT
+- Author: Romain Lebesle
 
-- Normalize follower and following usernames.
-- Compare the lists with set operations.
-- Produce two important views: accounts not followed back and accounts not following back.
-- Paginated collection as an adapter concern rather than a comparison concern.
+The supplied userscript bundle and embedded source map were reviewed. The map contained 21 original modules and confirmed the full source set.
 
-### Problems not carried forward
+Adopted as independent adapter behavior:
 
-- The script calls Instagram's private web friendship endpoints directly from an authenticated session.
-- Endpoint and header details can change without notice.
-- It has no historical snapshots, migrations, queue protections, or durable storage.
-- The supplied Gist has no explicit license in the referenced page; its source code was not copied.
+- Abortable execution
+- Localized exact-label matching for Unsend
+- Reinspection immediately before a destructive step
+- Post-action disappearance verification
 
-### New implementation
+Rejected:
 
-The relationship comparison is a clean local module operating on imported snapshots. Collection is abstracted away so official exports, visible-DOM capture, or a future approved adapter can feed the same comparison engine.
+- Selecting every right-aligned rendered row
+- Treating visual alignment as durable sender identity
+- Generic first-button confirmation
+- Broad retry loops after blocks or uncertain outcomes
+- Mass execution without exact message IDs, checkpoints, batch review, or two-stage confirmation
 
-## 4. User-provided existing components
+The source has no durable job state that can be migrated. `src/migrations/instagram-dm-unsender.js` therefore records a stateless migration report and requires manual creation of reviewed jobs from imported message data.
 
-The prompt states that follow/unfollow, follower-checking, and DM-unsending components already exist, but only two public code references and one feature-reference repository were supplied in this task. The repository therefore includes migration/adaptor boundaries and a Codex handoff rather than pretending that unprovided source code was integrated.
+## License boundary
 
-## Licensing conclusion
-
-- `instagram-helper`: MIT.
-- `SimpleInstaBot`: MIT.
-- Referenced Gist: no explicit license identified from the supplied page.
-- Insta AIO implementation: MIT, independently structured.
+MIT notices for reviewed MIT projects are retained in `THIRD_PARTY_NOTICES.md`. The implementation uses new local-first modules and does not vendor the reviewed applications. The unlicensed Gist is referenced only for provenance; its source is not included.

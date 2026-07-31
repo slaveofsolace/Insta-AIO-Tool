@@ -134,13 +134,28 @@ export function filterMessages(messages, filters = {}) {
   });
 }
 
+export function messageSelectionKey(message) {
+  return `${String(message?.conversationId || '')}:${String(message?.id || '')}`;
+}
+
+function selectedMessages(messages, selectedIds) {
+  const selected = new Set(selectedIds || []);
+  const idCounts = new Map();
+  for (const message of messages || []) {
+    idCounts.set(message.id, (idCounts.get(message.id) || 0) + 1);
+  }
+  return (messages || []).filter((message) => (
+    selected.has(messageSelectionKey(message))
+    || (idCounts.get(message.id) === 1 && selected.has(message.id))
+  ));
+}
+
 export function createUnsendPlan(messages, selectedIds, {
   createdAt = Date.now(),
   order = 'newest-first',
 } = {}) {
-  const selected = new Set(selectedIds || []);
-  const eligible = (messages || [])
-    .filter((message) => message.isMine && selected.has(message.id))
+  const eligible = selectedMessages(messages, selectedIds)
+    .filter((message) => message.isMine)
     .sort((a, b) => order === 'oldest-first' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp)
     .map((message) => ({
       id: message.id,

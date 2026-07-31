@@ -12,14 +12,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
       - name: Assemble browser module
-        run: npm run assemble
+        run: pnpm run assemble
       - name: Syntax checks
         run: |
-          find src userscripts tests -name '*.js' -print0 | xargs -0 -n1 node --check
+          find desktop extension scripts src tests userscripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
       - name: Core tests
-        run: npm test
+        run: pnpm test

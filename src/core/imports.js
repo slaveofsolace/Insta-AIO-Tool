@@ -1,10 +1,19 @@
-import { dedupeAccounts, normalizeAccount } from './accounts.js';
+import {
+  dedupeAccounts,
+  normalizeAccount,
+  stableAccountKey,
+} from './accounts.js';
 import { createSnapshot } from './snapshots.js';
 import {
   dedupeMessages,
-  parseInstagramHelperData,
   parseMetaConversation,
 } from './messages.js';
+import { inspectLegacyComponentRecord } from '../adapters/legacy-components.js';
+import {
+  createMigrationReport,
+  validateMigrationReport,
+} from '../migrations/migration-report.js';
+import { classifyImportPath } from './import-classification.js';
 
 function safeJson(text, name, warnings) {
   try {
@@ -30,14 +39,36 @@ export function parseRelationshipPayload(data, kind, source = 'import') {
     .filter(Boolean));
 }
 
-function classifyName(name) {
-  const lower = name.toLowerCase();
-  if (/followers(_\d+)?\.json$/.test(lower)) return 'followers';
-  if (/following(_\d+)?\.json$/.test(lower)) return 'following';
-  if (/message_\d+\.json$/.test(lower)) return 'messages';
-  if (/followed\.json$/.test(lower) && !/unfollowed/.test(lower)) return 'simple-followed';
-  if (/unfollowed\.json$/.test(lower)) return 'simple-unfollowed';
-  return 'unknown';
+function dedupeLegacyActions(actions) {
+  const map = new Map();
+  for (const action of actions || []) {
+    const key = `${action.action}:${stableAccountKey(action.account)}:${Number(action.timestamp)}`;
+    if (!map.has(key)) map.set(key, action);
+  }
+  return [...map.values()];
+}
+
+function addAggregateDuplicateReport({
+  count,
+  kind,
+  records,
+  migrationReports,
+  warnings,
+}) {
+  if (!count) return;
+  const report = createMigrationReport({
+    source: 'import-pipeline',
+    sourceFiles: (records || []).map((record) => record.name || 'unknown.json'),
+  });
+  report.inputCount = count;
+  report.duplicateCount = count;
+  report.warnings.push(
+    `${count} duplicate ${kind} ${count === 1 ? 'record was' : 'records were'} `
+    + 'reported across imported files.',
+  );
+  validateMigrationReport(report);
+  migrationReports.push(report);
+  warnings.push(...report.warnings);
 }
 
 export function importFileRecords(records, { ownerNames = [] } = {}) {
@@ -45,6 +76,8 @@ export function importFileRecords(records, { ownerNames = [] } = {}) {
   const following = [];
   const messages = [];
   const legacyActions = [];
+  const relationshipReports = [];
+  const migrationReports = [];
   const warnings = [];
   let latestTimestamp = 0;
 
@@ -56,12 +89,24 @@ export function importFileRecords(records, { ownerNames = [] } = {}) {
     if (!data) continue;
     latestTimestamp = Math.max(latestTimestamp, Number(record.lastModified || 0));
 
-    if (Array.isArray(data.allMessagesItemsArray)) {
-      messages.push(...parseInstagramHelperData(data, name));
+    const legacy = inspectLegacyComponentRecord({
+      name,
+      data,
+      lastModified: record.lastModified,
+    });
+    if (legacy?.handled) {
+      messages.push(...legacy.messages);
+      legacyActions.push(...legacy.legacyActions);
+      relationshipReports.push(...legacy.relationshipReports);
+      migrationReports.push(legacy.migrationReport);
+      warnings.push(
+        ...legacy.migrationReport.warnings,
+        ...legacy.migrationReport.manualCorrections,
+      );
       continue;
     }
 
-    const kind = classifyName(name);
+    const kind = classifyImportPath(name);
     if (kind === 'followers') {
       followers.push(...parseRelationshipPayload(data, 'followers', name));
       continue;
@@ -72,24 +117,6 @@ export function importFileRecords(records, { ownerNames = [] } = {}) {
     }
     if (kind === 'messages' || Array.isArray(data.messages)) {
       messages.push(...parseMetaConversation(data, { sourceName: name, ownerNames }));
-      continue;
-    }
-    if (kind === 'simple-followed' || kind === 'simple-unfollowed') {
-      if (!Array.isArray(data)) {
-        warnings.push(`${name}: expected a SimpleInstaBot history array.`);
-        continue;
-      }
-      for (const entry of data) {
-        const account = normalizeAccount(entry, 'simpleinstabot');
-        if (!account) continue;
-        legacyActions.push({
-          account,
-          action: kind === 'simple-followed' ? 'follow' : 'unfollow',
-          timestamp: Number(entry.time || Date.now()),
-          status: entry.failed ? 'failed' : entry.noActionTaken ? 'skipped' : 'completed',
-          source: name,
-        });
-      }
       continue;
     }
 
@@ -106,6 +133,22 @@ export function importFileRecords(records, { ownerNames = [] } = {}) {
 
   const uniqueFollowers = dedupeAccounts(followers);
   const uniqueFollowing = dedupeAccounts(following);
+  const uniqueMessages = dedupeMessages(messages);
+  const uniqueLegacyActions = dedupeLegacyActions(legacyActions);
+  addAggregateDuplicateReport({
+    count: messages.length - uniqueMessages.length,
+    kind: 'message',
+    records,
+    migrationReports,
+    warnings,
+  });
+  addAggregateDuplicateReport({
+    count: legacyActions.length - uniqueLegacyActions.length,
+    kind: 'legacy action',
+    records,
+    migrationReports,
+    warnings,
+  });
   const snapshot = uniqueFollowers.length || uniqueFollowing.length
     ? createSnapshot({
       followers: uniqueFollowers,
@@ -118,8 +161,10 @@ export function importFileRecords(records, { ownerNames = [] } = {}) {
 
   return {
     snapshot,
-    messages: dedupeMessages(messages),
-    legacyActions,
+    messages: uniqueMessages,
+    legacyActions: uniqueLegacyActions,
+    relationshipReports,
+    migrationReports,
     warnings,
   };
 }

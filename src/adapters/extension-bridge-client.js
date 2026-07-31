@@ -1,0 +1,98 @@
+import {
+  BRIDGE_CHANNEL,
+  createBridgeHandshakeNonce,
+  createSignedBridgeMessage,
+  deriveBridgeSessionPairing,
+  verifySignedBridgeMessage,
+} from '../core/bridge-protocol.js';
+
+const responseNonces = new Set();
+
+function requireBrowserTransport() {
+  if (!globalThis.window?.postMessage || !globalThis.location?.origin) {
+    throw new Error('The extension bridge requires a browser window.');
+  }
+}
+
+function exchange(message, {
+  timeoutMs = 10_000,
+} = {}) {
+  requireBrowserTransport();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      window.removeEventListener('message', onMessage);
+      reject(new Error('No response from the companion extension.'));
+    }, timeoutMs);
+
+    function onMessage(event) {
+      if (
+        event.source !== window
+        || event.origin !== location.origin
+        || event.data?.channel !== BRIDGE_CHANNEL
+        || event.data?.direction !== 'extension-to-pwa'
+        || event.data?.requestId !== message.requestId
+      ) {
+        return;
+      }
+      clearTimeout(timeout);
+      window.removeEventListener('message', onMessage);
+      if (event.data.error) {
+        reject(new Error(`Extension bridge rejected the request: ${event.data.error}.`));
+        return;
+      }
+      resolve(event.data.message);
+    }
+
+    window.addEventListener('message', onMessage);
+    window.postMessage({
+      channel: BRIDGE_CHANNEL,
+      direction: 'pwa-to-extension',
+      message,
+    }, location.origin);
+  });
+}
+
+async function verifyResponse(response, pairing, requestId) {
+  if (response?.requestId !== requestId) {
+    throw new Error('Extension response does not match the request.');
+  }
+  const verified = await verifySignedBridgeMessage(response, pairing, {
+    origin: location.origin,
+    usedNonces: responseNonces,
+  });
+  if (!verified.ok) {
+    throw new Error(`Extension response verification failed: ${verified.reason}.`);
+  }
+  return verified.message;
+}
+
+export async function completeExtensionPairing(pairing, options = {}) {
+  if (!pairing || pairing.pairedAt || pairing.revokedAt) {
+    throw new Error('Create an unused bridge pairing code first.');
+  }
+  const clientNonce = createBridgeHandshakeNonce();
+  const request = await createSignedBridgeMessage(pairing, 'bridge.pair', {
+    clientNonce,
+  });
+  const response = await exchange(request, options);
+  const verified = await verifyResponse(response, pairing, request.requestId);
+  if (
+    verified.type !== 'read.pairing-complete'
+    || !verified.payload?.extensionNonce
+  ) {
+    throw new Error('Extension returned an invalid pairing response.');
+  }
+  return deriveBridgeSessionPairing(pairing, {
+    clientNonce,
+    extensionNonce: verified.payload.extensionNonce,
+  });
+}
+
+export async function requestExtensionBridge(pairing, type, payload = {}, options = {}) {
+  if (!pairing?.pairedAt || pairing.revokedAt) {
+    throw new Error('Complete extension pairing before sending requests.');
+  }
+  const request = await createSignedBridgeMessage(pairing, type, payload);
+  const response = await exchange(request, options);
+  return verifyResponse(response, pairing, request.requestId);
+}

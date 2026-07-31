@@ -3,14 +3,95 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "desktop/main.mjs",
   "description": "Local-first Instagram relationship, queue, and message-data management suite.",
+  "author": "slaveofsolace",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slaveofsolace/Insta-AIO-Tool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/slaveofsolace/Insta-AIO-Tool/issues"
+  },
+  "homepage": "https://github.com/slaveofsolace/Insta-AIO-Tool#readme",
+  "keywords": [
+    "instagram",
+    "local-first",
+    "pwa",
+    "relationship-analysis",
+    "data-export"
+  ],
   "scripts": {
     "assemble": "node scripts/assemble-app.mjs",
-    "test": "node --test",
-    "serve": "python3 -m http.server 4173"
+    "build:desktop-assets": "node scripts/build-desktop-assets.mjs",
+    "build:extension": "node scripts/build-extension.mjs",
+    "pack:desktop": "pnpm run assemble && pnpm run build:desktop-assets && electron-builder --dir",
+    "dist:win": "pnpm run assemble && pnpm run build:desktop-assets && electron-builder --win nsis",
+    "dist:mac": "pnpm run assemble && pnpm run build:desktop-assets && electron-builder --mac dmg zip",
+    "benchmark:zip": "node scripts/benchmark-zip-import.mjs",
+    "verify:dependencies": "node scripts/verify-dependencies.mjs",
+    "test": "node scripts/verify-dependencies.mjs && node scripts/build-extension.mjs --check && node --test",
+    "serve": "node scripts/serve.mjs"
   },
   "engines": {
     "node": ">=20"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "pnpm@11.9.0",
+  "build": {
+    "appId": "io.github.slaveofsolace.insta-aio-tool",
+    "productName": "Insta AIO Tool",
+    "asar": true,
+    "files": [
+      "desktop/**/*",
+      "assets/**/*",
+      "src/app-loader.js",
+      "src/app.parts/**/*",
+      "src/core/**/*",
+      "src/adapters/**/*",
+      "src/migrations/**/*",
+      "src/workers/**/*",
+      "src/styles.css",
+      "index.html",
+      "manifest.webmanifest",
+      "sw.js",
+      "package.json",
+      "LICENSE",
+      "THIRD_PARTY_NOTICES.md"
+    ],
+    "directories": {
+      "output": "dist/desktop"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "dist/branding/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "dist/branding/icon.png",
+      "category": "public.app-category.utilities",
+      "hardenedRuntime": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "26.15.3",
+    "fake-indexeddb": "6.2.5"
+  }
 }
