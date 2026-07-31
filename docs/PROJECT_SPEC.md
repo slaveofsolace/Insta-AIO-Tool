@@ -128,6 +128,17 @@ The bridge shall:
 
 The shipped extension shall not perform live Instagram clicks.
 
+The Instagram sidecar shall:
+
+- Be visible on Instagram without replacing the PWA
+- Keep Instagram as the current-context surface and the PWA as the durable system of record
+- Restore visible-list capture and imported manual-queue navigation from the Tampermonkey companion
+- Merge repeated visible captures without auto-scrolling
+- Expose current-page inspection and sanitized no-click run history
+- Treat visible DM text as evidence only until exact message identity and ownership are available
+- Remain keyboard reachable, responsive, and reduced-motion aware
+- Keep live execution visibly disabled
+
 ## Desktop requirements
 
 The desktop shell shall:

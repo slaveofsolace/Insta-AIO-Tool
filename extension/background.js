@@ -261,7 +261,48 @@ function bridgeSenderOrigin(sender) {
   }
 }
 
+function overlayState(state) {
+  return {
+    extensionVersion: chrome.runtime.getManifest().version,
+    liveExecutionEnabled: false,
+    pairings: state.pairings.map((pairing) => ({
+      origin: pairing.origin,
+      permissions: Array.isArray(pairing.permissions) ? [...pairing.permissions] : [],
+      pairedAt: pairing.pairedAt || null,
+    })),
+    recentRuns: state.pendingJobs.slice(0, 12).map((job) => ({
+      kind: job.kind,
+      jobId: job.jobId,
+      receivedAt: job.receivedAt,
+      mode: 'dry-run',
+      status: job.result?.status || 'stopped',
+      stopReason: job.result?.stopReason || null,
+      results: (job.result?.results || []).slice(0, 25).map((result) => ({
+        username: result.username || null,
+        action: result.action || null,
+        conversationId: result.conversationId || null,
+        messageId: result.messageId || null,
+        status: result.status || 'safe-stopped',
+      })),
+    })),
+  };
+}
+
+function isInstagramSender(sender) {
+  return bridgeSenderOrigin(sender) === 'https://www.instagram.com';
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request?.kind === 'insta-aio-overlay-state') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    loadBridgeState()
+      .then((state) => sendResponse({ state: overlayState(state) }))
+      .catch(() => sendResponse({ error: 'overlay-state-unavailable' }));
+    return true;
+  }
   if (request?.kind !== 'insta-aio-bridge-request') return false;
   const origin = bridgeSenderOrigin(sender);
   if (!origin || origin !== request.origin) {

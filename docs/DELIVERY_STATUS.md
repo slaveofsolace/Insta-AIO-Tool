@@ -57,6 +57,11 @@ Complete:
 - Separate read/action permissions
 - Session-material payload rejection
 - Read-only Instagram inspection
+- Visible Instagram sidecar with isolated styling and keyboard toggle
+- Visible follower/following capture with deduplication and import-compatible JSON
+- Imported manual queue navigation and extension-local Complete/Skip state
+- Sanitized signed dry-run history
+- Read-only visible-DM evidence with exact-identity safe stop
 - JSON exchange fallback
 - Unpacked and ZIP build artifacts
 
@@ -86,6 +91,7 @@ Implemented:
 - Live status regions
 - Responsive breakpoints
 - Reduced-motion handling
+- Instagram sidecar runtime fixture for profile, capture, queue, and message states
 - Windowed queue and message lists
 - Import progress and cancellation
 - Confirmation and error states
@@ -93,6 +99,7 @@ Implemented:
 Pending acceptance:
 
 - Interactive Chrome walkthrough of all primary views
+- Authenticated Instagram walkthrough with the unpacked extension loaded
 - Representative viewport screenshots
 - Screenshot regression baselines
 - Screen-reader walkthrough

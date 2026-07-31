@@ -5,6 +5,9 @@
 - Preserve the PWA, migrations, userscript, tests, and data contracts.
 - Keep live action settings disabled by default.
 - Keep shipped extension execution no-click until controlled acceptance is recorded.
+- Keep `content-instagram.js` loaded before `instagram-overlay.js`.
+- Keep Instagram-side pairing state sanitized; never expose bridge secrets, signatures, or nonces.
+- Preserve `insta-aio-visible-list` and `insta-aio-manual-queue` compatibility.
 - Never infer exact identity from a visually similar profile or message.
 - Reserve ledger attempts before any destructive driver call.
 - Preserve every import disposition.
@@ -37,6 +40,12 @@ pnpm run pack:desktop
 ```
 
 Run target-platform installers before claiming packaging acceptance.
+
+For sidecar changes, also open
+`tests/fixtures/overlay-preview.html` through a local static server. Exercise the
+profile context, repeated capture deduplication, manual queue status updates,
+collapse/keyboard controls, and `?mode=messages` fixture. This is deterministic
+runtime evidence, not authenticated Instagram acceptance.
 
 ## Source integrations
 

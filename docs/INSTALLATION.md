@@ -18,8 +18,17 @@ The application can run offline after the service worker has cached the current 
 4. Choose **Load unpacked** and select `dist/extension`.
 5. Open the PWA and create a pairing code in Settings.
 6. Open the extension popup on the same PWA tab and complete pairing.
+7. Open or reload `https://www.instagram.com/`.
+8. Use the **Insta AIO Field Desk** sidecar, or press **Alt + Shift + I** to toggle it.
 
-The extension requests access only to the exact paired PWA origin at pairing time. Instagram host access is declared for read-only inspection.
+The extension requests access only to the exact paired PWA origin at pairing time.
+Instagram host access is declared for the visible sidecar and read-only
+inspection. The sidecar can import a PWA manual queue, navigate to the profile
+selected by the user, and update its own local completion/skip state. It does
+not auto-scroll Instagram or click Follow, Unfollow, message menus, or Unsend.
+
+After updating an unpacked build, reload the extension in the browser extension
+manager and reload existing Instagram tabs so both content scripts are current.
 
 ## Tampermonkey userscript
 

@@ -5,7 +5,7 @@
 Insta AIO Tool is a local-first PWA with three optional delivery surfaces:
 
 1. A read-only Tampermonkey companion for visible-list capture and manual queue navigation
-2. A Manifest V3 extension for signed, origin-paired inspection requests
+2. A Manifest V3 extension with an Instagram sidecar and signed, origin-paired inspection requests
 3. A hardened Electron shell for Windows and macOS packaging
 
 The stable data model remains independent of Instagram page markup. Imports, migrations, reviews, protections, checkpoints, and ledgers are implemented as browser-neutral modules.
@@ -80,7 +80,20 @@ Pairing uses:
 
 Every request includes a timestamp, request ID, nonce, type, payload, and HMAC-SHA-256 signature. Verification enforces origin, permission, maximum age, replay protection, payload size, and session-material rejection.
 
-The extension background worker serializes bridge requests and persists its replay cache. Its Instagram content script exposes inspection only and contains no click path. Live jobs are rejected by the shipped extension.
+The extension background worker serializes bridge requests and persists its replay cache. Its first Instagram content script exposes read-only page inspection. A second content script renders the isolated **Field Desk** sidecar in a closed shadow root after the inspector is available. The deterministic browser fixture explicitly opts into an open root for QA only.
+
+The sidecar owns only browser-local field state:
+
+- A bounded visible-list capture draft using the existing `insta-aio-visible-list` contract
+- An imported `insta-aio-manual-queue` and extension-local completion/skip updates
+- Read-only visible-message evidence that never claims exact message identity
+- Sanitized pairing and recent dry-run summaries returned by the background worker
+
+The PWA remains the system of record for imports, snapshots, comparisons,
+protections, reviewed jobs, ledgers, and backups. The background worker never
+returns pairing secrets, signatures, or nonces to the Instagram sidecar. Both
+Instagram scripts contain no synthetic click path, and live jobs are rejected
+by the shipped extension.
 
 ### Tampermonkey companion
 

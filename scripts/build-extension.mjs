@@ -18,6 +18,7 @@ const sourceFiles = [
   'background.js',
   'content-instagram.js',
   'content-pwa.js',
+  'instagram-overlay.js',
   'manifest.json',
   'popup.css',
   'popup.html',
@@ -100,11 +101,15 @@ async function validateSources() {
     }
   }
   const instagramSource = await readFile(path.join(sourceRoot, 'content-instagram.js'), 'utf8');
-  if (/\.click\s*\(/.test(instagramSource)) {
+  const overlaySource = await readFile(path.join(sourceRoot, 'instagram-overlay.js'), 'utf8');
+  if (/\.click\s*\(/.test(`${instagramSource}\n${overlaySource}`)) {
     throw new Error('Instagram content script must remain no-click.');
   }
   if (!instagramSource.includes('insta-aio-inspect-profile')) {
     throw new Error('Instagram content script is missing profile inspection.');
+  }
+  if (!overlaySource.includes('data-ia-section="queue"')) {
+    throw new Error('Instagram overlay is missing the in-page queue workspace.');
   }
   for (const file of sourceFiles) {
     await readFile(path.join(sourceRoot, file));
