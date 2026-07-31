@@ -1,0 +1,28 @@
+[
+  {
+    "username": "followed.one",
+    "time": 1700000000000
+  },
+  {
+    "username": "failed.follow",
+    "time": 1700000001000,
+    "failed": true
+  },
+  {
+    "username": "skipped.follow",
+    "time": 1700000002000,
+    "noActionTaken": true
+  },
+  {
+    "username": "followed.one",
+    "time": 1700000000000
+  },
+  {
+    "username": "not valid!",
+    "time": 1700000003000
+  },
+  {
+    "username": "missing.time"
+  },
+  null
+]

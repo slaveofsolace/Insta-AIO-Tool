@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Insta AIO Companion",
+  "version": "0.1.0",
+  "description": "Origin-paired, local bridge for reviewed Insta AIO jobs and read-only Instagram inspection.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "host_permissions": [
+    "https://www.instagram.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Insta AIO Companion",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "js": [
+        "content-instagram.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

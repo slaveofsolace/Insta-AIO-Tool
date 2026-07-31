@@ -1,194 +1,181 @@
 # Insta AIO Tool
 
-A local-first Instagram relationship, review-queue, and message-data workspace that combines the strongest ideas from:
+Insta AIO Tool is a local-first workspace for reviewing Instagram relationship exports, maintaining follow/unfollow queues, and examining message exports. Imported data stays in the browser or desktop app unless the user explicitly exports a file.
 
-- `pishangujeniya/instagram-helper` and its local message-data viewer
-- `mifi/SimpleInstaBot`
-- `abir-taheer/instagram-follower-following.js`
-- The user's existing follow/unfollow, relationship-checking, and DM-unsender components
+The project includes:
 
-This initial build is a zero-dependency progressive web app plus a Tampermonkey manual companion. It stores data in the browser through IndexedDB, does not ask for an Instagram password, and does not send imported account/message data to a server.
+- An installable progressive web app with offline support
+- Direct, local Instagram ZIP import with a reviewed manifest
+- Relationship snapshots, comparisons, protections, and queue history
+- Message search, sent-message classification, and reviewed unsend jobs
+- Source-specific migrations for Instagram Helper, SimpleInstaBot, and saved follower-checker results
+- A read-only Tampermonkey companion
+- A signed, origin-paired Manifest V3 extension bridge
+- Windows and macOS Electron packaging configuration
 
-## Current status
+## Safety model
 
-| Component | Status | Notes |
-|---|---:|---|
-| Followers/following JSON import | Implemented | Supports current Meta-style JSON relationship files and app snapshot exports. |
-| Relationship comparison | Implemented | Mutuals, not-following-back, not-followed-back, new followers, unfollowers, and following changes. |
-| Historical snapshots | Implemented | Multiple dated snapshots with active/previous comparison. |
-| Username-change handling | Implemented when IDs exist | ID-backed renames are not reported as unfollows. |
-| Seven-day review queue | Implemented | Configurable waiting period, protections, status history, and deduplication. |
-| SimpleInstaBot history migration | Implemented | Imports followed/unfollowed JSON history records. |
-| InstagramHelper message-data migration | Implemented | Imports the older `allMessagesItemsArray` format. |
-| Meta message export viewer | Implemented | Conversation preview, sent-message classification, type/search filters. |
-| DM unsend-plan creation | Implemented | Selects only messages identified as sent by the user and exports a reviewed plan. |
-| Tampermonkey companion | Implemented | Visible-list capture, queue import, profile navigation, manual completion/skip, state export. |
-| Automatic follow/unfollow execution | **Codex-Handoff** | Adapter boundary and acceptance criteria are documented; this build does not click account-action controls. |
-| Live mass DM unsend execution | **Codex-Handoff** | Preview and selection are complete; authenticated execution remains separate. |
-| Direct Instagram ZIP import | **Codex-Handoff** | Extracted JSON file/folder import works now. |
-| Desktop packaging | **Codex-Handoff** | PWA works now; Electron/Tauri packaging is documented as a later delivery. |
-| Full browser UI regression suite | **Codex-Handoff** | Core domain tests are complete; browser interaction and visual tests remain. |
+Live account changes and DM removal are disabled by default. The PWA requires exact batch previews and confirmation phrases. The companion extension currently exposes read-only inspection and true no-click dry runs; it rejects every live job.
 
-## Quick start
+The project does not implement proxy rotation, fingerprint spoofing, challenge bypass, CAPTCHA solving, private endpoint reverse engineering, or unreviewed destructive actions.
 
-No package installation is required.
+Insta AIO Tool is an independent project and is not affiliated with or endorsed
+by Instagram or Meta. Operators are responsible for protecting imported data
+and complying with the rules that apply to their accounts and environment.
 
-```bash
-npm test
-npm run serve
-```
+## Requirements
 
-For a materialized development copy of the assembled UI module:
+- Node.js 20 or newer
+- Corepack with pnpm 11.9.0, as pinned in `package.json`
+- A modern Chromium-based browser for the PWA
+- Windows for producing the NSIS installer
+- macOS for producing and validating DMG/ZIP releases
+
+## Development
 
 ```bash
-npm run assemble
+corepack enable
+pnpm install --frozen-lockfile
+pnpm run assemble
+pnpm test
+pnpm run serve
 ```
 
-Open `http://localhost:4173`.
+Open [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
-A direct `file://` launch may work for basic use, but serving the folder is recommended so the service worker and module imports behave consistently.
+`pnpm run assemble` materializes the deterministic UI fragments as the ignored `src/app.js` development file.
 
-## Main workflow
+## Import workflow
 
-### 1. Import Instagram data
+1. Request a JSON export from Instagram Accounts Center.
+2. In **Import / Export**, select the original ZIP.
+3. Review the detected paths, file types, expanded sizes, and archive warnings.
+4. Confirm the local import.
+5. Choose the active relationship snapshot and review comparisons.
 
-From Instagram Accounts Center, request JSON data for followers/following and, when needed, messages. Extract the downloaded archive, then import either selected JSON files or the extracted folder.
+Extracted JSON files and folders remain supported as a fallback. Recognized data includes:
 
-Recognized files include:
+- `followers_*.json` and `following*.json`
+- Meta `message_*.json` conversation exports
+- Instagram Helper `allMessagesItemsArray` data
+- SimpleInstaBot followed/unfollowed history
+- Saved follower-checker result objects
+- Insta AIO workspace and snapshot exports
 
-- `followers_1.json`, `followers_2.json`, etc.
-- `following.json` or `following_1.json`
-- `message_1.json`, `message_2.json`, etc.
-- InstagramHelper JSON containing `allMessagesItemsArray`
-- SimpleInstaBot `*-followed.json` and `*-unfollowed.json`
-- Insta AIO workspace/snapshot exports
+Encrypted archives, unsafe paths, unsupported ZIP variants, integrity errors, and configured size-limit violations are rejected before data is committed.
 
-### 2. Compare relationships
+## Relationship review
 
-The Relationships view shows:
+The Relationships view identifies mutuals, non-mutual relationships, new followers, detected unfollowers, following changes, and ID-backed username changes.
 
-- Mutual followers
-- Accounts that do not follow you back
-- Accounts you do not follow back
-- New followers
-- Detected unfollowers
-- Accounts newly followed by you
-- Accounts you no longer follow
-- ID-backed username changes
+The queue protects:
 
-Each new import is preserved as a dated snapshot.
+- Whitelisted usernames
+- Accounts followed before the tool was adopted
+- Mutual followers when mutual protection is enabled
+- Migration-only history records
+- Duplicate or already-completed actions
 
-### 3. Build the review queue
+Follow items enter a configurable waiting period before an unfollow review can become ready.
 
-Add usernames as follow targets or add relationship results to an unfollow review queue.
+## Reviewed action jobs
 
-When a follow item is manually marked complete, the queue:
+Queue records must be selected explicitly. A preview lists the exact username and action for every item, calculates a digest, and requires the matching confirmation phrase.
 
-1. Starts the configured waiting period, defaulting to seven days.
-2. Checks later snapshots for a follow-back.
-3. Protects mutuals, whitelisted accounts, and accounts marked as preexisting.
-4. Creates a ready unfollow-review item only when the waiting period expires without a follow-back.
+Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, ambiguous controls, session expiry, challenges, rate limits, action blocks, or changed protection state. The action ledger reserves a live attempt before any driver call and prevents duplicate or over-limit execution.
 
-The queue is a planner and audit record. It does not perform the account action in this build.
+The shipped extension does not expose live clicks. JSON export remains available for review and controlled adapter development.
 
-### 4. Review message data
+## Reviewed DM jobs
 
-Set the sender/display names that identify your own messages before importing current Meta message exports. Then:
+Only messages classified as sent by the configured owner can enter a reviewed unsend job. Each item preserves conversation ID, message ID, timestamp, sender ownership, and a content digest.
 
-- Search by message content, sender, or conversation.
-- Filter by message type.
-- Show only messages identified as yours.
-- Select sent messages.
-- Export an unsend plan for later execution.
+Live-mode data structures require:
 
-Received messages are never added to an unsend plan.
+- Complete batch review
+- A second destructive confirmation
+- Exact conversation and message resolution
+- Immediate sender-ownership revalidation
+- A durable reservation before the destructive call
+- Post-action removal verification
 
-### 5. Install the Tampermonkey companion
+The browser extension safe-stops when an Instagram export message ID cannot be matched to one exact rendered message. It never guesses.
+
+## Companion extension
+
+Build the extension:
+
+```bash
+pnpm run build:extension
+```
+
+Load `dist/extension` as an unpacked extension, or install the generated ZIP through the appropriate browser-managed workflow.
+
+Pairing is origin-specific:
+
+1. In the PWA Settings view, create a one-time pairing code.
+2. Open the extension popup on the exact PWA origin.
+3. Choose read-only access or reviewed dry-run transfer.
+4. Paste the code and pair the origin.
+5. Return to the PWA and complete the handshake.
+
+The handshake rotates the one-time code into a derived session secret. Messages are signed, time-limited, origin-bound, permission-checked, and protected against nonce replay. Payloads containing session or authorization material are rejected.
+
+## Tampermonkey companion
 
 Install `userscripts/insta-aio-companion.user.js` in Tampermonkey.
 
-It can:
+It can capture usernames already rendered in a follower/following dialog, import a manual queue, open the next profile, record manual completion or skip decisions, and export its local state. It does not auto-scroll or click Follow, Unfollow, or Unsend.
 
-- Capture usernames currently rendered in an Instagram follower/following dialog.
-- Import a manual queue exported from the PWA.
-- Open the next profile.
-- Mark an item completed or skipped.
-- Export updated companion state.
+## Desktop builds
 
-It deliberately does not auto-scroll lists, click Follow/Unfollow, click Unsend, bypass challenges, rotate proxies, spoof fingerprints, or collect passwords.
-
-## Project structure
-
-```text
-.
-├── index.html
-├── manifest.webmanifest
-├── sw.js
-├── scripts/
-│   └── assemble-app.mjs
-├── src/
-│   ├── app-loader.js
-│   ├── app.parts/
-│   │   ├── part-01.jsfrag
-│   │   └── ...
-│   ├── styles.css
-│   └── core/
-│       ├── accounts.js
-│       ├── imports.js
-│       ├── messages.js
-│       ├── queue.js
-│       ├── snapshots.js
-│       └── storage.js
-├── userscripts/
-│   └── insta-aio-companion.user.js
-├── tests/
-│   └── core.test.js
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── CODEX_HANDOFF.md
-    ├── CODEX_HANDOFF_PROMPT.md
-    ├── PROJECT_SPEC.md
-    └── SOURCE_AUDIT.md
-```
-
-
-## Source assembly
-
-The main UI module is checked in as deterministic source segments under `src/app.parts/` so the repository API can preserve the complete module without truncation. `src/app-loader.js` reconstructs the module in memory when the PWA runs. `npm run assemble` materializes the same source as `src/app.js` for local inspection or editing; that generated file is ignored by Git.
-
-## Tests
+Create an unpacked desktop build:
 
 ```bash
-npm test
+pnpm run pack:desktop
 ```
 
-The current suite covers:
+Create a Windows NSIS installer:
 
-- Username normalization
-- Snapshot differences
-- ID-backed rename detection
-- Mutual/non-mutual classification
-- Seven-day queue generation
-- Waiting-item reevaluation
-- Mutual protection
-- Meta relationship imports
-- SimpleInstaBot history migration
-- InstagramHelper message migration
-- Meta message parsing and sent-only unsend plans
+```bash
+pnpm run dist:win
+```
 
-## Design constraints
+Create macOS DMG and ZIP artifacts on macOS:
 
-- No proxy rotation
-- No fingerprint spoofing
-- No CAPTCHA bypassing
-- No circumvention of Instagram restrictions
-- No password collection or password logging
-- No hidden credential storage
-- No automatic action executor in the initial build
-- Imported data remains local unless the user explicitly exports it
+```bash
+pnpm run dist:mac
+```
 
-## Source and licensing
+The Electron renderer runs with context isolation, sandboxing, Node integration disabled, denied permission requests, a confined custom protocol, and a restrictive content policy. Local Chromium data is retained across approved upgrades, and up to five startup backups are kept in an app-specific data directory.
 
-The two referenced repositories use the MIT License. Their architecture and feature ideas were studied, but this repository uses a new local-first implementation rather than copying their applications wholesale. The referenced Gist does not present a license in the supplied source, so its code was not copied; only the general set-comparison concept was independently implemented.
+See [Installation](./docs/INSTALLATION.md) and [Rollback](./docs/ROLLBACK.md).
 
-See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) and [docs/SOURCE_AUDIT.md](./docs/SOURCE_AUDIT.md).
+## Verification
+
+```bash
+pnpm run assemble
+pnpm test
+pnpm run benchmark:zip
+```
+
+The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, transactional ledgers, bridge signing and replay protection, extension permissions, desktop hardening, state migration, service-worker assets, and large-list windowing.
+
+Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. macOS artifact production and interactive Chrome visual acceptance must be performed on their target environments before a signed release.
+
+## Documentation
+
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Product specification](./docs/PROJECT_SPEC.md)
+- [Source audit](./docs/SOURCE_AUDIT.md)
+- [Component integration audit](./docs/COMPONENT_INTEGRATION_AUDIT.md)
+- [Migration report](./docs/COMPONENT_MIGRATION_REPORT.md)
+- [Delivery status](./docs/DELIVERY_STATUS.md)
+- [Maintainer guide](./docs/MAINTAINER_GUIDE.md)
+- [Performance](./docs/PERFORMANCE.md)
+- [Security policy](./SECURITY.md)
+- [Third-party notices](./THIRD_PARTY_NOTICES.md)
+
+## License
+
+Insta AIO Tool is available under the [MIT License](./LICENSE). Reviewed third-party sources and their license boundaries are documented in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

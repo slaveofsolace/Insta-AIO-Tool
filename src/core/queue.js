@@ -82,14 +82,33 @@ export function markQueueItem(queue, itemId, status, now = Date.now(), extra = {
   });
 }
 
+export function getUnfollowProtectionReason(account, snapshot, settings = {}, {
+  preexisting = false,
+} = {}) {
+  const username = normalizeUsername(account?.username);
+  if (!username) return 'invalid-account';
+  if (accountMatchesSet(account, settings.whitelist || [])) return 'whitelist';
+  if (
+    preexisting
+    || (settings.preexistingFollowing || []).map(normalizeUsername).includes(username)
+  ) {
+    return 'preexisting-follow';
+  }
+  if (settings.protectMutuals !== false) {
+    const relationships = classifyRelationships(snapshot || { followers: [], following: [] });
+    if (relationships.mutuals.some((item) => normalizeUsername(item.username) === username)) {
+      return 'mutual-follow';
+    }
+  }
+  return null;
+}
+
 export function refreshQueue(queue, snapshot, settings = {}, now = Date.now()) {
   const waitingDays = Math.max(1, Number(settings.waitingDays || 7));
   const waitingMs = waitingDays * 24 * 60 * 60 * 1000;
   const whitelist = settings.whitelist || [];
   const preexistingFollowing = settings.preexistingFollowing || [];
   const protectMutuals = settings.protectMutuals !== false;
-  const relationships = classifyRelationships(snapshot || { followers: [], following: [] });
-  const mutualNames = new Set(relationships.mutuals.map((a) => normalizeUsername(a.username)));
   const followerNames = new Set((snapshot?.followers || []).map((a) => normalizeUsername(a.username)));
 
   const next = (queue || []).map((item) => ({ ...item }));
@@ -98,18 +117,21 @@ export function refreshQueue(queue, snapshot, settings = {}, now = Date.now()) {
     .map((item) => stableAccountKey(item.account)));
 
   for (const item of next) {
+    if (item.migrationOnly === true) continue;
+
     const username = normalizeUsername(item.account.username);
     const protectedByWhitelist = accountMatchesSet(item.account, whitelist);
     const protectedPreexisting = item.preexisting || preexistingFollowing.includes(username);
-    const protectedMutual = protectMutuals && mutualNames.has(username);
+    const protectionReason = getUnfollowProtectionReason(item.account, snapshot, {
+      ...settings,
+      protectMutuals,
+    }, {
+      preexisting: item.preexisting,
+    });
 
-    if (item.action === 'unfollow' && (protectedByWhitelist || protectedPreexisting || protectedMutual)) {
+    if (item.action === 'unfollow' && protectionReason) {
       item.status = 'protected';
-      item.reason = protectedByWhitelist
-        ? 'whitelist'
-        : protectedPreexisting
-          ? 'preexisting-follow'
-          : 'mutual-follow';
+      item.reason = protectionReason;
       continue;
     }
 

@@ -21,8 +21,10 @@ try {
   }
 
   const coreBase = new URL('./core/', import.meta.url).href;
+  const adaptersBase = new URL('./adapters/', import.meta.url).href;
   const source = new TextDecoder().decode(combined)
-    .replaceAll("from './core/", `from '${coreBase}`);
+    .replaceAll("from './core/", `from '${coreBase}`)
+    .replaceAll("from './adapters/", `from '${adaptersBase}`);
   const moduleUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
   try {
     await import(moduleUrl);
@@ -31,6 +33,15 @@ try {
   }
 } catch (error) {
   const root = document.querySelector('#app');
-  if (root) root.innerHTML = `<main style="padding:24px;font-family:system-ui"><h1>Insta AIO Tool failed to load</h1><pre>${String(error?.stack || error)}</pre></main>`;
+  if (root) {
+    const main = document.createElement('main');
+    main.style.cssText = 'padding:24px;font-family:system-ui';
+    const heading = document.createElement('h1');
+    heading.textContent = 'Insta AIO Tool failed to load';
+    const details = document.createElement('pre');
+    details.textContent = String(error?.stack || error);
+    main.append(heading, details);
+    root.replaceChildren(main);
+  }
   throw error;
 }

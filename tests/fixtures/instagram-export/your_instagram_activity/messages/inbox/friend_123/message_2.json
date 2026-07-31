@@ -1,0 +1,21 @@
+{
+  "participants": [
+    {
+      "name": "Owner Example"
+    },
+    {
+      "name": "Friend Example"
+    }
+  ],
+  "messages": [
+    {
+      "sender_name": "Owner Example",
+      "timestamp_ms": 1699999999000,
+      "content": "Earlier sent message",
+      "message_id": "zip-sent-2"
+    }
+  ],
+  "title": "Friend Example",
+  "is_still_participant": true,
+  "thread_path": "inbox/friend_123"
+}

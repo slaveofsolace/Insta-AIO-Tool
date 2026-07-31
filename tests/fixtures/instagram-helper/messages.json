@@ -1,0 +1,52 @@
+{
+  "myUserId": "100",
+  "usersChatParticipants": [
+    {
+      "pk": "100",
+      "username": "fixture.owner",
+      "profile_pic_url": "https://example.invalid/owner.jpg",
+      "full_name": "Fixture Owner"
+    },
+    {
+      "pk": "200",
+      "username": "fixture.friend",
+      "profile_pic_url": "https://example.invalid/friend.jpg",
+      "full_name": "Fixture Friend"
+    }
+  ],
+  "allMessagesItemsArray": [
+    {
+      "item_id": "sent-1",
+      "user_id": "100",
+      "item_type": "text",
+      "text": "Sent fixture message",
+      "timestamp": 1700000000000000
+    },
+    {
+      "item_id": "received-1",
+      "user_id": "200",
+      "item_type": "text",
+      "text": "Received fixture message",
+      "timestamp": 1700000001000000
+    },
+    {
+      "item_id": "sent-1",
+      "user_id": "100",
+      "item_type": "text",
+      "text": "Duplicate source identity",
+      "timestamp": 1700000000000000
+    },
+    {
+      "user_id": "100",
+      "item_type": "link",
+      "link": {
+        "link_context": {
+          "link_title": "Fixture link",
+          "link_url": "https://example.invalid/item"
+        }
+      },
+      "timestamp": 1700000002000000
+    },
+    null
+  ]
+}

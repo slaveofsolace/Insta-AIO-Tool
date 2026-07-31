@@ -1,14 +1,36 @@
 import { normalizeUsername } from './core/accounts.js';
+import { importZipArchive } from './adapters/zip-import-worker-client.js';
+import {
+  appendActionCheckpoint,
+  confirmReviewedActionJob,
+  createReviewedActionJob,
+} from './core/action-jobs.js';
+import {
+  appendDmCheckpoint,
+  confirmDmJobDestructive,
+  confirmDmJobReview,
+  createReviewedDmJob,
+} from './core/dm-jobs.js';
+import {
+  createBridgePairing,
+  formatBridgePairingCode,
+} from './core/bridge-protocol.js';
+import {
+  completeExtensionPairing,
+  requestExtensionBridge,
+} from './adapters/extension-bridge-client.js';
 import { importFileRecords } from './core/imports.js';
 import {
   conversationSummary,
   createUnsendPlan,
   dedupeMessages,
   filterMessages,
+  messageSelectionKey,
 } from './core/messages.js';
 import {
   addFollowTargets,
   createQueueItem,
+  getUnfollowProtectionReason,
   getQueueSummary,
   markQueueItem,
   refreshQueue,
@@ -20,12 +42,20 @@ import {
   previousSnapshot,
 } from './core/snapshots.js';
 import { clearState, loadState, migrateState, saveState } from './core/storage.js';
+import { inspectZipArchive } from './core/zip.js';
+import { virtualWindow } from './core/windowing.js';
 
 const app = document.querySelector('#app');
 let state = await loadState();
 let activeView = 'overview';
 let relationshipTab = 'notFollowingBack';
 let messageFilters = { keyword: '', onlyMine: true, type: '' };
+let pendingZip = null;
+let zipImportStatus = { phase: 'idle', processed: 0, total: 0, message: '' };
+let zipImportController = null;
+let bridgeStatus = '';
+let queueScrollTop = 0;
+let messageScrollTop = 0;
 
 const views = [
   ['overview', 'Overview'],
@@ -55,6 +85,19 @@ function formatDate(value, includeTime = true) {
     : date.toLocaleDateString();
 }
 
+function formatBytes(value) {
+  const bytes = Math.max(0, Number(value) || 0);
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let size = bytes;
+  let unit = -1;
+  do {
+    size /= 1024;
+    unit += 1;
+  } while (size >= 1024 && unit < units.length - 1);
+  return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unit]}`;
+}
+
 function profileUrl(username) {
   return `https://www.instagram.com/${encodeURIComponent(normalizeUsername(username))}/`;
 }
@@ -80,6 +123,66 @@ function logActivity(kind, message, details = {}) {
   state.activity = state.activity.slice(0, 5000);
 }
 
+function applyAccountBridgeResult(job, result) {
+  let next = job;
+  for (const record of result?.results || []) {
+    const item = next.items.find((candidate) => candidate.id === record.itemId);
+    if (!item) continue;
+    const completed = record.status === 'resolved-no-click';
+    next = appendActionCheckpoint(next, item.id, {
+      status: completed ? 'dry-run-complete' : 'safe-stopped',
+      result: completed ? 'resolved-no-click' : null,
+      beforeEvidence: record.observation?.evidence || null,
+      error: completed ? null : result.stopReason || 'bridge-inspection-failed',
+    }, {
+      activity: {
+        id: `${item.id}:extension-dry-run:${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        kind: completed ? 'action-dry-run' : 'action-safe-stop',
+        message: completed
+          ? `Resolved ${item.action} for @${item.username} without clicking.`
+          : `Extension inspection stopped before ${item.action} for @${item.username}.`,
+        details: { stopReason: result.stopReason || null },
+      },
+    });
+  }
+  next.status = result?.status === 'dry-run-complete' ? 'completed' : 'stopped';
+  next.control = 'stopped';
+  next.stopReason = result?.stopReason || null;
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
+function applyDmBridgeResult(job, result) {
+  let next = job;
+  for (const record of result?.results || []) {
+    const item = next.items.find((candidate) => candidate.id === record.itemId);
+    if (!item) continue;
+    next = appendDmCheckpoint(next, item.id, {
+      status: record.status === 'resolved-no-click' ? 'dry-run-complete' : 'safe-stopped',
+      result: record.status === 'resolved-no-click' ? 'resolved-no-click' : null,
+      error: record.status === 'resolved-no-click'
+        ? null
+        : result.stopReason || 'bridge-inspection-failed',
+    }, {
+      activity: {
+        id: `${item.id}:extension-dry-run:${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        kind: record.status === 'resolved-no-click' ? 'dm-dry-run' : 'dm-safe-stop',
+        message: record.status === 'resolved-no-click'
+          ? `Resolved sent message ${item.messageId} without clicking Unsend.`
+          : `Extension inspection stopped before message ${item.messageId}.`,
+        details: { stopReason: result.stopReason || null },
+      },
+    });
+  }
+  next.status = result?.status === 'dry-run-complete' ? 'completed' : 'stopped';
+  next.control = 'stopped';
+  next.stopReason = result?.stopReason || null;
+  next.updatedAt = new Date().toISOString();
+  return next;
+}
+
 async function persist({ rerender = true } = {}) {
   await saveState(state);
   if (rerender) render();
@@ -103,6 +206,53 @@ function downloadBlob(filename, blob) {
   anchor.click();
   anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function requestExactConfirmation({
+  title,
+  description,
+  phrase,
+  destructive = false,
+}) {
+  let dialog = document.querySelector('#exact-confirmation-dialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'exact-confirmation-dialog';
+    dialog.innerHTML = `
+      <form method="dialog" class="confirmation-card">
+        <h2 data-confirmation-title></h2>
+        <p data-confirmation-description></p>
+        <div class="notice"><span class="code" data-confirmation-phrase></span></div>
+        <div class="field">
+          <label for="exact-confirmation-input">Enter the phrase exactly</label>
+          <input id="exact-confirmation-input" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="toolbar confirmation-actions">
+          <button value="cancel">Cancel</button>
+          <button data-confirmation-submit value="confirm">Confirm</button>
+        </div>
+      </form>
+    `;
+    document.body.append(dialog);
+  }
+  dialog.querySelector('[data-confirmation-title]').textContent = title;
+  dialog.querySelector('[data-confirmation-description]').textContent = description;
+  dialog.querySelector('[data-confirmation-phrase]').textContent = phrase;
+  const input = dialog.querySelector('#exact-confirmation-input');
+  const submit = dialog.querySelector('[data-confirmation-submit]');
+  input.value = '';
+  dialog.returnValue = 'cancel';
+  submit.className = destructive ? 'danger' : 'primary';
+
+  return new Promise((resolve) => {
+    const onClose = () => {
+      dialog.removeEventListener('close', onClose);
+      resolve(dialog.returnValue === 'confirm' ? input.value : null);
+    };
+    dialog.addEventListener('close', onClose);
+    dialog.showModal();
+    input.focus();
+  });
 }
 
 function csvEscape(value) {
@@ -167,6 +317,7 @@ function renderShell(content) {
       <main class="main">${content}</main>
       <input id="data-file-input" class="hidden" type="file" accept=".json,application/json" multiple>
       <input id="data-folder-input" class="hidden" type="file" accept=".json,application/json" multiple webkitdirectory>
+      <input id="zip-file-input" class="hidden" type="file" accept=".zip,application/zip">
       <input id="state-file-input" class="hidden" type="file" accept=".json,application/json">
     </div>
   `;
@@ -197,10 +348,10 @@ function renderOverview() {
 
     <section class="panel">
       <div class="panel-head">
-        <div><h2>Current status</h2><p>Implemented capability and remaining execution work.</p></div>
+        <div><h2>Current status</h2><p>Local analysis, reviewed jobs, and delivery safeguards.</p></div>
       </div>
       <div class="notice">
-        Snapshot comparison, historical unfollower detection, queue scheduling, migration, message viewing, filtering, and unsend-plan exports are functional. Automated follow, unfollow, and live DM unsend execution remain <strong>Codex-Handoff</strong> tasks.
+        Imports, relationship history, queue protection, message review, no-click dry runs, extension pairing, and local exports are available. Live Follow, Unfollow, and Unsend execution remains disabled.
       </div>
       <div class="kpi-row" style="margin-top:14px">
         <span><strong>${state.snapshots.length}</strong> snapshots</span>

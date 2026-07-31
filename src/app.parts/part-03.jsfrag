@@ -1,7 +1,6 @@
-list">
-        ${visible.map((message) => `
-          <article class="message ${message.isMine ? 'mine' : ''}">
-            <input type="checkbox" data-action="toggle-message" data-id="${escapeHtml(message.id)}" ${selected.has(message.id) ? 'checked' : ''} ${message.isMine ? '' : 'disabled'} aria-label="Select message">
+        ${visible.map((message, index) => `
+          <article class="message ${message.isMine ? 'mine' : ''}" role="listitem" aria-posinset="${messageWindow.start + index + 1}" aria-setsize="${filtered.length}">
+            <input type="checkbox" data-action="toggle-message" data-id="${escapeHtml(message.id)}" data-key="${escapeHtml(messageSelectionKey(message))}" ${selected.has(messageSelectionKey(message)) || selected.has(message.id) ? 'checked' : ''} ${message.isMine ? '' : 'disabled'} aria-label="Select message">
             <div>
               <div class="meta">${escapeHtml(message.conversationName)} · ${escapeHtml(message.senderName)} · ${escapeHtml(message.type)}</div>
               <div class="content">${escapeHtml(message.content)}</div>
@@ -9,6 +8,7 @@ list">
             <time>${formatDate(message.timestamp)}</time>
           </article>
         `).join('')}
+        ${messageWindow.bottomPadding ? `<div class="virtual-block-spacer" aria-hidden="true" style="height:${messageWindow.bottomPadding}px"></div>` : ''}
       </div>` : '<div class="empty">No messages match the current filters.</div>'}
     </section>
   `;
@@ -16,21 +16,110 @@ list">
 
 function renderImports() {
   const ordered = [...state.snapshots].sort((a, b) => new Date(b.capturedAt) - new Date(a.capturedAt));
+  const migrationReports = state.migrationReports || [];
+  const relationshipReports = state.relationshipReports || [];
+  const manifest = pendingZip?.manifest || null;
+  const supportedZipEntries = (manifest?.entries || []).filter((entry) => (
+    ['followers', 'following', 'messages'].includes(entry.kind)
+    || entry.kind.startsWith('simple-')
+    || entry.kind === 'unknown-json'
+  ));
+  const zipBusy = zipImportStatus.phase === 'extract';
   return pageHead(
     'Import / Export',
-    'Import extracted JSON files from Instagram data exports, legacy helper data, or SimpleInstaBot history.',
-    '<button class="primary" data-action="pick-data-files">Import JSON files</button><button data-action="pick-data-folder">Import extracted folder</button><button data-action="export-state">Export workspace backup</button>',
+    'Import Instagram exports and supported legacy data locally without uploading files.',
+    '<button class="primary" data-action="pick-zip-file">Import Instagram ZIP</button><button data-action="pick-data-files">Import JSON files</button><button data-action="pick-data-folder">Import extracted folder</button><button data-action="export-state">Export workspace backup</button>',
   ) + `
     <section class="panel">
       <div class="panel-head"><div><h2>Supported imports</h2></div></div>
       <div class="notice">
-        Supported: <span class="code">followers_*.json</span>, <span class="code">following.json</span>, Meta <span class="code">message_*.json</span> files, InstagramHelper message-data JSON, SimpleInstaBot <span class="code">*-followed.json</span>/<span class="code">*-unfollowed.json</span>, and Insta AIO exports. Select multiple files or an extracted export folder. Direct ZIP import is listed under Codex-Handoff.
+        Supported: an unmodified Instagram export ZIP, <span class="code">followers_*.json</span>, <span class="code">following.json</span>, Meta <span class="code">message_*.json</span> files, InstagramHelper message-data JSON, SimpleInstaBot <span class="code">*-followed.json</span>/<span class="code">*-unfollowed.json</span>, saved follower-checker result JSON, and Insta AIO exports. Extracted files and folders remain available as a fallback.
       </div>
       <div class="toolbar" style="margin-top:14px">
         <button data-action="pick-state-file">Restore workspace backup</button>
         <button data-action="export-current-snapshot">Export active snapshot JSON</button>
         <button data-action="export-companion-queue">Export manual queue JSON</button>
       </div>
+    </section>
+
+    ${manifest ? `
+      <section class="panel" aria-labelledby="zip-preview-heading">
+        <div class="panel-head">
+          <div>
+            <h2 id="zip-preview-heading">ZIP import preview</h2>
+            <p>${escapeHtml(pendingZip.file.name)} · ${formatBytes(pendingZip.file.size)} · ${supportedZipEntries.length} supported JSON file${supportedZipEntries.length === 1 ? '' : 's'}</p>
+          </div>
+          <span class="badge ${zipBusy ? 'processing' : 'ready'}">${zipBusy ? 'importing' : 'ready for review'}</span>
+        </div>
+        <div class="grid metrics">
+          ${metric('Follower files', manifest.counts.followers)}
+          ${metric('Following files', manifest.counts.following)}
+          ${metric('Message files', manifest.counts.messages)}
+          ${metric('JSON files', manifest.counts.jsonFiles, formatBytes(manifest.totalUncompressedBytes))}
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label for="zip-progress">Import progress</label>
+          <progress id="zip-progress" max="${Math.max(1, zipImportStatus.total || supportedZipEntries.length)}" value="${zipImportStatus.processed || 0}" style="width:100%"></progress>
+          <div id="zip-progress-message" class="detail">${escapeHtml(zipImportStatus.message || 'Review the paths below before importing.')}</div>
+        </div>
+        <div class="table-wrap" style="margin-top:14px">
+          <table>
+            <thead><tr><th>Path</th><th>Type</th><th>Expanded size</th></tr></thead>
+            <tbody>
+              ${supportedZipEntries.slice(0, 100).map((entry) => `
+                <tr>
+                  <td class="code">${escapeHtml(entry.path)}</td>
+                  <td>${escapeHtml(entry.kind)}</td>
+                  <td>${formatBytes(entry.uncompressedSize)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ${supportedZipEntries.length > 100 ? `<p class="detail">Showing the first 100 of ${supportedZipEntries.length} supported files.</p>` : ''}
+        <div class="toolbar" style="margin-top:14px">
+          <button class="primary" data-action="confirm-zip-import" ${zipBusy || !supportedZipEntries.length ? 'disabled' : ''}>Import reviewed files</button>
+          <button data-action="cancel-zip-import">${zipBusy ? 'Cancel import' : 'Discard preview'}</button>
+        </div>
+      </section>
+    ` : zipImportStatus.message ? `
+      <section class="panel">
+        <div class="notice ${zipImportStatus.phase === 'error' ? 'warning' : ''}">${escapeHtml(zipImportStatus.message)}</div>
+      </section>
+    ` : ''}
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Component migration reports</h2><p>${migrationReports.length} retained reports. Skips and duplicates are never hidden.</p></div></div>
+      ${migrationReports.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Source</th><th>Files</th><th>Input</th><th>Imported</th><th>Duplicates</th><th>Skipped</th><th>Review</th></tr></thead>
+        <tbody>${migrationReports.slice(0, 100).map((report) => `
+          <tr>
+            <td>${escapeHtml(report.source)}</td>
+            <td>${escapeHtml((report.sourceFiles || []).join(', '))}</td>
+            <td>${Number(report.inputCount || 0)}</td>
+            <td>${Number(report.importedCount || 0)}</td>
+            <td>${Number(report.duplicateCount || 0)}</td>
+            <td>${Number(report.skippedCount || 0)}</td>
+            <td>${(report.manualCorrections || []).length} manual · ${(report.warnings || []).length} warnings</td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>` : '<div class="empty">No component migration reports yet.</div>'}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><div><h2>Partial relationship reports</h2><p>Checker results remain read-only and cannot create queue actions.</p></div></div>
+      ${relationshipReports.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Source file</th><th>I do not follow back</th><th>Not following me back</th><th>Complete</th><th>Actionable</th></tr></thead>
+        <tbody>${relationshipReports.slice(0, 100).map((report) => `
+          <tr>
+            <td>${escapeHtml(report.sourceFile || 'unknown')}</td>
+            <td>${(report.iDoNotFollowBack || []).length}</td>
+            <td>${(report.notFollowingBack || []).length}</td>
+            <td><span class="badge ${report.complete ? 'completed' : 'paused'}">${report.complete ? 'yes' : 'no'}</span></td>
+            <td><span class="badge ${report.actionable ? 'ready' : 'protected'}">${report.actionable ? 'yes' : 'no'}</span></td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>` : '<div class="empty">No partial relationship reports imported.</div>'}
     </section>
 
     <section class="panel">
@@ -52,6 +141,10 @@ function renderImports() {
 }
 
 function renderSettings() {
+  const bridgePairing = state.bridgePairing;
+  const pairingCode = bridgePairing && !bridgePairing.pairedAt
+    ? formatBridgePairingCode(bridgePairing)
+    : '';
   return pageHead(
     'Settings',
     'Configure local classification, scheduling, and protection rules.',
@@ -62,15 +155,49 @@ function renderSettings() {
         <div class="field"><label for="waiting-days">Waiting period before unfollow review</label><input id="waiting-days" type="number" min="1" max="365" value="${escapeHtml(state.settings.waitingDays)}"></div>
         <div class="field"><label for="daily-follow-limit">Daily follow planning limit</label><input id="daily-follow-limit" type="number" min="1" max="500" value="${escapeHtml(state.settings.dailyFollowLimit)}"></div>
         <div class="field"><label for="daily-unfollow-limit">Daily unfollow planning limit</label><input id="daily-unfollow-limit" type="number" min="1" max="500" value="${escapeHtml(state.settings.dailyUnfollowLimit)}"></div>
+        <div class="field"><label for="live-action-batch-limit">Maximum live account-action batch</label><input id="live-action-batch-limit" type="number" min="1" max="25" value="${escapeHtml(state.settings.liveActionBatchLimit || 1)}"></div>
+        <div class="field"><label for="live-dm-batch-limit">Maximum live DM unsend batch</label><input id="live-dm-batch-limit" type="number" min="1" max="25" value="${escapeHtml(state.settings.liveDmBatchLimit || 1)}"></div>
         <div class="field"><label for="owner-names">Your sender/display names in message exports</label><input id="owner-names" value="${escapeHtml(state.settings.ownerNames.join(', '))}" placeholder="Your Instagram display name, username"></div>
         <div class="field full"><label for="whitelist">Whitelist usernames</label><textarea id="whitelist" placeholder="one username per line">${escapeHtml(state.settings.whitelist.join('\n'))}</textarea></div>
         <div class="field full"><label for="preexisting">Protected accounts followed before this tool</label><textarea id="preexisting" placeholder="one username per line">${escapeHtml(state.settings.preexistingFollowing.join('\n'))}</textarea></div>
         <label class="checkbox"><input id="protect-mutuals" type="checkbox" ${state.settings.protectMutuals ? 'checked' : ''}> Protect mutual followers from unfollow review</label>
         <label class="checkbox"><input id="dry-run" type="checkbox" ${state.settings.dryRun ? 'checked' : ''}> Dry-run planning mode</label>
+        <label class="checkbox"><input id="live-action-enabled" type="checkbox" ${state.settings.liveActionEnabled ? 'checked' : ''}> Enable reviewed live account-action jobs</label>
+        <label class="checkbox"><input id="live-dm-enabled" type="checkbox" ${state.settings.liveDmUnsendEnabled ? 'checked' : ''}> Enable reviewed live DM unsend jobs</label>
       </div>
       <div class="toolbar" style="margin-top:14px">
         <button data-action="protect-current-following">Protect all accounts in active following snapshot</button>
       </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Companion extension</h2>
+          <p>Pair this exact app origin with the optional browser extension. Pairing never transfers Instagram cookies, passwords, or authorization headers.</p>
+        </div>
+        <span class="badge ${bridgePairing?.pairedAt ? 'completed' : 'protected'}">${bridgePairing?.pairedAt ? 'paired' : bridgePairing ? 'pending' : 'not paired'}</span>
+      </div>
+      ${bridgePairing ? `
+        <div class="form-grid">
+          <div class="field"><label>Paired origin</label><input value="${escapeHtml(bridgePairing.origin)}" readonly></div>
+          <div class="field"><label>Permissions</label><input value="${escapeHtml(bridgePairing.permissions.join(' + '))}" readonly></div>
+          ${pairingCode ? `<div class="field full"><label for="bridge-pairing-code">One-time pairing code</label><textarea id="bridge-pairing-code" readonly spellcheck="false">${escapeHtml(pairingCode)}</textarea></div>` : ''}
+        </div>
+        <div class="toolbar" style="margin-top:14px">
+          ${bridgePairing.pairedAt ? '<button data-action="ping-extension">Check extension connection</button>' : '<button class="primary" data-action="complete-extension-pairing">Complete pairing handshake</button>'}
+          <button class="danger" data-action="revoke-extension-pairing">${bridgePairing.pairedAt ? 'Revoke PWA pairing' : 'Discard pairing code'}</button>
+        </div>
+      ` : `
+        <label class="checkbox"><input id="bridge-action-permission" type="checkbox"> Allow transfer of explicitly reviewed dry-run jobs</label>
+        <div class="toolbar" style="margin-top:14px">
+          <button class="primary" data-action="create-extension-pairing">Create one-time pairing code</button>
+        </div>
+      `}
+      <div class="notice" style="margin-top:14px">
+        The extension currently performs read-only inspection and no-click dry runs. Live Follow, Unfollow, and Unsend execution remains unavailable. JSON job export remains available as a fallback.
+      </div>
+      ${bridgeStatus ? `<div class="notice ${bridgeStatus.startsWith('Error:') ? 'warning' : ''}" style="margin-top:10px">${escapeHtml(bridgeStatus)}</div>` : ''}
     </section>
 
     <section class="panel">
@@ -110,6 +237,10 @@ function render() {
     activity: renderActivity,
   };
   app.innerHTML = renderShell((renderers[activeView] || renderOverview)());
+  const queueList = app.querySelector('[data-virtual-list="queue"]');
+  if (queueList) queueList.scrollTop = queueScrollTop;
+  const messageList = app.querySelector('[data-virtual-list="messages"]');
+  if (messageList) messageList.scrollTop = messageScrollTop;
 }
 
 function currentRelationshipAccounts() {
@@ -127,17 +258,11 @@ function currentRelationshipAccounts() {
   })[relationshipTab] || [];
 }
 
-async function handleDataImport(fileList) {
-  const files = [...fileList].filter((file) => file.name.toLowerCase().endsWith('.json'));
-  if (!files.length) return;
-
-  const records = await Promise.all(files.map(async (file) => ({
-    name: file.webkitRelativePath || file.name,
-    text: await file.text(),
-    lastModified: file.lastModified,
-  })));
-
-  const result = importFileRecords(records, { ownerNames: state.settings.ownerNames });
+function mergeImportResult(result, {
+  sourceLabel,
+  fileCount,
+  execution = 'local',
+} = {}) {
   const wasEmpty = state.snapshots.length === 0;
   if (result.snapshot) {
     state.snapshots.push(result.snapshot);
@@ -148,6 +273,14 @@ async function handleDataImport(fileList) {
   }
 
   state.messages = dedupeMessages([...state.messages, ...result.messages]);
+  state.migrationReports = [
+    ...result.migrationReports,
+    ...(state.migrationReports || []),
+  ].slice(0, 500);
+  state.relationshipReports = [
+    ...result.relationshipReports,
+    ...(state.relationshipReports || []),
+  ].slice(0, 500);
 
   for (const legacy of result.legacyActions) {
     const item = createQueueItem(legacy.account, legacy.action, {
@@ -155,20 +288,145 @@ async function handleDataImport(fileList) {
       createdAt: legacy.timestamp,
       scheduledFor: legacy.timestamp,
       status: legacy.status,
+      preexisting: legacy.action === 'follow',
     });
+    item.migrationOnly = true;
+    item.sourceEvidence = legacy.sourceEvidence || null;
+    item.notes = legacy.sourceEvidence?.failed
+      ? 'Migrated source recorded a failed action.'
+      : legacy.sourceEvidence?.noActionTaken
+        ? 'Migrated source recorded that no action was taken.'
+        : 'Migrated historical action.';
     item.completedAt = legacy.status === 'completed' ? new Date(legacy.timestamp).toISOString() : null;
     if (!state.queue.some((existing) => existing.id === item.id)) state.queue.push(item);
   }
 
   state.importWarnings = result.warnings;
   state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
-  logActivity('import', `Imported ${files.length} JSON file${files.length === 1 ? '' : 's'}.`, {
+  logActivity('import', `Imported ${fileCount} ${sourceLabel}.`, {
     snapshot: Boolean(result.snapshot),
     messages: result.messages.length,
     legacyActions: result.legacyActions.length,
+    migrationReports: result.migrationReports.length,
+    relationshipReports: result.relationshipReports.length,
     warnings: result.warnings.length,
+    execution,
+  });
+}
+
+async function handleDataImport(fileList) {
+  const files = [...fileList].filter((file) => file.name.toLowerCase().endsWith('.json'));
+  if (!files.length) return;
+
+  const records = await Promise.all(files.map(async (file) => ({
+    name: file.webkitRelativePath || file.name,
+    text: await file.text(),
+    lastModified: file.lastModified,
+  })));
+  const result = importFileRecords(records, { ownerNames: state.settings.ownerNames });
+  mergeImportResult(result, {
+    sourceLabel: `JSON file${files.length === 1 ? '' : 's'}`,
+    fileCount: files.length,
   });
   await persist();
 }
 
-function addAccountsToUnfoll
+async function prepareZipImport(file) {
+  try {
+    const manifest = inspectZipArchive(await file.arrayBuffer());
+    const supported = manifest.entries.filter((entry) => (
+      ['followers', 'following', 'messages'].includes(entry.kind)
+      || entry.kind.startsWith('simple-')
+      || entry.kind === 'unknown-json'
+    ));
+    pendingZip = { file, manifest };
+    zipImportStatus = {
+      phase: 'preview',
+      processed: 0,
+      total: supported.length,
+      message: supported.length
+        ? 'Review the archive manifest, then confirm the import.'
+        : 'No supported JSON files were discovered in this archive.',
+    };
+    activeView = 'imports';
+    render();
+  } catch (error) {
+    pendingZip = null;
+    zipImportStatus = {
+      phase: 'error',
+      processed: 0,
+      total: 0,
+      message: error.message,
+    };
+    logActivity('import-error', 'Rejected ZIP archive before import.', {
+      code: error.code || null,
+      message: error.message,
+    });
+    await persist();
+  }
+}
+
+function updateZipProgress(progress) {
+  zipImportStatus = {
+    phase: 'extract',
+    processed: progress.processed,
+    total: progress.total,
+    message: `Reading ${progress.path} (${progress.processed} of ${progress.total})`,
+  };
+  const progressElement = document.querySelector('#zip-progress');
+  const messageElement = document.querySelector('#zip-progress-message');
+  if (progressElement) {
+    progressElement.max = Math.max(1, progress.total);
+    progressElement.value = progress.processed;
+  }
+  if (messageElement) messageElement.textContent = zipImportStatus.message;
+}
+
+async function handleZipImport() {
+  if (!pendingZip || zipImportController) return;
+  zipImportController = new AbortController();
+  zipImportStatus = {
+    phase: 'extract',
+    processed: 0,
+    total: pendingZip.manifest.counts.jsonFiles,
+    message: 'Starting offline ZIP import…',
+  };
+  render();
+
+  try {
+    const imported = await importZipArchive(pendingZip.file, {
+      ownerNames: state.settings.ownerNames,
+      signal: zipImportController.signal,
+      onProgress: updateZipProgress,
+    });
+    mergeImportResult(imported.result, {
+      sourceLabel: `JSON file${imported.recordCount === 1 ? '' : 's'} from an Instagram ZIP`,
+      fileCount: imported.recordCount,
+      execution: imported.execution,
+    });
+    pendingZip = null;
+    zipImportStatus = {
+      phase: 'complete',
+      processed: imported.recordCount,
+      total: imported.recordCount,
+      message: `Imported ${imported.recordCount} JSON file${imported.recordCount === 1 ? '' : 's'} from the archive.`,
+    };
+    await persist();
+  } catch (error) {
+    const canceled = error.name === 'AbortError';
+    zipImportStatus = {
+      phase: canceled ? 'canceled' : 'error',
+      processed: zipImportStatus.processed,
+      total: zipImportStatus.total,
+      message: canceled ? 'ZIP import canceled. No partial data was saved.' : error.message,
+    };
+    logActivity(canceled ? 'import-canceled' : 'import-error', zipImportStatus.message, {
+      code: error.code || null,
+    });
+    await persist();
+  } finally {
+    zipImportController = null;
+  }
+}
+
+function addAccountsToUnfollowQueue(accounts) {

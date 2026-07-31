@@ -1,0 +1,16 @@
+[
+  {
+    "username": "unfollowed.one",
+    "time": 1700000100000
+  },
+  {
+    "username": "failed.unfollow",
+    "time": 1700000101000,
+    "failed": true
+  },
+  {
+    "username": "skipped.unfollow",
+    "time": 1700000102000,
+    "noActionTaken": true
+  }
+]

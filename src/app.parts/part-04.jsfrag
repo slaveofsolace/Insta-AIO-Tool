@@ -1,13 +1,18 @@
-owQueue(accounts) {
   const existing = new Set(state.queue
     .filter((item) => item.action === 'unfollow' && item.status !== 'removed')
     .map((item) => normalizeUsername(item.account.username)));
   let count = 0;
   for (const account of accounts) {
     if (existing.has(account.username)) continue;
+    const protectionReason = getUnfollowProtectionReason(
+      account,
+      activeSnapshot(),
+      state.settings,
+    );
     state.queue.push(createQueueItem(account, 'unfollow', {
-      reason: 'not-following-back-review',
-      status: 'ready',
+      reason: protectionReason || 'not-following-back-review',
+      status: protectionReason ? 'protected' : 'ready',
+      preexisting: protectionReason === 'preexisting-follow',
     }));
     existing.add(account.username);
     count += 1;
@@ -36,6 +41,24 @@ app.addEventListener('click', async (event) => {
   }
   if (action === 'pick-data-folder') {
     document.querySelector('#data-folder-input').click();
+    return;
+  }
+  if (action === 'pick-zip-file') {
+    document.querySelector('#zip-file-input').click();
+    return;
+  }
+  if (action === 'confirm-zip-import') {
+    await handleZipImport();
+    return;
+  }
+  if (action === 'cancel-zip-import') {
+    if (zipImportController) {
+      zipImportController.abort();
+    } else {
+      pendingZip = null;
+      zipImportStatus = { phase: 'idle', processed: 0, total: 0, message: '' };
+      render();
+    }
     return;
   }
   if (action === 'pick-state-file') {
@@ -86,10 +109,250 @@ app.addEventListener('click', async (event) => {
     await persist();
     return;
   }
+  if (action === 'toggle-queue-selection') {
+    const selected = new Set(state.selectedQueueItemIds || []);
+    if (target.checked) selected.add(target.dataset.id);
+    else selected.delete(target.dataset.id);
+    state.selectedQueueItemIds = [...selected];
+    await persist();
+    return;
+  }
+  if (action === 'select-actionable-queue') {
+    state.selectedQueueItemIds = state.queue
+      .filter((item) => (
+        ['pending', 'ready', 'paused', 'failed'].includes(item.status)
+        && item.migrationOnly !== true
+      ))
+      .map((item) => item.id);
+    await persist();
+    return;
+  }
+  if (action === 'clear-queue-selection') {
+    state.selectedQueueItemIds = [];
+    await persist();
+    return;
+  }
+  if (action === 'create-action-preview') {
+    if (!state.selectedQueueItemIds.length) {
+      window.alert('Select at least one actionable queue record first.');
+      return;
+    }
+    const job = createReviewedActionJob(state.queue, {
+      snapshot: activeSnapshot(),
+      settings: state.settings,
+      selectedIds: state.selectedQueueItemIds,
+    });
+    state.actionJobs = [job, ...(state.actionJobs || [])].slice(0, 100);
+    logActivity(
+      'action-preview',
+      `Created a reviewed preview with ${job.items.length} actionable and ${job.blockedItems.length} blocked record${job.items.length + job.blockedItems.length === 1 ? '' : 's'}.`,
+      { jobId: job.id, previewDigest: job.previewDigest },
+    );
+    await persist();
+    return;
+  }
+  if (action === 'confirm-action-dry-run' || action === 'confirm-action-live') {
+    const job = state.actionJobs?.[0];
+    if (!job) return;
+    const phrase = await requestExactConfirmation({
+      title: action === 'confirm-action-live' ? 'Confirm live account batch' : 'Confirm no-click dry run',
+      description: 'Review every listed username and action before continuing.',
+      phrase: job.confirmationPhrase,
+      destructive: action === 'confirm-action-live',
+    });
+    if (phrase == null) return;
+    try {
+      const confirmed = confirmReviewedActionJob(job, {
+        phrase,
+        mode: action === 'confirm-action-live' ? 'live' : 'dry-run',
+        settings: state.settings,
+      });
+      state.actionJobs[0] = confirmed;
+      logActivity(
+        'action-confirmation',
+        `Confirmed reviewed ${confirmed.mode} batch containing ${confirmed.items.length} item${confirmed.items.length === 1 ? '' : 's'}.`,
+        { jobId: confirmed.id, previewDigest: confirmed.previewDigest },
+      );
+      await persist();
+    } catch (error) {
+      window.alert(error.message);
+    }
+    return;
+  }
+  if (action === 'run-action-extension-dry-run') {
+    const job = state.actionJobs?.[0];
+    if (!job || job.mode !== 'dry-run' || job.status !== 'ready') return;
+    bridgeStatus = 'Inspecting the active Instagram profile without clicking...';
+    render();
+    try {
+      const response = await requestExtensionBridge(
+        state.bridgePairing,
+        'action.account-job',
+        { job },
+        { timeoutMs: 15_000 },
+      );
+      if (response.type === 'action.bridge-error') {
+        throw new Error(response.payload?.reason || 'extension-rejected-job');
+      }
+      state.actionJobs[0] = applyAccountBridgeResult(job, response.payload);
+      bridgeStatus = response.payload?.status === 'dry-run-complete'
+        ? 'Extension dry run completed without clicking.'
+        : `Extension dry run stopped safely: ${response.payload?.stopReason || 'unknown reason'}.`;
+      logActivity('extension-dry-run', bridgeStatus, {
+        jobId: job.id,
+        stopReason: response.payload?.stopReason || null,
+      });
+      await persist();
+    } catch (error) {
+      bridgeStatus = `Error: ${error.message}`;
+      render();
+    }
+    return;
+  }
+  if (action === 'export-reviewed-action-job') {
+    const job = state.actionJobs?.[0];
+    if (!job?.confirmedAt) return;
+    downloadJson(`insta-aio-reviewed-action-job-${Date.now()}.json`, job);
+    logActivity('export', `Exported reviewed ${job.mode} action job.`, {
+      jobId: job.id,
+      previewDigest: job.previewDigest,
+    });
+    await persist({ rerender: false });
+    return;
+  }
+  if (action === 'discard-action-job') {
+    const [discarded, ...remaining] = state.actionJobs || [];
+    state.actionJobs = remaining;
+    if (discarded) {
+      logActivity('action-preview', 'Discarded a reviewed action preview.', {
+        jobId: discarded.id,
+      });
+    }
+    await persist();
+    return;
+  }
   if (action === 'queue-status') {
     state.queue = markQueueItem(state.queue, target.dataset.id, target.dataset.status);
     state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
     logActivity('queue', `Marked queue item ${target.dataset.status}.`, { id: target.dataset.id });
+    await persist();
+    return;
+  }
+  if (action === 'create-dm-preview') {
+    if (!state.selectedMessageIds.length) {
+      window.alert('Select at least one sent message first.');
+      return;
+    }
+    const job = createReviewedDmJob(state.messages, state.selectedMessageIds);
+    state.dmJobs = [job, ...(state.dmJobs || [])].slice(0, 100);
+    logActivity(
+      'dm-preview',
+      `Created a reviewed DM preview with ${job.items.length} eligible and ${job.blockedItems.length} blocked message${job.items.length + job.blockedItems.length === 1 ? '' : 's'}.`,
+      { jobId: job.id, previewDigest: job.previewDigest },
+    );
+    await persist();
+    return;
+  }
+  if (action === 'confirm-dm-dry-run' || action === 'review-dm-live') {
+    const job = state.dmJobs?.[0];
+    if (!job) return;
+    const phrase = await requestExactConfirmation({
+      title: action === 'review-dm-live' ? 'Review live DM batch' : 'Confirm DM no-click dry run',
+      description: 'Review every listed sent message before continuing.',
+      phrase: job.reviewConfirmationPhrase,
+      destructive: action === 'review-dm-live',
+    });
+    if (phrase == null) return;
+    try {
+      const reviewed = confirmDmJobReview(job, {
+        phrase,
+        mode: action === 'review-dm-live' ? 'live' : 'dry-run',
+        settings: state.settings,
+      });
+      state.dmJobs[0] = reviewed;
+      logActivity(
+        'dm-confirmation',
+        `Confirmed reviewed ${reviewed.mode} DM batch containing ${reviewed.items.length} sent message${reviewed.items.length === 1 ? '' : 's'}.`,
+        { jobId: reviewed.id, previewDigest: reviewed.previewDigest },
+      );
+      await persist();
+    } catch (error) {
+      window.alert(error.message);
+    }
+    return;
+  }
+  if (action === 'confirm-dm-destructive') {
+    const job = state.dmJobs?.[0];
+    if (!job) return;
+    const phrase = await requestExactConfirmation({
+      title: 'Final DM removal confirmation',
+      description: 'This confirmation authorizes the exact reviewed destructive batch.',
+      phrase: job.destructiveConfirmationPhrase,
+      destructive: true,
+    });
+    if (phrase == null) return;
+    try {
+      state.dmJobs[0] = confirmDmJobDestructive(job, { phrase });
+      logActivity(
+        'dm-destructive-confirmation',
+        `Confirmed destructive DM batch containing ${job.items.length} sent message${job.items.length === 1 ? '' : 's'}.`,
+        { jobId: job.id, previewDigest: job.previewDigest },
+      );
+      await persist();
+    } catch (error) {
+      window.alert(error.message);
+    }
+    return;
+  }
+  if (action === 'run-dm-extension-dry-run') {
+    const job = state.dmJobs?.[0];
+    if (!job || job.mode !== 'dry-run' || job.status !== 'ready') return;
+    bridgeStatus = 'Checking exact-message resolution support without clicking...';
+    render();
+    try {
+      const response = await requestExtensionBridge(
+        state.bridgePairing,
+        'action.dm-job',
+        { job },
+        { timeoutMs: 15_000 },
+      );
+      if (response.type === 'action.bridge-error') {
+        throw new Error(response.payload?.reason || 'extension-rejected-job');
+      }
+      state.dmJobs[0] = applyDmBridgeResult(job, response.payload);
+      bridgeStatus = response.payload?.status === 'dry-run-complete'
+        ? 'Extension DM dry run completed without clicking.'
+        : `Extension DM dry run stopped safely: ${response.payload?.stopReason || 'unknown reason'}.`;
+      logActivity('extension-dry-run', bridgeStatus, {
+        jobId: job.id,
+        stopReason: response.payload?.stopReason || null,
+      });
+      await persist();
+    } catch (error) {
+      bridgeStatus = `Error: ${error.message}`;
+      render();
+    }
+    return;
+  }
+  if (action === 'export-reviewed-dm-job') {
+    const job = state.dmJobs?.[0];
+    if (!job?.reviewConfirmedAt) return;
+    downloadJson(`insta-aio-reviewed-dm-job-${Date.now()}.json`, job);
+    logActivity('export', `Exported reviewed ${job.mode} DM job.`, {
+      jobId: job.id,
+      previewDigest: job.previewDigest,
+    });
+    await persist({ rerender: false });
+    return;
+  }
+  if (action === 'discard-dm-job') {
+    const [discarded, ...remaining] = state.dmJobs || [];
+    state.dmJobs = remaining;
+    if (discarded) {
+      logActivity('dm-preview', 'Discarded a reviewed DM preview.', {
+        jobId: discarded.id,
+      });
+    }
     await persist();
     return;
   }
@@ -98,8 +361,19 @@ app.addEventListener('click', async (event) => {
       keyword: messageFilters.keyword,
       onlyMine: messageFilters.onlyMine,
       types: messageFilters.type ? [messageFilters.type] : [],
-    }).filter((message) => message.isMine).slice(0, 250);
-    state.selectedMessageIds = [...new Set([...state.selectedMessageIds, ...filtered.map((message) => message.id)])];
+    });
+    const visible = virtualWindow(filtered, {
+      scrollTop: messageScrollTop,
+      rowHeight: 96,
+      viewportHeight: 620,
+      overscan: 6,
+    }).items.filter((message) => message.isMine);
+    state.selectedMessageIds = [
+      ...new Set([
+        ...state.selectedMessageIds,
+        ...visible.map(messageSelectionKey),
+      ]),
+    ];
     await persist();
     return;
   }
@@ -142,16 +416,80 @@ app.addEventListener('click', async (event) => {
     downloadJson(`insta-aio-activity-${Date.now()}.json`, state.activity);
     return;
   }
+  if (action === 'create-extension-pairing') {
+    try {
+      const permissions = document.querySelector('#bridge-action-permission')?.checked
+        ? ['read', 'action']
+        : ['read'];
+      state.bridgePairing = createBridgePairing({
+        origin: location.origin,
+        permissions,
+      }).pairing;
+      bridgeStatus = 'Copy the code into the extension popup, then complete the handshake here.';
+      logActivity('extension-pairing', 'Created a one-time extension pairing code.', {
+        origin: state.bridgePairing.origin,
+        permissions,
+      });
+      await persist();
+    } catch (error) {
+      bridgeStatus = `Error: ${error.message}`;
+      render();
+    }
+    return;
+  }
+  if (action === 'complete-extension-pairing') {
+    bridgeStatus = 'Waiting for the extension pairing response...';
+    render();
+    try {
+      state.bridgePairing = await completeExtensionPairing(state.bridgePairing);
+      bridgeStatus = 'Extension pairing completed and the one-time code was consumed.';
+      logActivity('extension-pairing', 'Completed the extension pairing handshake.', {
+        origin: state.bridgePairing.origin,
+        permissions: state.bridgePairing.permissions,
+      });
+      await persist();
+    } catch (error) {
+      bridgeStatus = `Error: ${error.message}`;
+      render();
+    }
+    return;
+  }
+  if (action === 'ping-extension') {
+    bridgeStatus = 'Checking extension connection...';
+    render();
+    try {
+      const response = await requestExtensionBridge(state.bridgePairing, 'bridge.ping');
+      bridgeStatus = response.type === 'read.bridge-status'
+        ? `Extension ${response.payload.extensionVersion} connected; live execution is disabled.`
+        : 'Error: The extension returned an unexpected response.';
+    } catch (error) {
+      bridgeStatus = `Error: ${error.message}`;
+    }
+    render();
+    return;
+  }
+  if (action === 'revoke-extension-pairing') {
+    const origin = state.bridgePairing?.origin;
+    state.bridgePairing = null;
+    bridgeStatus = 'PWA pairing removed. Revoke the matching origin in the extension popup too.';
+    logActivity('extension-pairing', 'Revoked the local extension pairing.', { origin });
+    await persist();
+    return;
+  }
   if (action === 'save-settings') {
     const lines = (value) => value.split(/[\n,]+/).map(normalizeUsername).filter(Boolean);
     state.settings.waitingDays = Math.max(1, Number(document.querySelector('#waiting-days').value || 7));
     state.settings.dailyFollowLimit = Math.max(1, Number(document.querySelector('#daily-follow-limit').value || 25));
     state.settings.dailyUnfollowLimit = Math.max(1, Number(document.querySelector('#daily-unfollow-limit').value || 25));
+    state.settings.liveActionBatchLimit = Math.max(1, Math.min(25, Number(document.querySelector('#live-action-batch-limit').value || 1)));
+    state.settings.liveDmBatchLimit = Math.max(1, Math.min(25, Number(document.querySelector('#live-dm-batch-limit').value || 1)));
     state.settings.ownerNames = document.querySelector('#owner-names').value.split(',').map((name) => name.trim()).filter(Boolean);
     state.settings.whitelist = lines(document.querySelector('#whitelist').value);
     state.settings.preexistingFollowing = lines(document.querySelector('#preexisting').value);
     state.settings.protectMutuals = document.querySelector('#protect-mutuals').checked;
     state.settings.dryRun = document.querySelector('#dry-run').checked;
+    state.settings.liveActionEnabled = document.querySelector('#live-action-enabled').checked;
+    state.settings.liveDmUnsendEnabled = document.querySelector('#live-dm-enabled').checked;
     state.queue = refreshQueue(state.queue, activeSnapshot(), state.settings);
     logActivity('settings', 'Updated local settings and queue protections.');
     await persist();
@@ -180,6 +518,13 @@ app.addEventListener('change', async (event) => {
   const target = event.target;
   if (target.id === 'data-file-input' || target.id === 'data-folder-input') {
     await handleDataImport(target.files);
+    target.value = '';
+    return;
+  }
+  if (target.id === 'zip-file-input') {
+    const file = target.files?.[0];
+    target.value = '';
+    if (file) await prepareZipImport(file);
     return;
   }
   if (target.id === 'state-file-input') {
@@ -204,18 +549,25 @@ app.addEventListener('change', async (event) => {
   }
   if (target.id === 'message-type') {
     messageFilters.type = target.value;
+    messageScrollTop = 0;
     render();
     return;
   }
   if (target.id === 'only-mine') {
     messageFilters.onlyMine = target.checked;
+    messageScrollTop = 0;
     render();
     return;
   }
   if (target.dataset.action === 'toggle-message') {
     const selected = new Set(state.selectedMessageIds);
-    if (target.checked) selected.add(target.dataset.id);
-    else selected.delete(target.dataset.id);
+    if (target.checked) {
+      selected.delete(target.dataset.id);
+      selected.add(target.dataset.key);
+    } else {
+      selected.delete(target.dataset.key);
+      selected.delete(target.dataset.id);
+    }
     state.selectedMessageIds = [...selected];
     await persist();
   }
@@ -224,9 +576,35 @@ app.addEventListener('change', async (event) => {
 app.addEventListener('input', (event) => {
   if (event.target.id !== 'message-search') return;
   messageFilters.keyword = event.target.value;
+  messageScrollTop = 0;
   clearTimeout(globalThis.__instaAioSearchTimer);
   globalThis.__instaAioSearchTimer = setTimeout(render, 120);
 });
+
+app.addEventListener('scroll', (event) => {
+  const list = event.target.closest?.('[data-virtual-list]');
+  if (!list) return;
+  const nextTop = list.scrollTop;
+  let previousTop;
+  let rowHeight;
+  if (list.dataset.virtualList === 'queue') {
+    previousTop = queueScrollTop;
+    queueScrollTop = nextTop;
+    rowHeight = 72;
+  } else if (list.dataset.virtualList === 'messages') {
+    previousTop = messageScrollTop;
+    messageScrollTop = nextTop;
+    rowHeight = 96;
+  } else {
+    return;
+  }
+  if (Math.floor(previousTop / rowHeight) === Math.floor(nextTop / rowHeight)) return;
+  if (globalThis.__instaAioVirtualFrame) return;
+  globalThis.__instaAioVirtualFrame = requestAnimationFrame(() => {
+    globalThis.__instaAioVirtualFrame = null;
+    render();
+  });
+}, true);
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').catch(() => {});

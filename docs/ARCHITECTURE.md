@@ -1,166 +1,141 @@
 # Architecture
 
-## Decision
+## System shape
 
-The initial product is a **hybrid local PWA plus Tampermonkey manual companion**.
+Insta AIO Tool is a local-first PWA with three optional delivery surfaces:
 
-This is the simplest architecture that delivers useful working functionality immediately while keeping unstable Instagram-specific behavior outside the core application.
+1. A read-only Tampermonkey companion for visible-list capture and manual queue navigation
+2. A Manifest V3 extension for signed, origin-paired inspection requests
+3. A hardened Electron shell for Windows and macOS packaging
 
-## Why this architecture
+The stable data model remains independent of Instagram page markup. Imports, migrations, reviews, protections, checkpoints, and ledgers are implemented as browser-neutral modules.
 
-### PWA core
+## Runtime components
 
-The browser application handles stable, testable work:
+### PWA
 
-- Import and migration
-- Account normalization
-- Snapshot storage
-- Relationship comparison
-- Queue scheduling
-- Whitelist/preexisting/mutual protection
-- Message parsing and viewing
-- Sent-message filtering
-- Unsend-plan creation
-- Audit history
-- JSON/CSV exports
+The PWA owns:
 
-It has no runtime dependencies and can be served with a basic local HTTP server.
+- Offline ZIP and extracted-file import
+- Account normalization and deduplication
+- Relationship snapshots and comparisons
+- Queue scheduling and protection checks
+- Message normalization and filtering
+- Reviewed account-action and DM job creation
+- Local persistence, backup export, and activity history
+- Extension pairing and signed request transport
+
+`src/app-loader.js` combines the deterministic source fragments under `src/app.parts/` in memory. `pnpm run assemble` produces the equivalent ignored `src/app.js` file for inspection.
+
+### Import pipeline
+
+`src/core/zip.js` inspects ZIP metadata before extraction. It validates central/local header agreement, CRC values, archive size limits, path safety, compression method, encryption flags, and unsupported ZIP features. `src/workers/zip-import-worker.js` performs extraction away from the UI thread and reports progress and cancellation.
+
+`src/core/import-classification.js` identifies supported records. `src/core/imports.js` routes records to the current Instagram parsers or source-specific migrations. Every source migration returns explicit imported, duplicate, skipped, unsupported, and manual-correction dispositions.
+
+### Relationship engine
+
+`src/core/accounts.js` normalizes account identity.
+
+`src/core/snapshots.js` creates dated follower/following snapshots and calculates mutuals, non-mutual relationships, new followers, lost followers, following changes, and ID-backed renames.
+
+`src/core/queue.js` schedules follow/unfollow reviews and enforces mutual, whitelist, preexisting-follow, status, and migration-history protections.
+
+### Reviewed account actions
+
+`src/core/action-jobs.js` creates immutable previews with exact usernames, actions, and a digest-bound confirmation phrase.
+
+`src/adapters/reviewed-action-adapter.js` implements:
+
+- Session inspection
+- Exact-profile and relationship validation
+- True no-click dry runs
+- Immediate protection revalidation
+- Transactional reservation before live driver calls
+- Before/after evidence
+- Pause, resume, stop, and durable per-item checkpoints
+- Safe stops for ambiguous or blocked states
+
+`src/core/action-ledger.js` and `src/adapters/indexeddb-action-ledger.js` enforce duplicate and daily-limit rules.
+
+### Reviewed DM actions
+
+`src/core/dm-jobs.js` preserves exact conversation ID, message ID, timestamp, ownership, and content digest for each selected message. Live jobs require both review and destructive confirmations.
+
+`src/adapters/reviewed-dm-adapter.js` resolves the conversation and message immediately before a driver call, reserves the attempt transactionally, checkpoints after every item, and verifies removal.
+
+`src/adapters/instagram-dm-unsender.js` adapts safe concepts from the reviewed 0.7.2 source. It accepts only one exact sent-message candidate, one exact localized Unsend option, and a matching confirmation record. It does not copy the source's broad loop or heuristic mass-selection behavior.
+
+### Extension bridge
+
+`src/core/bridge-protocol.js` defines a versioned signed-message format.
+
+Pairing uses:
+
+- An exact HTTP/HTTPS origin
+- A 12-byte pairing identifier
+- A 32-byte one-time secret
+- Separate read and action permissions
+- A two-nonce handshake that derives a new session secret
+
+Every request includes a timestamp, request ID, nonce, type, payload, and HMAC-SHA-256 signature. Verification enforces origin, permission, maximum age, replay protection, payload size, and session-material rejection.
+
+The extension background worker serializes bridge requests and persists its replay cache. Its Instagram content script exposes inspection only and contains no click path. Live jobs are rejected by the shipped extension.
 
 ### Tampermonkey companion
 
-The userscript handles limited on-site assistance:
+The userscript reads only currently rendered anchors and manages a separate manual queue in userscript storage. It performs profile navigation only after the user selects the control and never invokes Instagram action buttons.
 
-- Capture usernames already rendered in the page.
-- Import/export a manual queue.
-- Navigate to the next profile.
-- Mark manual work complete or skipped.
+### Desktop shell
 
-Instagram DOM selectors are isolated here so changes do not corrupt the data model or core UI.
+`desktop/main.mjs` serves packaged assets through a confined custom protocol. The renderer uses:
 
-### Future execution adapters
+- `contextIsolation: true`
+- `nodeIntegration: false`
+- `sandbox: true`
+- `webSecurity: true`
+- Denied permission requests
+- Navigation and new-window restrictions
+- A restrictive content policy
 
-Authenticated account-changing actions are defined as a separate adapter boundary. They are not embedded into the queue engine, import logic, or UI state.
+Electron's app-specific Chromium directory stores the same IndexedDB data used by the PWA. Before the renderer opens, the shell copies available storage directories into a timestamped backup and keeps the five newest backups.
 
-A future adapter must expose a narrow contract such as:
+## State model
 
-```js
-{
-  inspectSession(): Promise<SessionStatus>,
-  inspectRelationship(username): Promise<RelationshipStatus>,
-  performReviewedAction(action): Promise<ActionResult>,
-  inspectConversation(conversationId): Promise<ConversationStatus>,
-  unsendReviewedMessage(message): Promise<ActionResult>
-}
-```
-
-The adapter must never be allowed to mutate application history directly. It returns results, and the core records those results through validated state transitions.
-
-## Modules
-
-### `accounts.js`
-
-- Username normalization
-- Profile URL normalization
-- Stable ID/username keys
-- Account deduplication
-
-### `snapshots.js`
-
-- Snapshot creation
-- Current/previous comparison
-- New/lost follower detection
-- Following changes
-- ID-backed rename detection
-- Mutual/non-mutual classification
-
-### `queue.js`
-
-- Follow/unfollow queue records
-- Queue status transitions
-- Waiting-period calculation
-- Follow-back protection
-- Whitelist protection
-- Preexisting-follow protection
-- Duplicate-action prevention
-
-### `messages.js`
-
-- Old InstagramHelper format migration
-- Current Meta message export parsing
-- Message-type inference
-- Conversation summaries
-- Sent-only filtering
-- Unsend-plan creation
-
-### `imports.js`
-
-- File classification
-- Relationship format parsing
-- Message format parsing
-- SimpleInstaBot history migration
-- Warning collection
-
-### `storage.js`
-
-- IndexedDB state persistence
-- LocalStorage fallback
-- State defaults and migrations
-
-### `app-loader.js` and `app.parts/`
-
-- Deterministically reconstruct the complete browser UI module at runtime
-- `npm run assemble` materializes the same source as the generated `src/app.js` development file
-- UI composition
-- Event handling
-- File import/export
-- Queue and message workflows
-- Local activity log
-
-## Data flow
+The current workspace schema is version 3:
 
 ```text
-Instagram export / legacy JSON / visible DOM capture
-                    │
-                    ▼
-               Import adapters
-                    │
-                    ▼
-       Normalized accounts and messages
-                    │
-          ┌─────────┴─────────┐
-          ▼                   ▼
-   Snapshot engine       Message engine
-          │                   │
-          ▼                   ▼
- Relationship views     Viewer / filters
-          │                   │
-          ▼                   ▼
-     Review queue         Unsend plan
-          └─────────┬─────────┘
-                    ▼
-              IndexedDB state
+snapshots
+queue
+messages
+selectedMessageIds
+selectedQueueItemIds
+migrationReports
+relationshipReports
+actionJobs
+actionLedger
+dmJobs
+dmLedger
+bridgePairing
+settings
+activity
+importWarnings
 ```
 
-## Storage model
+Migrations are additive. Missing collections receive safe defaults, unknown extra fields remain available through object spread, and live settings default to disabled with batch limits of one.
 
-The initial version stores a single versioned workspace state in IndexedDB. This is adequate for an offline personal tool and avoids native database packaging.
-
-A future desktop build should move to SQLite once message volumes, job checkpoints, and multi-account support require indexed queries and transactions.
+IndexedDB is the primary store. LocalStorage is a fallback for environments without usable IndexedDB. Atomic ledger updates use one IndexedDB read/write transaction or a serialized LocalStorage fallback.
 
 ## Trust boundaries
 
-- Imported files are untrusted data and are escaped before display.
-- The PWA never receives Instagram credentials.
-- The userscript uses the browser's existing Instagram session but does not collect or export session cookies.
-- Live action adapters, when developed, must be isolated from storage and UI rendering.
-- Exported queue and message plans contain usernames/message metadata and should be treated as private files.
+- Imported archives and JSON are untrusted and validated before normalization.
+- Imported strings are escaped before HTML rendering.
+- Instagram credentials and session material do not enter the PWA.
+- The extension pairing secret authenticates local bridge messages only.
+- The extension may inspect an existing Instagram tab but does not export its session state.
+- Destructive drivers cannot mutate application history directly; they return observations and results that the core validates and checkpoints.
+- Exported workspaces and reviewed jobs contain private account/message metadata and should be handled as sensitive personal files.
 
-## Non-goals for the initial build
+## Offline behavior
 
-- Proxy rotation
-- Fingerprint spoofing
-- CAPTCHA solving
-- Login-challenge bypassing
-- Private API endpoint reverse engineering
-- Automated cold messaging
-- Unreviewed destructive actions
+The service worker precaches the shell, UI fragments, core modules, adapters, migrations, and ZIP worker. Imported data is never uploaded by the application. A service-worker cache version change removes older application caches during activation without deleting IndexedDB workspace data.

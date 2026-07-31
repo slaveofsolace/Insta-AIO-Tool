@@ -1,0 +1,14 @@
+{
+  "PeopleIDontFollowBack": [
+    "Follower.Only",
+    "@follower.only",
+    "second_follower",
+    "not valid!"
+  ],
+  "PeopleNotFollowingMeBack": [
+    "Following.Only",
+    "following.only",
+    "second_following",
+    "accounts"
+  ]
+}
