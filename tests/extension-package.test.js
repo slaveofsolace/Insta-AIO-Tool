@@ -14,6 +14,10 @@ const instagramContent = await readFile(
   new URL('../extension/content-instagram.js', import.meta.url),
   'utf8',
 );
+const instagramOverlay = await readFile(
+  new URL('../extension/instagram-overlay.js', import.meta.url),
+  'utf8',
+);
 const pwaContent = await readFile(
   new URL('../extension/content-pwa.js', import.meta.url),
   'utf8',
@@ -37,6 +41,8 @@ test('Instagram content script exposes inspection only and contains no click pat
   assert.match(instagramContent, /replace\(\/\^\\\/\+\/, ''\)/);
   assert.doesNotMatch(instagramContent, /\.click\s*\(/);
   assert.doesNotMatch(instagramContent, /cookies?|authorization/i);
+  assert.doesNotMatch(instagramOverlay, /\.click\s*\(/);
+  assert.match(instagramOverlay, /data-ia-section="queue"/);
 });
 
 test('bridge transport pins the page origin and background rejects live jobs', () => {

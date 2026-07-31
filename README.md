@@ -9,8 +9,9 @@ The project includes:
 - Relationship snapshots, comparisons, protections, and queue history
 - Message search, sent-message classification, and reviewed unsend jobs
 - Source-specific migrations for Instagram Helper, SimpleInstaBot, and saved follower-checker results
-- A read-only Tampermonkey companion
-- A signed, origin-paired Manifest V3 extension bridge
+- A visible Instagram sidecar for capture, manual queue work, and read-only message evidence
+- A signed, origin-paired Manifest V3 extension bridge for reviewed no-click jobs
+- A preserved read-only Tampermonkey fallback
 - Windows and macOS Electron packaging configuration
 
 ## Safety model
@@ -111,6 +112,20 @@ pnpm run build:extension
 
 Load `dist/extension` as an unpacked extension, or install the generated ZIP through the appropriate browser-managed workflow.
 
+Open Instagram after loading the extension. The **Insta AIO Field Desk** appears on
+the right side of the page and can be collapsed to its launcher. It provides:
+
+- Current-page session, profile, relationship, and queue-match inspection
+- Repeated visible-row capture that merges follower or following usernames
+- The existing manual queue JSON workflow with Open, Complete, and Skip controls
+- Sanitized history for signed account and DM dry runs received from the PWA
+- Read-only visible-message evidence with an explicit exact-identity safe stop
+- A direct link back to the exact paired PWA origin
+
+Press **Alt + Shift + I** to toggle the sidecar. Live Follow, Unfollow, and
+Unsend controls are not exposed. See [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
+for the runtime and data boundaries.
+
 Pairing is origin-specific:
 
 1. In the PWA Settings view, create a one-time pairing code.
@@ -159,13 +174,14 @@ pnpm test
 pnpm run benchmark:zip
 ```
 
-The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, transactional ledgers, bridge signing and replay protection, extension permissions, desktop hardening, state migration, service-worker assets, and large-list windowing.
+The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, transactional ledgers, bridge signing and replay protection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing.
 
 Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. macOS artifact production and interactive Chrome visual acceptance must be performed on their target environments before a signed release.
 
 ## Documentation
 
 - [Architecture](./docs/ARCHITECTURE.md)
+- [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
 - [Product specification](./docs/PROJECT_SPEC.md)
 - [Source audit](./docs/SOURCE_AUDIT.md)
 - [Component integration audit](./docs/COMPONENT_INTEGRATION_AUDIT.md)

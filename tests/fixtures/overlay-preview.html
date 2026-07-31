@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Insta AIO overlay runtime fixture</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #fafafa; color: #111; font: 14px/1.4 system-ui, sans-serif; }
+    .instagram-shell { display: grid; min-height: 100vh; grid-template-columns: 244px minmax(0, 1fr); }
+    .instagram-nav { padding: 34px 24px; border-right: 1px solid #ddd; background: #fff; }
+    .instagram-nav strong { font: 28px cursive; }
+    .instagram-nav ul { display: grid; gap: 28px; margin: 44px 0; padding: 0; list-style: none; }
+    main { width: min(880px, calc(100vw - 300px)); margin: 0 auto; padding: 58px 34px; }
+    .profile { display: grid; grid-template-columns: 180px 1fr; gap: 44px; align-items: center; }
+    .avatar { width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(145deg, #f7be45, #e54b88 52%, #7653db); }
+    .profile h1 { display: inline; margin-right: 18px; font-size: 20px; font-weight: 500; }
+    .profile button { border: 0; border-radius: 8px; padding: 8px 18px; background: #efefef; font-weight: 650; }
+    .stats { display: flex; gap: 34px; margin: 24px 0; }
+    .feed-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 50px; border-top: 1px solid #ddd; padding-top: 34px; }
+    .post { aspect-ratio: 1; background: #d8d5cf; }
+    .fixture-dialog { position: fixed; left: 280px; bottom: 28px; width: 310px; padding: 14px; border: 1px solid #bbb; border-radius: 12px; background: #fff; box-shadow: 0 18px 50px rgba(0,0,0,.2); }
+    .fixture-dialog h2 { margin: 0 0 10px; font-size: 15px; }
+    .fixture-dialog a { display: block; padding: 7px 0; color: #111; text-decoration: none; }
+    .fixture-thread { width: min(640px, 100%); margin: 0 auto; border: 1px solid #ddd; background: #fff; }
+    .fixture-thread header { padding: 18px; border-bottom: 1px solid #ddd; }
+    .fixture-thread header h1 { margin: 0; font-size: 16px; }
+    .fixture-thread [role="row"] { max-width: 72%; margin: 18px; padding: 11px 14px; border-radius: 16px; background: #efefef; }
+    .fixture-thread [data-mine] { margin-left: auto; background: #3e8df5; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="instagram-shell">
+    <aside class="instagram-nav"><strong>Instagram</strong><ul><li>Home</li><li>Search</li><li>Explore</li><li>Messages</li><li>Profile</li></ul></aside>
+    <main>
+      <section class="profile">
+        <div class="avatar" aria-label="Profile photo"></div>
+        <div>
+          <div><h1>demo_creator</h1><button type="button">Following</button></div>
+          <div class="stats"><span><b>126</b> posts</span><span><b>8,420</b> followers</span><span><b>531</b> following</span></div>
+          <strong>Demo Creator</strong><p>Runtime fixture for the Insta AIO extension overlay.</p>
+        </div>
+      </section>
+      <section class="feed-grid" aria-label="Posts"><div class="post"></div><div class="post"></div><div class="post"></div><div class="post"></div><div class="post"></div><div class="post"></div></section>
+    </main>
+  </div>
+  <section class="fixture-dialog" role="dialog" aria-label="Following">
+    <h2>Following</h2>
+    <a href="/alpha.friend/">alpha.friend</a>
+    <a href="/bravo_creator/">bravo_creator</a>
+    <a href="/charlie.studio/">charlie.studio</a>
+  </section>
+
+  <script>
+    const fixtureSearch = new URLSearchParams(location.search);
+    const fixtureMode = fixtureSearch.get('mode');
+    if (fixtureMode === 'messages') {
+      history.replaceState({}, '', '/direct/t/fixture_conversation/');
+      document.querySelector('.fixture-dialog').hidden = true;
+      document.querySelector('main').innerHTML = `
+        <section class="fixture-thread">
+          <header><h1>studio_friend</h1></header>
+          <div role="row"><div dir="auto">Did you see the draft?</div></div>
+          <div role="row" data-mine><div dir="auto">Yes — reviewing it now.</div></div>
+          <div role="row"><div dir="auto">Perfect, thank you.</div></div>
+        </section>`;
+    } else {
+      history.replaceState({}, '', '/demo_creator/');
+    }
+    const fixtureStorage = {
+      bridgePairings: [{
+        origin: 'http://127.0.0.1:4173',
+        permissions: ['read', 'action'],
+        pairedAt: '2026-07-31T12:00:00.000Z',
+      }],
+      pendingJobs: [],
+      instaAioOverlayManualQueueV1: {
+        importedAt: '2026-07-31T12:00:00.000Z',
+        queue: [{
+          id: 'fixture-queue-1',
+          account: { username: 'demo_creator', displayName: 'Demo Creator', source: 'fixture' },
+          action: 'unfollow',
+          status: 'ready',
+          reason: 'fixture review',
+          scheduledFor: '2026-07-31T12:00:00.000Z',
+        }],
+      },
+    };
+    const storageListeners = [];
+    if (fixtureSearch.get('shadow') !== 'closed') {
+      globalThis.__instaAioOverlayTestOpenShadow = true;
+    }
+    globalThis.chrome = {
+      runtime: {
+        lastError: null,
+        getManifest: () => ({ version: '0.2.0' }),
+        onMessage: { addListener: () => {} },
+        sendMessage: (request, callback) => {
+          if (request.kind === 'insta-aio-overlay-state') {
+            callback({ state: {
+              extensionVersion: '0.2.0',
+              liveExecutionEnabled: false,
+              pairings: fixtureStorage.bridgePairings,
+              recentRuns: [{
+                kind: 'insta-aio-reviewed-action-job',
+                jobId: 'fixture-job-1',
+                receivedAt: '2026-07-31T12:04:00.000Z',
+                mode: 'dry-run',
+                status: 'dry-run-complete',
+                stopReason: null,
+                results: [{ username: 'demo_creator', action: 'unfollow', status: 'resolved-no-click' }],
+              }],
+            } });
+            return;
+          }
+          callback({});
+        },
+      },
+      storage: {
+        local: {
+          get: (keys, callback) => {
+            const list = Array.isArray(keys) ? keys : [keys];
+            callback(Object.fromEntries(list.map((key) => [key, fixtureStorage[key]])));
+          },
+          set: (value, callback = () => {}) => {
+            const changes = {};
+            for (const [key, next] of Object.entries(value)) {
+              changes[key] = { oldValue: fixtureStorage[key], newValue: next };
+              fixtureStorage[key] = next;
+            }
+            callback();
+            for (const listener of storageListeners) listener(changes, 'local');
+          },
+          remove: (key, callback = () => {}) => {
+            const oldValue = fixtureStorage[key];
+            delete fixtureStorage[key];
+            callback();
+            for (const listener of storageListeners) listener({ [key]: { oldValue } }, 'local');
+          },
+        },
+        onChanged: { addListener: (listener) => storageListeners.push(listener) },
+      },
+    };
+  </script>
+  <script src="/extension/content-instagram.js"></script>
+  <script src="/extension/instagram-overlay.js"></script>
+</body>
+</html>

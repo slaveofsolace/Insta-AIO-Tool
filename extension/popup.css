@@ -1,17 +1,18 @@
 :root {
-  color-scheme: dark;
-  font: 14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif;
-  background: #111318;
-  color: #f3f4f6;
+  color-scheme: light;
+  font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  background: #f3efe4;
+  color: #151510;
 }
 
 body {
   margin: 0;
-  width: 360px;
+  width: 382px;
+  border-top: 5px solid #d8ff45;
 }
 
 main {
-  padding: 18px;
+  padding: 18px 19px 20px;
 }
 
 h1,
@@ -21,28 +22,66 @@ p {
 }
 
 h1 {
-  margin-bottom: 4px;
-  font-size: 22px;
+  margin-bottom: 3px;
+  font-family: "Arial Narrow", "Aptos Narrow", "Segoe UI", sans-serif;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -.035em;
 }
 
 h2 {
-  margin-top: 20px;
+  margin-top: 22px;
   font-size: 14px;
 }
 
+header {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #aaa497;
+}
+
+.mark {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+  background: #151510;
+  color: #d8ff45;
+  font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+}
+
 .eyebrow {
-  margin-bottom: 4px;
-  color: #b8e85b;
-  font-size: 11px;
-  font-weight: 700;
+  margin-bottom: 5px;
+  color: #5f5b50;
+  font-size: 10px;
+  font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 #active-origin,
 .notice {
-  color: #aab1bd;
+  color: #666156;
 }
+
+#active-origin { margin-bottom: 0; overflow-wrap: anywhere; font-size: 12px; }
+
+.field-note {
+  margin: 15px 0 4px;
+  padding: 11px 12px;
+  border-left: 7px solid #d8ff45;
+  background: #e8e2d5;
+  color: #4f4b42;
+  font-size: 12px;
+}
+
+.field-note strong { display: block; color: #151510; }
 
 label {
   display: block;
@@ -54,12 +93,17 @@ textarea {
   box-sizing: border-box;
   width: 100%;
   resize: vertical;
-  border: 1px solid #3a404b;
-  border-radius: 8px;
-  padding: 9px;
-  background: #191c22;
+  border: 1px solid #151510;
+  border-radius: 2px;
+  padding: 10px;
+  background: #fffdf7;
   color: inherit;
   font: 12px/1.4 ui-monospace, monospace;
+}
+
+textarea:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid #168cff;
+  outline-offset: 2px;
 }
 
 .check {
@@ -70,44 +114,45 @@ textarea {
 }
 
 button {
-  border: 1px solid #b8e85b;
-  border-radius: 8px;
+  min-height: 40px;
+  border: 1px solid #151510;
+  border-radius: 2px;
   padding: 9px 11px;
-  background: #b8e85b;
-  color: #10130c;
+  background: #d8ff45;
+  color: #151510;
   font-weight: 750;
   cursor: pointer;
 }
 
 button.secondary {
-  border-color: #3a404b;
-  background: #1b1f26;
-  color: #f3f4f6;
+  background: transparent;
+  color: #151510;
 }
 
 .notice {
   margin: 14px 0;
-  padding: 10px;
-  border: 1px solid #343a44;
-  border-radius: 8px;
+  padding: 11px 0;
+  border-top: 1px solid #aaa497;
+  border-bottom: 1px solid #d5cfc2;
   font-size: 12px;
 }
 
+.notice strong { color: #151510; }
+
 #status {
   min-height: 20px;
-  color: #b8e85b;
+  color: #215d32;
+  font-weight: 650;
 }
 
 .pairing {
   display: grid;
   gap: 7px;
-  margin-top: 8px;
-  padding: 10px;
-  border: 1px solid #343a44;
-  border-radius: 8px;
+  padding: 11px 0;
+  border-top: 1px solid #aaa497;
 }
 
 .pairing small {
-  color: #aab1bd;
+  color: #666156;
   overflow-wrap: anywhere;
 }

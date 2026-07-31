@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Insta AIO Companion",
-  "version": "0.1.0",
-  "description": "Origin-paired, local bridge for reviewed Insta AIO jobs and read-only Instagram inspection.",
+  "version": "0.2.0",
+  "description": "Local-first Instagram sidecar for visible capture, manual queues, and reviewed no-click inspection.",
   "permissions": [
     "storage",
     "tabs",
@@ -29,7 +29,8 @@
         "https://www.instagram.com/*"
       ],
       "js": [
-        "content-instagram.js"
+        "content-instagram.js",
+        "instagram-overlay.js"
       ],
       "run_at": "document_idle"
     }
