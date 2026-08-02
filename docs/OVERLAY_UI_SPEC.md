@@ -335,3 +335,8 @@ The concept score is an engineering selection, not human visual acceptance. The
 final implementation still requires automated matrix evidence and a user review.
 Authenticated persistent-profile fit, human screen-reader acceptance, and any
 real Follow, Unfollow, or Unsend remain `Codex-Handoff` items.
+
+Implementation is now tracked in [OVERLAY_UI_IMPLEMENTATION.md](./OVERLAY_UI_IMPLEMENTATION.md).
+The source checkpoint satisfies the modular and static safety design, while the
+required production runtime visual/geometry matrix and human acceptance remain
+open.

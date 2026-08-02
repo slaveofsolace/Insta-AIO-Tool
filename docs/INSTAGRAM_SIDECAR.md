@@ -105,14 +105,32 @@ Instagram cookies, or credentials.
 
 ## Interaction and accessibility
 
-- The sidecar opens by default on desktop and remembers the operator's last state.
+- A fresh V2 install starts collapsed as a 44-pixel launcher. Migration from V1
+  preserves a valid prior open/section choice.
 - **Alt + Shift + I** toggles it.
 - Escape collapses it while focus is inside.
+- Arrow keys plus Home and End move through the semantic five-tool tab rail.
 - Focus indicators are visible and status changes use an `aria-live` region.
-- The layout becomes a full-height mobile work surface below 540 pixels.
+- Dock side, 336/380/480-pixel width, auto/light/dark theme, and comfortable or
+  compact density are stored in the V2 preference record.
+- The layout becomes a bounded bottom sheet at 600 pixels and narrower, with a
+  separate short-height rule.
 - Motion is removed when `prefers-reduced-motion` is enabled.
 - Dynamic Instagram text is inserted with `textContent`, not HTML.
 - Production UI and extension-local queue data remain inside a closed shadow root.
+
+When a relevant native confirmation surface is visible, or while an exact arm
+is active/being consumed, the full panel yields to a compact measured status
+strip. If no non-intersecting placement is available, overlay controls remain
+hidden. Instagram controls are never moved, hidden, or restyled.
+
+## Extension and userscript availability
+
+The Manifest V3 companion is the full implementation of Now, Capture, Queue,
+Messages, Workspace, signed dry-run summaries, and exact one-item arm gates.
+The preserved Tampermonkey companion remains a limited read-only fallback for
+visible-list capture and a manual local queue. It has no signed PWA bridge and
+does not expose Follow, Unfollow, or Unsend execution.
 
 ## Safety invariants
 
@@ -157,3 +175,7 @@ screen-reader acceptance, or a successful real-account action. Those remain
 separate controlled checks. Issue #3 requires exact account before/after and
 ledger evidence; issue #4 requires one exact sent-message removal plus both
 durable ledger records, each from a user-selected authenticated run.
+
+See [Overlay UI implementation](./OVERLAY_UI_IMPLEMENTATION.md) for the ordered
+module graph, V1-to-V2 preference migration, current lightweight verification,
+and explicit post-implementation runtime nonclaims.

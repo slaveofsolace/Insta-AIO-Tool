@@ -25,6 +25,10 @@ This does not install anything into the operator's normal profile.
 7. Open or reload `https://www.instagram.com/`.
 8. Use the **Insta AIO Field Desk** sidecar, or press **Alt + Shift + I** to toggle it.
 
+On a fresh install, Instagram shows only the compact launcher. Opening the
+sidecar exposes all five extension tools. Dock, width, theme, and density are
+available under overlay preferences and remain browser-local.
+
 The extension requests access only to the exact paired PWA origin at pairing time.
 Instagram host access is declared for the visible sidecar, no-click inspection,
 and separately gated one-item drivers. The sidecar can import a PWA manual
@@ -86,6 +90,10 @@ stable message identity for post-removal proof, the driver stops uncertain. Do
 not retry or weaken those checks; record the DOM acceptance blocker instead.
 
 ## Tampermonkey userscript
+
+This is a limited read-only fallback, not an alternative transport for the full
+extension overlay. Use the Manifest V3 companion when you need Now, Messages,
+Workspace, signed PWA dry-run summaries, or exact one-item arm gates.
 
 1. Install Tampermonkey from its official browser store.
 2. Create a new userscript.

@@ -533,6 +533,19 @@
       }
     },
     {
+      "id": "claim_overlay_source_implemented",
+      "label": "MEASURED",
+      "statement": "The selected quiet operator overlay is implemented as an ordered modular content-script graph with fresh collapsed defaults, V1-to-V2 preference migration, theme and route lifecycle ownership, collision-safe arm presentation, and no overlay page-control path.",
+      "evidence_ids": [
+        "ev_overlay_implementation_checkpoint"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "MEDIUM",
+        "basis": "Syntax, source contracts, package validation, and controlled-live safety tests pass; the post-change browser visual and geometry matrix remains deferred."
+      }
+    },
+    {
       "id": "claim_randomness_locale_closed",
       "label": "MEASURED",
       "statement": "Current profile and DM inspection stores no resolution capability when Web Crypto cannot provide entropy, while relationship and localized Unsend matching use one frozen NFKC-normalized exact-label module with valid UTF-8.",
@@ -851,6 +864,18 @@
       "integrity": "fix: fail closed on insecure resolution tokens; 19 files; protected checkout remains at 1f7dab1",
       "supports_claim_ids": [
         "claim_randomness_locale_closed"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_overlay_implementation_checkpoint",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "git commits 6da61d873a304aebe44b357cc476c3832e6cbc7b and 6f8bc7bc49e009149e00fc14882485749cd6eee6; docs/OVERLAY_UI_IMPLEMENTATION.md",
+      "captured_at": "2026-08-02T21:24:47.4512968Z",
+      "integrity": "all overlay scripts parse; 27 focused overlay/package/preference/runtime-module tests pass; build check and 25 controlled-live safety tests pass; no Electron/Chromium runtime or authenticated action executed after the UI change",
+      "supports_claim_ids": [
+        "claim_overlay_source_implemented"
       ],
       "contradicts_claim_ids": []
     },
@@ -1557,25 +1582,27 @@
   ],
   "verification": {
     "mechanism": {
-      "status": "FAIL",
-      "signal": "Exact-target binding, discard cancellation, secure-random fail-closed behavior, and localization isolation pass focused and full-suite tests; only the modular overlay mechanism remains unfinished.",
+      "status": "PASS",
+      "signal": "Exact-target binding, discard cancellation, secure-random fail-closed behavior, localization isolation, modular overlay ordering, preference migration, and static no-control/no-polling rules pass their current focused checks.",
       "evidence_ids": [
         "ev_baseline_tests",
         "ev_discard_fix_tests",
         "ev_safety_checkpoint",
         "ev_randomness_locale_tests",
         "ev_correctness_checkpoint",
-        "ev_correctness_commit"
+        "ev_correctness_commit",
+        "ev_overlay_implementation_checkpoint"
       ],
-      "rationale": "The defensive mechanisms are closed, but the broader refinement mechanism is not yet complete."
+      "rationale": "The requested source mechanisms are implemented and their bounded contracts pass; endpoint pixels and authenticated fit are tracked separately."
     },
     "endpoint": {
       "status": "UNKNOWN",
-      "signal": "Before screenshots are captured, but the compact refined overlay and its full matrix do not yet exist.",
+      "signal": "The compact refined overlay source exists, but its post-change production screenshot, geometry, zoom, forced-color, and small-viewport matrix has not yet run.",
       "evidence_ids": [
-        "ev_before_visuals"
+        "ev_before_visuals",
+        "ev_overlay_implementation_checkpoint"
       ],
-      "rationale": "The actual requested visual outcome remains unimplemented."
+      "rationale": "Source completion and concept evidence do not establish the final rendered endpoint."
     },
     "guardrails": {
       "status": "PASS",
@@ -1600,9 +1627,9 @@
   },
   "closure": {
     "status": "OPEN",
-    "summary": "Recovery, baseline evidence, defensive safety remediation, and the two-concept design gate are complete; production overlay refinement, final verification, and draft publication remain open.",
+    "summary": "Recovery, defensive safety remediation, design selection, and the modular overlay source checkpoint are complete; production runtime visual verification, full regression, and draft publication remain open.",
     "residual_risks": [
-      "The two defensive commits 032b832 and ff8b4b8 are fully exercised locally but not yet published.",
+      "Local commits 032b832, ff8b4b8, f667142, 6da61d8, and 6f8bc7b are not yet published to the draft branch.",
       "The local Chrome pairing timeout is not yet explained.",
       "Overlay-specific visual regression and geometry matrices do not yet exist.",
       "Authenticated selector, persistent-profile, human screen-reader, and real-action acceptance remain unverified and human-owned."

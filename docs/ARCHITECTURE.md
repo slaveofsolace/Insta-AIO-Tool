@@ -93,7 +93,7 @@ Pairing uses:
 
 Every request includes a timestamp, request ID, nonce, type, payload, and HMAC-SHA-256 signature. Verification enforces origin, permission, maximum age, replay protection, payload size, and session-material rejection.
 
-The extension background worker serializes bridge requests and persists its replay cache. `action-labels.js` loads first and exposes one frozen normalization/allowlist surface for the reviewed relationship and localized Unsend labels. The Instagram inspector then exposes read-only page inspection, and the isolated **Field Desk** sidecar renders in a closed shadow root after the inspector is available. The deterministic browser fixture explicitly opts into an open root for QA only.
+The extension background worker serializes bridge requests and persists its replay cache. `action-labels.js` loads first and exposes one frozen normalization/allowlist surface for the reviewed relationship and localized Unsend labels. The Instagram inspector then exposes read-only page inspection. Ordered classic modules under `extension/overlay/` own preferences, routing, theme, bridge transport, downloads, accessibility, collision measurement, the static shell, and five bounded views; `instagram-overlay.js` owns their lifecycle and persistence. The isolated **Field Desk** renders in a closed shadow root after every dependency is available. The deterministic browser fixture explicitly opts into an open root for QA only.
 
 The sidecar owns only browser-local field state:
 
@@ -102,6 +102,9 @@ The sidecar owns only browser-local field state:
 - Read-only visible-message evidence plus conditional stable-identity DM dry runs
 - Sanitized pairing and recent dry-run summaries returned by the background worker
 - A sanitized pending one-item account intent and 90-second one-use arm
+- A sanitized pending exact-message intent and 90-second one-use DM arm
+- A versioned V2 visual preference record; fresh state is collapsed and V1
+  open/section choices migrate without changing capture or queue contracts
 
 The PWA remains the system of record for imports, snapshots, comparisons,
 protections, reviewed jobs, ledgers, and backups. The background worker never
@@ -135,6 +138,12 @@ Profile and message resolution capabilities require a valid Web Crypto
 `randomUUID` or nonzero `getRandomValues` result. A missing, throwing, or
 non-producing secure random source returns `secure-random-unavailable`, stores
 no token, and therefore cannot reach either controlled page driver.
+
+The overlay itself has no page-control activator. Package validation scans the
+complete ordered graph for direct clicks, synthetic dispatch, recurring polling,
+remote UI assets, and more than the one audited static shell-markup assignment.
+An active/just-consumed arm forces collision-safe presentation so the full panel
+does not compete with an exact native control, menu, or confirmation dialog.
 
 ### Tampermonkey companion
 

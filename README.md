@@ -112,8 +112,9 @@ pnpm run build:extension
 
 Load `dist/extension` as an unpacked extension, or install the generated ZIP through the appropriate browser-managed workflow.
 
-Open Instagram after loading the extension. The **Insta AIO Field Desk** appears on
-the right side of the page and can be collapsed to its launcher. It provides:
+Open Instagram after loading the extension. A compact **Insta AIO Field Desk**
+launcher appears on the right by default; the full sidecar opens only when the
+operator requests it. It provides:
 
 - Current-page session, profile, relationship, and queue-match inspection
 - Repeated visible-row capture that merges follower or following usernames
@@ -126,7 +127,9 @@ the right side of the page and can be collapsed to its launcher. It provides:
 Press **Alt + Shift + I** to toggle the sidecar. Follow, Unfollow, and Unsend
 remain locked until their controlled one-item workflows are completed. See
 [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
-for the runtime and data boundaries.
+for the runtime and data boundaries and
+[Overlay UI implementation](./docs/OVERLAY_UI_IMPLEMENTATION.md) for the
+module, migration, and current verification status.
 
 Pairing is origin-specific:
 
@@ -143,6 +146,10 @@ The handshake rotates the one-time code into a derived session secret. Messages 
 Install `userscripts/insta-aio-companion.user.js` in Tampermonkey.
 
 It can capture usernames already rendered in a follower/following dialog, import a manual queue, open the next profile, record manual completion or skip decisions, and export its local state. It does not auto-scroll or click Follow, Unfollow, or Unsend.
+
+The userscript is the preserved limited fallback. The complete five-tool
+overlay, signed PWA bridge, exact one-item arm gates, theme/dock preferences,
+and collision-safe execution strip are provided by the Manifest V3 extension.
 
 ## Desktop builds
 
