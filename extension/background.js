@@ -152,6 +152,72 @@ async function inspectAccountJob(job) {
   };
 }
 
+async function inspectDmJob(job) {
+  const tab = await activeInstagramTab();
+  if (!tab?.id) {
+    return {
+      jobId: job.id,
+      status: 'stopped',
+      stopReason: 'instagram-tab-unavailable',
+      results: [],
+    };
+  }
+
+  const results = [];
+  for (const item of job.items) {
+    let observation;
+    try {
+      observation = await chrome.tabs.sendMessage(tab.id, {
+        kind: 'insta-aio-inspect-reviewed-dm-item',
+        item: {
+          conversationId: item.conversationId,
+          contentDigest: item.contentDigest,
+          messageId: item.messageId,
+          sentByMe: item.sentByMe,
+          timestamp: item.timestamp,
+        },
+      });
+    } catch {
+      observation = { unexpectedUi: true, reason: 'inspector-unavailable' };
+    }
+    const matches = (
+      item.sentByMe === true
+      && observation?.conversationId === item.conversationId
+      && observation?.messageId === item.messageId
+      && Number(observation?.timestamp) === Number(item.timestamp)
+      && observation?.contentDigest === item.contentDigest
+      && observation?.sentByMe === true
+      && observation?.exactIdentityAvailable === true
+      && observation?.ownershipAvailable === true
+      && Boolean(observation?.resolutionToken)
+      && !observation?.ambiguous
+      && !observation?.unexpectedUi
+      && !observation?.sessionExpired
+      && !observation?.challenge
+      && !observation?.actionBlocked
+      && !observation?.rateLimited
+    );
+    results.push({
+      itemId: item.id,
+      conversationId: item.conversationId,
+      messageId: item.messageId,
+      status: matches ? 'resolved-no-click' : 'safe-stopped',
+      observation,
+    });
+    if (!matches) break;
+  }
+
+  const failed = results.find((result) => result.status === 'safe-stopped');
+  return {
+    jobId: job.id,
+    status: failed ? 'stopped' : 'dry-run-complete',
+    stopReason: failed
+      ? failed.observation?.reason || 'exact-message-identity-unavailable'
+      : null,
+    results,
+  };
+}
+
 function accountActionDay(now = Date.now()) {
   return new Date(now).toISOString().slice(0, 10);
 }
@@ -535,17 +601,7 @@ async function routeVerifiedRequest(request, pairing, state) {
         payload: { reason: invalid },
       };
     }
-    const result = {
-      jobId: job.id,
-      status: 'stopped',
-      stopReason: 'exact-message-identity-unavailable',
-      results: job.items.map((item) => ({
-        itemId: item.id,
-        conversationId: item.conversationId,
-        messageId: item.messageId,
-        status: 'safe-stopped',
-      })),
-    };
+    const result = await inspectDmJob(job);
     state.pendingJobs.unshift({
       kind: job.kind,
       jobId: job.id,

@@ -100,7 +100,7 @@ Live-mode data structures require:
 - A durable reservation before the destructive call
 - Post-action removal verification
 
-The browser extension safe-stops when an Instagram export message ID cannot be matched to one exact rendered message. It never guesses.
+The browser extension now performs a true no-click exact-message dry run when the open thread ID matches and one rendered sent row exposes the reviewed message ID, exact timestamp, matching content digest, and sender ownership. Missing stable attributes, duplicate candidates, wrong threads, changed content, and unknown ownership safe-stop. This conditional resolver has deterministic fixture coverage but still requires authenticated Instagram DOM acceptance; it never opens a message menu or guesses. Live Unsend remains unavailable.
 
 ## Companion extension
 
@@ -120,7 +120,7 @@ the right side of the page and can be collapsed to its launcher. It provides:
 - The existing manual queue JSON workflow with Open, Complete, and Skip controls
 - Sanitized history for signed account dry runs, controlled account results, and DM dry runs received from the PWA
 - An Instagram-side, 90-second one-use arm for a fresh signed one-item Follow or Unfollow intent
-- Read-only visible-message evidence with an explicit exact-identity safe stop
+- Read-only visible-message evidence plus conditional exact-identity DM dry runs that never open a menu
 - A direct link back to the exact paired PWA origin
 
 Press **Alt + Shift + I** to toggle the sidecar. Follow and Unfollow remain

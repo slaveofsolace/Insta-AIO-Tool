@@ -167,6 +167,7 @@ function applyDmBridgeResult(job, result) {
     next = appendDmCheckpoint(next, item.id, {
       status: record.status === 'resolved-no-click' ? 'dry-run-complete' : 'safe-stopped',
       result: record.status === 'resolved-no-click' ? 'resolved-no-click' : null,
+      resolutionEvidence: record.observation?.evidence || null,
       error: record.status === 'resolved-no-click'
         ? null
         : result.stopReason || 'bridge-inspection-failed',

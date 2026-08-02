@@ -179,6 +179,14 @@ The source cannot map an exported conversation/message ID to one durable rendere
 
 Missing, duplicate, received, changed, or ambiguous candidates safe-stop. The mass loop is not included.
 
+The extension additionally implements a no-click-only DOM boundary for signed
+reviewed DM jobs. It borrows the source's conversation-container and sent-layout
+observations but requires a matching direct-thread ID, an allowlisted stable
+message-ID attribute, exact timestamp, exact content digest, and one sent
+candidate. It never invokes the source's hover, menu, dialog, loop, or Unsend
+paths. Fixture coverage proves exact, missing, changed, received, wrong-thread,
+and ambiguous outcomes; authenticated Instagram DOM acceptance remains open.
+
 ## Shared migration contract
 
 Every migration returns:

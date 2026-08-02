@@ -9,6 +9,14 @@
   ]);
   const PROFILE_RESOLUTION_TTL_MS = 20_000;
   const profileResolutions = new Map();
+  const DM_MESSAGE_ID_ATTRIBUTES = Object.freeze([
+    'data-message-id',
+    'data-item-id',
+  ]);
+  const DM_TIMESTAMP_ATTRIBUTES = Object.freeze([
+    'data-timestamp-ms',
+    'data-timestamp',
+  ]);
 
   function normalizeUsername(value) {
     const username = String(value || '')
@@ -35,6 +43,202 @@
     const bytes = new Uint8Array(16);
     globalThis.crypto?.getRandomValues?.(bytes);
     return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  function dmContentDigest(value) {
+    const text = String(value ?? '');
+    let hash = 0x811c9dc5;
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function directThreadId(value) {
+    const text = String(value || '').replaceAll('\\', '/');
+    const directMatch = text.match(/\/direct\/t\/([^/?#]+)/i);
+    if (directMatch) return directMatch[1];
+    const finalSegment = text.split('/').filter(Boolean).at(-1) || '';
+    const exportMatch = finalSegment.match(/_([0-9]+)$/);
+    return exportMatch?.[1] || (/^[0-9]+$/.test(finalSegment) ? finalSegment : null);
+  }
+
+  function normalizedDmTimestamp(value) {
+    if (value == null || value === '') return null;
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      if (numeric > 100_000_000_000_000) return Math.floor(numeric / 1000);
+      return numeric < 10_000_000_000 ? numeric * 1000 : numeric;
+    }
+    const parsed = Date.parse(String(value));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function dmMessageId(element) {
+    for (const attribute of DM_MESSAGE_ID_ATTRIBUTES) {
+      const value = String(element?.getAttribute?.(attribute) || '').trim();
+      if (value) return { attribute, value };
+    }
+    return null;
+  }
+
+  function dmMessageTimestamp(identityNode, row) {
+    for (const element of [identityNode, row]) {
+      for (const attribute of DM_TIMESTAMP_ATTRIBUTES) {
+        const timestamp = normalizedDmTimestamp(element?.getAttribute?.(attribute));
+        if (timestamp != null) return { basis: attribute, timestamp };
+      }
+    }
+    const time = row?.querySelector?.('time[datetime]');
+    const timestamp = normalizedDmTimestamp(time?.getAttribute?.('datetime'));
+    return timestamp == null ? null : { basis: 'time[datetime]', timestamp };
+  }
+
+  function dmOwnership(row) {
+    const explicit = String(row?.getAttribute?.('data-sent-by-me') || '').toLowerCase();
+    if (explicit === 'true') return { sentByMe: true, basis: 'data-sent-by-me' };
+    if (explicit === 'false') return { sentByMe: false, basis: 'data-sent-by-me' };
+
+    const queue = [{ element: row, depth: 0 }];
+    while (queue.length) {
+      const { element, depth } = queue.shift();
+      if (getComputedStyle(element).justifyContent === 'flex-end') {
+        return { sentByMe: true, basis: 'flex-end-layout' };
+      }
+      if (depth < 8) {
+        for (const child of element.children || []) {
+          queue.push({ element: child, depth: depth + 1 });
+        }
+      }
+    }
+    return { sentByMe: null, basis: null };
+  }
+
+  function dmContentCandidates(row) {
+    const explicitlyMarked = [...(row?.querySelectorAll?.('[data-insta-aio-message-content]') || [])];
+    const nodes = explicitlyMarked.length
+      ? explicitlyMarked
+      : [...(row?.querySelectorAll?.('[dir="auto"]') || [])]
+        .filter((element) => !element.querySelector?.('[dir="auto"]'))
+        .filter((element) => !element.closest?.('header, nav, button, [role="button"], a, time'));
+    return [...new Set(nodes.map(visibleText).filter((text) => text && text.length <= 500))];
+  }
+
+  function inspectReviewedDmItem(item) {
+    const session = inspectSession();
+    if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
+      return session;
+    }
+    if (pageKind() !== 'messages') {
+      return { ...session, unexpectedUi: true, reason: 'open-an-instagram-conversation' };
+    }
+
+    const expectedThreadId = directThreadId(item?.conversationId);
+    const observedThreadId = directThreadId(location.pathname);
+    if (!expectedThreadId || !observedThreadId) {
+      return { ...session, ambiguous: true, reason: 'conversation-id-unresolved' };
+    }
+    if (expectedThreadId !== observedThreadId) {
+      return {
+        ...session,
+        ambiguous: true,
+        reason: 'wrong-conversation',
+        evidence: { expectedThreadId, observedThreadId },
+      };
+    }
+
+    const scope = document.querySelector('[data-pagelet="IGDMessagesList"]')
+      || document.querySelector('main');
+    const identitySelector = DM_MESSAGE_ID_ATTRIBUTES
+      .map((attribute) => `[${attribute}]`)
+      .join(', ');
+    const identityNodes = [...(scope?.querySelectorAll?.(identitySelector) || [])]
+      .filter((element) => visibleText(element));
+    if (!identityNodes.length) {
+      return {
+        ...session,
+        missing: true,
+        exactIdentityAvailable: false,
+        ownershipAvailable: false,
+        reason: 'exact-message-identity-unavailable',
+        evidence: { observedThreadId, stableIdentityNodeCount: 0 },
+      };
+    }
+
+    const candidates = identityNodes.map((identityNode) => {
+      const row = identityNode.closest?.('[role="row"], [role="listitem"]') || identityNode;
+      const identity = dmMessageId(identityNode) || dmMessageId(row);
+      const timestamp = dmMessageTimestamp(identityNode, row);
+      const ownership = dmOwnership(row);
+      const contents = dmContentCandidates(row);
+      return {
+        contentMatches: contents.filter((content) => dmContentDigest(content) === item?.contentDigest),
+        identity,
+        ownership,
+        row,
+        timestamp,
+      };
+    }).filter((candidate) => (
+      candidate.identity?.value === String(item?.messageId || '')
+      && candidate.timestamp?.timestamp === Number(item?.timestamp)
+      && candidate.contentMatches.length === 1
+    ));
+
+    if (!candidates.length) {
+      return {
+        ...session,
+        missing: true,
+        exactIdentityAvailable: true,
+        reason: 'exact-message-not-found',
+        evidence: { observedThreadId, stableIdentityNodeCount: identityNodes.length },
+      };
+    }
+    if (candidates.length !== 1) {
+      return {
+        ...session,
+        ambiguous: true,
+        exactIdentityAvailable: true,
+        reason: 'exact-message-ambiguous',
+        evidence: { observedThreadId, exactCandidateCount: candidates.length },
+      };
+    }
+
+    const candidate = candidates[0];
+    if (candidate.ownership.sentByMe !== true) {
+      return {
+        ...session,
+        sentByMe: candidate.ownership.sentByMe,
+        exactIdentityAvailable: true,
+        ownershipAvailable: candidate.ownership.sentByMe === false,
+        reason: candidate.ownership.sentByMe === false
+          ? 'received-message'
+          : 'message-ownership-unavailable',
+      };
+    }
+
+    return {
+      ...session,
+      ambiguous: false,
+      unexpectedUi: false,
+      conversationId: String(item.conversationId),
+      messageId: String(item.messageId),
+      timestamp: Number(item.timestamp),
+      contentDigest: String(item.contentDigest),
+      contentLength: candidate.contentMatches[0].length,
+      sentByMe: true,
+      exactIdentityAvailable: true,
+      ownershipAvailable: true,
+      resolutionToken: resolutionToken(),
+      evidence: {
+        source: 'extension-stable-visible-message-identity',
+        observedThreadId,
+        identityAttribute: candidate.identity.attribute,
+        timestampBasis: candidate.timestamp.basis,
+        ownershipBasis: candidate.ownership.basis,
+        capturedAt: new Date().toISOString(),
+      },
+    };
   }
 
   function pruneProfileResolutions(now = Date.now()) {
@@ -391,6 +595,7 @@
     captureVisibleAccounts,
     inspectPageContext,
     inspectProfile,
+    inspectReviewedDmItem,
     inspectSession,
     inspectVisibleMessages,
     normalizeUsername,
@@ -414,6 +619,10 @@
     }
     if (request?.kind === 'insta-aio-inspect-visible-messages') {
       sendResponse(inspectVisibleMessages());
+      return;
+    }
+    if (request?.kind === 'insta-aio-inspect-reviewed-dm-item') {
+      sendResponse(inspectReviewedDmItem(request.item));
       return;
     }
     if (request?.kind === 'insta-aio-perform-reviewed-profile-action') {

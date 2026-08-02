@@ -55,7 +55,13 @@ The DM core is complete:
 - Post-action removal verification
 - Source-specific localized Unsend matching
 
-The extension cannot safely map export message IDs to rendered Instagram messages and therefore stops with `exact-message-identity-unavailable`. A controlled live batch of one has not been accepted.
+The extension now conditionally maps one reviewed message in a true no-click dry
+run when the direct-thread ID, stable rendered message ID, exact timestamp,
+content digest, and sent ownership all match uniquely. The background rechecks
+the returned identity before recording success. Missing stable DOM identity still
+stops with `exact-message-identity-unavailable`; current authenticated Instagram
+DOM acceptance and a controlled live batch of one have not been completed. Live
+Unsend remains absent.
 
 ## Extension
 
@@ -75,7 +81,7 @@ Complete:
 - Sanitized signed dry-run history
 - Sanitized pending live intent, one-use arm, and controlled account-action history
 - Signed one-item Follow/Unfollow execution boundary, locked by default
-- Read-only visible-DM evidence with exact-identity safe stop
+- Read-only visible-DM evidence and conditional exact-identity no-click dry runs
 - JSON exchange fallback
 - Unpacked and ZIP build artifacts
 
@@ -128,6 +134,8 @@ including the documented Electron Builder advisory exception and its
 repeatable verification gate, is in `docs/SECURITY_REVIEW.md`.
 
 The controlled-action local-patch scan found four low-severity defects and all
-four are remediated with focused regressions. Deterministic assembly, the full
-89-test suite, companion source validation, and the unpacked/ZIP extension build
-pass. Authenticated one-account acceptance remains explicitly not run.
+four are remediated with focused regressions. The follow-up exact-message DM
+local-patch scan found no reportable security issue. Deterministic assembly, the
+full 96-test suite, companion source validation, and the unpacked/ZIP extension
+build pass. Authenticated account and DM DOM acceptance remain explicitly not
+run.

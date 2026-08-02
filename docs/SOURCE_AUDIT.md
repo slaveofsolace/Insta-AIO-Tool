@@ -80,6 +80,12 @@ Rejected:
 
 The source has no durable job state that can be migrated. `src/migrations/instagram-dm-unsender.js` therefore records a stateless migration report and requires manual creation of reviewed jobs from imported message data.
 
+The shipped extension independently uses only the source's read-only
+conversation-container and sent-layout observations during reviewed dry runs.
+It additionally requires a stable rendered message ID, exact timestamp and
+content digest, matching thread ID, and unique ownership result. It does not
+reuse the source's hover events, menu clicks, confirmation clicks, or mass loop.
+
 ## License boundary
 
 MIT notices for reviewed MIT projects are retained in `THIRD_PARTY_NOTICES.md`. The implementation uses new local-first modules and does not vendor the reviewed applications. The unlicensed Gist is referenced only for provenance; its source is not included.

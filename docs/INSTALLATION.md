@@ -30,6 +30,11 @@ an Instagram page control. A controlled live Follow or Unfollow is available
 only through the separate one-item workflow below and remains locked by
 default.
 
+Reviewed DM dry runs can report `resolved-no-click` only while the exact thread
+is open and one visible sent row exposes every stable identity field required by
+the reviewed job. Current Instagram DOMs that omit any field will stop safely;
+this is expected. Live Unsend is not exposed.
+
 After updating an unpacked build, reload the extension in the browser extension
 manager and reload existing Instagram tabs so both content scripts are current.
 

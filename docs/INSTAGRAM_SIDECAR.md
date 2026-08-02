@@ -73,9 +73,24 @@ The relationship is inspected again before the PWA marks success.
 Reads bounded text fragments already visible in the open Instagram conversation.
 It does not open a message menu. Visible fragments do not provide stable export
 message IDs or reliable sender ownership, so the sidecar always records
-`exactIdentityAvailable: false` and `ownershipAvailable: false` in this release.
-The extension therefore keeps DM action jobs at the existing
-`exact-message-identity-unavailable` safe stop.
+`exactIdentityAvailable: false` and `ownershipAvailable: false` for this general
+evidence capture.
+
+A separate signed reviewed-DM dry-run route can resolve one item without a
+click only when all of these visible-DOM facts match:
+
+- The open `/direct/t/` thread ID matches the stable reviewed conversation ID.
+- Exactly one rendered row exposes the reviewed message ID through a bounded
+  stable-attribute allowlist.
+- Its exact timestamp and content digest match the reviewed item.
+- The row is proven sent by the operator through an explicit ownership marker
+  or the source-audited sent-message layout signal.
+
+Missing attributes, unknown ownership, duplicate candidates, changed content,
+or a wrong thread remain safe stops. The deterministic `messages-exact` fixture
+proves this no-click boundary; whether the intended authenticated Instagram DOM
+currently exposes every required identity field is still an acceptance blocker.
+The extension does not open message menus and exposes no live Unsend route.
 
 ### Workspace
 
@@ -107,7 +122,8 @@ Instagram cookies, or credentials.
 - The sidecar does not auto-scroll.
 - Live settings remain off by default; the extension accepts at most one
   reviewed account item and consumes the arm before mutation.
-- Live Unsend remains absent and DM jobs keep the exact-identity safe stop.
+- Live Unsend remains absent; reviewed DM dry runs resolve only a stable exact
+  identity and otherwise keep the exact-identity safe stop.
 - Session expiry, challenges, restrictions, rate limits, wrong profiles,
   stale confirmations, replayed tokens, ambiguous relationships, and missing
   message identity remain safe stops.
@@ -116,7 +132,8 @@ Instagram cookies, or credentials.
 
 `tests/fixtures/overlay-preview.html` loads the actual production content scripts
 with deterministic profile, list, queue, pairing, dry-run, and message states.
-It supports `?mode=messages` for the conversation fixture,
+It supports `?mode=messages` for fragment-only evidence,
+`?mode=messages-exact` for one stable exact sent-message identity,
 `?mode=live-follow` for an exact one-control Follow transition, and
 `?mode=live-unfollow` for an exact relationship-plus-confirmation transition.
 

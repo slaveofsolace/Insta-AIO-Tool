@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-08-01
+Last reviewed: 2026-08-02
 
 ## Application boundaries
 
@@ -30,6 +30,14 @@ finite and bounded. Capability replay, stale confirmation, changed controls,
 wrong profiles, duplicate attempts, and ambiguous UI fail closed. Live DM
 removal remains unavailable.
 
+The extension also exposes a separate reviewed-DM inspection route that is
+dry-run-only. It requires the matching open direct thread, one allowlisted
+stable rendered message ID, exact timestamp and content digest, a unique
+candidate, and sent ownership before recording `resolved-no-click`. Missing,
+changed, duplicate, received, wrong-thread, and unknown-ownership states stop
+without opening a menu. The route returns no raw message text and has no live
+DM action consumer.
+
 The extension background derives the requesting origin from Chrome's sender
 metadata and rejects a mismatched page claim. The loopback development server
 accepts only loopback Host headers and an explicit application-asset allowlist;
@@ -46,13 +54,17 @@ issues before release: profile controls were not structurally bound to the
 reviewed header, an existing Unfollow dialog could be mistaken for a newly
 opened target dialog, the extension lacked its own durable reservation, and
 malformed restored daily limits could fail open. Regression tests exercise each
-fixed boundary, and the complete repository suite passes 89 of 89 tests.
+fixed boundary. The 2026-08-02 exact-message DM local-patch review completed with
+full diff coverage and no reportable finding. The complete repository suite now
+passes 96 of 96 tests.
 
-An authenticated Instagram Follow or Unfollow has deliberately not been run.
-It remains a separate operator acceptance gate requiring an exact target,
-action, and explicit approval. Local interactive fixture navigation was also
-blocked by the Codex in-app browser's loopback policy; this is recorded as an
-environment limitation rather than browser acceptance evidence.
+An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
+been run. It remains a separate operator acceptance gate requiring an exact
+target, action, and explicit approval. The production overlay passed desktop,
+mobile, messages, keyboard, and focus-restoration checks against the local
+synthetic fixture in Chrome. The real Instagram profile checked during this
+review was logged out and did not have the unpacked extension installed, so
+authenticated selector and rendered-message identity acceptance remain open.
 
 ## Dependency review
 

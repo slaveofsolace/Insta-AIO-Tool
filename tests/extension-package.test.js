@@ -47,9 +47,23 @@ test('Instagram content script isolates its only page-control call behind the re
   assert.match(instagramContent, /function activateLiveControl\(control\)[\s\S]*?control\.click\(\)/);
   assert.match(instagramContent, /profileResolutions\.delete\(token\)/);
   assert.match(instagramContent, /unfollow-confirmation-not-exact/);
+  assert.match(instagramContent, /insta-aio-inspect-reviewed-dm-item/);
+  assert.match(instagramContent, /exact-message-identity-unavailable/);
+  assert.match(instagramContent, /extension-stable-visible-message-identity/);
   assert.doesNotMatch(instagramContent, /cookies?|authorization/i);
   assert.doesNotMatch(instagramOverlay, /\.click\s*\(/);
   assert.match(instagramOverlay, /data-ia-section="queue"/);
+});
+
+test('extension DM inspection is exact and no-click while live Unsend remains absent', () => {
+  const dmDryRunBody = background.slice(
+    background.indexOf('async function inspectDmJob'),
+    background.indexOf('function accountActionDay'),
+  );
+  assert.match(dmDryRunBody, /insta-aio-inspect-reviewed-dm-item/);
+  assert.match(dmDryRunBody, /resolved-no-click/);
+  assert.doesNotMatch(dmDryRunBody, /perform|Unsend|\.click\s*\(/i);
+  assert.doesNotMatch(instagramContent, /insta-aio-perform-reviewed-dm|confirmUnsend|openMessageActions/);
 });
 
 test('bridge transport pins the page origin and requires one fresh, armed live account intent', () => {

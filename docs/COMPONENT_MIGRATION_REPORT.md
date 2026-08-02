@@ -22,6 +22,13 @@ current-page inspection, sanitized bridge dry-run history, and read-only DM
 evidence. The userscript remains available as a fallback; it was not removed or
 replaced.
 
+The DM migration also adds a conditional exact-identity inspection boundary for
+signed reviewed dry runs. It reuses only the supplied source's read-only
+conversation-container and sent-layout observations, adds stable message ID,
+timestamp, and content-digest requirements, and never opens an action menu.
+This is deterministic no-click fixture coverage, not authenticated live Unsend
+acceptance.
+
 The independently reviewed account-action boundary now has an optional
 production extension driver. It does not reuse SimpleInstaBot's Puppeteer,
 session persistence, private routes, selector set, or retry automation. It
@@ -65,6 +72,9 @@ historical and non-actionable.
 - No action history, durable message identity, or checkpoint state exists to migrate.
 - A report records the pinned release and requires manual creation of a reviewed job from imported message data.
 - No rendered row is converted into a stored message target.
+- A rendered row may satisfy a fresh signed dry run only when its stable message
+  ID, exact timestamp, content digest, thread ID, and sent ownership match one
+  reviewed item; otherwise it safe-stops and is not persisted as a target.
 
 ## State changes
 

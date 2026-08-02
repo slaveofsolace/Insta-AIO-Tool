@@ -68,6 +68,14 @@ The PWA owns:
 
 `src/adapters/instagram-dm-unsender.js` adapts safe concepts from the reviewed 0.7.2 source. It accepts only one exact sent-message candidate, one exact localized Unsend option, and a matching confirmation record. It does not copy the source's broad loop or heuristic mass-selection behavior.
 
+The extension's signed DM dry-run route is narrower than the adapter's live
+boundary. `content-instagram.js` requires a matching direct-thread ID, one
+rendered row with an allowlisted stable message-ID attribute, an exact timestamp
+and content digest, and proven sent ownership. The background independently
+rechecks every returned identity field before recording `resolved-no-click`.
+No message menu or page-control method is reachable from this route. Missing or
+ambiguous identity safe-stops, and authenticated DOM acceptance remains pending.
+
 ### Extension bridge
 
 `src/core/bridge-protocol.js` defines a versioned signed-message format.
@@ -88,7 +96,7 @@ The sidecar owns only browser-local field state:
 
 - A bounded visible-list capture draft using the existing `insta-aio-visible-list` contract
 - An imported `insta-aio-manual-queue` and extension-local completion/skip updates
-- Read-only visible-message evidence that never claims exact message identity
+- Read-only visible-message evidence plus conditional stable-identity DM dry runs
 - Sanitized pairing and recent dry-run summaries returned by the background worker
 - A sanitized pending one-item account intent and 90-second one-use arm
 
@@ -108,7 +116,8 @@ the pathname account, stops before any click when a dialog is already visible,
 and accepts only a newly surfaced Unfollow dialog that names the reviewed
 username. It then verifies the resulting relationship. The PWA independently
 rechecks the arm before its transactional reservation and checkpoints the
-before/after result. Live DM execution remains unavailable.
+before/after result. DM dry runs use only the separate stable-identity inspector;
+live DM execution remains unavailable.
 
 ### Tampermonkey companion
 

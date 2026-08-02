@@ -7,6 +7,9 @@
 - Keep every dry-run route no-click; it must never reach `activateLiveControl()`.
 - Keep extension live account execution to one fresh signed item, one exact Instagram-side phrase, one tab-scoped 90-second arm, one background-owned reservation, and one consumed capability.
 - Do not expose extension live DM execution until exact rendered message identity and ownership are proven.
+- Keep the extension DM dry-run resolver limited to allowlisted stable message
+  IDs, exact timestamps and content digests, matching direct-thread IDs, and
+  proven sent ownership; a visual-text similarity alone must safe-stop.
 - Keep `content-instagram.js` loaded before `instagram-overlay.js`.
 - Keep Instagram-side pairing state sanitized; never expose bridge secrets, signatures, or nonces.
 - Preserve `insta-aio-visible-list` and `insta-aio-manual-queue` compatibility.

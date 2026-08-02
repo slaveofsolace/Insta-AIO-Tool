@@ -55,18 +55,19 @@
     const fixtureSearch = new URLSearchParams(location.search);
     const fixtureMode = fixtureSearch.get('mode');
     const fixtureLiveMode = fixtureMode === 'live-follow' || fixtureMode === 'live-unfollow';
+    const fixtureExactDmMode = fixtureMode === 'messages-exact';
     if (fixtureLiveMode) {
       document.querySelector('.fixture-dialog').hidden = true;
     }
-    if (fixtureMode === 'messages') {
-      history.replaceState({}, '', '/direct/t/fixture_conversation/');
+    if (fixtureMode === 'messages' || fixtureExactDmMode) {
+      history.replaceState({}, '', fixtureExactDmMode ? '/direct/t/123/' : '/direct/t/fixture_conversation/');
       document.querySelector('.fixture-dialog').hidden = true;
       document.querySelector('main').innerHTML = `
-        <section class="fixture-thread">
+        <section class="fixture-thread" ${fixtureExactDmMode ? 'data-pagelet="IGDMessagesList"' : ''}>
           <header><h1>studio_friend</h1></header>
-          <div role="row"><div dir="auto">Did you see the draft?</div></div>
-          <div role="row" data-mine><div dir="auto">Yes — reviewing it now.</div></div>
-          <div role="row"><div dir="auto">Perfect, thank you.</div></div>
+          <div role="row" ${fixtureExactDmMode ? 'data-message-id="received-1" data-timestamp-ms="1700000000000" data-sent-by-me="false"' : ''}><div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Did you see the draft?</div></div>
+          <div role="row" data-mine ${fixtureExactDmMode ? 'data-message-id="sent-1" data-timestamp-ms="1700000000100" data-sent-by-me="true"' : ''}><div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Yes — reviewing it now.</div></div>
+          <div role="row" ${fixtureExactDmMode ? 'data-message-id="received-2" data-timestamp-ms="1700000000200" data-sent-by-me="false"' : ''}><div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Perfect, thank you.</div></div>
         </section>`;
     } else {
       history.replaceState({}, '', '/demo_creator/');

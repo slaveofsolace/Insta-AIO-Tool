@@ -106,11 +106,15 @@ test('sidecar exposes an exact, expiring live arm without executing from the ove
   assert.match(background, /expectedPhrase = `ARM \$\{intent\.action\.toUpperCase\(\)\} @\$\{intent\.username\}`/);
 });
 
-test('visible DM evidence remains read-only and identity-incomplete', () => {
+test('visible DM evidence stays read-only while reviewed jobs require stable exact identity', () => {
   assert.match(inspector, /inspectVisibleMessages/);
   assert.match(inspector, /exactIdentityAvailable: false/);
   assert.match(inspector, /ownershipAvailable: false/);
   assert.match(inspector, /!element\.closest\('header, nav, button, \[role="button"\], a'\)/);
+  assert.match(inspector, /function inspectReviewedDmItem\(item\)/);
+  assert.match(inspector, /data-message-id/);
+  assert.match(inspector, /data-timestamp-ms/);
+  assert.match(inspector, /message-ownership-unavailable/);
   assert.match(overlay, /Exact identity is required/);
   assert.match(overlay, /cannot authorize removal/);
 });
@@ -133,6 +137,9 @@ test('runtime fixture exercises the actual production scripts', () => {
   assert.match(fixture, /instaAioOverlayManualQueueV1/);
   assert.match(fixture, /resolved-no-click/);
   assert.match(fixture, /fixtureSearch\.get\('shadow'\) !== 'closed'/);
+  assert.match(fixture, /messages-exact/);
+  assert.match(fixture, /data-pagelet="IGDMessagesList"/);
+  assert.match(fixture, /data-message-id="sent-1"/);
 });
 
 test('popup identifies itself as setup while directing work to the Instagram sidecar', () => {
