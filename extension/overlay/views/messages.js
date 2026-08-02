@@ -52,6 +52,7 @@
     const { model, query, setText } = runtime;
     const intent = model.bridge.pendingDmIntent;
     const arm = model.bridge.dmArm;
+    const notice = model.armNotice?.kind === 'dm' ? model.armNotice : null;
     const armButton = query('[data-ia-action="arm-dm-live"]');
     const cancelButton = query('[data-ia-action="cancel-dm-live"]');
     const badge = query('[data-ia-role="dm-live-badge"]');
@@ -59,13 +60,20 @@
     const countdown = query('[data-ia-role="dm-live-countdown"]');
     if (!armButton || !cancelButton || !badge || !disclosure || !countdown) return;
     cancelButton.hidden = !intent;
-    disclosure.open = Boolean(intent || matchingArm(intent, arm));
+    disclosure.open = Boolean(intent || matchingArm(intent, arm) || notice);
 
     if (!intent) {
-      setText('dm-live-title', 'Live Unsend locked');
-      setText('dm-live-detail', 'A twice-confirmed exact sent-message intent from the paired PWA is required.');
-      badge.textContent = 'locked';
-      badge.dataset.tone = 'warning';
+      const noticeCopy = notice?.state === 'expired'
+        ? ['Unsend arm expired', `The arm for message ${notice.target} expired. A fresh twice-confirmed review is required.`, 'expired']
+        : notice?.state === 'canceled'
+          ? ['Unsend canceled', `The pending intent for message ${notice.target} was canceled without opening a menu.`, 'canceled']
+          : notice?.state === 'executing'
+            ? ['Executing in PWA', `The arm for message ${notice.target} was consumed. Wait for its signed result; do not retry.`, 'executing']
+            : ['Live Unsend locked', 'A twice-confirmed exact sent-message intent from the paired PWA is required.', 'locked'];
+      setText('dm-live-title', noticeCopy[0]);
+      setText('dm-live-detail', noticeCopy[1]);
+      badge.textContent = noticeCopy[2];
+      badge.dataset.tone = notice ? 'danger' : 'warning';
       armButton.textContent = 'Arm exact message';
       armButton.disabled = true;
       countdown.hidden = true;
@@ -73,6 +81,22 @@
     }
 
     setText('dm-live-title', `Message ${intent.messageId}`);
+    if (notice?.state === 'expired') {
+      const observation = inspectIntent(runtime, intent);
+      const ready = observationMatches(intent, observation);
+      setText(
+        'dm-live-detail',
+        ready
+          ? 'The prior arm expired. Type the exact phrase again for a new 90-second arm; the old expiry is never extended.'
+          : `The prior arm expired. Reopen the exact conversation and keep message ${intent.messageId} rendered before arming again.`,
+      );
+      countdown.hidden = true;
+      badge.textContent = 'expired';
+      badge.dataset.tone = 'danger';
+      armButton.textContent = 'Arm fresh Unsend';
+      armButton.disabled = !ready;
+      return;
+    }
     if (matchingArm(intent, arm)) {
       setText('dm-live-detail', 'One exact sent message is armed. The PWA must revalidate both durable ledgers before execution.');
       countdown.textContent = shared.countdownLabel(arm);
@@ -208,9 +232,15 @@
   }
 
   async function cancel(runtime) {
+    const intent = runtime.model.bridge.pendingDmIntent;
     const response = await runtime.sendBridge({ kind: 'insta-aio-cancel-dm-unsend' });
     if (response.error) throw new Error(`Could not cancel the DM intent: ${response.error}.`);
     runtime.applyBridgeState(response.state, { guardArmDrop: false });
+    runtime.setArmNotice({
+      kind: 'dm',
+      state: 'canceled',
+      target: intent?.messageId || 'reviewed message',
+    });
     runtime.status('Canceled the pending DM intent. No Instagram control was used.', 'good');
   }
 

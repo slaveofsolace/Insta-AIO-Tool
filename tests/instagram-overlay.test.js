@@ -134,6 +134,9 @@ test('sidecar exposes an exact, expiring live arm without executing from the ove
   assert.match(overlay, /ARM UNSEND \$\{intent\.armCode\}/);
   assert.match(overlay, /data-ia-action="arm-dm-live"/);
   assert.match(overlay, /Arming does not open a menu or remove anything/);
+  assert.match(overlay, /The prior arm expired/);
+  assert.match(overlay, /the old expiry is never extended/);
+  assert.match(overlay, /state: 'canceled'/);
   assert.match(controlledDmPolicy, /DM_ARM_TTL_MS = 90 \* 1000/);
   assert.match(background, /insta-aio-arm-dm-unsend/);
 });

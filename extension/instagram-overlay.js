@@ -306,7 +306,8 @@
       model.bridge.pendingLiveIntent
       || model.bridge.pendingDmIntent
       || model.bridge.liveArm
-      || model.bridge.dmArm,
+      || model.bridge.dmArm
+      || model.armNotice,
     );
     for (const role of ['launcher-signal', 'queue-signal']) {
       const element = query(`[data-ia-role="${role}"]`);
@@ -364,14 +365,30 @@
         expiresAt: new Date(Date.now() + 10_000).toISOString(),
         kind: 'account',
       };
+      model.armNotice = {
+        kind: 'account',
+        state: 'executing',
+        target: previous.pendingLiveIntent?.username || priorAccountArm.username,
+      };
     } else if (guardArmDrop && priorDmArm && !next.dmArm && !next.pendingDmIntent) {
       model.executionGuard = {
         dmIntent: previous.pendingDmIntent,
         expiresAt: new Date(Date.now() + 10_000).toISOString(),
         kind: 'dm',
       };
+      model.armNotice = {
+        kind: 'dm',
+        state: 'executing',
+        target: previous.pendingDmIntent?.messageId || priorDmArm.messageId,
+      };
     } else if (!guardArmDrop || next.liveArm || next.dmArm) {
       model.executionGuard = null;
+    }
+    if (next.liveArm || next.pendingLiveIntent) {
+      if (model.armNotice?.kind === 'account') model.armNotice = null;
+    }
+    if (next.dmArm || next.pendingDmIntent) {
+      if (model.armNotice?.kind === 'dm') model.armNotice = null;
     }
     model.bridge = next;
     bridgeLastContactAt = new Date().toISOString();
@@ -416,6 +433,11 @@
     });
   }
 
+  function setArmNotice(notice) {
+    model.armNotice = notice;
+    renderAll();
+  }
+
   function scheduleCountdown() {
     if (countdownTimer !== null) clearTimeout(countdownTimer);
     countdownTimer = null;
@@ -424,8 +446,22 @@
     const accountActive = shared.armRemainingMs(model.bridge.liveArm) > 0;
     const dmActive = shared.armRemainingMs(model.bridge.dmArm) > 0;
     const guardActive = shared.armRemainingMs(model.executionGuard) > 0;
-    if (!accountActive && model.bridge.liveArm) model.bridge.liveArm = null;
-    if (!dmActive && model.bridge.dmArm) model.bridge.dmArm = null;
+    if (!accountActive && model.bridge.liveArm) {
+      model.armNotice = {
+        kind: 'account',
+        state: 'expired',
+        target: model.bridge.liveArm.username,
+      };
+      model.bridge.liveArm = null;
+    }
+    if (!dmActive && model.bridge.dmArm) {
+      model.armNotice = {
+        kind: 'dm',
+        state: 'expired',
+        target: model.bridge.dmArm.messageId,
+      };
+      model.bridge.dmArm = null;
+    }
     if (!guardActive && model.executionGuard) model.executionGuard = null;
     queueView.renderLiveGate(runtime);
     messagesView.renderGate(runtime);
@@ -506,6 +542,7 @@
     renderSection,
     requestArmPhrase,
     sendBridge,
+    setArmNotice,
     setText,
     shadow,
     status,

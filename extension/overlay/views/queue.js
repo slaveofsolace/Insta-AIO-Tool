@@ -140,6 +140,7 @@
     const { model, query, setText } = runtime;
     const intent = model.bridge.pendingLiveIntent;
     const arm = model.bridge.liveArm;
+    const notice = model.armNotice?.kind === 'account' ? model.armNotice : null;
     const armButton = query('[data-ia-action="arm-account-live"]');
     const cancelButton = query('[data-ia-action="cancel-account-live"]');
     const badge = query('[data-ia-role="live-badge"]');
@@ -147,13 +148,20 @@
     const countdown = query('[data-ia-role="live-countdown"]');
     if (!armButton || !cancelButton || !badge || !disclosure || !countdown) return;
     cancelButton.hidden = !intent;
-    disclosure.open = Boolean(intent || matchingArm(intent, arm));
+    disclosure.open = Boolean(intent || matchingArm(intent, arm) || notice);
 
     if (!intent) {
-      setText('live-title', 'Live actions locked');
-      setText('live-detail', 'Confirm one live item in the paired PWA before an exact arm is even available.');
-      badge.textContent = 'locked';
-      badge.dataset.tone = 'warning';
+      const noticeCopy = notice?.state === 'expired'
+        ? ['Arm expired', `The arm for @${notice.target} expired. Create a fresh reviewed intent before any later attempt.`, 'expired']
+        : notice?.state === 'canceled'
+          ? ['Action canceled', `The pending action for @${notice.target} was canceled without using an Instagram control.`, 'canceled']
+          : notice?.state === 'executing'
+            ? ['Executing in PWA', `The arm for @${notice.target} was consumed. Wait for its signed result; do not retry.`, 'executing']
+            : ['Live actions locked', 'Confirm one live item in the paired PWA before an exact arm is even available.', 'locked'];
+      setText('live-title', noticeCopy[0]);
+      setText('live-detail', noticeCopy[1]);
+      badge.textContent = noticeCopy[2];
+      badge.dataset.tone = notice ? 'danger' : 'warning';
       armButton.textContent = 'Arm exact action';
       armButton.disabled = true;
       countdown.hidden = true;
@@ -161,6 +169,21 @@
     }
 
     setText('live-title', `${intent.action} @${intent.username}`);
+    if (notice?.state === 'expired') {
+      const ready = liveContextMatches(runtime, intent);
+      setText(
+        'live-detail',
+        ready
+          ? 'The prior arm expired. Type the exact phrase again to create a new 90-second arm; the old expiry is never extended.'
+          : `The prior arm expired. Reopen @${intent.username} and resolve its exact state before arming again.`,
+      );
+      countdown.hidden = true;
+      badge.textContent = 'expired';
+      badge.dataset.tone = 'danger';
+      armButton.textContent = `Arm fresh ${intent.action}`;
+      armButton.disabled = !ready;
+      return;
+    }
     if (matchingArm(intent, arm)) {
       setText('live-detail', 'One reviewed item is armed. Return to the PWA to revalidate and reserve it before execution.');
       countdown.textContent = shared.countdownLabel(arm);
@@ -257,9 +280,15 @@
   }
 
   async function cancel(runtime) {
+    const intent = runtime.model.bridge.pendingLiveIntent;
     const response = await runtime.sendBridge({ kind: 'insta-aio-cancel-account-action' });
     if (response.error) throw new Error(`Could not cancel the live intent: ${response.error}.`);
     runtime.applyBridgeState(response.state, { guardArmDrop: false });
+    runtime.setArmNotice({
+      kind: 'account',
+      state: 'canceled',
+      target: intent?.username || 'reviewed target',
+    });
     runtime.status('Canceled the pending live intent. No Instagram action was performed.', 'good');
   }
 

@@ -187,3 +187,13 @@ test('expired arms cannot keep collision mode active', () => {
     dmArm: { expiresAt: expired },
   }, 5_000).dmArm, null);
 });
+
+test('countdown derives from immutable expiry and the model starts without an arm notice', () => {
+  const { shared } = loadModules();
+  const arm = { expiresAt: new Date(10_000).toISOString() };
+  const before = JSON.stringify(arm);
+  assert.equal(shared.countdownLabel(arm, 7_100), '3s remaining');
+  assert.equal(shared.countdownLabel(arm, 10_001), 'Expired');
+  assert.equal(JSON.stringify(arm), before);
+  assert.equal(shared.createModel('fixture').armNotice, null);
+});

@@ -139,6 +139,7 @@
         pendingDmIntent: null,
         recentRuns: [],
       },
+      armNotice: null,
       capture: null,
       collision: { active: false, kind: null, rectangles: [] },
       context: null,
