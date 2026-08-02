@@ -33,6 +33,9 @@ PWA confirmations, exact signed intent and 90-second tab arm, independent
 reservations, one-use token consumption, same-row revalidation, pre-existing
 surface rejection, structurally bound interactive controls, and same-thread
 stable-identity removal verification. The
+localized allowlist is centralized in `extension/action-labels.js`, uses valid
+UTF-8 plus NFKC normalization, and issues no row capability when Web Crypto is
+unavailable. The
 source's mass loop, retry automation, stale-overlay dismissal, and generic
 dialog-button guess are excluded. This is deterministic fixture coverage, not
 authenticated live Unsend acceptance.

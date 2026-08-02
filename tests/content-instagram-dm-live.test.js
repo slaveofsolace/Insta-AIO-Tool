@@ -6,10 +6,10 @@ import vm from 'node:vm';
 
 import { dmContentDigest } from '../src/core/dm-jobs.js';
 
-const source = await readFile(
-  new URL('../extension/content-instagram.js', import.meta.url),
-  'utf8',
-);
+const [actionLabelsSource, source] = await Promise.all([
+  readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8'),
+  readFile(new URL('../extension/content-instagram.js', import.meta.url), 'utf8'),
+]);
 
 class FakeEvent {
   constructor(type, options = {}) {
@@ -162,6 +162,8 @@ function createHarness({
   plainTextUnsendControls = false,
   postConfirmation = 'remove',
   preexistingDialog = false,
+  secureCrypto = webcrypto,
+  unsendLabel = 'Unsend',
 } = {}) {
   let runtimeListener = null;
   const activations = [];
@@ -183,7 +185,7 @@ function createHarness({
   const confirmation = new FakeElement({
     attributes: bindSurfaces ? { 'data-insta-aio-bound-control': 'dm-dialog-1' } : {},
     tagName: plainTextUnsendControls ? 'SPAN' : 'BUTTON',
-    text: 'Unsend',
+    text: unsendLabel,
     onClick() {
       activations.push('confirmation');
       const row = scope.children[0];
@@ -206,9 +208,9 @@ function createHarness({
       ...(plainTextUnsendControls ? {} : { role: 'menuitem' }),
       ...(bindSurfaces ? { 'aria-controls': 'dm-dialog-1', id: 'dm-menu-choice-1' } : {}),
     },
-    children: plainTextUnsendControls ? [] : [new FakeElement({ tagName: 'SPAN', text: 'Unsend' })],
+    children: plainTextUnsendControls ? [] : [new FakeElement({ tagName: 'SPAN', text: unsendLabel })],
     tagName: plainTextUnsendControls ? 'SPAN' : 'DIV',
-    text: plainTextUnsendControls ? 'Unsend' : '',
+    text: plainTextUnsendControls ? unsendLabel : '',
     onClick() {
       activations.push('menu-choice');
       surfaces.menus.forEach((menu) => menu.disconnect());
@@ -301,7 +303,7 @@ function createHarness({
       },
     },
     console,
-    crypto: webcrypto,
+    crypto: secureCrypto,
     document,
     getComputedStyle: (element) => ({
       display: 'block',
@@ -313,6 +315,7 @@ function createHarness({
     PointerEvent: FakeEvent,
     setTimeout,
   });
+  vm.runInContext(actionLabelsSource, context);
   vm.runInContext(source, context);
 
   return {
@@ -347,6 +350,21 @@ test('one exact DM token drives only its menu, Unsend choice, and confirmation o
     item: { ...harness.item, resolutionToken: resolution.resolutionToken },
   });
   assert.equal(replay.reason, 'dm-resolution-expired-or-changed');
+  assert.deepEqual(harness.activations, ['action-menu', 'menu-choice', 'confirmation']);
+});
+
+test('the reviewed German Unsend label remains exact UTF-8 and executable', async () => {
+  const harness = createHarness({ unsendLabel: 'Zurücknehmen' });
+  const resolution = await harness.send({
+    kind: 'insta-aio-inspect-reviewed-dm-item',
+    item: harness.item,
+  });
+  const result = await harness.send({
+    kind: 'insta-aio-perform-reviewed-dm-unsend',
+    item: { ...harness.item, resolutionToken: resolution.resolutionToken },
+  });
+
+  assert.equal(result.result, 'unsent');
   assert.deepEqual(harness.activations, ['action-menu', 'menu-choice', 'confirmation']);
 });
 
@@ -429,4 +447,17 @@ test('a nested flex-end toolbar cannot prove that the reviewed message was sent 
   assert.equal(resolution.resolutionToken, undefined);
   assert.equal(resolution.sentByMe, null);
   assert.equal(resolution.reason, 'message-ownership-unavailable');
+});
+
+test('DM inspection issues no capability when secure randomness is unavailable', async () => {
+  const harness = createHarness({ secureCrypto: {} });
+  const resolution = await harness.send({
+    kind: 'insta-aio-inspect-reviewed-dm-item',
+    item: harness.item,
+  });
+
+  assert.equal(resolution.resolutionToken, null);
+  assert.equal(resolution.unexpectedUi, true);
+  assert.equal(resolution.reason, 'secure-random-unavailable');
+  assert.deepEqual(harness.activations, []);
 });

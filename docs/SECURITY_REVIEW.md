@@ -61,6 +61,14 @@ Restored daily limits are finite and bounded. Capability replay, stale
 confirmation, changed controls, wrong profiles or messages, duplicate attempts,
 and ambiguous UI fail closed for both controlled paths.
 
+The reviewed locale surface is isolated in `extension/action-labels.js`, loaded
+before the inspector and frozen after initialization. Labels are Unicode NFKC
+normalized and compared only against the documented exact allowlists; the
+German `zurücknehmen` value is stored as valid UTF-8 and covered by an executable
+fixture. Profile and message capability tokens require Web Crypto. Missing,
+throwing, invalid, or non-producing `randomUUID`/`getRandomValues` sources return
+`secure-random-unavailable`, store no resolution, and cannot reach a page driver.
+
 The extension background derives the requesting origin from Chrome's sender
 metadata and rejects a mismatched page claim. The loopback development server
 accepts only loopback Host headers and an explicit application-asset allowlist;
@@ -88,8 +96,11 @@ routing recovery review also reproduced a low-severity discard race across the
 PWA handler, asynchronous authorization/reservation, and checkpoint store. The
 current patch closes all three layers and adds pre-dispatch, post-reservation,
 post-dispatch, non-resurrection, and legitimate-control regressions. The complete
-repository suite now passes 132 of 132 tests; extension packaging independently
-runs the executable controlled-live safety subset before creating artifacts.
+patch also centralizes exact localized action labels as valid UTF-8 and refuses
+to issue a profile or message capability when Web Crypto cannot supply entropy.
+The repository suite now passes 138 of 138 tests; extension packaging
+independently runs the executable controlled-live safety subset before creating
+artifacts.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
 been run. It remains a separate operator acceptance gate requiring an exact

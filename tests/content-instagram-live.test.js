@@ -4,12 +4,12 @@ import { readFile } from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
 import vm from 'node:vm';
 
-const source = await readFile(
-  new URL('../extension/content-instagram.js', import.meta.url),
-  'utf8',
-);
+const [actionLabelsSource, source] = await Promise.all([
+  readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8'),
+  readFile(new URL('../extension/content-instagram.js', import.meta.url), 'utf8'),
+]);
 
-function createHarness(mode) {
+function createHarness(mode, { secureCrypto = webcrypto } = {}) {
   let clickCount = 0;
   let staleClickCount = 0;
   const dialogs = [];
@@ -110,7 +110,7 @@ function createHarness(mode) {
       },
     },
     console,
-    crypto: webcrypto,
+    crypto: secureCrypto,
     document,
     getComputedStyle: () => ({ display: 'block', visibility: 'visible' }),
     location: {
@@ -119,6 +119,7 @@ function createHarness(mode) {
     },
     setTimeout,
   });
+  vm.runInContext(actionLabelsSource, context);
   vm.runInContext(source, context);
 
   async function send(request) {
@@ -253,4 +254,18 @@ test('a pre-existing unrelated dialog safe-stops before either live control is c
   assert.equal(result.reason, 'preexisting-dialog-before-live-action');
   assert.equal(harness.clickCount(), 0);
   assert.equal(harness.staleClickCount(), 0);
+});
+
+test('profile inspection issues no capability when secure randomness is unavailable', async () => {
+  const harness = createHarness('follow', { secureCrypto: {} });
+  const observed = await harness.send({
+    kind: 'insta-aio-inspect-profile',
+    username: 'demo_creator',
+  });
+
+  assert.equal(observed.relationship, 'not-following');
+  assert.equal(observed.resolutionToken, null);
+  assert.equal(observed.unexpectedUi, true);
+  assert.equal(observed.reason, 'secure-random-unavailable');
+  assert.equal(harness.clickCount(), 0);
 });

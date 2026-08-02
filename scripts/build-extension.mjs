@@ -16,6 +16,7 @@ const outputRoot = path.join(repositoryRoot, 'dist', 'extension');
 const checkOnly = process.argv.includes('--check');
 
 const sourceFiles = [
+  'action-labels.js',
   'background.js',
   'content-instagram.js',
   'content-pwa.js',
@@ -115,6 +116,7 @@ async function validateSources() {
     }
   }
   const instagramSource = await readFile(path.join(sourceRoot, 'content-instagram.js'), 'utf8');
+  const actionLabelsSource = await readFile(path.join(sourceRoot, 'action-labels.js'), 'utf8');
   const overlaySource = await readFile(path.join(sourceRoot, 'instagram-overlay.js'), 'utf8');
   const allowedLiveActivator = `function activateLiveControl(control) {
     control.click();
@@ -130,6 +132,18 @@ async function validateSources() {
   }
   if (!instagramSource.includes('insta-aio-inspect-profile')) {
     throw new Error('Instagram content script is missing profile inspection.');
+  }
+  const instagramEntry = manifest.content_scripts?.find((entry) => (
+    entry.matches?.includes('https://www.instagram.com/*')
+  ));
+  if (
+    instagramEntry?.js?.[0] !== 'action-labels.js'
+    || instagramEntry.js?.[1] !== 'content-instagram.js'
+    || !actionLabelsSource.includes("'zurücknehmen'")
+    || /\u00c3[\u0080-\u00bf]/u.test(actionLabelsSource)
+    || !instagramSource.includes("reason: 'secure-random-unavailable'")
+  ) {
+    throw new Error('Instagram action labels or secure resolution-token gates are incomplete.');
   }
   if (
     !instagramSource.includes('function verifiedProfileHeader(username)')

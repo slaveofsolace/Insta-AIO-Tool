@@ -6,10 +6,10 @@ import vm from 'node:vm';
 
 import { dmContentDigest } from '../src/core/dm-jobs.js';
 
-const source = await readFile(
-  new URL('../extension/content-instagram.js', import.meta.url),
-  'utf8',
-);
+const [actionLabelsSource, source] = await Promise.all([
+  readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8'),
+  readFile(new URL('../extension/content-instagram.js', import.meta.url), 'utf8'),
+]);
 
 class FakeElement {
   constructor({
@@ -107,7 +107,7 @@ function messageRow({
   });
 }
 
-function createHarness(rows, { pathname = '/direct/t/123/' } = {}) {
+function createHarness(rows, { pathname = '/direct/t/123/', secureCrypto = webcrypto } = {}) {
   let runtimeListener = null;
   const scope = {
     querySelectorAll(selector) {
@@ -136,7 +136,7 @@ function createHarness(rows, { pathname = '/direct/t/123/' } = {}) {
       },
     },
     console,
-    crypto: webcrypto,
+    crypto: secureCrypto,
     document,
     getComputedStyle: (element) => ({
       display: 'block',
@@ -149,6 +149,7 @@ function createHarness(rows, { pathname = '/direct/t/123/' } = {}) {
     },
     setTimeout,
   });
+  vm.runInContext(actionLabelsSource, context);
   vm.runInContext(source, context);
 
   return {

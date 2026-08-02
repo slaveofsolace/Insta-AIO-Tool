@@ -189,7 +189,8 @@ proves exact, missing, changed, received, wrong-thread, and ambiguous outcomes.
 Extension 0.4.0 also independently migrates the source-audited one-message UI
 sequence behind a stronger capability boundary. It retains the exact row's
 source-backed hover and action-control patterns plus exact localized Unsend
-labels, but excludes the source's mass loop, automatic retries, randomized
+labels. Those labels now live in one frozen UTF-8 module, normalize with NFKC,
+and include an executable `zurücknehmen` regression. The implementation excludes the source's mass loop, automatic retries, randomized
 batch delays, stale-overlay dismissal, generic first-dialog-button selection,
 and descendant-wide ownership guesses. One fresh twice-confirmed item creates a signed
 intent and short-lived tab arm. Independent ledgers reserve before the first

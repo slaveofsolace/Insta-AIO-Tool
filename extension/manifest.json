@@ -29,6 +29,7 @@
         "https://www.instagram.com/*"
       ],
       "js": [
+        "action-labels.js",
         "content-instagram.js",
         "instagram-overlay.js"
       ],

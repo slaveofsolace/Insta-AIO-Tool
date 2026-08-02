@@ -93,7 +93,7 @@ Pairing uses:
 
 Every request includes a timestamp, request ID, nonce, type, payload, and HMAC-SHA-256 signature. Verification enforces origin, permission, maximum age, replay protection, payload size, and session-material rejection.
 
-The extension background worker serializes bridge requests and persists its replay cache. Its first Instagram content script exposes read-only page inspection. A second content script renders the isolated **Field Desk** sidecar in a closed shadow root after the inspector is available. The deterministic browser fixture explicitly opts into an open root for QA only.
+The extension background worker serializes bridge requests and persists its replay cache. `action-labels.js` loads first and exposes one frozen normalization/allowlist surface for the reviewed relationship and localized Unsend labels. The Instagram inspector then exposes read-only page inspection, and the isolated **Field Desk** sidecar renders in a closed shadow root after the inspector is available. The deterministic browser fixture explicitly opts into an open root for QA only.
 
 The sidecar owns only browser-local field state:
 
@@ -130,6 +130,11 @@ thread, both retained exact nodes disconnected, the exact candidate absent,
 and another stable message identity still available; otherwise both callers
 preserve an uncertain outcome. Authenticated selector and live-action acceptance
 remain external gates.
+
+Profile and message resolution capabilities require a valid Web Crypto
+`randomUUID` or nonzero `getRandomValues` result. A missing, throwing, or
+non-producing secure random source returns `secure-random-unavailable`, stores
+no token, and therefore cannot reach either controlled page driver.
 
 ### Tampermonkey companion
 

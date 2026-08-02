@@ -18,6 +18,7 @@ const userDataRoot = path.resolve(
 );
 const fixtureAssets = new Map([
   ['/fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'overlay-preview.html')],
+  ['/extension/action-labels.js', path.join(repositoryRoot, 'extension', 'action-labels.js')],
   ['/extension/content-instagram.js', path.join(repositoryRoot, 'extension', 'content-instagram.js')],
   ['/extension/instagram-overlay.js', path.join(repositoryRoot, 'extension', 'instagram-overlay.js')],
 ]);

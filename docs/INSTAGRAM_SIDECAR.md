@@ -138,6 +138,9 @@ Instagram cookies, or credentials.
 - Session expiry, challenges, restrictions, rate limits, wrong profiles,
   stale confirmations, replayed tokens, ambiguous relationships, and missing
   message identity remain safe stops.
+- Relationship and localized Unsend text use one reviewed exact-label module.
+  Unicode is normalized before comparison; unavailable secure randomness stores
+  no profile/message capability and reports `secure-random-unavailable`.
 
 ## Verification boundary
 

@@ -42,6 +42,7 @@ Extension 0.4.0 implements the production-controlled one-item account boundary:
 - Authorization revalidation before PWA ledger reservation
 - Independent extension-side reservation plus durable arm consumption before the page-control request
 - Short-lived exact DOM resolution token, pre-existing-dialog rejection, target-named Unfollow confirmation, and after-state verification
+- Web Crypto fail-closed token issuance with no zero-token fallback
 - Cross-job duplicate queue-item and same-day action prevention
 
 Automated Follow and Unfollow fixtures pass, including token replay, suggested-account isolation, pre-existing-dialog rejection, extension-side reservation, and ambiguous-control safe stops. The actual production content script also completes both bounded DOM chains in isolated Chromium. A current authenticated Instagram profile exposed one verified header and one owned Follow control during a read-only diagnostic. No real account mutation was selected or executed, so issue #3 remains open only for that operator-selected acceptance and account live execution remains locked by default.
@@ -78,6 +79,7 @@ twice-confirmed sent message:
 - Rejection of pre-existing dialogs/menus and changed or ambiguous rows
 - One source-audited action control plus new, structurally bound interactive
   menu and confirmation surfaces with exact localized Unsend labels
+- Frozen UTF-8 label allowlist with executable German `zurücknehmen` coverage
 - Same-thread retained-node disconnection, stable-identity exact-absence proof,
   uncertain-outcome finalization, duplicate prevention, a finite extension
   daily ceiling, and token replay rejection
@@ -181,7 +183,10 @@ The controlled-action local-patch scan found four low-severity defects and all
 four are remediated with focused regressions. The follow-up exact-message DM
 local-patch scan reproduced three bounded live-path defects plus one packaging
 hardening gap; all were remediated and no reportable finding survived.
-Deterministic assembly, the full 123-test suite, companion source validation,
+The follow-up recovery patch also closes discard-time execution races, fails
+closed when secure capability entropy is unavailable, and covers the reviewed
+localized labels as valid UTF-8. Deterministic assembly, the full 138-test
+suite, companion source validation,
 the unpacked/ZIP extension build, and the nine-image Windows browser baseline
 check pass. Authenticated account-profile DOM structure has been inspected
 read-only; no authenticated account or DM mutation has been run.

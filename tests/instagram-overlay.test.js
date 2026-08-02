@@ -44,6 +44,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     entry.matches.includes('https://www.instagram.com/*')
   ));
   assert.deepEqual(instagramEntry.js, [
+    'action-labels.js',
     'content-instagram.js',
     'instagram-overlay.js',
   ]);

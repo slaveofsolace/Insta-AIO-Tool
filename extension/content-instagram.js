@@ -1,5 +1,12 @@
 (() => {
   if (globalThis.__instaAioInspectorInstalled) return;
+  const actionLabels = globalThis.__instaAioActionLabels;
+  if (
+    !actionLabels
+    || typeof actionLabels.isDmUnsendLabel !== 'function'
+    || typeof actionLabels.normalizeActionLabel !== 'function'
+    || typeof actionLabels.relationshipForLabel !== 'function'
+  ) return;
   globalThis.__instaAioInspectorInstalled = true;
 
   const RESERVED = new Set([
@@ -18,14 +25,6 @@
   const DM_TIMESTAMP_ATTRIBUTES = Object.freeze([
     'data-timestamp-ms',
     'data-timestamp',
-  ]);
-  const DM_UNSEND_TEXT_VARIANTS = new Set([
-    'unsend',
-    'annulla invio',
-    'retirar',
-    'deshacer',
-    'retirer',
-    'zurÃ¼cknehmen',
   ]);
   const DM_ACTION_LABEL_SELECTORS = Object.freeze([
     "[aria-label^='See more options for message']",
@@ -58,10 +57,22 @@
   }
 
   function resolutionToken() {
-    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-    const bytes = new Uint8Array(16);
-    globalThis.crypto?.getRandomValues?.(bytes);
-    return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    try {
+      const secureCrypto = globalThis.crypto;
+      if (typeof secureCrypto?.randomUUID === 'function') {
+        const token = secureCrypto.randomUUID();
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
+          return token;
+        }
+      }
+      if (typeof secureCrypto?.getRandomValues !== 'function') return null;
+      const bytes = new Uint8Array(16);
+      secureCrypto.getRandomValues(bytes);
+      if (bytes.every((byte) => byte === 0)) return null;
+      return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    } catch {
+      return null;
+    }
   }
 
   function dmContentDigest(value) {
@@ -305,6 +316,14 @@
     if (!resolved.candidate) return resolved.observation;
     pruneDmResolutions();
     const token = resolutionToken();
+    if (!token) {
+      return {
+        ...resolved.observation,
+        unexpectedUi: true,
+        reason: 'secure-random-unavailable',
+        resolutionToken: null,
+      };
+    }
     dmResolutions.set(token, {
       contentDigest: String(item.contentDigest),
       conversationId: String(item.conversationId),
@@ -394,9 +413,9 @@
     const candidates = [...profile.root.querySelectorAll('button, [role="button"]')]
       .map((element) => ({
         element,
-        label: visibleText(element).toLocaleLowerCase(),
+        label: actionLabels.normalizeActionLabel(visibleText(element)),
       }))
-      .filter(({ label }) => ['follow', 'follow back', 'following', 'requested'].includes(label));
+      .filter(({ label }) => actionLabels.relationshipForLabel(label));
     const uniqueLabels = [...new Set(candidates.map(({ label }) => label))];
     if (candidates.length !== 1 || uniqueLabels.length !== 1) {
       return {
@@ -412,11 +431,7 @@
     }
     const label = uniqueLabels[0];
     return {
-      relationship: label === 'following'
-        ? 'following'
-        : label === 'requested'
-          ? 'requested'
-          : 'not-following',
+      relationship: actionLabels.relationshipForLabel(label),
       ambiguous: false,
       observedLabels: uniqueLabels,
       observedControlCount: 1,
@@ -436,16 +451,21 @@
     const relationship = relationshipFromButtons(username);
     pruneProfileResolutions();
     let token = null;
+    let secureRandomUnavailable = false;
     if (!relationship.ambiguous && username && relationship.control) {
       token = resolutionToken();
-      profileResolutions.set(token, {
-        control: relationship.control,
-        createdAt: Date.now(),
-        pathname: location.pathname,
-        profileRoot: relationship.profileRoot,
-        relationship: relationship.relationship,
-        username,
-      });
+      if (token) {
+        profileResolutions.set(token, {
+          control: relationship.control,
+          createdAt: Date.now(),
+          pathname: location.pathname,
+          profileRoot: relationship.profileRoot,
+          relationship: relationship.relationship,
+          username,
+        });
+      } else {
+        secureRandomUnavailable = true;
+      }
     }
     return {
       ...session,
@@ -456,7 +476,10 @@
       observedProfileCount: relationship.observedProfileCount,
       profileIdentityVerified: relationship.profileIdentityVerified,
       username,
-      unexpectedUi: !document.querySelector('main') || !relationship.profileIdentityVerified,
+      unexpectedUi: secureRandomUnavailable
+        || !document.querySelector('main')
+        || !relationship.profileIdentityVerified,
+      reason: secureRandomUnavailable ? 'secure-random-unavailable' : null,
       evidence: {
         url: location.href,
         expectedUsername: normalizeUsername(expectedUsername),
@@ -569,7 +592,7 @@
     for (const element of scope?.querySelectorAll?.(
       'button, [role="button"], [role="menuitem"], span, div',
     ) || []) {
-      if (!DM_UNSEND_TEXT_VARIANTS.has(visibleText(element).toLocaleLowerCase())) continue;
+      if (!actionLabels.isDmUnsendLabel(visibleText(element))) continue;
       const control = liveControlWithin(element, scope);
       if (control) controls.push(control);
     }

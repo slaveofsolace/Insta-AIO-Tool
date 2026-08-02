@@ -10,6 +10,10 @@ const background = await readFile(
   new URL('../extension/background.js', import.meta.url),
   'utf8',
 );
+const actionLabels = await readFile(
+  new URL('../extension/action-labels.js', import.meta.url),
+  'utf8',
+);
 const instagramContent = await readFile(
   new URL('../extension/content-instagram.js', import.meta.url),
   'utf8',
@@ -41,6 +45,13 @@ test('extension uses Manifest V3 without cookie or request interception permissi
   assert.equal(permissions.includes('webRequest'), false);
   assert.equal(permissions.includes('webRequestBlocking'), false);
   assert.deepEqual(manifest.host_permissions, ['https://www.instagram.com/*']);
+  const instagramEntry = manifest.content_scripts.find((entry) => (
+    entry.matches.includes('https://www.instagram.com/*')
+  ));
+  assert.deepEqual(instagramEntry.js.slice(0, 2), [
+    'action-labels.js',
+    'content-instagram.js',
+  ]);
 });
 
 test('Instagram content script isolates its only page-control call behind the reviewed live driver', () => {
@@ -50,6 +61,9 @@ test('Instagram content script isolates its only page-control call behind the re
   assert.equal((instagramContent.match(/\.click\s*\(/g) || []).length, 1);
   assert.match(instagramContent, /function activateLiveControl\(control\)[\s\S]*?control\.click\(\)/);
   assert.match(instagramContent, /profileResolutions\.delete\(token\)/);
+  assert.match(instagramContent, /globalThis\.__instaAioActionLabels/);
+  assert.match(instagramContent, /secure-random-unavailable/);
+  assert.match(instagramContent, /typeof secureCrypto\?\.getRandomValues !== 'function'/);
   assert.match(instagramContent, /unfollow-confirmation-not-exact/);
   assert.match(instagramContent, /insta-aio-inspect-reviewed-dm-item/);
   assert.match(instagramContent, /exact-message-identity-unavailable/);
@@ -57,6 +71,14 @@ test('Instagram content script isolates its only page-control call behind the re
   assert.doesNotMatch(instagramContent, /cookies?|authorization/i);
   assert.doesNotMatch(instagramOverlay, /\.click\s*\(/);
   assert.match(instagramOverlay, /data-ia-section="queue"/);
+});
+
+test('reviewed action labels preserve exact UTF-8 localization without mojibake', () => {
+  assert.match(actionLabels, /'zurücknehmen'/);
+  assert.doesNotMatch(actionLabels, /\u00c3[\u0080-\u00bf]/u);
+  assert.match(actionLabels, /normalize\('NFKC'\)/);
+  assert.match(actionLabels, /relationshipForLabel/);
+  assert.match(actionLabels, /isDmUnsendLabel/);
 });
 
 test('extension DM dry run stays no-click while live Unsend is isolated behind exact one-use gates', () => {
