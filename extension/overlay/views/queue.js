@@ -206,7 +206,7 @@
       throw new Error('The queue contained no valid Instagram usernames.');
     }
     runtime.model.manualQueue = next;
-    await runtime.storage.set({ [shared.STORAGE_KEYS.manualQueue]: next });
+    await runtime.persistManualQueue(next);
     render(runtime);
     runtime.renderSection('now');
     runtime.status(`Imported ${next.queue.length} local queue item${next.queue.length === 1 ? '' : 's'}.`, 'good');
@@ -220,9 +220,7 @@
         ? { ...candidate, status: statusValue, companionUpdatedAt: new Date().toISOString() }
         : candidate
     ));
-    await runtime.storage.set({
-      [shared.STORAGE_KEYS.manualQueue]: runtime.model.manualQueue,
-    });
+    await runtime.persistManualQueue(runtime.model.manualQueue);
     render(runtime);
     runtime.renderSection('now');
     runtime.status(

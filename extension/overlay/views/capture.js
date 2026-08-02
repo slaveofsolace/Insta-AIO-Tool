@@ -75,7 +75,7 @@
   }
 
   async function captureVisible(runtime) {
-    const { inspector, model, query, status, storage } = runtime;
+    const { inspector, model, query, status } = runtime;
     const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
       ? 'followers'
       : 'following';
@@ -98,7 +98,7 @@
       duplicates: Math.max(0, visible.length - (model.capture[listType].length - before)),
       visible: visible.length,
     };
-    await storage.set({ [shared.STORAGE_KEYS.capture]: model.capture });
+    await runtime.persistCapture(model.capture);
     render(runtime);
     status(
       `Read ${visible.length} rendered row${visible.length === 1 ? '' : 's'}; ${model.capture[listType].length} unique in the local draft.`,
@@ -109,7 +109,7 @@
   async function reset(runtime) {
     runtime.model.capture = null;
     runtime.model.captureMeta = null;
-    await runtime.storage.remove(shared.STORAGE_KEYS.capture);
+    await runtime.persistCapture(null);
     render(runtime);
     runtime.status('Visible-list draft cleared. Instagram data was not changed.', 'neutral');
   }

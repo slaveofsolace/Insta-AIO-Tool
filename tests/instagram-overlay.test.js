@@ -110,6 +110,10 @@ test('dry runs remain no-click while the one live activator is token-bound and o
   assert.match(inspector, /profileResolutions\.delete\(token\)/);
   assert.match(inspector, /current\.control !== resolution\.control/);
   assert.doesNotMatch(overlay, /\.click\s*\(|dispatchEvent\s*\(/);
+  assert.doesNotMatch(overlay, /setInterval\s*\(/);
+  assert.equal((overlay.match(/\.innerHTML\s*=/g) || []).length, 1);
+  assert.match(overlay, /shadow\.innerHTML = `/);
+  assert.doesNotMatch(overlay, /@import\s+url|url\(\s*['"]?https?:|<script[^>]+src=['"]https?:/i);
   const dryRunBody = background.slice(
     background.indexOf('async function inspectAccountJob'),
     background.indexOf('async function accountLiveReadiness'),

@@ -167,6 +167,16 @@ async function validateSources() {
   if (/\.click\s*\(|dispatchEvent\s*\(/.test(overlaySource)) {
     throw new Error('Instagram overlay must not directly control the page.');
   }
+  if (/setInterval\s*\(/.test(overlaySource)) {
+    throw new Error('Instagram overlay must not use a recurring polling interval.');
+  }
+  if ((overlaySource.match(/\.innerHTML\s*=/g) || []).length !== 1
+    || !overlaySource.includes('shadow.innerHTML = `')) {
+    throw new Error('Instagram overlay may use only the audited static shell markup assignment.');
+  }
+  if (/@import\s+url|url\(\s*['"]?https?:|<script[^>]+src=['"]https?:/i.test(overlaySource)) {
+    throw new Error('Instagram overlay may not load remote UI assets.');
+  }
   if (!instagramSource.includes('insta-aio-inspect-profile')) {
     throw new Error('Instagram content script is missing profile inspection.');
   }

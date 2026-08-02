@@ -327,6 +327,16 @@
     return bridge.send(chromeApi, message);
   }
 
+  function persistCapture(value) {
+    return value == null
+      ? storage.remove(shared.STORAGE_KEYS.capture)
+      : storage.set({ [shared.STORAGE_KEYS.capture]: value });
+  }
+
+  function persistManualQueue(value) {
+    return storage.set({ [shared.STORAGE_KEYS.manualQueue]: value });
+  }
+
   async function refreshContext({ announce = true } = {}) {
     try {
       model.context = inspector.inspectPageContext();
@@ -486,6 +496,8 @@
     downloads: downloadManager,
     inspector,
     model,
+    persistCapture,
+    persistManualQueue,
     query,
     queryAll,
     refreshBridge,
@@ -497,7 +509,6 @@
     setText,
     shadow,
     status,
-    storage,
     window,
   };
 
