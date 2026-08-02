@@ -1,5 +1,3 @@
-/section>
-
     ${state.importWarnings.length ? `
       <section class="panel">
         <div class="panel-head"><div><h2>Latest import warnings</h2></div><button class="small" data-action="clear-warnings">Clear</button></div>
@@ -313,6 +311,8 @@ function renderMessages() {
     </section>
 
     <section class="panel">
-      <div class="panel-head"><div><h2>Message preview</h2><p>Rendering rows ${messageWindow.start + 1}-${messageWindow.end} of ${filtered.length}. Received messages cannot be selected for unsend.</p></div></div>
+      <div class="panel-head"><div><h2>Message preview</h2><p>${filtered.length
+    ? `Rendering rows ${messageWindow.start + 1}-${messageWindow.end} of ${filtered.length}.`
+    : 'No messages to render.'} Received messages cannot be selected for unsend.</p></div></div>
       ${visible.length ? `<div class="message-list virtual-scroll" data-virtual-list="messages" role="list" aria-setsize="${filtered.length}">
         ${messageWindow.topPadding ? `<div class="virtual-block-spacer" aria-hidden="true" style="height:${messageWindow.topPadding}px"></div>` : ''}

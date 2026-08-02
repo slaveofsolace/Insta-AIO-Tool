@@ -27,12 +27,14 @@ app.addEventListener('click', async (event) => {
 
   if (action === 'navigate') {
     activeView = target.dataset.view;
-    render();
+    render({ focusHeading: true });
     return;
   }
   if (action === 'relationship-tab') {
     relationshipTab = target.dataset.tab;
-    render();
+    render({
+      focusSelector: `[data-action="relationship-tab"][data-tab="${relationshipTab}"]`,
+    });
     return;
   }
   if (action === 'pick-data-files') {

@@ -56,7 +56,7 @@ opened target dialog, the extension lacked its own durable reservation, and
 malformed restored daily limits could fail open. Regression tests exercise each
 fixed boundary. The 2026-08-02 exact-message DM local-patch review completed with
 full diff coverage and no reportable finding. The complete repository suite now
-passes 96 of 96 tests.
+passes 99 of 99 tests.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
 been run. It remains a separate operator acceptance gate requiring an exact

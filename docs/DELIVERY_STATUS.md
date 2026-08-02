@@ -107,6 +107,7 @@ Implemented:
 
 - Keyboard-reachable controls
 - Visible focus styles
+- View-navigation and relationship-tab focus restoration after whole-view rerenders
 - Accessible selection labels
 - Live status regions
 - Responsive breakpoints
@@ -115,14 +116,19 @@ Implemented:
 - Windowed queue and message lists
 - Import progress and cancellation
 - Confirmation and error states
+- Interactive Chrome walkthrough of all seven primary PWA views using empty or synthetic local data
+- Representative desktop screenshots for Overview, Action Queue, Messages, and Activity
+- Truthful empty-message copy and assembled-markup regression coverage
+
+The dated walkthrough matrix and screenshots are in
+[`docs/BROWSER_QA.md`](./BROWSER_QA.md).
 
 Pending acceptance:
 
-- Interactive Chrome walkthrough of all primary views
 - Authenticated Instagram walkthrough with the unpacked extension loaded
-- Representative viewport screenshots
+- Production PWA walkthrough at tablet and mobile viewport widths
 - Screenshot regression baselines
-- Screen-reader walkthrough
+- Human screen-reader walkthrough
 - PWA installation confirmation in Chrome
 
 These pending checks prevent a claim of complete browser visual acceptance.
@@ -136,6 +142,6 @@ repeatable verification gate, is in `docs/SECURITY_REVIEW.md`.
 The controlled-action local-patch scan found four low-severity defects and all
 four are remediated with focused regressions. The follow-up exact-message DM
 local-patch scan found no reportable security issue. Deterministic assembly, the
-full 96-test suite, companion source validation, and the unpacked/ZIP extension
+full 99-test suite, companion source validation, and the unpacked/ZIP extension
 build pass. Authenticated account and DM DOM acceptance remain explicitly not
 run.

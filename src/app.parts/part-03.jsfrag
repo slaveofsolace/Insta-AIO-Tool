@@ -226,7 +226,7 @@ function renderActivity() {
   `;
 }
 
-function render() {
+function render({ focusHeading = false, focusSelector = null } = {}) {
   const renderers = {
     overview: renderOverview,
     relationships: renderRelationships,
@@ -241,6 +241,12 @@ function render() {
   if (queueList) queueList.scrollTop = queueScrollTop;
   const messageList = app.querySelector('[data-virtual-list="messages"]');
   if (messageList) messageList.scrollTop = messageScrollTop;
+  const focusTarget = focusSelector
+    ? app.querySelector(focusSelector)
+    : focusHeading
+      ? app.querySelector('[data-page-heading]')
+      : null;
+  focusTarget?.focus({ preventScroll: true });
 }
 
 function currentRelationshipAccounts() {

@@ -72,7 +72,7 @@ button, .button {
   background: var(--panel-2); color: var(--text); text-decoration: none;
 }
 button:hover, .button:hover { border-color: #424855; }
-button:focus-visible, .button:focus-visible, a:focus-visible {
+button:focus-visible, .button:focus-visible, a:focus-visible, [data-page-heading]:focus-visible {
   outline: 3px solid rgba(120, 183, 255, .75);
   outline-offset: 2px;
 }

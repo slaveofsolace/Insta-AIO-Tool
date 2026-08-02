@@ -285,7 +285,7 @@ function pageHead(title, description, actions = '') {
   return `
     <header class="page-head">
       <div>
-        <h1>${escapeHtml(title)}</h1>
+        <h1 data-page-heading tabindex="-1">${escapeHtml(title)}</h1>
         <p>${escapeHtml(description)}</p>
       </div>
       ${actions ? `<div class="toolbar">${actions}</div>` : ''}
@@ -366,4 +366,4 @@ function renderOverview() {
         <span><strong>${conversationSummary(state.messages).length}</strong> conversations</span>
         <span><strong>${state.activity.length}</strong> activity records</span>
       </div>
-    <
+    </section>

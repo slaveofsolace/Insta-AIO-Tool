@@ -178,7 +178,7 @@ pnpm run benchmark:zip
 
 The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing.
 
-Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. macOS artifact production and interactive Chrome visual acceptance must be performed on their target environments before a signed release.
+Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. The production PWA has a documented desktop Chrome walkthrough and representative screenshots in [Browser QA](./docs/BROWSER_QA.md). Authenticated extension pairing, PWA installation, human screen-reader review, production-PWA tablet/mobile acceptance, and macOS artifact production still require their target environments before a signed release.
 
 ## Documentation
 
