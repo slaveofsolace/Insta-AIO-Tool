@@ -287,11 +287,18 @@ function renderMessages() {
             Second confirmation phrase: <span class="code">${escapeHtml(latestDmJob.destructiveConfirmationPhrase)}</span>
           </div>
         ` : ''}
+        ${latestDmJob.status === 'ready' && latestDmJob.mode === 'live' && latestDmJob.items.length === 1 ? `
+          <div class="notice warning" style="margin-top:14px">
+            Controlled extension execution accepts exactly one reviewed sent message. Send its signed intent, open the exact Instagram conversation, then arm that message for 90 seconds from Field Desk. The PWA rechecks the one-use capability before reserving either durable ledger.
+          </div>
+        ` : ''}
+        ${bridgeStatus ? `<div class="notice" style="margin-top:14px">${escapeHtml(bridgeStatus)}</div>` : ''}
         <div class="toolbar" style="margin-top:14px">
           ${latestDmJob.status === 'awaiting-review-confirmation' && latestDmJob.items.length ? '<button class="primary" data-action="confirm-dm-dry-run">Confirm no-click dry run</button>' : ''}
           ${latestDmJob.status === 'awaiting-review-confirmation' && latestDmJob.items.length && state.settings.liveDmUnsendEnabled ? '<button class="danger" data-action="review-dm-live">Review live unsend batch</button>' : ''}
           ${latestDmJob.status === 'awaiting-destructive-confirmation' ? '<button class="danger" data-action="confirm-dm-destructive">Confirm destructive batch</button>' : ''}
           ${latestDmJob.status === 'ready' && latestDmJob.mode === 'dry-run' && state.bridgePairing?.pairedAt && state.bridgePairing.permissions?.includes('action') ? '<button data-action="run-dm-extension-dry-run">Check extension resolution</button>' : ''}
+          ${latestDmJob.status === 'ready' && latestDmJob.mode === 'live' && latestDmJob.items.length === 1 && state.bridgePairing?.pairedAt && state.bridgePairing.permissions?.includes('action') ? '<button class="danger" data-action="run-dm-extension-live">Continue controlled live Unsend</button>' : ''}
           ${latestDmJob.reviewConfirmedAt ? '<button data-action="export-reviewed-dm-job">Export reviewed DM job</button>' : ''}
           <button data-action="discard-dm-job">Discard preview</button>
         </div>

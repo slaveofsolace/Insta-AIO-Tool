@@ -62,6 +62,35 @@ function exactResolution(item, overrides = {}) {
   };
 }
 
+function exactRemovalResult(item) {
+  return {
+    result: 'unsent',
+    conversationId: item.conversationId,
+    messageId: item.messageId,
+    postcondition: {
+      exactCandidateAbsent: true,
+      exactThread: true,
+      expectedThreadId: '123',
+      observedThreadId: '123',
+      observationReason: 'exact-message-not-found',
+      retainedIdentityNodeDisconnected: true,
+      retainedRowDisconnected: true,
+    },
+  };
+}
+
+function exactMissingResolution(item, overrides = {}) {
+  return {
+    conversationId: item.conversationId,
+    messageId: item.messageId,
+    missing: true,
+    exactIdentityAvailable: true,
+    reason: 'exact-message-not-found',
+    evidence: { observedThreadId: '123' },
+    ...overrides,
+  };
+}
+
 test('DM preview hard-blocks received messages and preserves exact sent-message identity', () => {
   const sent = message('sent-1');
   const received = message('received-1', {
@@ -264,11 +293,15 @@ test('live DM execution reserves before Unsend and verifies message removal', as
     async resolveMessage(item) {
       resolveCount += 1;
       calls.push(`message:${resolveCount}`);
-      return resolveCount === 1 ? exactResolution(item) : { missing: true };
+      return resolveCount === 1 ? exactResolution(item) : exactMissingResolution(item);
+    },
+    async inspectLiveAuthorization(item) {
+      calls.push(`authorize:${item.resolutionToken}`);
+      return { authorized: true };
     },
     async performReviewedUnsend(item) {
       calls.push(`unsend:${item.resolutionToken}`);
-      return { result: 'unsent' };
+      return exactRemovalResult(item);
     },
   };
   const ledger = {
@@ -293,11 +326,119 @@ test('live DM execution reserves before Unsend and verifies message removal', as
     'session',
     'conversation:inbox/friend_123',
     'message:1',
+    `authorize:resolution:${job.items[0].id}`,
     'reserve:sent-1',
     `unsend:resolution:${job.items[0].id}`,
     'message:2',
     'finalize:dm-attempt-1:succeeded',
   ]);
+});
+
+test('live DM postcheck keeps the durable ledger uncertain when exact removal evidence is incomplete', async () => {
+  const source = message('sent-1');
+  const settings = { liveDmUnsendEnabled: true, liveDmBatchLimit: 1 };
+  const draft = createReviewedDmJob([source], [messageSelectionKey(source)]);
+  const reviewed = confirmDmJobReview(draft, {
+    phrase: draft.reviewConfirmationPhrase,
+    mode: 'live',
+    settings,
+  });
+  const job = confirmDmJobDestructive(reviewed, {
+    phrase: reviewed.destructiveConfirmationPhrase,
+  });
+  let resolveCount = 0;
+  const finalizations = [];
+  const result = await executeReviewedDmJob(job, {
+    settings,
+    driver: {
+      async inspectSession() {
+        return {};
+      },
+      async resolveConversation(conversationId) {
+        return { conversationId };
+      },
+      async resolveMessage(item) {
+        resolveCount += 1;
+        return resolveCount === 1
+          ? exactResolution(item)
+          : exactMissingResolution(item, {
+            exactIdentityAvailable: false,
+            evidence: {},
+            reason: 'exact-message-identity-unavailable',
+          });
+      },
+      async inspectLiveAuthorization() {
+        return { authorized: true };
+      },
+      async performReviewedUnsend(item) {
+        return exactRemovalResult(item);
+      },
+    },
+    ledger: {
+      async reserve() {
+        return { ok: true, record: { id: 'dm-attempt-uncertain' } };
+      },
+      async finalize(id, completion) {
+        finalizations.push({ id, completion });
+        return { ok: true };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'stopped');
+  assert.equal(result.stopReason, 'unsend-not-confirmed');
+  assert.equal(result.items[0].status, 'safe-stopped');
+  assert.equal(finalizations.length, 1);
+  assert.equal(finalizations[0].completion.status, 'uncertain');
+});
+
+test('DM live authorization safe-stops before reserving the durable ledger', async () => {
+  const source = message('sent-1');
+  const settings = { liveDmUnsendEnabled: true, liveDmBatchLimit: 1 };
+  const draft = createReviewedDmJob([source], [messageSelectionKey(source)]);
+  const reviewed = confirmDmJobReview(draft, {
+    phrase: draft.reviewConfirmationPhrase,
+    mode: 'live',
+    settings,
+  });
+  const job = confirmDmJobDestructive(reviewed, {
+    phrase: reviewed.destructiveConfirmationPhrase,
+  });
+  let reservationCount = 0;
+  let performCount = 0;
+  const result = await executeReviewedDmJob(job, {
+    settings,
+    driver: {
+      async inspectSession() {
+        return {};
+      },
+      async resolveConversation(conversationId) {
+        return { conversationId };
+      },
+      async resolveMessage(item) {
+        return exactResolution(item);
+      },
+      async inspectLiveAuthorization() {
+        return { authorized: false, reason: 'dm-live-arm-required' };
+      },
+      async performReviewedUnsend() {
+        performCount += 1;
+        return { result: 'unsent' };
+      },
+    },
+    ledger: {
+      async reserve() {
+        reservationCount += 1;
+        return { ok: true, record: { id: 'must-not-exist' } };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'stopped');
+  assert.equal(result.stopReason, 'dm-live-arm-required');
+  assert.equal(result.items[0].status, 'safe-stopped');
+  assert.equal(reservationCount, 0);
+  assert.equal(performCount, 0);
 });
 
 test('revalidates DM confirmation, preview, and live limits at execution time', async () => {

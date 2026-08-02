@@ -63,3 +63,35 @@ test('controlled live account UI prepares and arms one item before durable execu
     true,
   );
 });
+
+test('controlled live DM UI prepares exactly one item before either ledger or driver', async () => {
+  const [imports, messagesView, handlers] = await Promise.all([
+    readFile('src/app.parts/part-01.jsfrag', 'utf8'),
+    readFile('src/app.parts/part-02.jsfrag', 'utf8'),
+    readFile('src/app.parts/part-04.jsfrag', 'utf8'),
+  ]);
+  assert.match(imports, /createExtensionDmUnsendDriver/);
+  assert.match(imports, /createIndexedDbDmLedger/);
+  assert.match(imports, /saveDmJobCheckpoint/);
+  assert.match(messagesView, /latestDmJob\.items\.length === 1/);
+  assert.match(messagesView, /data-action="run-dm-extension-live"/);
+  assert.match(handlers, /'action\.dm-live-intent'/);
+  assert.match(handlers, /prepared\.payload\?\.armed !== true/);
+  assert.match(handlers, /state = await saveDmJobCheckpoint\(checkpointJob\)/);
+  assert.equal(
+    handlers.indexOf("'action.dm-live-intent'")
+      < handlers.indexOf('createIndexedDbDmLedger()'),
+    true,
+  );
+  assert.equal(
+    handlers.indexOf("'action.dm-live-intent'")
+      < handlers.indexOf('executeReviewedDmJob(job'),
+    true,
+  );
+});
+
+test('overview does not describe controlled DM removal as preview-only', async () => {
+  const source = await readFile('src/app.parts/part-01.jsfrag', 'utf8');
+  assert.match(source, /Reviewed preview or one-message gate/);
+  assert.doesNotMatch(source, /Preview\/export only in this build/);
+});

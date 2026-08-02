@@ -22,18 +22,18 @@ The application can run offline after the service worker has cached the current 
 8. Use the **Insta AIO Field Desk** sidecar, or press **Alt + Shift + I** to toggle it.
 
 The extension requests access only to the exact paired PWA origin at pairing time.
-Instagram host access is declared for the visible sidecar and read-only
-inspection. The sidecar can import a PWA manual queue, navigate to the profile
-selected by the user, and update its own local completion/skip state. It does
-not auto-scroll Instagram or touch message menus or Unsend. Dry runs never use
-an Instagram page control. A controlled live Follow or Unfollow is available
-only through the separate one-item workflow below and remains locked by
-default.
+Instagram host access is declared for the visible sidecar, no-click inspection,
+and separately gated one-item drivers. The sidecar can import a PWA manual
+queue, navigate to the profile selected by the user, and update its own local
+completion/skip state. It does not auto-scroll Instagram. Dry runs never use an
+Instagram page control. Controlled live Follow, Unfollow, and exact
+sent-message Unsend are available only through the separate one-item workflows
+below and remain locked by default.
 
 Reviewed DM dry runs can report `resolved-no-click` only while the exact thread
 is open and one visible sent row exposes every stable identity field required by
 the reviewed job. Current Instagram DOMs that omit any field will stop safely;
-this is expected. Live Unsend is not exposed.
+this is expected.
 
 After updating an unpacked build, reload the extension in the browser extension
 manager and reload existing Instagram tabs so both content scripts are current.
@@ -56,6 +56,30 @@ account the operator has explicitly reviewed:
 The arm is scoped to one job item, username, action, Instagram tab, and short
 expiry. It is consumed before the page-control request, including on uncertain
 outcomes. A new review and arm are required for any later attempt.
+
+### Controlled one-message Unsend
+
+This workflow removes one exact sent message. Do not use it until the operator
+has reviewed that specific message and accepts that Unsend is destructive:
+
+1. Pair the extension with **action** permission.
+2. In PWA Settings, enable reviewed live DM Unsend. The extension path accepts exactly one message even if exported core jobs use another reviewed limit.
+3. Select one sent message, create its reviewed preview, and complete the no-click dry run first.
+4. Create a new preview if needed, choose live mode, type the review phrase, then type the separate destructive phrase.
+5. Select **Continue controlled live Unsend**. The first selection sends only a signed intent; it does not open an Instagram menu.
+6. Open the exact conversation and keep the exact sent message rendered. In **Field Desk â†’ Messages**, verify the message identity and type the displayed `ARM UNSEND <code>` phrase.
+7. Return to the PWA within 90 seconds and select **Continue controlled live Unsend** again.
+8. Stop immediately if the PWA reports any ambiguity or uncertain outcome. Review the DM job checkpoint plus both ledger records before any later attempt.
+9. Disable reviewed live DM Unsend when the controlled check is finished.
+
+The arm is scoped to one job, item, conversation, message, and Instagram tab.
+The extension reserves and consumes it before the first page control. The PWA
+separately reserves its durable ledger, and the row token is one-use. A new
+twice-confirmed review and arm are required for any later attempt. Deterministic
+fixtures do not replace authenticated selector and action acceptance.
+If Instagram does not expose explicit control/surface relationships or another
+stable message identity for post-removal proof, the driver stops uncertain. Do
+not retry or weaken those checks; record the DOM acceptance blocker instead.
 
 ## Tampermonkey userscript
 

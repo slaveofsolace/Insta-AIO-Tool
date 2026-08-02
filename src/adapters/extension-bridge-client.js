@@ -156,3 +156,49 @@ export function createExtensionAccountActionDriver(pairing, {
     },
   });
 }
+
+export function createExtensionDmUnsendDriver(pairing, {
+  jobId,
+  request = requestExtensionBridge,
+  timeoutMs = 15_000,
+} = {}) {
+  if (!jobId) throw new Error('A reviewed DM job ID is required.');
+
+  async function exchange(type, payload, expectedType) {
+    const response = await request(pairing, type, {
+      jobId,
+      ...payload,
+    }, { timeoutMs });
+    return responsePayload(response, expectedType);
+  }
+
+  return Object.freeze({
+    async inspectSession() {
+      return exchange('action.dm-session', {}, 'action.dm-session-result');
+    },
+
+    async resolveConversation(conversationId) {
+      return exchange(
+        'action.dm-conversation',
+        { conversationId },
+        'action.dm-conversation-result',
+      );
+    },
+
+    async resolveMessage(item) {
+      return exchange('action.dm-message', { item }, 'action.dm-message-result');
+    },
+
+    async inspectLiveAuthorization(item) {
+      return exchange(
+        'action.dm-live-readiness',
+        { item },
+        'action.dm-live-readiness-result',
+      );
+    },
+
+    async performReviewedUnsend(item) {
+      return exchange('action.dm-perform', { item }, 'action.dm-perform-result');
+    },
+  });
+}

@@ -390,6 +390,56 @@ app.addEventListener('click', async (event) => {
     }
     return;
   }
+  if (action === 'run-dm-extension-live') {
+    const job = state.dmJobs?.[0];
+    if (!job || job.mode !== 'live' || job.status !== 'ready' || job.items.length !== 1) return;
+    bridgeStatus = 'Checking the signed one-message intent and Instagram-side DM arm...';
+    render();
+    try {
+      const prepared = await requestExtensionBridge(
+        state.bridgePairing,
+        'action.dm-live-intent',
+        { job },
+        { timeoutMs: 15_000 },
+      );
+      if (prepared.type === 'action.bridge-error') {
+        throw new Error(prepared.payload?.reason || 'extension-rejected-dm-live-intent');
+      }
+      if (prepared.type !== 'action.dm-live-intent-result') {
+        throw new Error('The extension returned an unexpected DM live-intent response.');
+      }
+      if (prepared.payload?.armed !== true) {
+        const item = job.items[0];
+        bridgeStatus = `Signed intent sent. Open conversation ${item.conversationName} on Instagram, use Field Desk â†’ Messages, arm exact message ${item.messageId} for 90 seconds, then continue here again.`;
+        render();
+        return;
+      }
+
+      bridgeStatus = 'The exact sent message is armed. Revalidating before both durable reservations...';
+      render();
+      const driver = createExtensionDmUnsendDriver(state.bridgePairing, {
+        jobId: job.id,
+      });
+      const ledger = createIndexedDbDmLedger();
+      const result = await executeReviewedDmJob(job, {
+        driver,
+        ledger,
+        settings: state.settings,
+        async onCheckpoint(checkpointJob) {
+          state = await saveDmJobCheckpoint(checkpointJob);
+          render();
+        },
+      });
+      bridgeStatus = result.status === 'completed'
+        ? 'Controlled one-message Unsend completed. The job checkpoint and both ledger results are durable.'
+        : `Controlled DM Unsend stopped safely: ${result.stopReason || 'unknown reason'}.`;
+      await persist();
+    } catch (error) {
+      bridgeStatus = `Stopped: ${error.message}`;
+      render();
+    }
+    return;
+  }
   if (action === 'export-reviewed-dm-job') {
     const job = state.dmJobs?.[0];
     if (!job?.reviewConfirmedAt) return;

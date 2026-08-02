@@ -30,7 +30,12 @@ Insta AIO Tool:
   exactly one Follow or Unfollow item through the short-lived Instagram arm,
   PWA and extension-side durable ledgers, verified profile-header ownership,
   target-bound confirmation dialog, and one-use DOM-token boundary
-- Does not expose live DM Unsend execution in the shipped extension
+- Permits one exact sent-message Unsend only after two fresh confirmations, a
+  signed one-item intent, a tab-scoped 90-second arm, exact conversation,
+  message, timestamp, content-digest, and sent-ownership revalidation, PWA and
+  extension-side reservations, one-use DOM-token consumption, structurally
+  bound interactive menu/dialog controls, and same-thread exact-removal proof
+  with stable identity coverage
 - Requires reviewed job digests and explicit confirmations
 - Uses transactional duplicate and finite-limit enforcement, including restored state
 - Safe-stops on uncertain browser state

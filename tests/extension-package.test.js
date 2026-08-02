@@ -26,6 +26,10 @@ const controlledPolicy = await readFile(
   new URL('../src/core/controlled-account-action.js', import.meta.url),
   'utf8',
 );
+const controlledDmPolicy = await readFile(
+  new URL('../src/core/controlled-dm-unsend.js', import.meta.url),
+  'utf8',
+);
 
 test('extension uses Manifest V3 without cookie or request interception permissions', () => {
   assert.equal(manifest.manifest_version, 3);
@@ -55,7 +59,7 @@ test('Instagram content script isolates its only page-control call behind the re
   assert.match(instagramOverlay, /data-ia-section="queue"/);
 });
 
-test('extension DM inspection is exact and no-click while live Unsend remains absent', () => {
+test('extension DM dry run stays no-click while live Unsend is isolated behind exact one-use gates', () => {
   const dmDryRunBody = background.slice(
     background.indexOf('async function inspectDmJob'),
     background.indexOf('function accountActionDay'),
@@ -63,7 +67,20 @@ test('extension DM inspection is exact and no-click while live Unsend remains ab
   assert.match(dmDryRunBody, /insta-aio-inspect-reviewed-dm-item/);
   assert.match(dmDryRunBody, /resolved-no-click/);
   assert.doesNotMatch(dmDryRunBody, /perform|Unsend|\.click\s*\(/i);
-  assert.doesNotMatch(instagramContent, /insta-aio-perform-reviewed-dm|confirmUnsend|openMessageActions/);
+  assert.match(instagramContent, /insta-aio-perform-reviewed-dm-unsend/);
+  assert.match(instagramContent, /dmResolutions\.delete\(token\)/);
+  assert.match(instagramContent, /preexisting-surface-before-live-unsend/);
+  assert.match(instagramContent, /dm-message-changed-before-final-confirmation/);
+  assert.match(instagramContent, /surfaceBoundToControl/);
+  assert.match(instagramContent, /identity-ancestor-flex-end-layout/);
+  assert.match(instagramContent, /retainedIdentityNodeDisconnected/);
+  assert.doesNotMatch(instagramContent, /closest\?\.\('button,[^\n]+\) \|\| element/);
+  assert.match(controlledDmPolicy, /controlled-live-dm-batch-must-be-one/);
+  assert.match(controlledDmPolicy, /dm-destructive-confirmation-expired/);
+  assert.match(controlledDmPolicy, /verifiedControlledDmResult/);
+  assert.match(background, /Reserve and consume the one-shot DM capability durably/);
+  assert.match(background, /dmActionLedger/);
+  assert.match(background, /reserveExtensionDmAction/);
 });
 
 test('bridge transport pins the page origin and requires one fresh, armed live account intent', () => {

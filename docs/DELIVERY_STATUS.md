@@ -28,7 +28,7 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-Extension 0.3.0 now implements the production-controlled account boundary:
+Extension 0.4.0 implements the production-controlled one-item account boundary:
 
 - Fresh signed live intent with action permission
 - Exactly one reviewed account item
@@ -55,13 +55,34 @@ The DM core is complete:
 - Post-action removal verification
 - Source-specific localized Unsend matching
 
-The extension now conditionally maps one reviewed message in a true no-click dry
+The extension conditionally maps one reviewed message in a true no-click dry
 run when the direct-thread ID, stable rendered message ID, exact timestamp,
 content digest, and sent ownership all match uniquely. The background rechecks
-the returned identity before recording success. Missing stable DOM identity still
-stops with `exact-message-identity-unavailable`; current authenticated Instagram
-DOM acceptance and a controlled live batch of one have not been completed. Live
-Unsend remains absent.
+the returned identity before recording success. Missing stable DOM identity
+still stops with `exact-message-identity-unavailable`.
+
+Extension 0.4.0 adds a separate controlled live boundary for exactly one
+twice-confirmed sent message:
+
+- A fresh signed intent whose reviewed preview is unchanged
+- Exact `ARM UNSEND <code>` entry in the matching Instagram conversation
+- A 90-second one-use arm scoped to that Instagram tab
+- Exact thread, message ID, timestamp, content digest, and sent ownership
+- Independent extension and PWA reservations before the first page control
+- Durable consumption of the arm before dispatch to the isolated content driver
+- Rejection of pre-existing dialogs/menus and changed or ambiguous rows
+- One source-audited action control plus new, structurally bound interactive
+  menu and confirmation surfaces with exact localized Unsend labels
+- Same-thread retained-node disconnection, stable-identity exact-absence proof,
+  uncertain-outcome finalization, duplicate prevention, a finite extension
+  daily ceiling, and token replay rejection
+
+Deterministic fixtures cover the successful three-control chain, authorization
+ordering, duplicate/replay blocking, wrong-thread and identity-loss uncertainty,
+unbound/noninteractive surface rejection, ownership confusion, and zero-control
+pre-existing-dialog stop.
+Authenticated Instagram DOM and one-message live acceptance have not been run,
+so issue #4 remains open and live settings remain disabled by default.
 
 ## Extension
 
@@ -143,7 +164,9 @@ repeatable verification gate, is in `docs/SECURITY_REVIEW.md`.
 
 The controlled-action local-patch scan found four low-severity defects and all
 four are remediated with focused regressions. The follow-up exact-message DM
-local-patch scan found no reportable security issue. Deterministic assembly, the
-full 103-test suite, companion source validation, the unpacked/ZIP extension
-build, and the nine-image Windows browser baseline check pass. Authenticated
+local-patch scan reproduced three bounded live-path defects plus one packaging
+hardening gap; all were remediated and no reportable finding survived.
+Deterministic assembly, the full 119-test suite, companion source validation,
+the unpacked/ZIP extension build, and the nine-image Windows browser baseline
+check pass. Authenticated
 account and DM DOM acceptance remain explicitly not run.

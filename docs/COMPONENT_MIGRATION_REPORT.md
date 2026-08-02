@@ -14,7 +14,7 @@ The dispatcher in `src/adapters/legacy-components.js` identifies supported data 
 
 ## Companion workflow migration
 
-Extension version 0.3.0 migrates the proven in-page workflow from the preserved
+Extension version 0.4.0 migrates the proven in-page workflow from the preserved
 Tampermonkey companion into the Manifest V3 Instagram sidecar. The migration
 retains the existing `insta-aio-visible-list`, `insta-aio-manual-queue`, and
 `insta-aio-companion-state` shapes. It adds repeated capture deduplication,
@@ -26,8 +26,16 @@ The DM migration also adds a conditional exact-identity inspection boundary for
 signed reviewed dry runs. It reuses only the supplied source's read-only
 conversation-container and sent-layout observations, adds stable message ID,
 timestamp, and content-digest requirements, and never opens an action menu.
-This is deterministic no-click fixture coverage, not authenticated live Unsend
-acceptance.
+
+The controlled one-message path separately migrates the source-backed hover,
+row action-control, and localized Unsend-label observations. It adds two fresh
+PWA confirmations, exact signed intent and 90-second tab arm, independent
+reservations, one-use token consumption, same-row revalidation, pre-existing
+surface rejection, structurally bound interactive controls, and same-thread
+stable-identity removal verification. The
+source's mass loop, retry automation, stale-overlay dismissal, and generic
+dialog-button guess are excluded. This is deterministic fixture coverage, not
+authenticated live Unsend acceptance.
 
 The independently reviewed account-action boundary now has an optional
 production extension driver. It does not reuse SimpleInstaBot's Puppeteer,

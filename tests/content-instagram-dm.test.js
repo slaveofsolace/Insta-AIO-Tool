@@ -35,6 +35,11 @@ class FakeElement {
     return Object.hasOwn(this.attributes, name) ? this.attributes[name] : null;
   }
 
+  contains(candidate) {
+    if (candidate === this) return true;
+    return this.children.some((child) => child.contains(candidate));
+  }
+
   querySelector(selector) {
     return this.querySelectorAll(selector)[0] || null;
   }
@@ -237,7 +242,7 @@ test('source-audited sent layout resolves while unknown ownership fails closed',
     item: reviewedItem(),
   });
   assert.equal(sentResult.sentByMe, true);
-  assert.equal(sentResult.evidence.ownershipBasis, 'flex-end-layout');
+  assert.equal(sentResult.evidence.ownershipBasis, 'identity-ancestor-flex-end-layout');
 
   const unknown = createHarness([messageRow({ sentByMe: null })]);
   const unknownResult = await unknown.send({

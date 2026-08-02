@@ -56,7 +56,7 @@ unpacked extension installed.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 103 of 103 tests.
+complete repository suite passes 119 of 119 tests.
 
 ## Representative screenshots
 

@@ -6,7 +6,11 @@
 - Keep live action settings disabled by default.
 - Keep every dry-run route no-click; it must never reach `activateLiveControl()`.
 - Keep extension live account execution to one fresh signed item, one exact Instagram-side phrase, one tab-scoped 90-second arm, one background-owned reservation, and one consumed capability.
-- Do not expose extension live DM execution until exact rendered message identity and ownership are proven.
+- Keep controlled extension DM execution to exactly one fresh twice-confirmed
+  item, one exact conversation/message/timestamp/content/ownership binding,
+  one tab-scoped 90-second arm, independent PWA and extension reservations, one
+  consumed row token, structurally bound interactive menu/dialog controls, and
+  same-thread verified removal with stable identity coverage.
 - Keep the extension DM dry-run resolver limited to allowlisted stable message
   IDs, exact timestamps and content digests, matching direct-thread IDs, and
   proven sent ownership; a visual-text similarity alone must safe-stop.
@@ -58,6 +62,15 @@ exact arm is required, suggested-account controls cannot impersonate the
 profile header, Follow activates one control, pre-existing dialogs stop before
 any click, Unfollow activates only a newly surfaced target-named confirmation,
 token replay performs nothing, and duplicate relationship controls safe-stop.
+
+For controlled DM-driver changes, exercise the exact stable-message fixture and
+verify that dry run performs zero activations, a wrong or replayed token performs
+zero additional activations, a pre-existing surface stops before every control,
+unbound or noninteractive surfaces stop before Unsend, wrong-thread/identity-loss
+outcomes stay uncertain, nested flex-end descendants cannot prove ownership,
+and success uses only the exact row action, bound localized Unsend choice, bound
+confirmation, and stable-identity removal proof. Do not treat this fixture as
+authenticated issue #4 acceptance.
 
 ## Source integrations
 

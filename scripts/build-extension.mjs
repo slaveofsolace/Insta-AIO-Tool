@@ -5,6 +5,7 @@ import {
   rm,
   writeFile,
 } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +28,15 @@ const sourceFiles = [
 const libraryFiles = [
   'bridge-protocol.js',
   'controlled-account-action.js',
+  'controlled-dm-unsend.js',
+];
+const liveSafetyTests = [
+  'tests/content-instagram-dm-live.test.js',
+  'tests/content-instagram-live.test.js',
+  'tests/controlled-account-action.test.js',
+  'tests/controlled-dm-unsend.test.js',
+  'tests/extension-background-dm.test.js',
+  'tests/extension-background-live.test.js',
 ];
 
 function crc32(buffer) {
@@ -137,6 +147,10 @@ async function validateSources() {
     path.join(repositoryRoot, 'src', 'core', 'controlled-account-action.js'),
     'utf8',
   );
+  const controlledDmSource = await readFile(
+    path.join(repositoryRoot, 'src', 'core', 'controlled-dm-unsend.js'),
+    'utf8',
+  );
   if (
     !controlledSource.includes('controlled-live-batch-must-be-one')
     || !controlledSource.includes('live-confirmation-expired')
@@ -145,6 +159,21 @@ async function validateSources() {
     || !backgroundSource.includes('reserveExtensionAction')
   ) {
     throw new Error('Controlled live account-action gates are incomplete.');
+  }
+  if (
+    !controlledDmSource.includes('controlled-live-dm-batch-must-be-one')
+    || !controlledDmSource.includes('dm-destructive-confirmation-expired')
+    || !backgroundSource.includes('Reserve and consume the one-shot DM capability durably')
+    || !backgroundSource.includes('dmActionLedger')
+    || !backgroundSource.includes('reserveExtensionDmAction')
+    || !backgroundSource.includes('verifiedControlledDmResult')
+    || !instagramSource.includes('insta-aio-perform-reviewed-dm-unsend')
+    || !instagramSource.includes('preexisting-surface-before-live-unsend')
+    || !instagramSource.includes('dm-message-changed-before-final-confirmation')
+    || !instagramSource.includes('surfaceBoundToControl')
+    || !instagramSource.includes('retainedIdentityNodeDisconnected')
+  ) {
+    throw new Error('Controlled live DM-unsend gates are incomplete.');
   }
   for (const file of sourceFiles) {
     await readFile(path.join(sourceRoot, file));
@@ -155,9 +184,22 @@ async function validateSources() {
   return manifest;
 }
 
+function validateLiveSafetyBehavior() {
+  const result = spawnSync(process.execPath, ['--test', ...liveSafetyTests], {
+    cwd: repositoryRoot,
+    encoding: 'utf8',
+  });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  if (result.status !== 0) {
+    throw new Error('Executable controlled-live safety tests failed; extension packaging stopped.');
+  }
+}
+
 const manifest = await validateSources();
+validateLiveSafetyBehavior();
 if (checkOnly) {
-  console.log('Companion extension sources validated.');
+  console.log('Companion extension sources and controlled-live behavior validated.');
   process.exit(0);
 }
 

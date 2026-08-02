@@ -29,6 +29,7 @@ test('background consumes one armed capability before dispatching an exact live 
     copyFile(new URL('../extension/background.js', import.meta.url), path.join(temporaryRoot, 'background.js')),
     copyFile(new URL('../src/core/bridge-protocol.js', import.meta.url), path.join(libraryRoot, 'bridge-protocol.js')),
     copyFile(new URL('../src/core/controlled-account-action.js', import.meta.url), path.join(libraryRoot, 'controlled-account-action.js')),
+    copyFile(new URL('../src/core/controlled-dm-unsend.js', import.meta.url), path.join(libraryRoot, 'controlled-dm-unsend.js')),
   ]);
 
   const origin = 'http://127.0.0.1:4173';
@@ -65,7 +66,7 @@ test('background consumes one armed capability before dispatching an exact live 
   let liveDispatches = 0;
   globalThis.chrome = {
     runtime: {
-      getManifest: () => ({ version: '0.3.0' }),
+      getManifest: () => ({ version: '0.4.0' }),
       onMessage: {
         addListener(listener) {
           runtimeListener = listener;

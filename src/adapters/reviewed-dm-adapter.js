@@ -5,6 +5,7 @@ import {
   dmStopReason,
   validateDmResolution,
 } from '../core/dm-jobs.js';
+import { directThreadId } from './instagram-dm-unsender.js';
 
 function clone(value) {
   return typeof structuredClone === 'function'
@@ -25,6 +26,32 @@ function activity(kind, item, message, now, details = {}) {
 async function save(job, onCheckpoint) {
   await onCheckpoint?.(job);
   return job;
+}
+
+function exactDmRemovalConfirmed(item, performed, after) {
+  const expectedThreadId = directThreadId(item?.conversationId);
+  const postcondition = performed?.postcondition;
+  return Boolean(
+    expectedThreadId
+    && performed?.result === 'unsent'
+    && performed?.conversationId === item?.conversationId
+    && performed?.messageId === item?.messageId
+    && postcondition?.exactThread === true
+    && postcondition?.expectedThreadId === expectedThreadId
+    && postcondition?.observedThreadId === expectedThreadId
+    && postcondition?.retainedRowDisconnected === true
+    && postcondition?.retainedIdentityNodeDisconnected === true
+    && postcondition?.exactCandidateAbsent === true
+    && postcondition?.observationReason === 'exact-message-not-found'
+    && after?.missing === true
+    && after?.conversationId === item?.conversationId
+    && after?.messageId === item?.messageId
+    && after?.evidence?.observedThreadId === expectedThreadId
+    && after?.exactIdentityAvailable === true
+    && after?.reason === 'exact-message-not-found'
+    && !after?.ambiguous
+    && !after?.unexpectedUi
+  );
 }
 
 function stopJob(job, reason, now) {
@@ -175,6 +202,36 @@ export async function executeReviewedDmJob(inputJob, {
       continue;
     }
 
+    if (typeof driver.inspectLiveAuthorization === 'function') {
+      const authorization = await driver.inspectLiveAuthorization({
+        ...item,
+        resolutionToken: resolved.resolutionToken,
+      });
+      const authorizationStop = dmStopReason(authorization)
+        || (authorization?.authorized === true
+          ? null
+          : authorization?.reason || 'dm-live-authorization-required');
+      if (authorizationStop) {
+        job = appendDmCheckpoint(job, item.id, {
+          status: 'safe-stopped',
+          error: authorizationStop,
+          resolutionEvidence: resolved?.evidence || null,
+        }, {
+          now: now(),
+          activity: activity(
+            'dm-safe-stop',
+            item,
+            `Stopped before unsend: ${authorizationStop}.`,
+            now(),
+            { reason: authorizationStop },
+          ),
+        });
+        await save(job, onCheckpoint);
+        job = stopJob(job, authorizationStop, now());
+        return save(job, onCheckpoint);
+      }
+    }
+
     const reservation = await ledger.reserve({
       jobId: job.id,
       itemId: item.id,
@@ -213,7 +270,7 @@ export async function executeReviewedDmJob(inputJob, {
     }
 
     const after = await driver.resolveMessage(item);
-    if (!after?.missing) {
+    if (!exactDmRemovalConfirmed(item, performed, after)) {
       await ledger.finalize(reservation.record.id, {
         status: 'uncertain',
         result: after,

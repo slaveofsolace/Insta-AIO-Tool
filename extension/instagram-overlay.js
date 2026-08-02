@@ -24,11 +24,14 @@
   const model = {
     bridge: {
       controlledAccountActionsAvailable: false,
+      controlledDmUnsendAvailable: false,
+      dmArm: null,
       extensionVersion: chrome.runtime.getManifest().version,
       liveExecutionEnabled: false,
       liveArm: null,
       pairings: [],
       pendingLiveIntent: null,
+      pendingDmIntent: null,
       recentRuns: [],
     },
     capture: null,
@@ -483,7 +486,7 @@
             </section>
 
             <section class="ia-view" id="ia-view-messages" data-ia-view="messages" hidden>
-              <div class="ia-section-head"><h2>Visible message evidence</h2><p>Read the open conversation without opening menus or touching Unsend.</p></div>
+              <div class="ia-section-head"><h2>Visible message evidence</h2><p>Read the open conversation without opening menus. A separate signed gate can arm one exact sent message.</p></div>
               <div class="ia-safety" data-tone="warning">
                 <div><strong>Exact identity is required</strong><span>Visible text can support review, but cannot authorize removal without stable conversation, message, timestamp, and ownership identity.</span></div>
               </div>
@@ -493,6 +496,18 @@
               </div>
               <div class="ia-count"><strong data-ia-role="message-count">0</strong><span data-ia-role="message-detail">Open a conversation first</span></div>
               <ul class="ia-fragments" data-ia-role="message-list"></ul>
+              <div class="ia-live-gate" data-ia-role="dm-live-gate">
+                <p class="ia-overline">Controlled one-message gate</p>
+                <div class="ia-live-gate-head">
+                  <div><strong data-ia-role="dm-live-title">Live Unsend locked</strong><span data-ia-role="dm-live-detail">A signed, twice-confirmed one-message intent from the paired PWA is required.</span></div>
+                  <span class="ia-badge" data-ia-role="dm-live-badge">locked</span>
+                </div>
+                <div class="ia-toolbar">
+                  <button class="ia-button ia-button--danger" type="button" data-ia-action="arm-dm-live" disabled>Arm exact message</button>
+                  <button class="ia-button ia-button--quiet" type="button" data-ia-action="cancel-dm-live" hidden>Cancel intent</button>
+                </div>
+                <p class="ia-note">Arming does not open a menu or remove anything. The paired PWA must return within 90 seconds, re-resolve the same message, and reserve both independent ledgers before the one-use driver can proceed.</p>
+              </div>
             </section>
 
             <section class="ia-view" id="ia-view-workspace" data-ia-view="workspace" hidden>
@@ -513,7 +528,7 @@
             </section>
           </div>
 
-          <div class="ia-footer" role="status" aria-live="polite" data-ia-role="status"><strong>Ready.</strong> Live actions are locked until a signed one-item intent is armed.</div>
+          <div class="ia-footer" role="status" aria-live="polite" data-ia-role="status"><strong>Ready.</strong> Live actions are locked until one signed exact-item intent is armed.</div>
         </div>
       </div>
     </aside>
@@ -626,6 +641,25 @@
     const input = query('[data-ia-role="arm-input"]');
     const phrase = liveArmPhrase(intent);
     setText('arm-description', `This arms one ${intent.action} for @${intent.username}. It still cannot run without the paired PWA ledger.`);
+    setText('arm-phrase', phrase);
+    input.value = '';
+    dialog.returnValue = 'cancel';
+    const focusBeforeDialog = shadow.activeElement;
+    return new Promise((resolve) => {
+      dialog.addEventListener('close', () => {
+        requestAnimationFrame(() => focusBeforeDialog?.focus?.());
+        resolve(dialog.returnValue === 'confirm' ? input.value : null);
+      }, { once: true });
+      dialog.showModal();
+      requestAnimationFrame(() => input.focus());
+    });
+  }
+
+  function requestDmArmPhrase(intent) {
+    const dialog = query('[data-ia-role="arm-dialog"]');
+    const input = query('[data-ia-role="arm-input"]');
+    const phrase = `ARM UNSEND ${intent.armCode}`;
+    setText('arm-description', `This arms only message ${intent.messageId}. It still cannot run without PWA revalidation and both durable ledgers.`);
     setText('arm-phrase', phrase);
     input.value = '';
     dialog.returnValue = 'cancel';
@@ -783,7 +817,7 @@
     now: ['This page', 'Read the current page before doing anything.'],
     capture: ['Visible capture', 'Build a follower or following draft from rendered rows.'],
     queue: ['Manual queue', 'Work one reviewed account at a time on Instagram.'],
-    messages: ['Message evidence', 'Inspect the open thread without touching Unsend.'],
+    messages: ['Messages', 'Inspect the open thread or arm one exact signed sent-message intent.'],
     workspace: ['Full workspace', 'Open imports, comparisons, reviews, and local backups.'],
   });
 
@@ -1115,6 +1149,123 @@
     }
   }
 
+  function inspectDmIntent(intent) {
+    if (!intent || typeof inspector.inspectReviewedDmItem !== 'function') return null;
+    return inspector.inspectReviewedDmItem({
+      conversationId: intent.conversationId,
+      contentDigest: intent.contentDigest,
+      messageId: intent.messageId,
+      sentByMe: true,
+      timestamp: intent.timestamp,
+    });
+  }
+
+  function dmObservationMatches(intent, observation) {
+    return Boolean(
+      intent
+      && observation?.conversationId === intent.conversationId
+      && observation?.messageId === intent.messageId
+      && Number(observation?.timestamp) === Number(intent.timestamp)
+      && observation?.contentDigest === intent.contentDigest
+      && observation?.sentByMe === true
+      && observation?.exactIdentityAvailable === true
+      && observation?.ownershipAvailable === true
+      && observation?.resolutionToken
+      && !observation?.ambiguous
+      && !observation?.unexpectedUi
+      && !observation?.sessionExpired
+      && !observation?.challenge
+      && !observation?.actionBlocked
+      && !observation?.rateLimited,
+    );
+  }
+
+  function renderDmLiveGate() {
+    const intent = model.bridge.pendingDmIntent;
+    const arm = model.bridge.dmArm;
+    const armButton = query('[data-ia-action="arm-dm-live"]');
+    const cancelButton = query('[data-ia-action="cancel-dm-live"]');
+    const badge = query('[data-ia-role="dm-live-badge"]');
+    cancelButton.hidden = !intent;
+
+    if (!intent) {
+      setText('dm-live-title', 'Live Unsend locked');
+      setText('dm-live-detail', 'Confirm one sent message twice in the paired PWA, then send its signed intent here.');
+      badge.textContent = 'locked';
+      badge.dataset.tone = 'warning';
+      armButton.textContent = 'Arm exact message';
+      armButton.disabled = true;
+      return;
+    }
+
+    const matchingArm = arm
+      && arm.jobId === intent.jobId
+      && arm.itemId === intent.itemId
+      && arm.conversationId === intent.conversationId
+      && arm.messageId === intent.messageId;
+    setText('dm-live-title', `Message ${intent.messageId}`);
+    if (matchingArm) {
+      setText('dm-live-detail', `Armed until ${shortDate(arm.expiresAt)}. Return to the PWA and continue the same reviewed job before this one-use gate expires.`);
+      badge.textContent = 'armed';
+      badge.dataset.tone = 'danger';
+      armButton.textContent = 'One message armed';
+      armButton.disabled = true;
+      return;
+    }
+
+    const observation = inspectDmIntent(intent);
+    const ready = dmObservationMatches(intent, observation);
+    setText(
+      'dm-live-detail',
+      ready
+        ? 'The open thread contains exactly one matching sent-message identity. Arming alone does not open its menu or remove it.'
+        : `Open the exact conversation and keep sent message ${intent.messageId} rendered before arming.`,
+    );
+    badge.textContent = ready ? 'ready' : 'open message';
+    badge.dataset.tone = ready ? 'warning' : 'danger';
+    armButton.textContent = 'Arm one Unsend';
+    armButton.disabled = !ready;
+  }
+
+  async function armDmLive() {
+    const intent = model.bridge.pendingDmIntent;
+    if (!intent) return;
+    const observation = inspectDmIntent(intent);
+    if (!dmObservationMatches(intent, observation)) {
+      status(`Open the exact conversation and resolve sent message ${intent.messageId} before arming.`, 'error');
+      renderDmLiveGate();
+      return;
+    }
+    const phrase = await requestDmArmPhrase(intent);
+    if (phrase == null) return;
+    const response = await runtimeMessage({
+      kind: 'insta-aio-arm-dm-unsend',
+      conversationId: intent.conversationId,
+      itemId: intent.itemId,
+      jobId: intent.jobId,
+      messageId: intent.messageId,
+      phrase,
+    });
+    if (response.error) {
+      status(`DM arm rejected: ${response.error}.`, 'error');
+      return;
+    }
+    if (response.state) model.bridge = response.state;
+    renderBridge();
+    status(`Armed one Unsend for message ${intent.messageId} for 90 seconds. No menu has been opened and no message has been removed.`, 'good');
+  }
+
+  async function cancelDmLive() {
+    const response = await runtimeMessage({ kind: 'insta-aio-cancel-dm-unsend' });
+    if (response.error) {
+      status(`Could not cancel the DM intent: ${response.error}.`, 'error');
+      return;
+    }
+    if (response.state) model.bridge = response.state;
+    renderBridge();
+    status('Canceled the pending DM intent. No Instagram control was used.', 'good');
+  }
+
   function renderMessages() {
     const list = query('[data-ia-role="message-list"]');
     list.replaceChildren();
@@ -1149,6 +1300,7 @@
         note: 'Read-only visible DOM evidence. Exact message identity and sender ownership were not resolved.',
       },
     } : undefined);
+    renderDmLiveGate();
   }
 
   async function inspectMessages() {
@@ -1186,6 +1338,7 @@
     }
     renderRuns();
     renderLiveGate();
+    renderDmLiveGate();
   }
 
   async function refreshBridge() {
@@ -1236,6 +1389,8 @@
     if (action === 'queue-skip') await updateCurrentQueue('skipped');
     if (action === 'arm-account-live') await armAccountLive();
     if (action === 'cancel-account-live') await cancelAccountLive();
+    if (action === 'arm-dm-live') await armDmLive();
+    if (action === 'cancel-dm-live') await cancelDmLive();
     if (action === 'inspect-messages') await inspectMessages();
   });
 
@@ -1264,6 +1419,8 @@
       || changes.pendingJobs
       || changes.pendingLiveIntent
       || changes.liveArm
+      || changes.pendingDmIntent
+      || changes.dmArm
     ) refreshBridge();
   });
 

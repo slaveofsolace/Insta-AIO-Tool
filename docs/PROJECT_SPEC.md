@@ -135,8 +135,17 @@ exact Instagram-side action/username phrase creates a short-lived, tab-scoped,
 one-use arm. The arm must be revalidated before the PWA ledger reservation. The
 background must persist its independent reservation and consume the arm before
 the page-control request. Dry-run routes shall never reach the page-control
-activator. The extension shall not expose live DM
-removal until exact rendered message identity and ownership are available.
+activator. A live DM route shall remain separate from dry run and accept exactly
+one twice-confirmed sent message only when exact rendered conversation,
+message, timestamp, content digest, and ownership identity are available. It
+shall require a fresh signed intent, tab-scoped 90-second arm, independent PWA
+and extension reservations, one-use resolution token, new structurally bound
+interactive menu/dialog controls, and revalidation before every destructive
+stage. Layout ownership evidence must belong to the exact identity ancestor
+chain. Success requires the same thread, disconnected retained target nodes,
+exact absence, and independent stable identity coverage. Any missing, changed,
+duplicate, stale, replayed, pre-existing, unbound, or noninteractive surface
+shall safe-stop.
 
 The Instagram sidecar shall:
 

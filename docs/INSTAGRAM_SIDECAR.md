@@ -90,7 +90,10 @@ Missing attributes, unknown ownership, duplicate candidates, changed content,
 or a wrong thread remain safe stops. The deterministic `messages-exact` fixture
 proves this no-click boundary; whether the intended authenticated Instagram DOM
 currently exposes every required identity field is still an acceptance blocker.
-The extension does not open message menus and exposes no live Unsend route.
+Dry run never opens a menu. A separately signed one-message intent can appear in
+the Messages gate only after the PWA's two confirmations. The sidecar enables
+arming only when the open thread resolves the exact sent-message identity; the
+background repeats that check before creating the 90-second arm.
 
 ### Workspace
 
@@ -121,9 +124,12 @@ Instagram cookies, or credentials.
 - All Instagram reading is limited to the visible DOM.
 - The sidecar does not auto-scroll.
 - Live settings remain off by default; the extension accepts at most one
-  reviewed account item and consumes the arm before mutation.
-- Live Unsend remains absent; reviewed DM dry runs resolve only a stable exact
-  identity and otherwise keep the exact-identity safe stop.
+  reviewed account or DM item and consumes its arm before mutation.
+- Reviewed DM dry runs resolve only a stable exact identity. Controlled Unsend
+  additionally requires two fresh confirmations, the matching Messages gate,
+  independent reservations, a one-use row token, newly surfaced ARIA-bound
+  interactive menu/dialog controls, repeated row revalidation, and same-thread
+  exact-removal proof while another stable identity remains available.
 - Session expiry, challenges, restrictions, rate limits, wrong profiles,
   stale confirmations, replayed tokens, ambiguous relationships, and missing
   message identity remain safe stops.
@@ -140,5 +146,6 @@ It supports `?mode=messages` for fragment-only evidence,
 That fixture validates runtime behavior and visual composition without account
 access. It does not establish authenticated Instagram selector acceptance,
 screen-reader acceptance, or a successful real-account action. Those remain
-separate controlled checks, and issue #3 stays open until exact before/after and
-durable ledger evidence are recorded for a user-selected batch of one.
+separate controlled checks. Issue #3 requires exact account before/after and
+ledger evidence; issue #4 requires one exact sent-message removal plus both
+durable ledger records, each from a user-selected authenticated run.

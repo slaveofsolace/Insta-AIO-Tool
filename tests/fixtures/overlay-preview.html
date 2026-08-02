@@ -134,13 +134,13 @@
     globalThis.chrome = {
       runtime: {
         lastError: null,
-        getManifest: () => ({ version: '0.3.0' }),
+        getManifest: () => ({ version: '0.4.0' }),
         onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
         sendMessage: (request, callback) => {
           if (request.kind === 'insta-aio-overlay-state') {
             callback({ state: {
               controlledAccountActionsAvailable: true,
-              extensionVersion: '0.3.0',
+              extensionVersion: '0.4.0',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -173,7 +173,7 @@
             };
             callback({ state: {
               controlledAccountActionsAvailable: true,
-              extensionVersion: '0.3.0',
+              extensionVersion: '0.4.0',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -187,7 +187,7 @@
             fixtureStorage.liveArm = null;
             callback({ state: {
               controlledAccountActionsAvailable: true,
-              extensionVersion: '0.3.0',
+              extensionVersion: '0.4.0',
               liveExecutionEnabled: false,
               liveArm: null,
               pairings: fixtureStorage.bridgePairings,

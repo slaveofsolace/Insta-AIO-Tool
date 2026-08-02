@@ -73,8 +73,9 @@ boundary. `content-instagram.js` requires a matching direct-thread ID, one
 rendered row with an allowlisted stable message-ID attribute, an exact timestamp
 and content digest, and proven sent ownership. The background independently
 rechecks every returned identity field before recording `resolved-no-click`.
-No message menu or page-control method is reachable from this route. Missing or
-ambiguous identity safe-stops, and authenticated DOM acceptance remains pending.
+No message menu or page-control method is reachable from this dry-run route.
+Missing or ambiguous identity safe-stops, and authenticated DOM acceptance
+remains pending.
 
 ### Extension bridge
 
@@ -116,8 +117,17 @@ the pathname account, stops before any click when a dialog is already visible,
 and accepts only a newly surfaced Unfollow dialog that names the reviewed
 username. It then verifies the resulting relationship. The PWA independently
 rechecks the arm before its transactional reservation and checkpoints the
-before/after result. DM dry runs use only the separate stable-identity inspector;
-live DM execution remains unavailable.
+before/after result. DM dry runs use only the separate stable-identity inspector.
+The controlled DM path accepts exactly one twice-confirmed sent-message item,
+uses a separate signed intent and 90-second tab arm, reserves independent PWA
+and extension ledgers, consumes the arm before the isolated page driver, and
+revalidates the exact row before its action menu, localized Unsend option, and
+localized confirmation. The menu and dialog must be new, interactive, and
+structurally related to their triggering controls. Success requires the same
+thread, both retained exact nodes disconnected, the exact candidate absent,
+and another stable message identity still available; otherwise both callers
+preserve an uncertain outcome. Authenticated selector and live-action acceptance
+remain external gates.
 
 ### Tampermonkey companion
 

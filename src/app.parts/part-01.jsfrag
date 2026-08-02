@@ -18,13 +18,19 @@ import {
 import {
   completeExtensionPairing,
   createExtensionAccountActionDriver,
+  createExtensionDmUnsendDriver,
   requestExtensionBridge,
 } from './adapters/extension-bridge-client.js';
 import { executeReviewedActionJob } from './adapters/reviewed-action-adapter.js';
+import { executeReviewedDmJob } from './adapters/reviewed-dm-adapter.js';
 import {
   createIndexedDbActionLedger,
   saveActionJobCheckpoint,
 } from './adapters/indexeddb-action-ledger.js';
+import {
+  createIndexedDbDmLedger,
+  saveDmJobCheckpoint,
+} from './adapters/indexeddb-dm-ledger.js';
 import { importFileRecords } from './core/imports.js';
 import {
   conversationSummary,
@@ -318,7 +324,7 @@ function renderShell(content) {
         </nav>
         <div class="sidebar-foot">
           Data remains in this browser unless you export it.<br>
-          Live actions stay locked until one reviewed account is armed on Instagram.
+          Live actions stay locked until one exact reviewed item is armed on Instagram.
         </div>
       </aside>
       <main class="main">${content}</main>
@@ -350,7 +356,7 @@ function renderOverview() {
       ${metric('New followers', diff.newFollowers.length, 'Compared with prior snapshot')}
       ${metric('Recent unfollows', diff.lostFollowers.length, 'Detected by snapshot comparison')}
       ${metric('Messages loaded', state.messages.length, `${sentMessages} identified as sent by you`)}
-      ${metric('Unsend selected', state.selectedMessageIds.length, 'Preview/export only in this build')}
+      ${metric('Unsend selected', state.selectedMessageIds.length, 'Reviewed preview or one-message gate')}
     </section>
 
     <section class="panel">
@@ -358,7 +364,7 @@ function renderOverview() {
         <div><h2>Current status</h2><p>Local analysis, reviewed jobs, and delivery safeguards.</p></div>
       </div>
       <div class="notice">
-        Imports, relationship history, queue protection, message review, no-click dry runs, extension pairing, and local exports are available. Live account actions stay locked by default. A paired, fresh, one-item Follow or Unfollow job may use the controlled Instagram arm-and-return gate; live Unsend remains unavailable.
+        Imports, relationship history, queue protection, message review, no-click dry runs, extension pairing, and local exports are available. Live actions stay locked by default. A paired, fresh, one-item Follow, Unfollow, or sent-message Unsend job may use the controlled Instagram arm-and-return gate.
       </div>
       <div class="kpi-row" style="margin-top:14px">
         <span><strong>${state.snapshots.length}</strong> snapshots</span>

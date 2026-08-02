@@ -16,27 +16,39 @@ reservations, durable checkpoints, and safe stops for ambiguous state.
 Execution adapters revalidate the confirmed preview, current enable setting,
 and current batch limit before entering a live path.
 
-The distributed extension exposes a controlled account-action path only. It
-requires a signed action-permission request, one fresh reviewed item, a matching
-Instagram profile and relationship, an exact action/username phrase, and a
-tab-scoped 90-second arm. The PWA revalidates the arm before reserving its
-ledger. The background worker persists an independent reservation, then
-consumes the one-use arm and signed intent before sending the page-control
-request. The content script requires a short-lived exact DOM token and one
+The distributed extension exposes controlled paths for exactly one reviewed
+account action or sent-message Unsend. Both require signed action permission, a
+fresh reviewed item, matching Instagram context, an exact Instagram-side
+phrase, and a tab-scoped 90-second arm. The PWA revalidates the arm before
+reserving its ledger. The background worker persists an independent
+reservation, then consumes the one-use arm and signed intent before sending the
+page-control request.
+
+The account content driver requires a short-lived exact DOM token and one
 relationship control owned by a verified profile header. It stops before any
 click when a dialog is already visible and accepts only a newly surfaced
-Unfollow dialog that names the reviewed username. Restored daily limits are
-finite and bounded. Capability replay, stale confirmation, changed controls,
-wrong profiles, duplicate attempts, and ambiguous UI fail closed. Live DM
-removal remains unavailable.
+Unfollow dialog that names the reviewed username.
 
-The extension also exposes a separate reviewed-DM inspection route that is
-dry-run-only. It requires the matching open direct thread, one allowlisted
+The separate reviewed-DM dry-run route requires the matching open direct
+thread, one allowlisted
 stable rendered message ID, exact timestamp and content digest, a unique
 candidate, and sent ownership before recording `resolved-no-click`. Missing,
 changed, duplicate, received, wrong-thread, and unknown-ownership states stop
-without opening a menu. The route returns no raw message text and has no live
-DM action consumer.
+without opening a menu. The route returns no raw message text and cannot reach
+the live control activator. The controlled live consumer additionally requires
+two fresh confirmations, exactly one item, exact arm-code entry on the matching
+thread, an independent finite extension ledger, and a one-use row token. It
+rejects pre-existing menus or dialogs, revalidates the same row before each
+stage, accepts only new ARIA-bound interactive menu/dialog controls with exact
+localized Unsend labels, and reports success only when the same thread remains
+open, both retained exact nodes disconnect, the exact message is absent, and
+other stable identity evidence remains available. Wrong-thread, identity-loss,
+unbound-surface, noninteractive-text, and descendant-toolbar ownership fixtures
+all fail closed.
+
+Restored daily limits are finite and bounded. Capability replay, stale
+confirmation, changed controls, wrong profiles or messages, duplicate attempts,
+and ambiguous UI fail closed for both controlled paths.
 
 The extension background derives the requesting origin from Chrome's sender
 metadata and rejects a mismatched page claim. The loopback development server
@@ -57,9 +69,12 @@ issues before release: profile controls were not structurally bound to the
 reviewed header, an existing Unfollow dialog could be mistaken for a newly
 opened target dialog, the extension lacked its own durable reservation, and
 malformed restored daily limits could fail open. Regression tests exercise each
-fixed boundary. The 2026-08-02 exact-message DM local-patch review completed with
-full diff coverage and no reportable finding. The complete repository suite now
-passes 103 of 103 tests.
+fixed boundary. The 2026-08-02 exact-message DM local-patch review reproduced
+three bounded live-path defects and one packaging-gate hardening gap. All four
+were remediated during the scan, every changed source file received a full-file
+receipt, and no reportable finding survives in the current patch. The complete
+repository suite now passes 119 of 119 tests; extension packaging independently
+runs the executable controlled-live safety subset before creating artifacts.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
 been run. It remains a separate operator acceptance gate requiring an exact

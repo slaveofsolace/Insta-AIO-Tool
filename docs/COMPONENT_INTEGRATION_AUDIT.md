@@ -179,13 +179,25 @@ The source cannot map an exported conversation/message ID to one durable rendere
 
 Missing, duplicate, received, changed, or ambiguous candidates safe-stop. The mass loop is not included.
 
-The extension additionally implements a no-click-only DOM boundary for signed
-reviewed DM jobs. It borrows the source's conversation-container and sent-layout
-observations but requires a matching direct-thread ID, an allowlisted stable
-message-ID attribute, exact timestamp, exact content digest, and one sent
-candidate. It never invokes the source's hover, menu, dialog, loop, or Unsend
-paths. Fixture coverage proves exact, missing, changed, received, wrong-thread,
-and ambiguous outcomes; authenticated Instagram DOM acceptance remains open.
+The extension implements a no-click DOM boundary for signed reviewed DM jobs.
+It borrows the source's conversation-container and sent-layout observations but
+requires a matching direct-thread ID, an allowlisted stable message-ID
+attribute, exact timestamp, exact content digest, and one sent candidate. Dry
+run never invokes hover, menu, dialog, loop, or Unsend paths. Fixture coverage
+proves exact, missing, changed, received, wrong-thread, and ambiguous outcomes.
+
+Extension 0.4.0 also independently migrates the source-audited one-message UI
+sequence behind a stronger capability boundary. It retains the exact row's
+source-backed hover and action-control patterns plus exact localized Unsend
+labels, but excludes the source's mass loop, automatic retries, randomized
+batch delays, stale-overlay dismissal, generic first-dialog-button selection,
+and descendant-wide ownership guesses. One fresh twice-confirmed item creates a signed
+intent and short-lived tab arm. Independent ledgers reserve before the first
+page control, the arm and token are consumed once, the same row is revalidated
+before every destructive stage, pre-existing or unbound surfaces reject
+execution, and same-thread removal requires retained-node disconnection plus
+stable identity coverage. Authenticated Instagram DOM and live-action acceptance
+remain open.
 
 ## Shared migration contract
 
@@ -222,7 +234,8 @@ The reviewed sources do not supply a safe live executor that satisfies current
 contracts. The independent action and DM adapters implement transaction
 ordering, durable checkpoints, no-click dry runs, and safe stops.
 
-Extension 0.3.0 adds an independently implemented controlled account driver;
+Extension 0.4.0 includes independently implemented controlled account and DM
+drivers;
 it does not copy the SimpleInstaBot executor. A fresh signed job of exactly one
 item creates a sanitized intent. The Instagram sidecar requires the matching
 profile, relationship, action/username phrase, and a 90-second one-use arm. The
@@ -233,6 +246,7 @@ Unfollow-confirmation controls. Token replay and ambiguous controls fail closed.
 This is implementation and deterministic fixture coverage, not authenticated
 live acceptance. Account live acceptance cannot be claimed until the operator
 selects a batch of one and exact before/after plus durable ledger evidence is
-captured in the intended authenticated environment. The DM extension path
-remains inspection-only because exact rendered message identity and ownership
-are still unavailable.
+captured in the intended authenticated environment. DM live acceptance also
+cannot be claimed until the operator selects exactly one twice-confirmed sent
+message and exact row-removal plus both durable-ledger records are captured in
+the intended authenticated environment.

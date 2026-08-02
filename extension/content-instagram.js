@@ -8,7 +8,9 @@
     'reels', 'settings', 'static', 'stories', 'terms', 'tv', 'web',
   ]);
   const PROFILE_RESOLUTION_TTL_MS = 20_000;
+  const DM_RESOLUTION_TTL_MS = 20_000;
   const profileResolutions = new Map();
+  const dmResolutions = new Map();
   const DM_MESSAGE_ID_ATTRIBUTES = Object.freeze([
     'data-message-id',
     'data-item-id',
@@ -16,6 +18,23 @@
   const DM_TIMESTAMP_ATTRIBUTES = Object.freeze([
     'data-timestamp-ms',
     'data-timestamp',
+  ]);
+  const DM_UNSEND_TEXT_VARIANTS = new Set([
+    'unsend',
+    'annulla invio',
+    'retirar',
+    'deshacer',
+    'retirer',
+    'zurÃ¼cknehmen',
+  ]);
+  const DM_ACTION_LABEL_SELECTORS = Object.freeze([
+    "[aria-label^='See more options for message']",
+    "[aria-label*='more options']",
+    "[aria-label*='More']",
+    "[aria-label*='Altre opzioni']",
+    "[aria-label*='opzioni']",
+    "[aria-label*='opciones']",
+    "[aria-label*='options']",
   ]);
 
   function normalizeUsername(value) {
@@ -95,21 +114,25 @@
     return timestamp == null ? null : { basis: 'time[datetime]', timestamp };
   }
 
-  function dmOwnership(row) {
+  function dmOwnership(row, identityNode) {
     const explicit = String(row?.getAttribute?.('data-sent-by-me') || '').toLowerCase();
     if (explicit === 'true') return { sentByMe: true, basis: 'data-sent-by-me' };
     if (explicit === 'false') return { sentByMe: false, basis: 'data-sent-by-me' };
 
-    const queue = [{ element: row, depth: 0 }];
-    while (queue.length) {
-      const { element, depth } = queue.shift();
+    // The source script used flex-end as sent-message evidence. Keep that evidence
+    // only on the exact identity-to-row ancestor chain; unrelated descendant
+    // toolbars must never confer ownership on a received message.
+    const ownershipChain = [];
+    let element = identityNode;
+    while (element && row?.contains?.(element)) {
+      ownershipChain.push(element);
+      if (element === row) break;
+      element = element.parentElement || element.parentNode || element.parent || null;
+    }
+    if (ownershipChain.at(-1) !== row) return { sentByMe: null, basis: null };
+    for (const element of ownershipChain) {
       if (getComputedStyle(element).justifyContent === 'flex-end') {
-        return { sentByMe: true, basis: 'flex-end-layout' };
-      }
-      if (depth < 8) {
-        for (const child of element.children || []) {
-          queue.push({ element: child, depth: depth + 1 });
-        }
+        return { sentByMe: true, basis: 'identity-ancestor-flex-end-layout' };
       }
     }
     return { sentByMe: null, basis: null };
@@ -125,26 +148,35 @@
     return [...new Set(nodes.map(visibleText).filter((text) => text && text.length <= 500))];
   }
 
-  function inspectReviewedDmItem(item) {
+  function resolveReviewedDmItem(item) {
     const session = inspectSession();
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
-      return session;
+      return { observation: session, candidate: null };
     }
     if (pageKind() !== 'messages') {
-      return { ...session, unexpectedUi: true, reason: 'open-an-instagram-conversation' };
+      return {
+        observation: { ...session, unexpectedUi: true, reason: 'open-an-instagram-conversation' },
+        candidate: null,
+      };
     }
 
     const expectedThreadId = directThreadId(item?.conversationId);
     const observedThreadId = directThreadId(location.pathname);
     if (!expectedThreadId || !observedThreadId) {
-      return { ...session, ambiguous: true, reason: 'conversation-id-unresolved' };
+      return {
+        observation: { ...session, ambiguous: true, reason: 'conversation-id-unresolved' },
+        candidate: null,
+      };
     }
     if (expectedThreadId !== observedThreadId) {
       return {
-        ...session,
-        ambiguous: true,
-        reason: 'wrong-conversation',
-        evidence: { expectedThreadId, observedThreadId },
+        observation: {
+          ...session,
+          ambiguous: true,
+          reason: 'wrong-conversation',
+          evidence: { expectedThreadId, observedThreadId },
+        },
+        candidate: null,
       };
     }
 
@@ -157,12 +189,17 @@
       .filter((element) => visibleText(element));
     if (!identityNodes.length) {
       return {
-        ...session,
-        missing: true,
-        exactIdentityAvailable: false,
-        ownershipAvailable: false,
-        reason: 'exact-message-identity-unavailable',
-        evidence: { observedThreadId, stableIdentityNodeCount: 0 },
+        observation: {
+          ...session,
+          conversationId: String(item?.conversationId || ''),
+          messageId: String(item?.messageId || ''),
+          missing: true,
+          exactIdentityAvailable: false,
+          ownershipAvailable: false,
+          reason: 'exact-message-identity-unavailable',
+          evidence: { observedThreadId, stableIdentityNodeCount: 0 },
+        },
+        candidate: null,
       };
     }
 
@@ -170,11 +207,12 @@
       const row = identityNode.closest?.('[role="row"], [role="listitem"]') || identityNode;
       const identity = dmMessageId(identityNode) || dmMessageId(row);
       const timestamp = dmMessageTimestamp(identityNode, row);
-      const ownership = dmOwnership(row);
+      const ownership = dmOwnership(row, identityNode);
       const contents = dmContentCandidates(row);
       return {
         contentMatches: contents.filter((content) => dmContentDigest(content) === item?.contentDigest),
         identity,
+        identityNode,
         ownership,
         row,
         timestamp,
@@ -187,58 +225,117 @@
 
     if (!candidates.length) {
       return {
-        ...session,
-        missing: true,
-        exactIdentityAvailable: true,
-        reason: 'exact-message-not-found',
-        evidence: { observedThreadId, stableIdentityNodeCount: identityNodes.length },
+        observation: {
+          ...session,
+          conversationId: String(item?.conversationId || ''),
+          messageId: String(item?.messageId || ''),
+          missing: true,
+          exactIdentityAvailable: true,
+          reason: 'exact-message-not-found',
+          evidence: { observedThreadId, stableIdentityNodeCount: identityNodes.length },
+        },
+        candidate: null,
       };
     }
     if (candidates.length !== 1) {
       return {
-        ...session,
-        ambiguous: true,
-        exactIdentityAvailable: true,
-        reason: 'exact-message-ambiguous',
-        evidence: { observedThreadId, exactCandidateCount: candidates.length },
+        observation: {
+          ...session,
+          ambiguous: true,
+          exactIdentityAvailable: true,
+          reason: 'exact-message-ambiguous',
+          evidence: { observedThreadId, exactCandidateCount: candidates.length },
+        },
+        candidate: null,
       };
     }
 
     const candidate = candidates[0];
     if (candidate.ownership.sentByMe !== true) {
       return {
-        ...session,
-        sentByMe: candidate.ownership.sentByMe,
-        exactIdentityAvailable: true,
-        ownershipAvailable: candidate.ownership.sentByMe === false,
-        reason: candidate.ownership.sentByMe === false
-          ? 'received-message'
-          : 'message-ownership-unavailable',
+        observation: {
+          ...session,
+          sentByMe: candidate.ownership.sentByMe,
+          exactIdentityAvailable: true,
+          ownershipAvailable: candidate.ownership.sentByMe === false,
+          reason: candidate.ownership.sentByMe === false
+            ? 'received-message'
+            : 'message-ownership-unavailable',
+        },
+        candidate: null,
       };
     }
 
     return {
-      ...session,
-      ambiguous: false,
-      unexpectedUi: false,
-      conversationId: String(item.conversationId),
-      messageId: String(item.messageId),
-      timestamp: Number(item.timestamp),
-      contentDigest: String(item.contentDigest),
-      contentLength: candidate.contentMatches[0].length,
-      sentByMe: true,
-      exactIdentityAvailable: true,
-      ownershipAvailable: true,
-      resolutionToken: resolutionToken(),
-      evidence: {
-        source: 'extension-stable-visible-message-identity',
-        observedThreadId,
-        identityAttribute: candidate.identity.attribute,
-        timestampBasis: candidate.timestamp.basis,
-        ownershipBasis: candidate.ownership.basis,
-        capturedAt: new Date().toISOString(),
+      observation: {
+        ...session,
+        ambiguous: false,
+        unexpectedUi: false,
+        conversationId: String(item.conversationId),
+        messageId: String(item.messageId),
+        timestamp: Number(item.timestamp),
+        contentDigest: String(item.contentDigest),
+        contentLength: candidate.contentMatches[0].length,
+        sentByMe: true,
+        exactIdentityAvailable: true,
+        ownershipAvailable: true,
+        evidence: {
+          source: 'extension-stable-visible-message-identity',
+          observedThreadId,
+          identityAttribute: candidate.identity.attribute,
+          timestampBasis: candidate.timestamp.basis,
+          ownershipBasis: candidate.ownership.basis,
+          capturedAt: new Date().toISOString(),
+        },
       },
+      candidate,
     };
+  }
+
+  function pruneDmResolutions(now = Date.now()) {
+    for (const [token, resolution] of dmResolutions) {
+      if (now - resolution.createdAt > DM_RESOLUTION_TTL_MS) {
+        dmResolutions.delete(token);
+      }
+    }
+  }
+
+  function inspectReviewedDmItem(item) {
+    const resolved = resolveReviewedDmItem(item);
+    if (!resolved.candidate) return resolved.observation;
+    pruneDmResolutions();
+    const token = resolutionToken();
+    dmResolutions.set(token, {
+      contentDigest: String(item.contentDigest),
+      conversationId: String(item.conversationId),
+      createdAt: Date.now(),
+      identityNode: resolved.candidate.identityNode,
+      messageId: String(item.messageId),
+      pathname: location.pathname,
+      row: resolved.candidate.row,
+      timestamp: Number(item.timestamp),
+    });
+    return { ...resolved.observation, resolutionToken: token };
+  }
+
+  function dmResolutionMatches(resolution, item) {
+    if (
+      !resolution
+      || !resolution.row?.isConnected
+      || !resolution.identityNode?.isConnected
+      || resolution.pathname !== location.pathname
+      || resolution.conversationId !== String(item?.conversationId || '')
+      || resolution.messageId !== String(item?.messageId || '')
+      || resolution.timestamp !== Number(item?.timestamp)
+      || resolution.contentDigest !== String(item?.contentDigest || '')
+      || item?.sentByMe !== true
+    ) return false;
+    const current = resolveReviewedDmItem(item);
+    return Boolean(
+      current.candidate
+      && current.candidate.row === resolution.row
+      && current.candidate.identityNode === resolution.identityNode,
+    );
   }
 
   function pruneProfileResolutions(now = Date.now()) {
@@ -417,6 +514,252 @@
 
   function activateLiveControl(control) {
     control.click();
+  }
+
+  function visibleMenus() {
+    return [...document.querySelectorAll('[role="menu"], [role="listbox"]')]
+      .filter((menu) => visibleText(menu));
+  }
+
+  function liveControlWithin(element, scope) {
+    const control = element?.closest?.('button, [role="button"], [role="menuitem"]');
+    return control && scope?.contains?.(control) ? control : null;
+  }
+
+  function idReferences(element, attribute) {
+    return new Set(String(element?.getAttribute?.(attribute) || '').split(/\s+/).filter(Boolean));
+  }
+
+  function surfaceBoundToControl(surface, control) {
+    const surfaceId = String(surface?.getAttribute?.('id') || '').trim();
+    const controlId = String(control?.getAttribute?.('id') || '').trim();
+    return Boolean(
+      (surfaceId && (
+        idReferences(control, 'aria-controls').has(surfaceId)
+        || idReferences(control, 'aria-owns').has(surfaceId)
+      ))
+      || (controlId && idReferences(surface, 'aria-labelledby').has(controlId)),
+    );
+  }
+
+  function exactBoundSurface(surfaces, control, excluded = new Set()) {
+    const matches = surfaces.filter((surface) => (
+      !excluded.has(surface)
+      && surfaceBoundToControl(surface, control)
+    ));
+    return matches.length === 1 ? matches[0] : null;
+  }
+
+  function exactDmActionControls(row) {
+    const matches = [];
+    for (const selector of DM_ACTION_LABEL_SELECTORS) {
+      for (const element of row?.querySelectorAll?.(selector) || []) {
+        const control = liveControlWithin(element, row);
+        if (control) matches.push(control);
+      }
+    }
+    for (const control of row?.querySelectorAll?.('[role="button"][aria-haspopup="menu"]') || []) {
+      matches.push(control);
+    }
+    return [...new Set(matches)].filter((control) => visibleText(control));
+  }
+
+  function exactDmUnsendControls(scope) {
+    const controls = [];
+    for (const element of scope?.querySelectorAll?.(
+      'button, [role="button"], [role="menuitem"], span, div',
+    ) || []) {
+      if (!DM_UNSEND_TEXT_VARIANTS.has(visibleText(element).toLocaleLowerCase())) continue;
+      const control = liveControlWithin(element, scope);
+      if (control) controls.push(control);
+    }
+    return [...new Set(controls)];
+  }
+
+  function hoverExactDmRow(row) {
+    const eventTargets = [];
+    const queue = [{ element: row, depth: 0 }];
+    while (queue.length) {
+      const { element, depth } = queue.shift();
+      eventTargets.push(element);
+      if (depth < 8) {
+        for (const child of element.children || []) {
+          queue.push({ element: child, depth: depth + 1 });
+        }
+      }
+    }
+    for (const target of eventTargets) {
+      const rect = target.getBoundingClientRect?.() || { x: 0, y: 0, width: 0, height: 0 };
+      const options = {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect.x + (rect.width / 2),
+        clientY: rect.y + (rect.height / 2),
+        pointerId: 1,
+        pointerType: 'mouse',
+      };
+      if (typeof PointerEvent === 'function') {
+        target.dispatchEvent?.(new PointerEvent('pointerenter', { ...options, bubbles: false }));
+        target.dispatchEvent?.(new PointerEvent('pointerover', options));
+        target.dispatchEvent?.(new PointerEvent('pointermove', options));
+      }
+      if (typeof MouseEvent === 'function') {
+        target.dispatchEvent?.(new MouseEvent('mouseenter', { ...options, bubbles: false }));
+        target.dispatchEvent?.(new MouseEvent('mouseover', options));
+        target.dispatchEvent?.(new MouseEvent('mousemove', options));
+      }
+    }
+  }
+
+  async function performReviewedDmUnsend(item) {
+    const token = String(item?.resolutionToken || '');
+    if (
+      !token
+      || !String(item?.conversationId || '')
+      || !String(item?.messageId || '')
+      || !Number.isFinite(Number(item?.timestamp))
+      || !String(item?.contentDigest || '')
+      || item?.sentByMe !== true
+    ) {
+      return { unexpectedUi: true, reason: 'invalid-live-dm-request' };
+    }
+
+    const session = inspectSession();
+    if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
+      return session;
+    }
+
+    pruneDmResolutions();
+    const resolution = dmResolutions.get(token);
+    dmResolutions.delete(token);
+    if (!dmResolutionMatches(resolution, item)) {
+      return { ambiguous: true, reason: 'dm-resolution-expired-or-changed' };
+    }
+    if (visibleDialogs().length || visibleMenus().length) {
+      return { unexpectedUi: true, reason: 'preexisting-surface-before-live-unsend' };
+    }
+
+    hoverExactDmRow(resolution.row);
+    const actionControl = await waitFor(() => {
+      const controls = exactDmActionControls(resolution.row);
+      return controls.length === 1 ? controls[0] : null;
+    }, 1_500);
+    if (!actionControl) {
+      return { ambiguous: true, reason: 'dm-action-control-not-exact' };
+    }
+    if (
+      !dmResolutionMatches(resolution, item)
+      || visibleDialogs().length
+      || visibleMenus().length
+    ) {
+      return { ambiguous: true, reason: 'dm-message-changed-before-menu' };
+    }
+
+    const menusBeforeAction = new Set(visibleMenus());
+    activateLiveControl(actionControl);
+    const menuResult = await waitFor(() => {
+      const newMenus = visibleMenus().filter((menu) => !menusBeforeAction.has(menu));
+      if (!newMenus.length) return null;
+      const menu = exactBoundSurface(newMenus, actionControl);
+      if (!menu) return { invalid: true };
+      const controls = exactDmUnsendControls(menu);
+      return controls.length === 1
+        ? { menu, control: controls[0] }
+        : { invalid: true };
+    }, 3_000);
+    if (!menuResult?.menu) {
+      return { unexpectedUi: true, reason: 'dm-unsend-menu-not-exact' };
+    }
+    if (!dmResolutionMatches(resolution, item) || visibleDialogs().length) {
+      return { ambiguous: true, reason: 'dm-message-changed-before-unsend-choice' };
+    }
+
+    const dialogsBeforeChoice = new Set(visibleDialogs());
+    activateLiveControl(menuResult.control);
+    const confirmation = await waitFor(() => {
+      const newDialogs = visibleDialogs().filter((dialog) => !dialogsBeforeChoice.has(dialog));
+      if (!newDialogs.length) return null;
+      const dialog = exactBoundSurface(
+        newDialogs,
+        menuResult.control,
+      );
+      if (!dialog) return { invalid: true };
+      const controls = exactDmUnsendControls(dialog);
+      return controls.length === 1 ? { control: controls[0] } : { invalid: true };
+    }, 3_000);
+    if (!confirmation?.control) {
+      return { unexpectedUi: true, reason: 'dm-unsend-confirmation-not-exact' };
+    }
+    if (!dmResolutionMatches(resolution, item)) {
+      return { ambiguous: true, reason: 'dm-message-changed-before-final-confirmation' };
+    }
+
+    activateLiveControl(confirmation.control);
+    const completion = await waitFor(() => {
+      const currentSession = inspectSession();
+      if (
+        currentSession.sessionExpired
+        || currentSession.challenge
+        || currentSession.actionBlocked
+        || currentSession.rateLimited
+      ) return { sessionStop: currentSession };
+      const expectedThreadId = directThreadId(item.conversationId);
+      const observedThreadId = directThreadId(location.pathname);
+      if (!expectedThreadId || expectedThreadId !== observedThreadId) {
+        return {
+          uncertain: true,
+          observation: {
+            ambiguous: true,
+            reason: 'wrong-conversation-after-unsend',
+            evidence: { expectedThreadId, observedThreadId },
+          },
+        };
+      }
+      const retainedRowDisconnected = resolution.row?.isConnected === false;
+      const retainedIdentityNodeDisconnected = resolution.identityNode?.isConnected === false;
+      const current = resolveReviewedDmItem(item);
+      if (current.candidate) return null;
+      if (!retainedRowDisconnected || !retainedIdentityNodeDisconnected) {
+        return current.observation?.missing || current.observation?.reason
+          ? { uncertain: true, observation: current.observation }
+          : null;
+      }
+      if (
+        current.observation?.ambiguous
+        || current.observation?.unexpectedUi
+        || current.observation?.exactIdentityAvailable !== true
+        || current.observation?.reason !== 'exact-message-not-found'
+      ) {
+        return { uncertain: true, observation: current.observation };
+      }
+      return {
+        confirmed: true,
+        observation: current.observation,
+        postcondition: {
+          exactCandidateAbsent: true,
+          exactThread: true,
+          expectedThreadId,
+          observedThreadId,
+          observationReason: current.observation.reason,
+          retainedIdentityNodeDisconnected: true,
+          retainedRowDisconnected: true,
+        },
+      };
+    }, 5_000);
+    if (completion?.sessionStop) return completion.sessionStop;
+    if (!completion?.confirmed) {
+      return {
+        unexpectedUi: true,
+        reason: 'dm-unsend-not-confirmed',
+        observation: completion?.observation || null,
+      };
+    }
+    return {
+      result: 'unsent',
+      conversationId: String(item.conversationId),
+      messageId: String(item.messageId),
+      postcondition: completion.postcondition,
+    };
   }
 
   async function waitForRelationship(expectedRelationships, username, timeoutMs = 5_000) {
@@ -629,6 +972,12 @@
       performReviewedProfileAction(request.item)
         .then(sendResponse)
         .catch(() => sendResponse({ unexpectedUi: true, reason: 'live-action-driver-error' }));
+      return true;
+    }
+    if (request?.kind === 'insta-aio-perform-reviewed-dm-unsend') {
+      performReviewedDmUnsend(request.item)
+        .then(sendResponse)
+        .catch(() => sendResponse({ unexpectedUi: true, reason: 'live-dm-driver-error' }));
       return true;
     }
   });

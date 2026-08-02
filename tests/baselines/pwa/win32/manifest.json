@@ -28,7 +28,7 @@
       "width": 1134,
       "height": 700,
       "view": "overview",
-      "sha256": "486d4ddf9d5eb6e885317d446dcc5c476cade6588f9d7fadb93a9bbe4772f679"
+      "sha256": "1320f16cc62c586ceeba070e228399cd1dabdd1878270dd5aad12614a9225198"
     },
     {
       "file": "desktop-messages.png",
@@ -36,7 +36,7 @@
       "width": 1134,
       "height": 700,
       "view": "messages",
-      "sha256": "413826c97b72fad3332a26f3c064b03b11a51c505478715ba5b303c7e84de38c"
+      "sha256": "cf564098355ec2728a8dc332929ddbdc4d227e19c03904ce3a9be7c0eb8243f9"
     },
     {
       "file": "desktop-settings.png",
@@ -44,7 +44,7 @@
       "width": 1134,
       "height": 700,
       "view": "settings",
-      "sha256": "3a61e48073c14fddab47ba1b90013ab5811b94ff91c8ed384db7aeb9acdd4386"
+      "sha256": "1ec4cee34aeaf3042eb715e901ff2eb5b0886c3cc4bdb682f87405cc8b75a7bb"
     },
     {
       "file": "tablet-overview.png",
@@ -52,7 +52,7 @@
       "width": 820,
       "height": 900,
       "view": "overview",
-      "sha256": "d4e0ee07e3def7b732a520e476cb6ebf37c22312c21e968db694b44b54b67ac4"
+      "sha256": "7fe859ddb31808f788f0c8a79a89f888df52496802480c6e36ef64f25bc40721"
     },
     {
       "file": "tablet-messages.png",
@@ -60,7 +60,7 @@
       "width": 820,
       "height": 900,
       "view": "messages",
-      "sha256": "eb50ad69782c142e39d44d8819c772ccceb16b7807d08ea59ee9e7e8eb80d391"
+      "sha256": "4603923e1ae8699532370f8706d36de0a9289a3622537bc0913a0f26f3c8881f"
     },
     {
       "file": "tablet-settings.png",
@@ -68,7 +68,7 @@
       "width": 820,
       "height": 900,
       "view": "settings",
-      "sha256": "522d1eaf5919c9e051e3cfae9ed9b59a68eb8589a87d777579467448c07647c7"
+      "sha256": "cca87b1d48da46d91533703481a57b7d3b18e7e63044bfdfcb26fd01744c7407"
     },
     {
       "file": "mobile-overview.png",

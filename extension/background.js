@@ -14,11 +14,24 @@ import {
   publicAccountArm as publicLiveArm,
   publicAccountIntent as publicLiveIntent,
 } from './lib/controlled-account-action.js';
+import {
+  DM_ARM_TTL_MS,
+  controlledDmArmPhrase,
+  dmArmMatchesIntent,
+  dmIntentMatchesItem,
+  prepareControlledDmIntent,
+  pruneControlledDmState,
+  publicDmArm,
+  publicDmIntent,
+  verifiedControlledDmResult,
+} from './lib/controlled-dm-unsend.js';
 
 const MAX_REPLAY_NONCES = 512;
 const MAX_PENDING_JOBS = 50;
 const MAX_ACCOUNT_ACTION_LEDGER = 500;
+const MAX_DM_ACTION_LEDGER = 500;
 const EXTENSION_DAILY_ACTION_LIMIT = 25;
+const EXTENSION_DAILY_DM_LIMIT = 5;
 let requestTail = Promise.resolve();
 
 async function loadBridgeState() {
@@ -27,8 +40,11 @@ async function loadBridgeState() {
     'bridgeReplayNonces',
     'pendingJobs',
     'accountActionLedger',
+    'dmActionLedger',
     'pendingLiveIntent',
     'liveArm',
+    'pendingDmIntent',
+    'dmArm',
   ]);
   return {
     pairings: Array.isArray(stored.bridgePairings) ? stored.bridgePairings : [],
@@ -37,8 +53,13 @@ async function loadBridgeState() {
     accountActionLedger: Array.isArray(stored.accountActionLedger)
       ? stored.accountActionLedger
       : [],
+    dmActionLedger: Array.isArray(stored.dmActionLedger)
+      ? stored.dmActionLedger
+      : [],
     pendingLiveIntent: stored.pendingLiveIntent || null,
     liveArm: stored.liveArm || null,
+    pendingDmIntent: stored.pendingDmIntent || null,
+    dmArm: stored.dmArm || null,
   };
 }
 
@@ -48,8 +69,11 @@ async function saveBridgeState(state) {
     bridgeReplayNonces: state.replayNonces.slice(-MAX_REPLAY_NONCES),
     pendingJobs: state.pendingJobs.slice(0, MAX_PENDING_JOBS),
     accountActionLedger: state.accountActionLedger.slice(0, MAX_ACCOUNT_ACTION_LEDGER),
+    dmActionLedger: state.dmActionLedger.slice(0, MAX_DM_ACTION_LEDGER),
     pendingLiveIntent: state.pendingLiveIntent || null,
     liveArm: state.liveArm || null,
+    pendingDmIntent: state.pendingDmIntent || null,
+    dmArm: state.dmArm || null,
   });
 }
 
@@ -75,6 +99,19 @@ async function intentInstagramTab(state) {
   return activeInstagramTab();
 }
 
+async function dmIntentInstagramTab(state) {
+  const tabId = state.dmArm?.tabId;
+  if (Number.isInteger(tabId)) {
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (new URL(tab.url || '').origin === 'https://www.instagram.com') return tab;
+    } catch {
+      return null;
+    }
+  }
+  return activeInstagramTab();
+}
+
 async function inspectProfileInTab(tabId, username) {
   try {
     return await chrome.tabs.sendMessage(tabId, {
@@ -84,6 +121,32 @@ async function inspectProfileInTab(tabId, username) {
   } catch {
     return { unexpectedUi: true, reason: 'inspector-unavailable' };
   }
+}
+
+async function inspectDmItemInTab(tabId, item) {
+  try {
+    return await chrome.tabs.sendMessage(tabId, {
+      kind: 'insta-aio-inspect-reviewed-dm-item',
+      item: {
+        conversationId: item.conversationId,
+        contentDigest: item.contentDigest,
+        messageId: item.messageId,
+        sentByMe: item.sentByMe === true,
+        timestamp: item.timestamp,
+      },
+    });
+  } catch {
+    return { unexpectedUi: true, reason: 'inspector-unavailable' };
+  }
+}
+
+function directThreadId(value) {
+  const text = String(value || '').replaceAll('\\', '/');
+  const directMatch = text.match(/\/direct\/t\/([^/?#]+)/i);
+  if (directMatch) return directMatch[1];
+  const finalSegment = text.split('/').filter(Boolean).at(-1) || '';
+  const exportMatch = finalSegment.match(/_([0-9]+)$/);
+  return exportMatch?.[1] || (/^[0-9]+$/.test(finalSegment) ? finalSegment : null);
 }
 
 function validateReviewedJob(job, expectedKind) {
@@ -287,6 +350,164 @@ function finalizeExtensionAction(state, attemptId, result, succeeded, now = Date
     : String(result?.reason || 'live-action-not-confirmed');
 }
 
+function dmActionAttemptId(jobId, intent) {
+  return `${jobId}:${intent.itemId}:${intent.conversationId}:${intent.messageId}`;
+}
+
+function extensionDmReservationConflict(state, jobId, intent, now = Date.now()) {
+  const ledger = Array.isArray(state.dmActionLedger) ? state.dmActionLedger : [];
+  const counted = new Set(['reserved', 'succeeded', 'uncertain']);
+  const id = dmActionAttemptId(jobId, intent);
+  const existing = ledger.find((entry) => entry.id === id && counted.has(entry.status));
+  if (existing) return { reason: 'extension-duplicate-dm-attempt', existing };
+
+  const duplicateMessage = ledger.find((entry) => (
+    entry.conversationId === intent.conversationId
+    && entry.messageId === intent.messageId
+    && counted.has(entry.status)
+  ));
+  if (duplicateMessage) return { reason: 'extension-duplicate-dm-message', existing: duplicateMessage };
+
+  const day = accountActionDay(now);
+  const used = ledger.filter((entry) => entry.day === day && counted.has(entry.status)).length;
+  if (used >= EXTENSION_DAILY_DM_LIMIT) {
+    return { reason: 'extension-daily-dm-limit', limit: EXTENSION_DAILY_DM_LIMIT, used };
+  }
+  return null;
+}
+
+function reserveExtensionDmAction(state, jobId, intent, pairingId, tabId, now = Date.now()) {
+  const conflict = extensionDmReservationConflict(state, jobId, intent, now);
+  if (conflict) return { ok: false, ...conflict };
+  const record = {
+    id: dmActionAttemptId(jobId, intent),
+    jobId,
+    itemId: intent.itemId,
+    conversationId: intent.conversationId,
+    messageId: intent.messageId,
+    pairingId,
+    tabId,
+    day: accountActionDay(now),
+    status: 'reserved',
+    reservedAt: new Date(now).toISOString(),
+    finalizedAt: null,
+    result: null,
+  };
+  state.dmActionLedger.unshift(record);
+  return { ok: true, record };
+}
+
+function finalizeExtensionDmAction(state, attemptId, result, succeeded, now = Date.now()) {
+  const record = state.dmActionLedger.find((entry) => entry.id === attemptId);
+  if (!record) throw new Error('Extension DM reservation is missing.');
+  record.status = succeeded ? 'succeeded' : 'uncertain';
+  record.finalizedAt = new Date(now).toISOString();
+  record.result = succeeded
+    ? String(result?.result || 'unsent')
+    : String(result?.reason || 'live-dm-not-confirmed');
+}
+
+function matchingDmAttempt(state, pairing, jobId, item) {
+  return state.dmActionLedger.find((entry) => (
+    entry.jobId === jobId
+    && entry.itemId === item?.id
+    && entry.conversationId === String(item?.conversationId || '')
+    && entry.messageId === String(item?.messageId || '')
+    && entry.pairingId === pairing.pairingId
+    && ['succeeded', 'uncertain'].includes(entry.status)
+  )) || null;
+}
+
+async function dmLiveReadiness(state, pairing, jobId, item, now = Date.now()) {
+  pruneControlledDmState(state, now);
+  const intent = state.pendingDmIntent;
+  if (!dmIntentMatchesItem(intent, jobId, item) || intent?.pairingId !== pairing.pairingId) {
+    return { authorized: false, reason: 'dm-live-intent-required' };
+  }
+  if (!dmArmMatchesIntent(state.dmArm, intent)) {
+    return {
+      authorized: false,
+      reason: 'dm-live-arm-required',
+      intent: publicDmIntent(intent),
+    };
+  }
+  if (!item?.resolutionToken) {
+    return { authorized: false, reason: 'exact-dm-resolution-required' };
+  }
+  const reservationConflict = extensionDmReservationConflict(state, jobId, intent, now);
+  if (reservationConflict) {
+    return { authorized: false, reason: reservationConflict.reason };
+  }
+  const tab = await dmIntentInstagramTab(state);
+  if (!tab?.id || tab.id !== state.dmArm.tabId) {
+    return { authorized: false, reason: 'armed-instagram-tab-unavailable' };
+  }
+  return {
+    authorized: true,
+    expiresAt: state.dmArm.expiresAt,
+    intent: publicDmIntent(intent),
+  };
+}
+
+async function performLiveDmUnsend(state, pairing, jobId, item) {
+  const readiness = await dmLiveReadiness(state, pairing, jobId, item);
+  if (!readiness.authorized) return readiness;
+  const intent = state.pendingDmIntent;
+  const tab = await dmIntentInstagramTab(state);
+  const reservation = reserveExtensionDmAction(
+    state,
+    jobId,
+    intent,
+    pairing.pairingId,
+    tab.id,
+  );
+  if (!reservation.ok) return { authorized: false, reason: reservation.reason };
+
+  // Reserve and consume the one-shot DM capability durably before the first page control is used.
+  state.dmArm = null;
+  state.pendingDmIntent = null;
+  await saveBridgeState(state);
+
+  let result;
+  try {
+    result = await chrome.tabs.sendMessage(tab.id, {
+      kind: 'insta-aio-perform-reviewed-dm-unsend',
+      item: {
+        conversationId: intent.conversationId,
+        contentDigest: intent.contentDigest,
+        messageId: intent.messageId,
+        resolutionToken: item.resolutionToken,
+        sentByMe: true,
+        timestamp: intent.timestamp,
+      },
+    });
+  } catch {
+    result = { unexpectedUi: true, reason: 'live-dm-inspector-unavailable' };
+  }
+
+  const succeeded = verifiedControlledDmResult(intent, result);
+  finalizeExtensionDmAction(state, reservation.record.id, result, succeeded);
+  state.pendingJobs.unshift({
+    kind: 'insta-aio-reviewed-dm-job',
+    jobId,
+    receivedAt: new Date().toISOString(),
+    mode: 'live',
+    result: {
+      jobId,
+      status: succeeded ? 'completed' : 'stopped',
+      stopReason: succeeded ? null : result?.reason || 'live-dm-not-confirmed',
+      results: [{
+        itemId: intent.itemId,
+        conversationId: intent.conversationId,
+        messageId: intent.messageId,
+        status: succeeded ? 'completed' : 'safe-stopped',
+      }],
+    },
+  });
+  await saveBridgeState(state);
+  return result || { unexpectedUi: true, reason: 'empty-live-dm-result' };
+}
+
 async function accountLiveReadiness(state, pairing, jobId, item, now = Date.now()) {
   pruneLiveState(state, now);
   const intent = state.pendingLiveIntent;
@@ -446,8 +667,77 @@ async function cancelPendingAccountIntent() {
   return { state: overlayState(state) };
 }
 
+async function armPendingDmIntent(request, sender) {
+  const state = pruneControlledDmState(await loadBridgeState());
+  const intent = state.pendingDmIntent;
+  if (!intent) return { error: 'dm-live-intent-required' };
+  if (!Number.isInteger(sender?.tab?.id)) return { error: 'instagram-tab-required' };
+  if (String(request?.phrase || '').trim() !== controlledDmArmPhrase(intent)) {
+    return { error: 'dm-live-arm-phrase-mismatch' };
+  }
+  if (
+    request?.jobId !== intent.jobId
+    || request?.itemId !== intent.itemId
+    || String(request?.conversationId || '') !== intent.conversationId
+    || String(request?.messageId || '') !== intent.messageId
+  ) {
+    return { error: 'dm-live-intent-mismatch' };
+  }
+
+  const observation = await inspectDmItemInTab(sender.tab.id, {
+    conversationId: intent.conversationId,
+    contentDigest: intent.contentDigest,
+    messageId: intent.messageId,
+    sentByMe: true,
+    timestamp: intent.timestamp,
+  });
+  if (
+    observation?.conversationId !== intent.conversationId
+    || observation?.messageId !== intent.messageId
+    || Number(observation?.timestamp) !== intent.timestamp
+    || observation?.contentDigest !== intent.contentDigest
+    || observation?.sentByMe !== true
+    || observation?.exactIdentityAvailable !== true
+    || observation?.ownershipAvailable !== true
+    || observation?.ambiguous
+    || observation?.unexpectedUi
+    || observation?.sessionExpired
+    || observation?.challenge
+    || observation?.actionBlocked
+    || observation?.rateLimited
+    || !observation?.resolutionToken
+  ) {
+    return { error: observation?.reason || 'exact-dm-resolution-required' };
+  }
+
+  const now = Date.now();
+  state.dmArm = {
+    armedAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + DM_ARM_TTL_MS).toISOString(),
+    itemId: intent.itemId,
+    jobId: intent.jobId,
+    tabId: sender.tab.id,
+    conversationId: intent.conversationId,
+    messageId: intent.messageId,
+  };
+  await saveBridgeState(state);
+  return {
+    arm: publicDmArm(state.dmArm),
+    state: overlayState(state),
+  };
+}
+
+async function cancelPendingDmIntent() {
+  const state = await loadBridgeState();
+  state.pendingDmIntent = null;
+  state.dmArm = null;
+  await saveBridgeState(state);
+  return { state: overlayState(state) };
+}
+
 async function routeVerifiedRequest(request, pairing, state) {
   pruneLiveState(state);
+  pruneControlledDmState(state);
   if (request.type === 'bridge.ping') {
     return {
       responseType: 'read.bridge-status',
@@ -455,9 +745,13 @@ async function routeVerifiedRequest(request, pairing, state) {
         extensionVersion: chrome.runtime.getManifest().version,
         permissions: pairing.permissions,
         controlledAccountActionsAvailable: true,
-        liveExecutionEnabled: armMatchesIntent(state.liveArm, state.pendingLiveIntent),
+        controlledDmUnsendAvailable: true,
+        liveExecutionEnabled: armMatchesIntent(state.liveArm, state.pendingLiveIntent)
+          || dmArmMatchesIntent(state.dmArm, state.pendingDmIntent),
         pendingLiveIntent: publicLiveIntent(state.pendingLiveIntent),
         liveArm: publicLiveArm(state.liveArm),
+        pendingDmIntent: publicDmIntent(state.pendingDmIntent),
+        dmArm: publicDmArm(state.dmArm),
       },
     };
   }
@@ -470,8 +764,26 @@ async function routeVerifiedRequest(request, pairing, state) {
         payload: { reason: prepared.error },
       };
     }
+    state.pendingDmIntent = null;
+    state.dmArm = null;
     return {
       responseType: 'action.account-live-intent-result',
+      payload: prepared,
+    };
+  }
+
+  if (request.type === 'action.dm-live-intent') {
+    const prepared = prepareControlledDmIntent(request.payload?.job, pairing, state);
+    if (prepared.error) {
+      return {
+        responseType: 'action.bridge-error',
+        payload: { reason: prepared.error },
+      };
+    }
+    state.pendingLiveIntent = null;
+    state.liveArm = null;
+    return {
+      responseType: 'action.dm-live-intent-result',
       payload: prepared,
     };
   }
@@ -539,6 +851,100 @@ async function routeVerifiedRequest(request, pairing, state) {
     return {
       responseType: 'action.account-perform-result',
       payload: await performLiveAccountAction(
+        state,
+        pairing,
+        request.payload?.jobId,
+        request.payload?.item,
+      ),
+    };
+  }
+
+  if (request.type === 'action.dm-session') {
+    const intent = state.pendingDmIntent;
+    if (!intent || intent.jobId !== request.payload?.jobId || intent.pairingId !== pairing.pairingId) {
+      return {
+        responseType: 'action.dm-session-result',
+        payload: { unexpectedUi: true, reason: 'dm-live-intent-required' },
+      };
+    }
+    const tab = await dmIntentInstagramTab(state);
+    let result;
+    try {
+      result = tab?.id
+        ? await chrome.tabs.sendMessage(tab.id, { kind: 'insta-aio-inspect-session' })
+        : { unexpectedUi: true, reason: 'instagram-tab-unavailable' };
+    } catch {
+      result = { unexpectedUi: true, reason: 'inspector-unavailable' };
+    }
+    return { responseType: 'action.dm-session-result', payload: result };
+  }
+
+  if (request.type === 'action.dm-conversation') {
+    const intent = state.pendingDmIntent;
+    const conversationId = String(request.payload?.conversationId || '');
+    if (
+      !intent
+      || intent.jobId !== request.payload?.jobId
+      || intent.pairingId !== pairing.pairingId
+      || conversationId !== intent.conversationId
+    ) {
+      return {
+        responseType: 'action.dm-conversation-result',
+        payload: { unexpectedUi: true, reason: 'dm-live-intent-mismatch' },
+      };
+    }
+    const tab = await dmIntentInstagramTab(state);
+    const expectedThreadId = directThreadId(intent.conversationId);
+    const observedThreadId = directThreadId(tab?.url);
+    const exact = Boolean(tab?.id && expectedThreadId && expectedThreadId === observedThreadId);
+    return {
+      responseType: 'action.dm-conversation-result',
+      payload: exact
+        ? { conversationId: intent.conversationId, unexpectedUi: false }
+        : { ambiguous: true, reason: 'wrong-conversation' },
+    };
+  }
+
+  if (request.type === 'action.dm-message') {
+    const item = request.payload?.item;
+    const jobId = request.payload?.jobId;
+    const intent = state.pendingDmIntent;
+    let tab = null;
+    if (dmIntentMatchesItem(intent, jobId, item) && intent?.pairingId === pairing.pairingId) {
+      tab = await dmIntentInstagramTab(state);
+    } else {
+      const attempt = matchingDmAttempt(state, pairing, jobId, item);
+      if (attempt) {
+        try {
+          tab = await chrome.tabs.get(attempt.tabId);
+          if (new URL(tab?.url || '').origin !== 'https://www.instagram.com') tab = null;
+        } catch {
+          tab = null;
+        }
+      }
+    }
+    const result = tab?.id
+      ? await inspectDmItemInTab(tab.id, item)
+      : { unexpectedUi: true, reason: 'dm-live-intent-mismatch' };
+    return { responseType: 'action.dm-message-result', payload: result };
+  }
+
+  if (request.type === 'action.dm-live-readiness') {
+    return {
+      responseType: 'action.dm-live-readiness-result',
+      payload: await dmLiveReadiness(
+        state,
+        pairing,
+        request.payload?.jobId,
+        request.payload?.item,
+      ),
+    };
+  }
+
+  if (request.type === 'action.dm-perform') {
+    return {
+      responseType: 'action.dm-perform-result',
+      payload: await performLiveDmUnsend(
         state,
         pairing,
         request.payload?.jobId,
@@ -683,12 +1089,17 @@ function bridgeSenderOrigin(sender) {
 
 function overlayState(state) {
   pruneLiveState(state);
+  pruneControlledDmState(state);
   return {
     extensionVersion: chrome.runtime.getManifest().version,
     controlledAccountActionsAvailable: true,
-    liveExecutionEnabled: armMatchesIntent(state.liveArm, state.pendingLiveIntent),
+    controlledDmUnsendAvailable: true,
+    liveExecutionEnabled: armMatchesIntent(state.liveArm, state.pendingLiveIntent)
+      || dmArmMatchesIntent(state.dmArm, state.pendingDmIntent),
     pendingLiveIntent: publicLiveIntent(state.pendingLiveIntent),
     liveArm: publicLiveArm(state.liveArm),
+    pendingDmIntent: publicDmIntent(state.pendingDmIntent),
+    dmArm: publicDmArm(state.dmArm),
     pairings: state.pairings.map((pairing) => ({
       origin: pairing.origin,
       permissions: Array.isArray(pairing.permissions) ? [...pairing.permissions] : [],
@@ -749,6 +1160,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const operation = requestTail.then(() => cancelPendingAccountIntent());
     requestTail = operation.catch(() => {});
     operation.then(sendResponse).catch(() => sendResponse({ error: 'live-intent-cancel-failed' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-arm-dm-unsend') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    const operation = requestTail.then(() => armPendingDmIntent(request, sender));
+    requestTail = operation.catch(() => {});
+    operation.then(sendResponse).catch(() => sendResponse({ error: 'dm-live-arm-unavailable' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-cancel-dm-unsend') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    const operation = requestTail.then(() => cancelPendingDmIntent());
+    requestTail = operation.catch(() => {});
+    operation.then(sendResponse).catch(() => sendResponse({ error: 'dm-live-intent-cancel-failed' }));
     return true;
   }
   if (request?.kind !== 'insta-aio-bridge-request') return false;

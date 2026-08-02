@@ -22,6 +22,10 @@ const controlledPolicy = await readFile(
   new URL('../src/core/controlled-account-action.js', import.meta.url),
   'utf8',
 );
+const controlledDmPolicy = await readFile(
+  new URL('../src/core/controlled-dm-unsend.js', import.meta.url),
+  'utf8',
+);
 const fixture = await readFile(
   new URL('./fixtures/overlay-preview.html', import.meta.url),
   'utf8',
@@ -43,7 +47,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'content-instagram.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.3.0');
+  assert.equal(manifest.version, '0.4.0');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -104,6 +108,12 @@ test('sidecar exposes an exact, expiring live arm without executing from the ove
   assert.match(controlledPolicy, /ACCOUNT_ARM_TTL_MS = 90 \* 1000/);
   assert.match(background, /insta-aio-arm-account-action/);
   assert.match(background, /expectedPhrase = `ARM \$\{intent\.action\.toUpperCase\(\)\} @\$\{intent\.username\}`/);
+  assert.match(overlay, /Controlled one-message gate/);
+  assert.match(overlay, /ARM UNSEND \$\{intent\.armCode\}/);
+  assert.match(overlay, /data-ia-action="arm-dm-live"/);
+  assert.match(overlay, /Arming does not open a menu or remove anything/);
+  assert.match(controlledDmPolicy, /DM_ARM_TTL_MS = 90 \* 1000/);
+  assert.match(background, /insta-aio-arm-dm-unsend/);
 });
 
 test('visible DM evidence stays read-only while reviewed jobs require stable exact identity', () => {
@@ -128,6 +138,8 @@ test('background reveals only sanitized pairing, intent, arm, and run summaries 
   assert.match(background, /instagram-origin-required/);
   assert.match(background, /pendingLiveIntent: publicLiveIntent/);
   assert.match(background, /liveArm: publicLiveArm/);
+  assert.match(background, /pendingDmIntent: publicDmIntent/);
+  assert.match(background, /dmArm: publicDmArm/);
   assert.doesNotMatch(overlayStateBody, /secret|signature|nonce/i);
 });
 

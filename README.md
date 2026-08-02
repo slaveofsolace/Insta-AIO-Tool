@@ -16,7 +16,7 @@ The project includes:
 
 ## Safety model
 
-Live account changes and DM removal are disabled by default. The PWA requires exact batch previews and confirmation phrases. Dry runs never invoke the extension's page-control path. A live Follow or Unfollow requires a fresh signed batch of exactly one item, action permission, an exact phrase entered on the matching Instagram profile, a 90-second one-use arm, PWA and extension-side durable reservations, a relationship control inside a verified profile header, a newly created target-named Unfollow dialog when needed, and post-action relationship verification. Live DM removal is not exposed by the extension.
+Live account changes and DM removal are disabled by default. The PWA requires exact previews and confirmation phrases. Dry runs never invoke the extension's page-control path. A live Follow or Unfollow requires a fresh signed batch of exactly one item, action permission, an exact phrase entered on the matching Instagram profile, a 90-second one-use arm, PWA and extension-side durable reservations, a relationship control inside a verified profile header, a newly created target-named Unfollow dialog when needed, and post-action relationship verification. A live Unsend additionally requires two fresh confirmations for exactly one sent message, exact thread/message/timestamp/content-digest/ownership binding, an `ARM UNSEND <code>` phrase in the matching Instagram conversation, independent PWA and extension reservations, a one-use rendered-message token, structurally bound interactive menu/dialog controls, and exact-message removal proof while stable identity coverage remains available.
 
 The project does not implement proxy rotation, fingerprint spoofing, challenge bypass, CAPTCHA solving, private endpoint reverse engineering, or unreviewed destructive actions.
 
@@ -85,7 +85,7 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.3.0 exposes a controlled live account path only for a reviewed batch of one. The PWA sends a signed intent; the Instagram Field Desk requires the matching profile and exact `ARM FOLLOW @username` or `ARM UNFOLLOW @username` phrase; the arm expires after 90 seconds. Immediately before page control, the background persists its own reservation and consumes the arm, then finalizes that mirror as succeeded or uncertain. The PWA independently checkpoints its transactional ledger. This implemented path still requires authenticated selector acceptance before issue #3 can be closed.
+Extension 0.4.0 exposes controlled live paths only for one reviewed item. The PWA sends a signed intent; the Instagram Field Desk requires the matching profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds. Immediately before page control, the background persists its own reservation and consumes the arm, then finalizes that mirror as succeeded or uncertain. The PWA independently checkpoints its transactional ledger. These implemented paths still require authenticated selector acceptance before issues #3 and #4 can be closed.
 
 ## Reviewed DM jobs
 
@@ -100,7 +100,7 @@ Live-mode data structures require:
 - A durable reservation before the destructive call
 - Post-action removal verification
 
-The browser extension now performs a true no-click exact-message dry run when the open thread ID matches and one rendered sent row exposes the reviewed message ID, exact timestamp, matching content digest, and sender ownership. Missing stable attributes, duplicate candidates, wrong threads, changed content, and unknown ownership safe-stop. This conditional resolver has deterministic fixture coverage but still requires authenticated Instagram DOM acceptance; it never opens a message menu or guesses. Live Unsend remains unavailable.
+The browser extension performs a true no-click exact-message dry run when the open thread ID matches and one rendered sent row exposes the reviewed message ID, exact timestamp, matching content digest, and sender ownership. Missing stable attributes, duplicate candidates, wrong threads, changed content, and unknown ownership safe-stop. The controlled live path is isolated from that dry-run route: it accepts one fresh twice-confirmed item, consumes an expiring tab-scoped capability before page control, revalidates the same row before each stage, rejects pre-existing menus or dialogs, requires newly surfaced ARIA-bound interactive Unsend controls, and confirms the same-thread target is gone while another stable message identity remains observable. Wrong-thread navigation, identity loss, unbound surfaces, noninteractive text, and unrelated right-aligned descendants all stop uncertain. Authenticated Instagram DOM and action acceptance remain not run, so this is not a claim that issue #4 is closed.
 
 ## Companion extension
 
@@ -118,14 +118,14 @@ the right side of the page and can be collapsed to its launcher. It provides:
 - Current-page session, profile, relationship, and queue-match inspection
 - Repeated visible-row capture that merges follower or following usernames
 - The existing manual queue JSON workflow with Open, Complete, and Skip controls
-- Sanitized history for signed account dry runs, controlled account results, and DM dry runs received from the PWA
-- An Instagram-side, 90-second one-use arm for a fresh signed one-item Follow or Unfollow intent
+- Sanitized history for signed account/DM dry runs and controlled one-item results received from the PWA
+- Instagram-side, 90-second one-use arms for a fresh signed one-item Follow, Unfollow, or exact sent-message Unsend intent
 - Read-only visible-message evidence plus conditional exact-identity DM dry runs that never open a menu
 - A direct link back to the exact paired PWA origin
 
-Press **Alt + Shift + I** to toggle the sidecar. Follow and Unfollow remain
-locked until the controlled one-item workflow is completed; live Unsend is not
-exposed. See [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
+Press **Alt + Shift + I** to toggle the sidecar. Follow, Unfollow, and Unsend
+remain locked until their controlled one-item workflows are completed. See
+[Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
 for the runtime and data boundaries.
 
 Pairing is origin-specific:
