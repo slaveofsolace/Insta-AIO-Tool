@@ -75,6 +75,8 @@ test('Chrome for Testing acceptance loads and pairs the real extension in a disp
   assert.match(chromeAcceptance, /'chrome-acceptance'/);
   assert.match(chromeAcceptance, /--disable-extensions-except=/);
   assert.match(chromeAcceptance, /--load-extension=/);
+  assert.match(chromeAcceptance, /INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX === '1'/);
+  assert.match(chromeAcceptance, /chromeArguments\.unshift\('--no-sandbox'\)/);
   assert.match(chromeAcceptance, /Page\.getAppManifest/);
   assert.match(chromeAcceptance, /Page\.getInstallabilityErrors/);
   assert.match(chromeAcceptance, /complete-extension-pairing/);
@@ -88,6 +90,7 @@ test('Chrome for Testing acceptance loads and pairs the real extension in a disp
   assert.match(workflow, /CHROME_BIN: \$\{\{ steps\.setup-chrome\.outputs\.chrome-path \}\}/);
   assert.match(workflow, /xvfb-run --auto-servernum pnpm run qa:chrome/);
   assert.match(workflow, /INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"/);
+  assert.match(workflow, /INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"/);
 });
 
 test('macOS CI builds and exercises the packaged lifecycle without release credentials', () => {

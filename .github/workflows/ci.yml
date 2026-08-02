@@ -40,6 +40,8 @@ jobs:
       - name: Real Chrome extension pairing acceptance
         env:
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}
+          # Ubuntu hosted runners disable the user-namespace sandbox through AppArmor.
+          INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"
         run: xvfb-run --auto-servernum pnpm run qa:chrome
 
   package-macos:

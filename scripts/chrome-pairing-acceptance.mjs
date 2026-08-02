@@ -228,7 +228,10 @@ async function run() {
     '--window-size=1200,900',
     pwaUrl,
   ];
-  if (typeof process.getuid === 'function' && process.getuid() === 0) {
+  const hostedLinuxNoSandbox =
+    process.platform === 'linux'
+    && process.env.INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX === '1';
+  if (hostedLinuxNoSandbox || (typeof process.getuid === 'function' && process.getuid() === 0)) {
     chromeArguments.unshift('--no-sandbox');
   }
 
