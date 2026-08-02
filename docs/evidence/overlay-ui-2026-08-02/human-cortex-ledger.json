@@ -1,0 +1,1620 @@
+{
+  "schema_version": "2.0.0",
+  "ledger_id": "insta_aio_overlay_recovery",
+  "created_at": "2026-08-02T18:45:27.8937235Z",
+  "depth": "DEEP",
+  "iteration": 1,
+  "root": {
+    "kind": "DECISION",
+    "node_id": "root_recovery_decision",
+    "statement": "Recover the verified remote overlay branch, remediate current safety and quality defects locally, and publish only a green draft without changing an Instagram account.",
+    "source_state": "The original checkout contains an uncommitted controlled-action recreation based on main, while GitHub contains a later draft branch with eleven additional commits and a dedicated overlay refinement contract.",
+    "target_state": "A compact modular overlay and cancellation-safe controlled-action implementation pass automated, visual, accessibility, performance, packaging, and diff-security gates while authenticated mutations remain unexecuted.",
+    "conditions": [
+      "Preserve the original dirty checkout and all existing PWA, migration, userscript, desktop, test, documentation, and data contracts.",
+      "Do not perform Follow, Unfollow, Unsend, or another Instagram account mutation without exact target and action authorization at execution time.",
+      "Keep live execution disabled by default and keep dry runs unable to reach a page-control activator."
+    ],
+    "boundary": "Local repository work, deterministic fixtures, disposable browser profiles, GitHub draft publication, and read-only evidence only; persistent authenticated Instagram state is excluded.",
+    "objective_claim_id": "claim_objective",
+    "invariant_ids": [
+      "inv_preserve_existing",
+      "inv_default_lock",
+      "inv_exact_target",
+      "inv_no_external_mutation"
+    ],
+    "uncertainty_changes_decision": true
+  },
+  "project_model": {
+    "status": "PARTIAL",
+    "facets": {
+      "intent": {
+        "summary": "Restore the original Instagram overlay experience as a polished compact field layer over the durable PWA.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_objective",
+          "claim_reference_contract"
+        ],
+        "unknown_disposition": "Authenticated visual fit remains a human-owned acceptance step after local evidence is green."
+      },
+      "decision": {
+        "summary": "Continue from the verified remote draft in an isolated worktree, not from the older dirty recreation, then fix only evidence-backed defects.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_remote_recovery",
+          "claim_dirty_preserved"
+        ],
+        "unknown_disposition": "Reopen if the remote head or PR ownership changes before publication."
+      },
+      "acceptance_contract": {
+        "summary": "The committed overlay-perfection prompt defines visual, architecture, accessibility, performance, security, and evidence gates; authenticated mutations are excluded.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_reference_contract",
+          "claim_external_boundary"
+        ],
+        "unknown_disposition": "Human screen-reader acceptance and persistent-profile installation remain Codex-Handoff items."
+      },
+      "mechanism": {
+        "summary": "The remote branch already binds account controls to an exact profile header, but app-level async execution can outlive discard because abort and job-presence checks are not repeated after awaited boundaries.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_target_binding_closed",
+          "claim_discard_race"
+        ],
+        "unknown_disposition": "Run focused negative regressions after implementation and repeat the diff-focused security review."
+      },
+      "current_state_history": {
+        "summary": "Main is 1f7dab1; the verified remote draft is 76f66cd; the recovered baseline passes 123 tests and extension/PWA visual acceptance, while local Chrome pairing timed out before extension identity discovery.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_remote_recovery",
+          "claim_baseline",
+          "claim_chrome_timeout"
+        ],
+        "unknown_disposition": "Diagnose the local Chrome timeout and distinguish environment timing from a deterministic harness defect."
+      },
+      "people_incentives": {
+        "summary": "The user wants the familiar in-page overlay restored without losing the separate site, while account-impact decisions remain intentionally reserved to the operator.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_objective",
+          "claim_external_boundary"
+        ],
+        "unknown_disposition": "The user selects any future authenticated target and action at execution time."
+      },
+      "lifecycle_recovery": {
+        "summary": "The original dirty checkout remains untouched; work continues in a sibling worktree and local commits can be reverted without external Instagram residue.",
+        "knowledge": "KNOWN",
+        "load_bearing": true,
+        "claim_ids": [
+          "claim_dirty_preserved",
+          "claim_external_boundary"
+        ],
+        "unknown_disposition": "If publication fails, preserve the local branch and evidence rather than resetting either checkout."
+      }
+    },
+    "invariants": [
+      {
+        "id": "inv_preserve_existing",
+        "statement": "Preserve the PWA, core modules, migrations, Tampermonkey companion, desktop shell, tests, documentation, and data contracts.",
+        "owner": "Repository maintainer",
+        "status": "PRESERVED",
+        "hard_gate": true,
+        "evidence_ids": [
+          "ev_remote_branch",
+          "ev_baseline_tests"
+        ]
+      },
+      {
+        "id": "inv_default_lock",
+        "statement": "Live account and DM execution remain disabled by default and dry-run routes cannot activate Instagram controls.",
+        "owner": "Repository security contract",
+        "status": "PRESERVED",
+        "hard_gate": true,
+        "evidence_ids": [
+          "ev_baseline_tests",
+          "ev_required_sources"
+        ]
+      },
+      {
+        "id": "inv_exact_target",
+        "statement": "Every destructive capability remains one-item, short-lived, exact-target, independently reserved, and postcondition-verified.",
+        "owner": "Repository security contract",
+        "status": "THREATENED",
+        "hard_gate": true,
+        "evidence_ids": [
+          "ev_required_sources",
+          "ev_discard_validation"
+        ]
+      },
+      {
+        "id": "inv_no_external_mutation",
+        "statement": "No authenticated Instagram mutation occurs without an exact target, action, and contemporaneous user authorization.",
+        "owner": "User",
+        "status": "PRESERVED",
+        "hard_gate": true,
+        "evidence_ids": [
+          "ev_user_authority"
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "id": "dep_instagram_dom",
+        "name": "Instagram rendered DOM",
+        "role": "External context inspected by exact visible-DOM adapters; selector stability is not controlled by this repository.",
+        "claim_ids": [
+          "claim_authenticated_unknown"
+        ]
+      },
+      {
+        "id": "dep_chrome",
+        "name": "Chrome for Testing",
+        "role": "Disposable target-browser pairing acceptance surface.",
+        "claim_ids": [
+          "claim_chrome_timeout"
+        ]
+      },
+      {
+        "id": "dep_github",
+        "name": "GitHub pull request 8",
+        "role": "Public draft review and publication surface.",
+        "claim_ids": [
+          "claim_remote_recovery"
+        ]
+      }
+    ],
+    "stakeholders": [
+      {
+        "id": "stakeholder_user",
+        "name": "Repository owner and Instagram operator",
+        "role": "Owns target selection, account-impact authorization, subjective acceptance, and residual risk.",
+        "claim_ids": [
+          "claim_external_boundary",
+          "claim_authenticated_unknown"
+        ]
+      },
+      {
+        "id": "stakeholder_maintainer",
+        "name": "Insta AIO maintainer",
+        "role": "Owns code, test, migration, documentation, and release-gate integrity.",
+        "claim_ids": [
+          "claim_objective",
+          "claim_reference_contract"
+        ]
+      }
+    ]
+  },
+  "authority": {
+    "scope": "Local implementation, deterministic testing, disposable browser automation, documentation, commits, pushes, and draft PR updates are authorized; authenticated Instagram mutation is not.",
+    "decision_owner": "The user owns account-impact actions and human acceptance; the agent owns bounded local engineering choices within the committed contracts.",
+    "authorized_actions": [
+      "Inspect local and public repository evidence.",
+      "Create an isolated worktree and preserve the original dirty checkout.",
+      "Edit, test, document, commit, and publish in-scope repository changes.",
+      "Run deterministic local fixtures and disposable browser profiles without account mutation."
+    ],
+    "forbidden_actions": [
+      "Perform Follow, Unfollow, Unsend, or another Instagram account mutation without exact contemporaneous user authorization.",
+      "Reset, clean, stash, discard, or overwrite the original dirty checkout.",
+      "Claim authenticated selector, screen-reader, or human visual acceptance from synthetic evidence."
+    ],
+    "human_reserved_decisions": [
+      "Select an exact Instagram target and action for any future controlled live test.",
+      "Approve subjective visual and screen-reader acceptance in the intended persistent browser profile.",
+      "Accept residual release risk and authorize merging the draft pull request."
+    ],
+    "external_state_allowed": false,
+    "hard_gates": [
+      {
+        "id": "gate_authority",
+        "category": "AUTHORITY",
+        "status": "CLEAR",
+        "rationale": "Local repository implementation and draft publication are explicitly authorized.",
+        "claim_ids": [
+          "claim_external_boundary"
+        ]
+      },
+      {
+        "id": "gate_safety",
+        "category": "SAFETY",
+        "status": "CLEAR",
+        "rationale": "Discard revocation, checkpoint non-resurrection, secure-random fail-closed behavior, and exact UTF-8 label handling are remediated and negatively tested in two local green commits.",
+        "claim_ids": [
+          "claim_discard_race_closed",
+          "claim_randomness_locale_closed"
+        ]
+      },
+      {
+        "id": "gate_privacy",
+        "category": "PRIVACY_SECURITY_LEGAL",
+        "status": "CLEAR",
+        "rationale": "Current work uses repository source, synthetic fixtures, local-only evidence, and no credentials or session exports.",
+        "claim_ids": [
+          "claim_external_boundary"
+        ]
+      },
+      {
+        "id": "gate_external",
+        "category": "IRREVERSIBLE_EXTERNAL_STATE",
+        "status": "BLOCKED",
+        "rationale": "Persistent Instagram mutations are outside current authority and remain blocked.",
+        "claim_ids": [
+          "claim_external_boundary",
+          "claim_authenticated_unknown"
+        ]
+      },
+      {
+        "id": "gate_production",
+        "category": "DESTRUCTIVE_PRODUCTION",
+        "status": "BLOCKED",
+        "rationale": "No production account action, PR merge, or signed release is authorized in this pass.",
+        "claim_ids": [
+          "claim_external_boundary"
+        ]
+      },
+      {
+        "id": "gate_human",
+        "category": "HUMAN_RESERVED",
+        "status": "UNRESOLVED",
+        "rationale": "Persistent-profile visual, screen-reader, and authenticated selector acceptance remain human-owned.",
+        "claim_ids": [
+          "claim_authenticated_unknown"
+        ]
+      },
+      {
+        "id": "gate_rollback",
+        "category": "ROLLBACK_FAILURE",
+        "status": "CLEAR",
+        "rationale": "The original checkout is untouched and the isolated local branch can be reverted without external Instagram residue.",
+        "claim_ids": [
+          "claim_dirty_preserved"
+        ]
+      }
+    ]
+  },
+  "companion_findings": {
+    "lead_skill": "HUMAN_CORTEX",
+    "applicable_domains": [
+      "VISUAL",
+      "UI",
+      "RUNTIME_EXPERIENCE",
+      "ACCESSIBILITY_COMFORT"
+    ],
+    "observation_input": "BOTH",
+    "cold_eye_status": "PENDING",
+    "cold_eye_before_source_inspection": false,
+    "findings": [
+      {
+        "id": "finding_gray_box_audit",
+        "source_skill": "HUMAN_EYE",
+        "domain": "UI",
+        "label": "OBSERVED",
+        "verdict": "REVISE",
+        "statement": "A documented gray-box pixel pass scores the existing shell and runtime/accessibility contract as release-blocking while explicitly preserving the unavailable blind-review and human-acceptance boundaries.",
+        "evidence_ids": [
+          "ev_human_eye_audit"
+        ]
+      },
+      {
+        "id": "finding_concept_selection",
+        "source_skill": "HUMAN_EYE",
+        "domain": "UI",
+        "label": "MEASURED",
+        "verdict": "KEEP",
+        "statement": "The quiet operator concept scores 92.2 versus 86.6 for the Instagram-native concept because it preserves clearer tool ownership, target hierarchy, accessibility potential, and safety-state visibility at a bounded 380 by 680 pixel standard shell.",
+        "evidence_ids": [
+          "ev_overlay_concepts",
+          "ev_concept_scorecard"
+        ]
+      },
+      {
+        "id": "finding_overlay_dominance",
+        "source_skill": "HUMAN_CORTEX",
+        "domain": "UI",
+        "label": "OBSERVED",
+        "verdict": "REVISE",
+        "statement": "The 462-pixel cream, black, and acid-lime panel occupies nearly the full viewport height, competes with Instagram, and exposes too much protocol copy before the next action.",
+        "evidence_ids": [
+          "ev_before_visuals"
+        ]
+      },
+      {
+        "id": "finding_visual_acceptance",
+        "source_skill": "HUMAN_CORTEX",
+        "domain": "RUNTIME_EXPERIENCE",
+        "label": "UNKNOWN",
+        "verdict": "BLOCKED",
+        "statement": "Synthetic screenshots support engineering judgment but do not establish authenticated persistent-profile or human screen-reader acceptance.",
+        "evidence_ids": [
+          "ev_before_visuals"
+        ]
+      }
+    ],
+    "completion_axes": {
+      "functional_implementation": {
+        "status": "PASS",
+        "signal": "The recovered branch passes 123 automated tests and deterministic production content-script action chains.",
+        "evidence_ids": [
+          "ev_baseline_tests",
+          "ev_extension_acceptance"
+        ],
+        "rationale": "This is a synthetic functional baseline, not closure of the refinement pass."
+      },
+      "runtime_integration": {
+        "status": "PASS",
+        "signal": "The actual production content scripts render and operate in the deterministic Instagram fixture.",
+        "evidence_ids": [
+          "ev_extension_acceptance",
+          "ev_before_visuals"
+        ],
+        "rationale": "Authenticated persistent-profile integration remains separate."
+      },
+      "player_eye_presentation": {
+        "status": "FAIL",
+        "signal": "Baseline screenshots show excessive width, density, visual dominance, and weak native-dialog coexistence.",
+        "evidence_ids": [
+          "ev_before_visuals"
+        ],
+        "rationale": "The committed perfection prompt requires a substantially quieter shell."
+      },
+      "evidence_regression_coverage": {
+        "status": "UNKNOWN",
+        "signal": "PWA baselines pass, but the branch has no first-class overlay visual matrix yet.",
+        "evidence_ids": [
+          "ev_pwa_visuals"
+        ],
+        "rationale": "Overlay-specific update/check commands and reviewed baselines are required."
+      },
+      "human_acceptance": {
+        "status": "UNKNOWN",
+        "signal": "No human screen-reader or authenticated persistent-profile acceptance decision is recorded.",
+        "evidence_ids": [],
+        "rationale": "This decision remains explicitly human-reserved."
+      }
+    }
+  },
+  "claims": [
+    {
+      "id": "claim_objective",
+      "label": "OBSERVED",
+      "statement": "The requested outcome is a polished Instagram overlay that preserves the separate PWA and all controlled-action safety contracts.",
+      "evidence_ids": [
+        "ev_reference_export",
+        "ev_overlay_contract"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "The user request, recovered Pro export, and committed refinement prompt agree on the same outcome."
+      }
+    },
+    {
+      "id": "claim_reference_contract",
+      "label": "OBSERVED",
+      "statement": "The recovered Pro export points to the public draft branch and the committed overlay-perfection prompt, which defines the current acceptance contract.",
+      "evidence_ids": [
+        "ev_reference_export",
+        "ev_overlay_contract"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "The remote ref and pull request independently verify the export's branch and commit claims."
+      }
+    },
+    {
+      "id": "claim_remote_recovery",
+      "label": "MEASURED",
+      "statement": "GitHub branch codex/issue-3-controlled-account-action resolves to 76f66cde and pull request 8 is public, open, draft, and mergeable.",
+      "evidence_ids": [
+        "ev_remote_branch",
+        "ev_pull_request"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Verified through git ls-remote, fetch, and the authenticated GitHub connector."
+      }
+    },
+    {
+      "id": "claim_dirty_preserved",
+      "label": "MEASURED",
+      "statement": "The original dirty checkout remains at 1f7dab1 and the recovered work continues in a sibling worktree on codex/overlay-ui-perfection-recovery.",
+      "evidence_ids": [
+        "ev_worktrees"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Git worktree and status output directly identify both checkouts."
+      }
+    },
+    {
+      "id": "claim_baseline",
+      "label": "MEASURED",
+      "statement": "At recovered head 76f66cd, assembly, 123 automated tests, extension acceptance, and all nine Windows PWA baselines pass.",
+      "evidence_ids": [
+        "ev_baseline_tests",
+        "ev_extension_acceptance",
+        "ev_pwa_visuals"
+      ],
+      "contradiction_claim_ids": [
+        "claim_chrome_timeout"
+      ],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "All commands ran in the clean recovery worktree in this session."
+      }
+    },
+    {
+      "id": "claim_chrome_timeout",
+      "label": "MEASURED",
+      "statement": "The local Chrome pairing baseline timed out while locating the unpacked extension identity even though the pinned remote CI run previously passed.",
+      "evidence_ids": [
+        "ev_chrome_timeout"
+      ],
+      "contradiction_claim_ids": [
+        "claim_baseline"
+      ],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "The local command produced a specific timeout and Chrome diagnostic output."
+      }
+    },
+    {
+      "id": "claim_target_binding_closed",
+      "label": "OBSERVED",
+      "statement": "The recovered content script already scopes relationship controls to one profile header that independently proves the pathname username and rejects suggested-account controls and pre-existing dialogs.",
+      "evidence_ids": [
+        "ev_required_sources",
+        "ev_baseline_tests"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Current source and focused passing tests directly establish the mechanism."
+      }
+    },
+    {
+      "id": "claim_discard_race",
+      "label": "OBSERVED",
+      "statement": "Account and DM adapters check cancellation only at loop entry, their app handlers do not own an AbortController, and checkpoint writers re-add a job that was discarded during an awaited operation.",
+      "evidence_ids": [
+        "ev_required_sources",
+        "ev_discard_validation"
+      ],
+      "contradiction_claim_ids": [
+        "claim_discard_race_closed"
+      ],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Source inspection and a defensive local proof reproduce the stale authorization and checkpoint-resurrection path."
+      }
+    },
+    {
+      "id": "claim_discard_race_closed",
+      "label": "MEASURED",
+      "statement": "Current account and DM flows abort matching execution ownership, recheck exact job identity across awaited checkpoints, finalize post-reservation cancellation as canceled, and reject missing-job checkpoint writes without dispatching a browser action.",
+      "evidence_ids": [
+        "ev_discard_fix_tests",
+        "ev_safety_checkpoint",
+        "ev_safety_commit"
+      ],
+      "contradiction_claim_ids": [
+        "claim_discard_race"
+      ],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Forty focused tests cover cancellation during authorization, after reservation, after driver dispatch, stale storage checkpoints, and legitimate live/dry-run behavior."
+      }
+    },
+    {
+      "id": "claim_design_direction_selected",
+      "label": "MEASURED",
+      "statement": "Two required overlay shell concepts render in light and dark on the deterministic Instagram fixture; the selected quiet operator panel is specified at a content-bounded 380 by 680 pixel standard state with a 48 pixel tool rail and progressive safety disclosure.",
+      "evidence_ids": [
+        "ev_human_eye_audit",
+        "ev_overlay_concepts",
+        "ev_concept_scorecard",
+        "ev_overlay_spec"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Four current screenshots, measured DOM rectangles, SHA-256 receipts, and a weighted scorecard make the engineering selection reproducible while leaving subjective acceptance open."
+      }
+    },
+    {
+      "id": "claim_randomness_locale_closed",
+      "label": "MEASURED",
+      "statement": "Current profile and DM inspection stores no resolution capability when Web Crypto cannot provide entropy, while relationship and localized Unsend matching use one frozen NFKC-normalized exact-label module with valid UTF-8.",
+      "evidence_ids": [
+        "ev_randomness_locale_tests",
+        "ev_correctness_checkpoint",
+        "ev_correctness_commit"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "Focused VM fixtures cover unavailable secure randomness and executable German Unsend behavior; package checks verify script ordering and the raw source scan finds no runtime mojibake signature."
+      }
+    },
+    {
+      "id": "claim_external_boundary",
+      "label": "OBSERVED",
+      "statement": "Current authority permits local repository work but forbids a real Instagram mutation without exact target and action authorization at execution time.",
+      "evidence_ids": [
+        "ev_user_authority"
+      ],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "The cross-task steer states the restriction explicitly."
+      }
+    },
+    {
+      "id": "claim_authenticated_unknown",
+      "label": "UNKNOWN",
+      "statement": "The refined overlay's authenticated Instagram selector fit, persistent-profile composition, screen-reader experience, and any real action outcome remain unverified.",
+      "evidence_ids": [],
+      "contradiction_claim_ids": [],
+      "confidence": {
+        "level": "LOW",
+        "basis": "No authorized authenticated mutation or human acceptance run has occurred."
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_reference_export",
+      "kind": "SOURCE",
+      "access": "INSPECTED_CURRENT",
+      "locator": "C:/Users/suhai/.codex/attachments/af8b04fa-847f-450e-852f-63f8b86b1cc9/pasted-text.txt",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "sha256:5D450C386904C39B156B498C7BC7C31FD48638AFB9BB880E881F84834F04A9C0",
+      "supports_claim_ids": [
+        "claim_objective",
+        "claim_reference_contract"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_remote_branch",
+      "kind": "MEASUREMENT",
+      "access": "INSPECTED_CURRENT",
+      "locator": "git ls-remote and fetch origin codex/issue-3-controlled-account-action",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "head:76f66cde4ca85254b40603a38f7244687d6a0982",
+      "supports_claim_ids": [
+        "claim_remote_recovery",
+        "claim_reference_contract"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_pull_request",
+      "kind": "SOURCE",
+      "access": "INSPECTED_CURRENT",
+      "locator": "https://github.com/slaveofsolace/Insta-AIO-Tool/pull/8",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "GitHub connector snapshot: public open draft mergeable head 76f66cd",
+      "supports_claim_ids": [
+        "claim_remote_recovery"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_overlay_contract",
+      "kind": "SOURCE",
+      "access": "INSPECTED_CURRENT",
+      "locator": "docs/CODEX_OVERLAY_UI_PERFECTION_PROMPT.md at 76f66cd",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "git object at recovered branch head",
+      "supports_claim_ids": [
+        "claim_objective",
+        "claim_reference_contract"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_worktrees",
+      "kind": "MEASUREMENT",
+      "access": "INSPECTED_CURRENT",
+      "locator": "git worktree list --porcelain",
+      "captured_at": "2026-08-02T19:45:38.7914206Z",
+      "integrity": "original 1f7dab1 dirty and untouched; recovery 032b832 with only overlay evidence untracked; no protected checkout file changed",
+      "supports_claim_ids": [
+        "claim_dirty_preserved"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_baseline_tests",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "pnpm run assemble and pnpm test in recovery worktree",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "123 passed, 0 failed; dependency and extension package checks passed",
+      "supports_claim_ids": [
+        "claim_baseline",
+        "claim_target_binding_closed"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_extension_acceptance",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "pnpm run qa:extension in recovery worktree",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "isolated production Follow, Unfollow, one-message Unsend, accessibility, and PWA installability passed",
+      "supports_claim_ids": [
+        "claim_baseline"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_pwa_visuals",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "pnpm run qa:browser:check",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "9 win32 PWA screenshot baselines reproduced",
+      "supports_claim_ids": [
+        "claim_baseline"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_chrome_timeout",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "pnpm run qa:chrome local baseline",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "timeout: unpacked extension identity; no account action attempted",
+      "supports_claim_ids": [
+        "claim_chrome_timeout"
+      ],
+      "contradicts_claim_ids": [
+        "claim_baseline"
+      ]
+    },
+    {
+      "id": "ev_before_visuals",
+      "kind": "ARTIFACT",
+      "access": "GENERATED_CURRENT",
+      "locator": "docs/evidence/overlay-ui-2026-08-02/before/*.png",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "profile-open sha256:310E607B...; profile-collapsed sha256:E2F4ABDD...; queue-ready sha256:EDA1E137...; messages sha256:5C656A82...",
+      "supports_claim_ids": [
+        "claim_objective"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_human_eye_audit",
+      "kind": "ARTIFACT",
+      "access": "GENERATED_CURRENT",
+      "locator": "docs/OVERLAY_UI_AUDIT.md; docs/evidence/overlay-ui-2026-08-02/human-eye-observations.json; docs/evidence/overlay-ui-2026-08-02/human-eye-priority.md",
+      "captured_at": "2026-08-02T20:48:39.003Z",
+      "integrity": "6 scored findings: S=2, A=4; gray-box status and human-acceptance nonclaim recorded",
+      "supports_claim_ids": [
+        "claim_objective",
+        "claim_design_direction_selected"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_overlay_concepts",
+      "kind": "ARTIFACT",
+      "access": "GENERATED_CURRENT",
+      "locator": "docs/evidence/overlay-ui-2026-08-02/concepts/*.png; concept-metrics.json",
+      "captured_at": "2026-08-02T20:48:39.003Z",
+      "integrity": "four 1440x900 light/dark concept captures with SHA-256 receipts; native 356x588 at 16.15 percent viewport area; operator 380x680 at 19.94 percent; neither intersects the native profile control",
+      "supports_claim_ids": [
+        "claim_design_direction_selected"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_concept_scorecard",
+      "kind": "MEASUREMENT",
+      "access": "GENERATED_CURRENT",
+      "locator": "docs/evidence/overlay-ui-2026-08-02/concepts/concept-scorecard.json",
+      "captured_at": "2026-08-02T20:48:39.003Z",
+      "integrity": "weights sum to 100; compact native 86.6; quiet operator 92.2; selected direction recorded",
+      "supports_claim_ids": [
+        "claim_design_direction_selected"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_overlay_spec",
+      "kind": "SOURCE",
+      "access": "INSPECTED_CURRENT",
+      "locator": "docs/OVERLAY_UI_SPEC.md",
+      "captured_at": "2026-08-02T20:48:39.003Z",
+      "integrity": "selected direction, preferences V2, modular architecture, route lifecycle, collision mode, accessibility, performance, and QA contracts specified before production implementation",
+      "supports_claim_ids": [
+        "claim_design_direction_selected"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_required_sources",
+      "kind": "SOURCE",
+      "access": "INSPECTED_CURRENT",
+      "locator": "Required source set listed in docs/CODEX_OVERLAY_UI_PERFECTION_PROMPT.md",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "All 19 required files read in full at 76f66cd",
+      "supports_claim_ids": [
+        "claim_target_binding_closed",
+        "claim_discard_race"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_discard_validation",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "C:/Users/suhai/AppData/Local/Temp/codex-security-scans/Insta-AIO-Tool/1f7dab1_localpatch_20260802T175316Z/artifacts/05_findings/IAIO-DIFF-C-001-LIVE-DISCARD-RACE",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "defensive PoC 2 passed; attack-path Low P3 on earlier equivalent adapter flow",
+      "supports_claim_ids": [
+        "claim_discard_race"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_discard_fix_tests",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "node --test tests/action-adapter.test.js tests/dm-adapter.test.js tests/storage-atomic.test.js tests/app-shell-safety.test.js",
+      "captured_at": "2026-08-02T19:40:47.4772533Z",
+      "integrity": "40 passed, 0 failed; pre-fix run failed five race assertions; no browser or Instagram mutation executed",
+      "supports_claim_ids": [
+        "claim_discard_race_closed"
+      ],
+      "contradicts_claim_ids": [
+        "claim_discard_race"
+      ]
+    },
+    {
+      "id": "ev_safety_checkpoint",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "pnpm run assemble; pnpm test; pnpm run qa:extension; pnpm run qa:browser:check; git diff --check",
+      "captured_at": "2026-08-02T19:43:32.0042459Z",
+      "integrity": "assemble pass; 132/132 tests; production fixture Follow, Unfollow, and one-message Unsend acceptance pass; 9 win32 PWA baselines pass; diff check pass; no authenticated action",
+      "supports_claim_ids": [
+        "claim_discard_race_closed"
+      ],
+      "contradicts_claim_ids": [
+        "claim_discard_race"
+      ]
+    },
+    {
+      "id": "ev_safety_commit",
+      "kind": "MEASUREMENT",
+      "access": "INSPECTED_CURRENT",
+      "locator": "git commit 032b8328b7aac90b945866e7fc19c0e08053d4f7",
+      "captured_at": "2026-08-02T19:45:38.7914206Z",
+      "integrity": "fix: cancel discarded reviewed executions; 14 files; protected checkout remains at 1f7dab1",
+      "supports_claim_ids": [
+        "claim_discard_race_closed"
+      ],
+      "contradicts_claim_ids": [
+        "claim_discard_race"
+      ]
+    },
+    {
+      "id": "ev_randomness_locale_tests",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "node --test tests/action-labels.test.js tests/content-instagram-live.test.js tests/content-instagram-dm.test.js tests/content-instagram-dm-live.test.js tests/extension-package.test.js tests/instagram-overlay.test.js",
+      "captured_at": "2026-08-02T19:55:36.1391187Z",
+      "integrity": "36 passed, 0 failed; profile and DM inspection issue no capability without secure entropy; exact German Unsend fixture executes only the bounded synthetic controls",
+      "supports_claim_ids": [
+        "claim_randomness_locale_closed"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_correctness_checkpoint",
+      "kind": "TEST_RESULT",
+      "access": "GENERATED_CURRENT",
+      "locator": "pnpm run assemble; pnpm test; pnpm run qa:extension; pnpm run qa:browser:check; git diff --check; raw UTF-8/mojibake scan",
+      "captured_at": "2026-08-02T19:55:36.1391187Z",
+      "integrity": "assemble pass; 138/138 tests; bounded production-script Follow, Unfollow, and one-message Unsend fixtures pass; accessibility and installability pass; 9 win32 PWA baselines pass; diff check and UTF-8 scan pass; no authenticated action",
+      "supports_claim_ids": [
+        "claim_discard_race_closed",
+        "claim_randomness_locale_closed"
+      ],
+      "contradicts_claim_ids": [
+        "claim_discard_race"
+      ]
+    },
+    {
+      "id": "ev_correctness_commit",
+      "kind": "MEASUREMENT",
+      "access": "INSPECTED_CURRENT",
+      "locator": "git commit ff8b4b8c9587114273e45d28e8bac14ec1d3f643",
+      "captured_at": "2026-08-02T19:55:36.1391187Z",
+      "integrity": "fix: fail closed on insecure resolution tokens; 19 files; protected checkout remains at 1f7dab1",
+      "supports_claim_ids": [
+        "claim_randomness_locale_closed"
+      ],
+      "contradicts_claim_ids": []
+    },
+    {
+      "id": "ev_user_authority",
+      "kind": "HUMAN_DECISION",
+      "access": "INSPECTED_CURRENT",
+      "locator": "Cross-task coordination steer in current Codex task",
+      "captured_at": "2026-08-02T18:45:27.8937235Z",
+      "integrity": "Explicit prohibition on real Instagram mutation without target and action authorization",
+      "supports_claim_ids": [
+        "claim_external_boundary"
+      ],
+      "contradicts_claim_ids": []
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp_modular_overlay",
+      "statement": "A modular quiet utility shell can restore the familiar in-page workflow while reducing occlusion and preserving every destructive boundary.",
+      "mechanism": "Separate pure model, preferences, route observation, bridge, rendering, accessibility, downloads, labels, and style tokens; render one route-aware next action inside a 380-pixel theme-aware panel that defaults collapsed.",
+      "status": "ACTIVE",
+      "supporting_claim_ids": [
+        "claim_objective",
+        "claim_reference_contract"
+      ],
+      "contradicting_claim_ids": [],
+      "distinguishing_prediction": "The overlay visual matrix shows less occlusion and lower density while existing action tests and no-click invariants remain green.",
+      "falsifier": "Any required workflow becomes unreachable, a destructive activator enters overlay source, or visual geometry still intersects the reviewed native control surfaces.",
+      "decision_if_true": "Select the quiet professional operator panel and publish the evidence-backed draft update.",
+      "test_ids": [
+        "test_overlay_matrix",
+        "test_full_suite",
+        "test_geometry"
+      ],
+      "confidence": {
+        "level": "MEDIUM",
+        "basis": "The fixture and prompt make the mechanism testable, but the redesign has not yet been implemented."
+      }
+    },
+    {
+      "id": "hyp_cancellation_fix",
+      "statement": "Abort checks after every awaited boundary plus no-resurrection checkpoint semantics prevent discarded jobs from reserving or executing.",
+      "mechanism": "Own one AbortController per running account or DM job, abort on discard, recheck current job identity before checkpoint and reservation, finalize any post-reservation abort as canceled, and reject checkpoint writes for missing jobs.",
+      "status": "SUPPORTED",
+      "supporting_claim_ids": [
+        "claim_discard_race_closed"
+      ],
+      "contradicting_claim_ids": [],
+      "distinguishing_prediction": "A test that aborts during asynchronous live authorization records zero driver calls and a checkpoint against a removed job rejects without recreating it.",
+      "falsifier": "Reservation, driver execution, or job resurrection remains observable after abort/discard.",
+      "decision_if_true": "Apply the cancellation model to both account and DM flows before any visual refinement is published.",
+      "test_ids": [
+        "test_cancel_race"
+      ],
+      "confidence": {
+        "level": "HIGH",
+        "basis": "The failure mechanism and required interruption points are directly visible in current source."
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "test_cancel_race",
+      "question": "Can discard or abort during authorization still reserve, perform, checkpoint, or resurrect an account or DM job?",
+      "kind": "SIMULATION",
+      "discriminates_hypothesis_ids": [
+        "hyp_cancellation_fix"
+      ],
+      "predicted_outcomes": [
+        {
+          "hypothesis_id": "hyp_cancellation_fix",
+          "outcome": "Zero reservation and driver calls before reservation; canceled finalization after reservation; missing-job checkpoints reject and preserve absence."
+        }
+      ],
+      "expected_decision_value": "HIGH",
+      "cost": "LOW",
+      "risk": "LOW",
+      "authorization_status": "AUTHORIZED",
+      "status": "PASS",
+      "evidence_ids": [
+        "ev_discard_fix_tests",
+        "ev_safety_checkpoint"
+      ],
+      "changes_decision_if": "Any stale path survives, in which case publication stops until the mechanism is closed."
+    },
+    {
+      "id": "test_overlay_matrix",
+      "question": "Does the production-built overlay remain legible, compact, theme-correct, and unclipped across required states and viewports?",
+      "kind": "SIMULATION",
+      "discriminates_hypothesis_ids": [
+        "hyp_modular_overlay"
+      ],
+      "predicted_outcomes": [
+        {
+          "hypothesis_id": "hyp_modular_overlay",
+          "outcome": "Reviewed platform baselines reproduce with no clipping, overflow, unreadable text, or unexplained drift."
+        }
+      ],
+      "expected_decision_value": "HIGH",
+      "cost": "MEDIUM",
+      "risk": "LOW",
+      "authorization_status": "AUTHORIZED",
+      "status": "PROPOSED",
+      "evidence_ids": [
+        "ev_before_visuals"
+      ],
+      "changes_decision_if": "A failed primary state requires revision before the branch can remain a merge candidate."
+    },
+    {
+      "id": "test_geometry",
+      "question": "Does execution-safe mode avoid every fixture target control, row, menu, and confirmation dialog?",
+      "kind": "SIMULATION",
+      "discriminates_hypothesis_ids": [
+        "hyp_modular_overlay"
+      ],
+      "predicted_outcomes": [
+        {
+          "hypothesis_id": "hyp_modular_overlay",
+          "outcome": "Overlay and status-strip rectangles do not intersect protected native rectangles in each controlled workflow."
+        }
+      ],
+      "expected_decision_value": "HIGH",
+      "cost": "LOW",
+      "risk": "LOW",
+      "authorization_status": "AUTHORIZED",
+      "status": "PROPOSED",
+      "evidence_ids": [],
+      "changes_decision_if": "Any intersection blocks visual acceptance and requires layout revision."
+    },
+    {
+      "id": "test_full_suite",
+      "question": "Do all assembly, unit, extension, Chrome, PWA visual, overlay visual, ZIP benchmark, and diff checks pass after the change?",
+      "kind": "EXPERIMENT",
+      "discriminates_hypothesis_ids": [
+        "hyp_modular_overlay",
+        "hyp_cancellation_fix"
+      ],
+      "predicted_outcomes": [
+        {
+          "hypothesis_id": "hyp_modular_overlay",
+          "outcome": "No pre-existing contract regresses and new overlay gates pass."
+        },
+        {
+          "hypothesis_id": "hyp_cancellation_fix",
+          "outcome": "Focused and full-suite regressions remain green."
+        }
+      ],
+      "expected_decision_value": "HIGH",
+      "cost": "MEDIUM",
+      "risk": "LOW",
+      "authorization_status": "AUTHORIZED",
+      "status": "PROPOSED",
+      "evidence_ids": [],
+      "changes_decision_if": "Any unexplained failure prevents commit or publication."
+    },
+    {
+      "id": "test_authenticated_acceptance",
+      "question": "Does the overlay fit the user's persistent authenticated Instagram profile and a selected real target?",
+      "kind": "HUMAN_REVIEW",
+      "discriminates_hypothesis_ids": [
+        "hyp_modular_overlay"
+      ],
+      "predicted_outcomes": [
+        {
+          "hypothesis_id": "hyp_modular_overlay",
+          "outcome": "The user accepts composition and explicitly selects any controlled target/action."
+        }
+      ],
+      "expected_decision_value": "MEDIUM",
+      "cost": "MEDIUM",
+      "risk": "HIGH",
+      "authorization_status": "REQUIRES_AUTHORITY",
+      "status": "SKIPPED",
+      "evidence_ids": [],
+      "changes_decision_if": "Human rejection reopens UI design; exact target/action approval is required before any mutation."
+    }
+  ],
+  "trace": {
+    "bounds": {
+      "max_depth": 4,
+      "max_nodes": 8,
+      "stop_rule": "Expand only consequences that change safety, publication, visual acceptance, rollback truth, or human authority."
+    },
+    "nodes": [
+      {
+        "id": "root_recovery_decision",
+        "kind": "ROOT",
+        "statement": "Continue from recovered remote work while preserving dirty local work and external-state limits.",
+        "claim_id": "claim_remote_recovery",
+        "depth": 0,
+        "terminal": false,
+        "closure_reason": "EXPANDED"
+      },
+      {
+        "id": "node_recovered_baseline",
+        "kind": "STATE",
+        "statement": "The advanced branch and its 123-test baseline become the actual working product.",
+        "claim_id": "claim_baseline",
+        "depth": 1,
+        "terminal": false,
+        "closure_reason": "EXPANDED"
+      },
+      {
+        "id": "node_discard_risk",
+        "kind": "FAILURE",
+        "statement": "A stale async handler can survive discard and cross the local execution boundary.",
+        "claim_id": "claim_discard_race",
+        "depth": 2,
+        "terminal": false,
+        "closure_reason": "EXPANDED"
+      },
+      {
+        "id": "node_cancel_mitigation",
+        "kind": "MITIGATION",
+        "statement": "Abort ownership, post-await checks, and no-resurrection checkpoints close the stale-handler path.",
+        "claim_id": "claim_discard_race",
+        "depth": 3,
+        "terminal": true,
+        "closure_reason": "MONITORED"
+      },
+      {
+        "id": "node_overlay_refinement",
+        "kind": "MITIGATION",
+        "statement": "A quiet modular shell plus visual/geometry evidence reduces occlusion without changing destructive authority.",
+        "claim_id": "claim_objective",
+        "depth": 2,
+        "terminal": true,
+        "closure_reason": "MONITORED"
+      },
+      {
+        "id": "node_external_stop",
+        "kind": "CONSEQUENCE",
+        "statement": "Authenticated mutation and subjective release acceptance remain outside this action batch.",
+        "claim_id": "claim_external_boundary",
+        "depth": 1,
+        "terminal": true,
+        "closure_reason": "OUT_OF_SCOPE_AUTHORITY"
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_recover_baseline",
+        "relation": "FORWARD",
+        "source_node_id": "root_recovery_decision",
+        "target_node_id": "node_recovered_baseline",
+        "source_delta": "Use verified remote history instead of duplicating older local work.",
+        "mechanism_status": "KNOWN",
+        "mechanism": "Fetch the remote ref into an isolated worktree while leaving the original checkout untouched.",
+        "conditions": [
+          "Remote head remains 76f66cd at recovery time."
+        ],
+        "lag": "Immediate",
+        "target_delta": "The complete controlled account/DM and acceptance implementation becomes available for refinement.",
+        "affected_refs": [
+          "inv_preserve_existing"
+        ],
+        "supporting_claim_ids": [
+          "claim_remote_recovery",
+          "claim_dirty_preserved"
+        ],
+        "contradicting_claim_ids": [],
+        "detection": {
+          "signal": "Worktree heads and clean status",
+          "latency": "Immediate",
+          "failure_to_detect": "Edits could be applied to the wrong checkout."
+        },
+        "falsifier": "The recovery worktree does not resolve to the verified remote head.",
+        "confidence": {
+          "level": "HIGH",
+          "basis": "Git directly reports both worktree heads."
+        }
+      },
+      {
+        "id": "edge_baseline_race",
+        "relation": "FORWARD",
+        "source_node_id": "node_recovered_baseline",
+        "target_node_id": "node_discard_risk",
+        "source_delta": "Run source and security audit beyond nominal passing tests.",
+        "mechanism_status": "KNOWN",
+        "mechanism": "Inspect async boundaries and reproduce abort timing against the actual adapter/checkpoint implementation.",
+        "conditions": [
+          "A live job is discarded while authorization or another awaited inspection is pending."
+        ],
+        "lag": "Milliseconds to seconds",
+        "target_delta": "A removed job may be reserved, performed, or re-added unless cancellation is revalidated.",
+        "affected_refs": [
+          "inv_exact_target",
+          "inv_default_lock"
+        ],
+        "supporting_claim_ids": [
+          "claim_discard_race"
+        ],
+        "contradicting_claim_ids": [],
+        "detection": {
+          "signal": "Abort-during-authorization regression and missing-job checkpoint test",
+          "latency": "Test duration",
+          "failure_to_detect": "A timing-dependent stale path could survive until a real operator discard."
+        },
+        "falsifier": "Every post-await boundary proves current job ownership and cancellation before reservation or execution.",
+        "confidence": {
+          "level": "HIGH",
+          "basis": "The current source lacks those checks."
+        }
+      },
+      {
+        "id": "edge_race_mitigation",
+        "relation": "FORWARD",
+        "source_node_id": "node_discard_risk",
+        "target_node_id": "node_cancel_mitigation",
+        "source_delta": "Introduce explicit abort and current-job ownership checks.",
+        "mechanism_status": "HYPOTHESIZED",
+        "mechanism": "Abort on discard, pass the signal into both adapters, reject missing checkpoints, and cancel a reservation if abort occurs before the driver call.",
+        "conditions": [
+          "Focused regressions cover pre-reservation and post-reservation abort timing."
+        ],
+        "lag": "One implementation and verification cycle",
+        "target_delta": "Discard becomes a durable revocation before any unstarted page action.",
+        "affected_refs": [
+          "inv_exact_target"
+        ],
+        "supporting_claim_ids": [
+          "claim_discard_race"
+        ],
+        "contradicting_claim_ids": [],
+        "detection": {
+          "signal": "Zero driver calls and no resurrected job in focused tests",
+          "latency": "Immediate in CI",
+          "failure_to_detect": "An untested await boundary could remain stale."
+        },
+        "falsifier": "A deterministic abort timing still reaches reserve, driver execution, or checkpoint resurrection.",
+        "confidence": {
+          "level": "HIGH",
+          "basis": "The mitigation directly removes each causal edge in the proof."
+        }
+      },
+      {
+        "id": "edge_baseline_ui",
+        "relation": "FORWARD",
+        "source_node_id": "node_recovered_baseline",
+        "target_node_id": "node_overlay_refinement",
+        "source_delta": "Replace the dominant monolith with a compact operational shell.",
+        "mechanism_status": "HYPOTHESIZED",
+        "mechanism": "Modularize state and lifecycle, default collapsed, add theme/dock/width preferences, reduce copy, and enter execution-safe collision mode around native surfaces.",
+        "conditions": [
+          "Production-script visual and geometry matrices pass at every required viewport and state."
+        ],
+        "lag": "One design and verification cycle",
+        "target_delta": "The overlay becomes subordinate to Instagram while retaining the next safe action.",
+        "affected_refs": [
+          "inv_preserve_existing",
+          "inv_default_lock"
+        ],
+        "supporting_claim_ids": [
+          "claim_objective",
+          "claim_reference_contract"
+        ],
+        "contradicting_claim_ids": [],
+        "detection": {
+          "signal": "Reviewed before/after screenshots, geometry assertions, accessibility tree, and performance measurements",
+          "latency": "Per QA run",
+          "failure_to_detect": "Synthetic fixture may not reproduce a future Instagram layout."
+        },
+        "falsifier": "The refined panel still clips, obscures target surfaces, or weakens a safety invariant.",
+        "confidence": {
+          "level": "MEDIUM",
+          "basis": "The baseline defects are visible, but final pixels are not yet implemented."
+        }
+      },
+      {
+        "id": "edge_external_boundary",
+        "relation": "FORWARD",
+        "source_node_id": "root_recovery_decision",
+        "target_node_id": "node_external_stop",
+        "source_delta": "Apply the user's external-state restriction to every runtime decision.",
+        "mechanism_status": "KNOWN",
+        "mechanism": "Use synthetic fixtures and disposable profiles only, and stop before any armed authenticated action.",
+        "conditions": [
+          "No new exact target/action authorization is supplied during this pass."
+        ],
+        "lag": "Continuous",
+        "target_delta": "No Instagram account residue or compensating action is created.",
+        "affected_refs": [
+          "inv_no_external_mutation"
+        ],
+        "supporting_claim_ids": [
+          "claim_external_boundary"
+        ],
+        "contradicting_claim_ids": [],
+        "detection": {
+          "signal": "No authenticated arm, menu activation, or account mutation evidence",
+          "latency": "Immediate",
+          "failure_to_detect": "An unauthorized external tool call would cross the boundary."
+        },
+        "falsifier": "Any authenticated Follow, Unfollow, or Unsend occurs in this work batch.",
+        "confidence": {
+          "level": "HIGH",
+          "basis": "All executed runtime checks are synthetic and local."
+        }
+      }
+    ],
+    "feedback_loops": [],
+    "thresholds": [
+      {
+        "id": "threshold_publish",
+        "variable": "Unexplained required verification failures",
+        "boundary": "Zero",
+        "direction": "Publication is blocked when greater than zero.",
+        "evidence_or_test_ids": [
+          "test_full_suite"
+        ]
+      },
+      {
+        "id": "threshold_external_action",
+        "variable": "Authenticated Instagram mutations without exact authorization",
+        "boundary": "Zero",
+        "direction": "Stop immediately if greater than zero.",
+        "evidence_or_test_ids": [
+          "test_authenticated_acceptance"
+        ]
+      }
+    ]
+  },
+  "decision": {
+    "iteration_choice": "TEST",
+    "recommendation": "Continue locally on the recovered draft: defensive correctness and the two-concept design gate are green, so implement the selected quiet operator panel and visual matrix, then publish only after every non-authenticated gate is green.",
+    "selected_action_ids": [
+      "action_recover",
+      "action_capture_before",
+      "action_select_direction",
+      "action_fix_safety",
+      "action_refine_overlay",
+      "action_verify_publish"
+    ],
+    "rejected_options": [
+      "Do not reset or overwrite the original dirty checkout.",
+      "Do not reimplement from main when the verified remote branch contains the newer product.",
+      "Do not use a real Instagram mutation as a development test.",
+      "Do not mark the draft review-ready from DOM assertions without overlay visual evidence."
+    ],
+    "decision_claim_ids": [
+      "claim_objective",
+      "claim_remote_recovery",
+      "claim_discard_race",
+      "claim_external_boundary"
+    ],
+    "remaining_unknown_claim_ids": [
+      "claim_authenticated_unknown",
+      "claim_chrome_timeout"
+    ],
+    "human_owner": "Repository owner and Instagram operator",
+    "consecutive_stable_checks": 0,
+    "reopen_trigger": "Reopen on Instagram DOM drift, any surviving abort race, unexplained visual/Chrome regression, changed remote head, or new exact action authorization."
+  },
+  "actions": [
+    {
+      "id": "action_recover",
+      "description": "Fetch the verified remote branch into an isolated sibling worktree while preserving the original dirty checkout.",
+      "status": "VERIFIED",
+      "authorization_status": "AUTHORIZED",
+      "authority_basis": "Read-only recovery and isolated local work are within the user-authorized repository scope.",
+      "destructive": false,
+      "production": false,
+      "external_state_change": false,
+      "irreversible": false,
+      "monitoring": "Verify both worktree heads and statuses before each publication step.",
+      "rollback": {
+        "kind": "TRUE_ROLLBACK",
+        "procedure": "Remove only the isolated worktree after its branch is preserved; do not touch the original checkout.",
+        "preconditions": [
+          "Confirm the recovery branch and commits are preserved."
+        ],
+        "verification": "git worktree list no longer includes the isolated path and the original status is unchanged.",
+        "evidence_ids": [
+          "ev_worktrees"
+        ],
+        "irreversible_residue": "None in Instagram; Git objects may remain locally until normal maintenance."
+      },
+      "recovery": {
+        "procedure": "Re-add a worktree from the preserved local or remote recovery branch.",
+        "owner": "Repository maintainer",
+        "evidence_ids": [
+          "ev_remote_branch"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_recovered_baseline"
+      ]
+    },
+    {
+      "id": "action_capture_before",
+      "description": "Capture current production-script overlay screenshots before redesign and inspect the pixels.",
+      "status": "VERIFIED",
+      "authorization_status": "AUTHORIZED",
+      "authority_basis": "Synthetic local visual evidence is non-destructive and required by the committed contract.",
+      "destructive": false,
+      "production": false,
+      "external_state_change": false,
+      "irreversible": false,
+      "monitoring": "Retain hashes and compare against final evidence rather than overwriting before images.",
+      "rollback": {
+        "kind": "TRUE_ROLLBACK",
+        "procedure": "Remove generated evidence files only if the review contract is abandoned and their hashes are no longer referenced.",
+        "preconditions": [
+          "Confirm no documentation or accepted baseline references the files."
+        ],
+        "verification": "Git status and evidence manifest show no stale paths.",
+        "evidence_ids": [
+          "ev_before_visuals"
+        ],
+        "irreversible_residue": "None."
+      },
+      "recovery": {
+        "procedure": "Re-run the deterministic fixture at recovered head 76f66cd.",
+        "owner": "Repository maintainer",
+        "evidence_ids": [
+          "ev_before_visuals"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_overlay_refinement"
+      ]
+    },
+    {
+      "id": "action_select_direction",
+      "description": "Audit the current production overlay, render both required shell concepts, score them, and specify the selected direction before implementation.",
+      "status": "VERIFIED",
+      "authorization_status": "AUTHORIZED",
+      "authority_basis": "Synthetic local design evidence and engineering selection are explicitly required by the committed refinement prompt.",
+      "destructive": false,
+      "production": false,
+      "external_state_change": false,
+      "irreversible": false,
+      "monitoring": "Retain both concept variants, geometry metrics, score inputs, and the human-acceptance nonclaim.",
+      "rollback": {
+        "kind": "TRUE_ROLLBACK",
+        "procedure": "Revert the design-audit commit without touching either controlled-action commit or the protected checkout.",
+        "preconditions": [
+          "Preserve the before screenshots and concept receipts if later documentation still references them."
+        ],
+        "verification": "Git status shows only the intended design evidence removed and both source checkouts retain their prior heads.",
+        "evidence_ids": [
+          "ev_human_eye_audit",
+          "ev_overlay_concepts",
+          "ev_concept_scorecard",
+          "ev_overlay_spec"
+        ],
+        "irreversible_residue": "None."
+      },
+      "recovery": {
+        "procedure": "Rerun scripts/run-overlay-concepts.mjs at the recorded build and recalculate the documented scorecard.",
+        "owner": "Repository maintainer",
+        "evidence_ids": [
+          "ev_overlay_concepts",
+          "ev_concept_scorecard"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_overlay_refinement"
+      ]
+    },
+    {
+      "id": "action_fix_safety",
+      "description": "Remediate cancellation, checkpoint resurrection, CSPRNG failure, and localization corruption with focused regressions.",
+      "status": "VERIFIED",
+      "authorization_status": "AUTHORIZED",
+      "authority_basis": "Local defensive changes are within scope and required before publication.",
+      "destructive": false,
+      "production": false,
+      "external_state_change": false,
+      "irreversible": false,
+      "monitoring": "Run focused negative tests before and after the full suite.",
+      "rollback": {
+        "kind": "TRUE_ROLLBACK",
+        "procedure": "Revert the logical local commit if it regresses a preserved contract.",
+        "preconditions": [
+          "Preserve evidence and identify the exact commit."
+        ],
+        "verification": "Focused and full tests return to the prior baseline without changing the original checkout.",
+        "evidence_ids": [
+          "ev_discard_validation",
+          "ev_discard_fix_tests",
+          "ev_randomness_locale_tests",
+          "ev_correctness_checkpoint"
+        ],
+        "irreversible_residue": "None in Instagram because no external action is permitted."
+      },
+      "recovery": {
+        "procedure": "Reapply a corrected patch on the isolated branch and rerun the negative proof.",
+        "owner": "Repository maintainer",
+        "evidence_ids": [
+          "ev_required_sources",
+          "ev_correctness_commit"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_cancel_mitigation"
+      ]
+    },
+    {
+      "id": "action_refine_overlay",
+      "description": "Implement the selected quiet professional operator panel, modular lifecycle, preferences, themes, accessibility, collision mode, and visual QA.",
+      "status": "AUTHORIZED",
+      "authorization_status": "AUTHORIZED",
+      "authority_basis": "The user and committed refinement prompt explicitly request this local UI implementation.",
+      "destructive": false,
+      "production": false,
+      "external_state_change": false,
+      "irreversible": false,
+      "monitoring": "Use reviewed screenshots, geometry assertions, DOM bounds, performance metrics, and accessibility-tree checks.",
+      "rollback": {
+        "kind": "TRUE_ROLLBACK",
+        "procedure": "Revert the overlay refinement commits while preserving the recovered controlled-action implementation.",
+        "preconditions": [
+          "Keep design audit and before evidence intact."
+        ],
+        "verification": "The prior production overlay and 123-test baseline reproduce.",
+        "evidence_ids": [
+          "ev_before_visuals",
+          "ev_baseline_tests"
+        ],
+        "irreversible_residue": "Versioned local preferences may remain but must migrate safely; no Instagram state changes."
+      },
+      "recovery": {
+        "procedure": "Restore from the last passing logical commit and reapply the failing visual slice.",
+        "owner": "Repository maintainer",
+        "evidence_ids": [
+          "ev_remote_branch"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_overlay_refinement"
+      ]
+    },
+    {
+      "id": "action_verify_publish",
+      "description": "Run the complete non-authenticated verification matrix, commit logical green checkpoints, push to the existing draft branch, and update pull request 8.",
+      "status": "PROPOSED",
+      "authorization_status": "AUTHORIZED",
+      "authority_basis": "Repository publication is explicitly authorized; merge and real-account actions remain excluded.",
+      "destructive": false,
+      "production": false,
+      "external_state_change": true,
+      "irreversible": false,
+      "monitoring": "Require zero unexplained failures and confirm PR remains draft.",
+      "rollback": {
+        "kind": "TRUE_ROLLBACK",
+        "procedure": "Publish a normal revert commit or update the draft branch with a corrective commit; never force-reset shared history.",
+        "preconditions": [
+          "Identify the exact published commit and preserve evidence."
+        ],
+        "verification": "GitHub draft head contains the revert/correction and CI returns green.",
+        "evidence_ids": [
+          "ev_pull_request"
+        ],
+        "irreversible_residue": "Public commit and review history remain visible."
+      },
+      "recovery": {
+        "procedure": "Continue on the isolated branch, publish a corrective commit, and update the PR evidence truthfully.",
+        "owner": "Repository maintainer",
+        "evidence_ids": [
+          "ev_pull_request"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_recovered_baseline",
+        "node_overlay_refinement"
+      ]
+    },
+    {
+      "id": "action_authenticated_mutation",
+      "description": "Perform a real authenticated Follow, Unfollow, or Unsend as part of this refinement pass.",
+      "status": "REJECTED",
+      "authorization_status": "FORBIDDEN",
+      "authority_basis": "The user explicitly requires exact target and action authorization at execution time, which has not been supplied.",
+      "destructive": true,
+      "production": true,
+      "external_state_change": true,
+      "irreversible": true,
+      "monitoring": "No authenticated arm or page-control request may be issued.",
+      "rollback": {
+        "kind": "NONE",
+        "procedure": "Do not execute; a later inverse action would be compensating rather than true rollback.",
+        "preconditions": [
+          "A new exact target/action authorization would be required even to reconsider."
+        ],
+        "verification": "No before/after external mutation evidence exists in this batch.",
+        "evidence_ids": [
+          "ev_user_authority"
+        ],
+        "irreversible_residue": "A real action could create notifications, relationship changes, or message removal that cannot be erased by repository rollback."
+      },
+      "recovery": {
+        "procedure": "If an unauthorized action ever occurred, stop immediately and escalate to the user; do not silently compensate.",
+        "owner": "User",
+        "evidence_ids": [
+          "ev_user_authority"
+        ]
+      },
+      "mitigation_consequence_node_ids": [
+        "node_external_stop"
+      ]
+    }
+  ],
+  "verification": {
+    "mechanism": {
+      "status": "FAIL",
+      "signal": "Exact-target binding, discard cancellation, secure-random fail-closed behavior, and localization isolation pass focused and full-suite tests; only the modular overlay mechanism remains unfinished.",
+      "evidence_ids": [
+        "ev_baseline_tests",
+        "ev_discard_fix_tests",
+        "ev_safety_checkpoint",
+        "ev_randomness_locale_tests",
+        "ev_correctness_checkpoint",
+        "ev_correctness_commit"
+      ],
+      "rationale": "The defensive mechanisms are closed, but the broader refinement mechanism is not yet complete."
+    },
+    "endpoint": {
+      "status": "UNKNOWN",
+      "signal": "Before screenshots are captured, but the compact refined overlay and its full matrix do not yet exist.",
+      "evidence_ids": [
+        "ev_before_visuals"
+      ],
+      "rationale": "The actual requested visual outcome remains unimplemented."
+    },
+    "guardrails": {
+      "status": "PASS",
+      "signal": "Default-lock, no-click, exact-target, durable discard revocation, secure capability issuance, and exact localized-label guardrails pass across 138 tests and bounded fixture acceptance.",
+      "evidence_ids": [
+        "ev_baseline_tests",
+        "ev_discard_fix_tests",
+        "ev_safety_checkpoint",
+        "ev_randomness_locale_tests",
+        "ev_correctness_checkpoint"
+      ],
+      "rationale": "The local defensive correctness slice is verified; visual geometry, authenticated use, and human acceptance remain separate open gates."
+    },
+    "recovery": {
+      "status": "PASS",
+      "signal": "The original dirty checkout is preserved and the work is isolated in a sibling worktree.",
+      "evidence_ids": [
+        "ev_worktrees"
+      ],
+      "rationale": "Local changes can be reverted without erasing user work or leaving Instagram residue."
+    }
+  },
+  "closure": {
+    "status": "OPEN",
+    "summary": "Recovery, baseline evidence, defensive safety remediation, and the two-concept design gate are complete; production overlay refinement, final verification, and draft publication remain open.",
+    "residual_risks": [
+      "The two defensive commits 032b832 and ff8b4b8 are fully exercised locally but not yet published.",
+      "The local Chrome pairing timeout is not yet explained.",
+      "Overlay-specific visual regression and geometry matrices do not yet exist.",
+      "Authenticated selector, persistent-profile, human screen-reader, and real-action acceptance remain unverified and human-owned."
+    ],
+    "human_acceptance_required": true,
+    "accepted_by": "",
+    "acceptance_evidence_ids": [],
+    "nonclaims": [
+      "This ledger does not contain hidden chain-of-thought.",
+      "No authenticated Instagram Follow, Unfollow, or Unsend was executed.",
+      "Synthetic fixture evidence is not authenticated Instagram or human screen-reader acceptance.",
+      "The overlay is not claimed perfect, production ready, or fully verified."
+    ]
+  }
+}

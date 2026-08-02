@@ -1,0 +1,137 @@
+{
+  "buildId": "ff8b4b8c9587114273e45d28e8bac14ec1d3f643",
+  "capturedAt": "2026-08-02T20:49:30.183Z",
+  "fixture": "tests/fixtures/overlay-preview.html?mode=profile",
+  "metrics": [
+    {
+      "concept": "native",
+      "theme": "light",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panel": {
+        "bottom": 661.96875,
+        "height": 587.96875,
+        "left": 1051,
+        "right": 1407,
+        "top": 74,
+        "width": 356
+      },
+      "rail": null,
+      "nativeControl": {
+        "bottom": 91,
+        "height": 31,
+        "left": 795.296875,
+        "right": 893.5,
+        "top": 60,
+        "width": 98.203125
+      },
+      "viewportAreaShare": 0.1615,
+      "intersectsNativeProfileControl": false,
+      "file": "compact-instagram-native-light.png",
+      "sha256": "ccdcec295287d122e88728eb0cea6065a23dd8fdfcc430d48e2eae5b5e0fb4dd"
+    },
+    {
+      "concept": "native",
+      "theme": "dark",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panel": {
+        "bottom": 661.96875,
+        "height": 587.96875,
+        "left": 1051,
+        "right": 1407,
+        "top": 74,
+        "width": 356
+      },
+      "rail": null,
+      "nativeControl": {
+        "bottom": 91,
+        "height": 31,
+        "left": 795.296875,
+        "right": 893.5,
+        "top": 60,
+        "width": 98.203125
+      },
+      "viewportAreaShare": 0.1615,
+      "intersectsNativeProfileControl": false,
+      "file": "compact-instagram-native-dark.png",
+      "sha256": "93fd355a6b5f19889fff37e7a2c91bc4012bbaaac70c325557a60ff42941c162"
+    },
+    {
+      "concept": "operator",
+      "theme": "light",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panel": {
+        "bottom": 734,
+        "height": 680,
+        "left": 1027,
+        "right": 1407,
+        "top": 54,
+        "width": 380
+      },
+      "rail": {
+        "bottom": 733,
+        "height": 678,
+        "left": 1028,
+        "right": 1076,
+        "top": 55,
+        "width": 48
+      },
+      "nativeControl": {
+        "bottom": 91,
+        "height": 31,
+        "left": 795.296875,
+        "right": 893.5,
+        "top": 60,
+        "width": 98.203125
+      },
+      "viewportAreaShare": 0.1994,
+      "intersectsNativeProfileControl": false,
+      "file": "quiet-operator-panel-light.png",
+      "sha256": "58799c02786f8fd408b3fc6752054871a50500790e0f08326aa0a0c9df9ae62d"
+    },
+    {
+      "concept": "operator",
+      "theme": "dark",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panel": {
+        "bottom": 734,
+        "height": 680,
+        "left": 1027,
+        "right": 1407,
+        "top": 54,
+        "width": 380
+      },
+      "rail": {
+        "bottom": 733,
+        "height": 678,
+        "left": 1028,
+        "right": 1076,
+        "top": 55,
+        "width": 48
+      },
+      "nativeControl": {
+        "bottom": 91,
+        "height": 31,
+        "left": 795.296875,
+        "right": 893.5,
+        "top": 60,
+        "width": 98.203125
+      },
+      "viewportAreaShare": 0.1994,
+      "intersectsNativeProfileControl": false,
+      "file": "quiet-operator-panel-dark.png",
+      "sha256": "2452ab5244a69409a36f49213a282c06ead72065b959466872347f10c20204a6"
+    }
+  ]
+}
