@@ -441,6 +441,182 @@ test('DM live authorization safe-stops before reserving the durable ledger', asy
   assert.equal(performCount, 0);
 });
 
+test('discard cancellation during DM live authorization stops before reservation or Unsend', async () => {
+  const source = message('sent-discarded');
+  const settings = { liveDmUnsendEnabled: true, liveDmBatchLimit: 1 };
+  const draft = createReviewedDmJob([source], [messageSelectionKey(source)]);
+  const reviewed = confirmDmJobReview(draft, {
+    phrase: draft.reviewConfirmationPhrase,
+    mode: 'live',
+    settings,
+  });
+  const job = confirmDmJobDestructive(reviewed, {
+    phrase: reviewed.destructiveConfirmationPhrase,
+  });
+  const controller = new AbortController();
+  const calls = [];
+  const result = await executeReviewedDmJob(job, {
+    settings,
+    signal: controller.signal,
+    driver: {
+      async inspectSession() {
+        calls.push('session');
+        return {};
+      },
+      async resolveConversation(conversationId) {
+        calls.push(`conversation:${conversationId}`);
+        return { conversationId };
+      },
+      async resolveMessage(item) {
+        calls.push(`message:${item.messageId}`);
+        return exactResolution(item);
+      },
+      async inspectLiveAuthorization() {
+        calls.push('authorize');
+        controller.abort();
+        return { authorized: true };
+      },
+      async performReviewedUnsend() {
+        calls.push('unsend');
+        return exactRemovalResult(job.items[0]);
+      },
+    },
+    ledger: {
+      async reserve() {
+        calls.push('reserve');
+        return { ok: true, record: { id: 'must-not-exist' } };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'paused');
+  assert.equal(result.stopReason, 'execution-canceled-before-driver');
+  assert.deepEqual(calls, [
+    'session',
+    `conversation:${source.conversationId}`,
+    `message:${source.id}`,
+    'authorize',
+  ]);
+});
+
+test('discard cancellation after DM reservation finalizes canceled without dispatching Unsend', async () => {
+  const source = message('sent-reserved');
+  const settings = { liveDmUnsendEnabled: true, liveDmBatchLimit: 1 };
+  const draft = createReviewedDmJob([source], [messageSelectionKey(source)]);
+  const reviewed = confirmDmJobReview(draft, {
+    phrase: draft.reviewConfirmationPhrase,
+    mode: 'live',
+    settings,
+  });
+  const job = confirmDmJobDestructive(reviewed, {
+    phrase: reviewed.destructiveConfirmationPhrase,
+  });
+  const controller = new AbortController();
+  const calls = [];
+  const result = await executeReviewedDmJob(job, {
+    settings,
+    signal: controller.signal,
+    driver: {
+      async inspectSession() {
+        calls.push('session');
+        return {};
+      },
+      async resolveConversation(conversationId) {
+        calls.push(`conversation:${conversationId}`);
+        return { conversationId };
+      },
+      async resolveMessage(item) {
+        calls.push(`message:${item.messageId}`);
+        return exactResolution(item);
+      },
+      async inspectLiveAuthorization() {
+        calls.push('authorize');
+        return { authorized: true };
+      },
+      async performReviewedUnsend() {
+        calls.push('unsend');
+        return exactRemovalResult(job.items[0]);
+      },
+    },
+    ledger: {
+      async reserve() {
+        calls.push('reserve');
+        controller.abort();
+        return { ok: true, record: { id: 'dm-attempt-canceled' } };
+      },
+      async finalize(id, completion) {
+        calls.push(`finalize:${id}:${completion.status}:${completion.result.reason}`);
+        return { ok: true };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'paused');
+  assert.equal(result.stopReason, 'execution-canceled-before-driver');
+  assert.deepEqual(calls, [
+    'session',
+    `conversation:${source.conversationId}`,
+    `message:${source.id}`,
+    'authorize',
+    'reserve',
+    'finalize:dm-attempt-canceled:canceled:execution-canceled-before-driver',
+  ]);
+});
+
+test('cancellation after Unsend dispatch preserves postcheck and durable outcome semantics', async () => {
+  const source = message('sent-in-flight');
+  const settings = { liveDmUnsendEnabled: true, liveDmBatchLimit: 1 };
+  const draft = createReviewedDmJob([source], [messageSelectionKey(source)]);
+  const reviewed = confirmDmJobReview(draft, {
+    phrase: draft.reviewConfirmationPhrase,
+    mode: 'live',
+    settings,
+  });
+  const job = confirmDmJobDestructive(reviewed, {
+    phrase: reviewed.destructiveConfirmationPhrase,
+  });
+  const controller = new AbortController();
+  const finalizations = [];
+  let resolutionCount = 0;
+  const result = await executeReviewedDmJob(job, {
+    settings,
+    signal: controller.signal,
+    driver: {
+      async inspectSession() {
+        return {};
+      },
+      async resolveConversation(conversationId) {
+        return { conversationId };
+      },
+      async resolveMessage(item) {
+        resolutionCount += 1;
+        return resolutionCount === 1 ? exactResolution(item) : exactMissingResolution(item);
+      },
+      async inspectLiveAuthorization() {
+        return { authorized: true };
+      },
+      async performReviewedUnsend(item) {
+        controller.abort();
+        return exactRemovalResult(item);
+      },
+    },
+    ledger: {
+      async reserve() {
+        return { ok: true, record: { id: 'dm-attempt-in-flight' } };
+      },
+      async finalize(id, completion) {
+        finalizations.push({ id, completion });
+        return { ok: true };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.items[0].status, 'completed');
+  assert.equal(finalizations.length, 1);
+  assert.equal(finalizations[0].completion.status, 'succeeded');
+});
+
 test('revalidates DM confirmation, preview, and live limits at execution time', async () => {
   const sources = [
     message('sent-1'),

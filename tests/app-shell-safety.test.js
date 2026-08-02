@@ -54,7 +54,8 @@ test('controlled live account UI prepares and arms one item before durable execu
   assert.match(queueView, /data-action="run-action-extension-live"/);
   assert.match(handlers, /'action\.account-live-intent'/);
   assert.match(handlers, /prepared\.payload\?\.armed !== true/);
-  assert.match(handlers, /state = await saveActionJobCheckpoint\(checkpointJob\)/);
+  assert.match(handlers, /const savedState = await saveActionJobCheckpoint\(checkpointJob\)/);
+  assert.match(handlers, /state = savedState/);
   assert.match(handlers, /markQueueItem\(state\.queue, item\.queueItemId, 'completed'\)/);
   assert.match(handlers, /state\.settings\.liveActionBatchLimit = 1/);
   assert.equal(
@@ -77,7 +78,8 @@ test('controlled live DM UI prepares exactly one item before either ledger or dr
   assert.match(messagesView, /data-action="run-dm-extension-live"/);
   assert.match(handlers, /'action\.dm-live-intent'/);
   assert.match(handlers, /prepared\.payload\?\.armed !== true/);
-  assert.match(handlers, /state = await saveDmJobCheckpoint\(checkpointJob\)/);
+  assert.match(handlers, /const savedState = await saveDmJobCheckpoint\(checkpointJob\)/);
+  assert.match(handlers, /state = savedState/);
   assert.equal(
     handlers.indexOf("'action.dm-live-intent'")
       < handlers.indexOf('createIndexedDbDmLedger()'),
@@ -88,6 +90,30 @@ test('controlled live DM UI prepares exactly one item before either ledger or dr
       < handlers.indexOf('executeReviewedDmJob(job'),
     true,
   );
+});
+
+test('discard aborts only the matching reviewed execution and stale checkpoints are rejected', async () => {
+  const [shell, handlers] = await Promise.all([
+    readFile('src/app.parts/part-01.jsfrag', 'utf8'),
+    readFile('src/app.parts/part-04.jsfrag', 'utf8'),
+  ]);
+  assert.match(shell, /let actionExecutionController = null/);
+  assert.match(shell, /let dmExecutionController = null/);
+  assert.match(shell, /actionExecutionController !== controller/);
+  assert.match(shell, /current\?\.id !== job\.id/);
+  assert.match(shell, /current\?\.previewDigest !== job\.previewDigest/);
+  assert.match(shell, /dmExecutionController !== controller/);
+  assert.match(handlers, /signal: controller\.signal/);
+  assert.match(
+    handlers,
+    /discarded\?\.id === actionExecutionJobId[\s\S]*?actionExecutionController\?\.abort\(\)/,
+  );
+  assert.match(
+    handlers,
+    /discarded\?\.id === dmExecutionJobId[\s\S]*?dmExecutionController\?\.abort\(\)/,
+  );
+  assert.match(handlers, /const savedState = await saveActionJobCheckpoint\(checkpointJob\)/);
+  assert.match(handlers, /const savedState = await saveDmJobCheckpoint\(checkpointJob\)/);
 });
 
 test('overview does not describe controlled DM removal as preview-only', async () => {

@@ -68,6 +68,45 @@ let zipImportController = null;
 let bridgeStatus = '';
 let queueScrollTop = 0;
 let messageScrollTop = 0;
+let actionExecutionController = null;
+let actionExecutionJobId = null;
+let dmExecutionController = null;
+let dmExecutionJobId = null;
+
+function assertCurrentActionExecution(controller, job) {
+  const current = state.actionJobs?.[0];
+  if (
+    actionExecutionController !== controller
+    || actionExecutionJobId !== job.id
+    || controller.signal.aborted
+    || current?.id !== job.id
+    || current?.previewDigest !== job.previewDigest
+    || current?.mode !== job.mode
+    || current?.confirmedAt !== job.confirmedAt
+    || !['ready', 'running', 'paused', 'stopped', 'completed'].includes(current?.status)
+  ) {
+    throw new Error('The reviewed action job was discarded or changed; execution canceled.');
+  }
+  return current;
+}
+
+function assertCurrentDmExecution(controller, job) {
+  const current = state.dmJobs?.[0];
+  if (
+    dmExecutionController !== controller
+    || dmExecutionJobId !== job.id
+    || controller.signal.aborted
+    || current?.id !== job.id
+    || current?.previewDigest !== job.previewDigest
+    || current?.mode !== job.mode
+    || current?.reviewConfirmedAt !== job.reviewConfirmedAt
+    || current?.destructiveConfirmedAt !== job.destructiveConfirmedAt
+    || !['ready', 'running', 'paused', 'stopped', 'completed'].includes(current?.status)
+  ) {
+    throw new Error('The reviewed DM job was discarded or changed; execution canceled.');
+  }
+  return current;
+}
 
 const views = [
   ['overview', 'Overview'],

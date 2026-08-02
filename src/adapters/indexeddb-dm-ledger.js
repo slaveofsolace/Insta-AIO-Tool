@@ -30,8 +30,8 @@ export async function saveDmJobCheckpoint(job) {
   const outcome = await updateStateAtomically((state) => {
     const dmJobs = [...state.dmJobs];
     const index = dmJobs.findIndex((candidate) => candidate.id === job.id);
-    if (index >= 0) dmJobs[index] = job;
-    else dmJobs.push(job);
+    if (index < 0) throw new Error('Reviewed DM job no longer exists.');
+    dmJobs[index] = job;
     return {
       state: {
         ...state,

@@ -184,6 +184,14 @@ app.addEventListener('click', async (event) => {
   if (action === 'run-action-extension-dry-run') {
     const job = state.actionJobs?.[0];
     if (!job || job.mode !== 'dry-run' || job.status !== 'ready') return;
+    if (actionExecutionController) {
+      bridgeStatus = 'A reviewed account execution is already in progress.';
+      render();
+      return;
+    }
+    const controller = new AbortController();
+    actionExecutionController = controller;
+    actionExecutionJobId = job.id;
     bridgeStatus = 'Inspecting the active Instagram profile without clicking...';
     render();
     try {
@@ -193,6 +201,7 @@ app.addEventListener('click', async (event) => {
         { job },
         { timeoutMs: 15_000 },
       );
+      assertCurrentActionExecution(controller, job);
       if (response.type === 'action.bridge-error') {
         throw new Error(response.payload?.reason || 'extension-rejected-job');
       }
@@ -206,14 +215,29 @@ app.addEventListener('click', async (event) => {
       });
       await persist();
     } catch (error) {
-      bridgeStatus = `Error: ${error.message}`;
+      bridgeStatus = controller.signal.aborted
+        ? 'Account dry run canceled because its reviewed job was discarded.'
+        : `Error: ${error.message}`;
       render();
+    } finally {
+      if (actionExecutionController === controller) {
+        actionExecutionController = null;
+        actionExecutionJobId = null;
+      }
     }
     return;
   }
   if (action === 'run-action-extension-live') {
     const job = state.actionJobs?.[0];
     if (!job || job.mode !== 'live' || job.status !== 'ready' || job.items.length !== 1) return;
+    if (actionExecutionController) {
+      bridgeStatus = 'A reviewed account execution is already in progress.';
+      render();
+      return;
+    }
+    const controller = new AbortController();
+    actionExecutionController = controller;
+    actionExecutionJobId = job.id;
     bridgeStatus = 'Checking the signed one-item intent and Instagram-side live arm...';
     render();
     try {
@@ -223,6 +247,7 @@ app.addEventListener('click', async (event) => {
         { job },
         { timeoutMs: 15_000 },
       );
+      assertCurrentActionExecution(controller, job);
       if (prepared.type === 'action.bridge-error') {
         throw new Error(prepared.payload?.reason || 'extension-rejected-live-intent');
       }
@@ -247,11 +272,16 @@ app.addEventListener('click', async (event) => {
         ledger,
         settings: state.settings,
         snapshot: activeSnapshot(),
+        signal: controller.signal,
         async onCheckpoint(checkpointJob) {
-          state = await saveActionJobCheckpoint(checkpointJob);
+          assertCurrentActionExecution(controller, job);
+          const savedState = await saveActionJobCheckpoint(checkpointJob);
+          assertCurrentActionExecution(controller, job);
+          state = savedState;
           render();
         },
       });
+      assertCurrentActionExecution(controller, job);
       for (const item of result.items.filter((candidate) => candidate.status === 'completed')) {
         state.queue = markQueueItem(state.queue, item.queueItemId, 'completed');
       }
@@ -260,8 +290,15 @@ app.addEventListener('click', async (event) => {
         : `Controlled live action stopped safely: ${result.stopReason || 'unknown reason'}.`;
       await persist();
     } catch (error) {
-      bridgeStatus = `Stopped: ${error.message}`;
+      bridgeStatus = controller.signal.aborted
+        ? 'Reviewed action discarded. No new action will be dispatched; check the durable ledger before retrying because an action already in flight cannot be recalled.'
+        : `Stopped: ${error.message}`;
       render();
+    } finally {
+      if (actionExecutionController === controller) {
+        actionExecutionController = null;
+        actionExecutionJobId = null;
+      }
     }
     return;
   }
@@ -278,6 +315,7 @@ app.addEventListener('click', async (event) => {
   }
   if (action === 'discard-action-job') {
     const [discarded, ...remaining] = state.actionJobs || [];
+    if (discarded?.id === actionExecutionJobId) actionExecutionController?.abort();
     state.actionJobs = remaining;
     if (discarded) {
       logActivity('action-preview', 'Discarded a reviewed action preview.', {
@@ -363,6 +401,14 @@ app.addEventListener('click', async (event) => {
   if (action === 'run-dm-extension-dry-run') {
     const job = state.dmJobs?.[0];
     if (!job || job.mode !== 'dry-run' || job.status !== 'ready') return;
+    if (dmExecutionController) {
+      bridgeStatus = 'A reviewed DM execution is already in progress.';
+      render();
+      return;
+    }
+    const controller = new AbortController();
+    dmExecutionController = controller;
+    dmExecutionJobId = job.id;
     bridgeStatus = 'Checking exact-message resolution support without clicking...';
     render();
     try {
@@ -372,6 +418,7 @@ app.addEventListener('click', async (event) => {
         { job },
         { timeoutMs: 15_000 },
       );
+      assertCurrentDmExecution(controller, job);
       if (response.type === 'action.bridge-error') {
         throw new Error(response.payload?.reason || 'extension-rejected-job');
       }
@@ -385,14 +432,29 @@ app.addEventListener('click', async (event) => {
       });
       await persist();
     } catch (error) {
-      bridgeStatus = `Error: ${error.message}`;
+      bridgeStatus = controller.signal.aborted
+        ? 'DM dry run canceled because its reviewed job was discarded.'
+        : `Error: ${error.message}`;
       render();
+    } finally {
+      if (dmExecutionController === controller) {
+        dmExecutionController = null;
+        dmExecutionJobId = null;
+      }
     }
     return;
   }
   if (action === 'run-dm-extension-live') {
     const job = state.dmJobs?.[0];
     if (!job || job.mode !== 'live' || job.status !== 'ready' || job.items.length !== 1) return;
+    if (dmExecutionController) {
+      bridgeStatus = 'A reviewed DM execution is already in progress.';
+      render();
+      return;
+    }
+    const controller = new AbortController();
+    dmExecutionController = controller;
+    dmExecutionJobId = job.id;
     bridgeStatus = 'Checking the signed one-message intent and Instagram-side DM arm...';
     render();
     try {
@@ -402,6 +464,7 @@ app.addEventListener('click', async (event) => {
         { job },
         { timeoutMs: 15_000 },
       );
+      assertCurrentDmExecution(controller, job);
       if (prepared.type === 'action.bridge-error') {
         throw new Error(prepared.payload?.reason || 'extension-rejected-dm-live-intent');
       }
@@ -425,18 +488,30 @@ app.addEventListener('click', async (event) => {
         driver,
         ledger,
         settings: state.settings,
+        signal: controller.signal,
         async onCheckpoint(checkpointJob) {
-          state = await saveDmJobCheckpoint(checkpointJob);
+          assertCurrentDmExecution(controller, job);
+          const savedState = await saveDmJobCheckpoint(checkpointJob);
+          assertCurrentDmExecution(controller, job);
+          state = savedState;
           render();
         },
       });
+      assertCurrentDmExecution(controller, job);
       bridgeStatus = result.status === 'completed'
         ? 'Controlled one-message Unsend completed. The job checkpoint and both ledger results are durable.'
         : `Controlled DM Unsend stopped safely: ${result.stopReason || 'unknown reason'}.`;
       await persist();
     } catch (error) {
-      bridgeStatus = `Stopped: ${error.message}`;
+      bridgeStatus = controller.signal.aborted
+        ? 'Reviewed DM job discarded. No new Unsend will be dispatched; check the durable ledger before retrying because an Unsend already in flight cannot be recalled.'
+        : `Stopped: ${error.message}`;
       render();
+    } finally {
+      if (dmExecutionController === controller) {
+        dmExecutionController = null;
+        dmExecutionJobId = null;
+      }
     }
     return;
   }
@@ -453,6 +528,7 @@ app.addEventListener('click', async (event) => {
   }
   if (action === 'discard-dm-job') {
     const [discarded, ...remaining] = state.dmJobs || [];
+    if (discarded?.id === dmExecutionJobId) dmExecutionController?.abort();
     state.dmJobs = remaining;
     if (discarded) {
       logActivity('dm-preview', 'Discarded a reviewed DM preview.', {

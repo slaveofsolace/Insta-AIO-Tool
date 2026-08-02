@@ -54,17 +54,19 @@ The PWA owns:
 - Ten-minute live-confirmation freshness validation
 - One-use extension authorization revalidation before ledger reservation
 - Transactional reservation before live driver calls
+- Abort-aware revalidation after every awaited pre-driver boundary
+- Matching-job discard cancellation with canceled reservation finalization
 - Before/after evidence
 - Pause, resume, stop, and durable per-item checkpoints
 - Safe stops for ambiguous or blocked states
 
-`src/core/action-ledger.js` and `src/adapters/indexeddb-action-ledger.js` enforce duplicate and finite daily-limit rules. Restored limits are normalized before use. The extension background also keeps a bounded, independent reservation mirror with a conservative per-action daily ceiling so the privileged page-control boundary never depends only on a cooperative PWA caller.
+`src/core/action-ledger.js` and `src/adapters/indexeddb-action-ledger.js` enforce duplicate and finite daily-limit rules. Restored limits are normalized before use. A checkpoint can update only an existing reviewed job; a callback arriving after discard fails closed instead of recreating the job. The extension background also keeps a bounded, independent reservation mirror with a conservative per-action daily ceiling so the privileged page-control boundary never depends only on a cooperative PWA caller.
 
 ### Reviewed DM actions
 
 `src/core/dm-jobs.js` preserves exact conversation ID, message ID, timestamp, ownership, and content digest for each selected message. Live jobs require both review and destructive confirmations.
 
-`src/adapters/reviewed-dm-adapter.js` resolves the conversation and message immediately before a driver call, reserves the attempt transactionally, checkpoints after every item, and verifies removal.
+`src/adapters/reviewed-dm-adapter.js` resolves the conversation and message immediately before a driver call, reserves the attempt transactionally, checkpoints after every item, and verifies removal. Matching discard cancellation is rechecked after every awaited pre-Unsend boundary. A post-reservation cancellation is finalized as `canceled` before any driver call; cancellation after dispatch retains the postcheck and real outcome semantics because Unsend cannot be recalled.
 
 `src/adapters/instagram-dm-unsender.js` adapts safe concepts from the reviewed 0.7.2 source. It accepts only one exact sent-message candidate, one exact localized Unsend option, and a matching confirmation record. It does not copy the source's broad loop or heuristic mass-selection behavior.
 
@@ -171,7 +173,7 @@ importWarnings
 
 Migrations are additive. Missing collections receive safe defaults, unknown extra fields remain available through object spread, and live settings default to disabled with batch limits of one.
 
-IndexedDB is the primary store. LocalStorage is a fallback for environments without usable IndexedDB. Atomic ledger updates use one IndexedDB read/write transaction or a serialized LocalStorage fallback.
+IndexedDB is the primary store. LocalStorage is a fallback for environments without usable IndexedDB. Atomic ledger updates use one IndexedDB read/write transaction or a serialized LocalStorage fallback. Reviewed-job checkpoint updates are update-only transactions and reject missing jobs, preventing stale asynchronous writers from undoing discard.
 
 ## Trust boundaries
 

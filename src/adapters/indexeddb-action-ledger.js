@@ -30,8 +30,8 @@ export async function saveActionJobCheckpoint(job) {
   const outcome = await updateStateAtomically((state) => {
     const actionJobs = [...state.actionJobs];
     const index = actionJobs.findIndex((candidate) => candidate.id === job.id);
-    if (index >= 0) actionJobs[index] = job;
-    else actionJobs.push(job);
+    if (index < 0) throw new Error('Reviewed action job no longer exists.');
+    actionJobs[index] = job;
     return {
       state: {
         ...state,

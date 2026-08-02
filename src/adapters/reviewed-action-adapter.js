@@ -14,6 +14,8 @@ function aborted(signal) {
   return Boolean(signal?.aborted);
 }
 
+const CANCELED_BEFORE_DRIVER = 'execution-canceled-before-driver';
+
 function activity(kind, item, message, now = Date.now(), details = {}) {
   return {
     id: `${item.id}:${kind}:${now}`,
@@ -39,6 +41,12 @@ function stopJob(job, reason, now = Date.now()) {
     message: `Action job stopped: ${reason}.`,
     details: { reason },
   });
+  return next;
+}
+
+function canceledJob(job, now = Date.now()) {
+  const next = setActionJobControl(job, 'paused', now);
+  next.stopReason = CANCELED_BEFORE_DRIVER;
   return next;
 }
 
@@ -87,14 +95,23 @@ export async function executeReviewedActionJob(inputJob, {
     }
   }
 
+  if (aborted(signal)) {
+    return checkpoint(canceledJob(inputJob, now()), onCheckpoint);
+  }
+
   let job = setActionJobControl(inputJob, 'running', now());
   await checkpoint(job, onCheckpoint);
+  if (aborted(signal)) {
+    return checkpoint(canceledJob(job, now()), onCheckpoint);
+  }
 
   for (const sourceItem of job.items) {
     const item = job.items.find((candidate) => candidate.id === sourceItem.id);
     if (['dry-run-complete', 'completed', 'skipped'].includes(item.status)) continue;
     if (aborted(signal) || job.control === 'paused') {
-      job = setActionJobControl(job, 'paused', now());
+      job = aborted(signal)
+        ? canceledJob(job, now())
+        : setActionJobControl(job, 'paused', now());
       return checkpoint(job, onCheckpoint);
     }
 
@@ -119,11 +136,17 @@ export async function executeReviewedActionJob(inputJob, {
           ),
         });
         await checkpoint(job, onCheckpoint);
+        if (aborted(signal)) {
+          return checkpoint(canceledJob(job, now()), onCheckpoint);
+        }
         continue;
       }
     }
 
     const session = await driver.inspectSession();
+    if (aborted(signal)) {
+      return checkpoint(canceledJob(job, now()), onCheckpoint);
+    }
     const sessionStop = actionStopReason(session);
     if (sessionStop) {
       job = stopJob(job, sessionStop, now());
@@ -131,6 +154,9 @@ export async function executeReviewedActionJob(inputJob, {
     }
 
     const before = await driver.resolveProfile(item.username);
+    if (aborted(signal)) {
+      return checkpoint(canceledJob(job, now()), onCheckpoint);
+    }
     const validation = validateActionObservation(item, before);
     if (!validation.ok) {
       job = appendActionCheckpoint(job, item.id, {
@@ -148,6 +174,9 @@ export async function executeReviewedActionJob(inputJob, {
         ),
       });
       await checkpoint(job, onCheckpoint);
+      if (aborted(signal)) {
+        return checkpoint(canceledJob(job, now()), onCheckpoint);
+      }
       job = stopJob(job, validation.stopReason, now());
       return checkpoint(job, onCheckpoint);
     }
@@ -166,6 +195,9 @@ export async function executeReviewedActionJob(inputJob, {
         ),
       });
       await checkpoint(job, onCheckpoint);
+      if (aborted(signal)) {
+        return checkpoint(canceledJob(job, now()), onCheckpoint);
+      }
       continue;
     }
 
@@ -184,6 +216,9 @@ export async function executeReviewedActionJob(inputJob, {
         ),
       });
       await checkpoint(job, onCheckpoint);
+      if (aborted(signal)) {
+        return checkpoint(canceledJob(job, now()), onCheckpoint);
+      }
       continue;
     }
 
@@ -193,6 +228,9 @@ export async function executeReviewedActionJob(inputJob, {
         expectedRelationship: before.relationship,
         resolutionToken: before.resolutionToken,
       });
+      if (aborted(signal)) {
+        return checkpoint(canceledJob(job, now()), onCheckpoint);
+      }
       const authorizationStop = actionStopReason(authorization)
         || (authorization?.authorized === true
           ? null
@@ -213,6 +251,9 @@ export async function executeReviewedActionJob(inputJob, {
           ),
         });
         await checkpoint(job, onCheckpoint);
+        if (aborted(signal)) {
+          return checkpoint(canceledJob(job, now()), onCheckpoint);
+        }
         job = stopJob(job, authorizationStop, now());
         return checkpoint(job, onCheckpoint);
       }
@@ -225,6 +266,15 @@ export async function executeReviewedActionJob(inputJob, {
       action: item.action,
       username: item.username,
     }, settings, now());
+    if (aborted(signal)) {
+      if (reservation?.ok) {
+        await ledger.finalize(reservation.record.id, {
+          status: 'canceled',
+          result: { reason: CANCELED_BEFORE_DRIVER },
+        }, now());
+      }
+      return checkpoint(canceledJob(job, now()), onCheckpoint);
+    }
     if (!reservation?.ok) {
       const reason = reservation?.reason || 'ledger-rejected';
       job = appendActionCheckpoint(job, item.id, {

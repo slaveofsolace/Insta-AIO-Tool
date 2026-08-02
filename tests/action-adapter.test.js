@@ -411,6 +411,170 @@ test('revalidates one-shot live authorization before ledger reservation', async 
   ]);
 });
 
+test('discard cancellation during live authorization stops before reservation or action', async () => {
+  const settings = {
+    liveActionEnabled: true,
+    liveActionBatchLimit: 1,
+  };
+  const job = confirmedJob([
+    createQueueItem('discarded_target', 'follow'),
+  ], { settings }, 'live');
+  const controller = new AbortController();
+  const calls = [];
+  const result = await executeReviewedActionJob(job, {
+    settings,
+    signal: controller.signal,
+    now: () => new Date(job.confirmedAt).getTime() + 1_000,
+    driver: {
+      async inspectSession() {
+        calls.push('session');
+        return {};
+      },
+      async resolveProfile(username) {
+        calls.push(`resolve:${username}`);
+        return {
+          username,
+          relationship: 'not-following',
+          resolutionToken: 'discarded-token',
+        };
+      },
+      async inspectLiveAuthorization() {
+        calls.push('authorize');
+        controller.abort();
+        return { authorized: true };
+      },
+      async performReviewedAction() {
+        calls.push('perform');
+        return { result: 'followed' };
+      },
+    },
+    ledger: {
+      async reserve() {
+        calls.push('reserve');
+        return { ok: true, record: { id: 'must-not-exist' } };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'paused');
+  assert.equal(result.stopReason, 'execution-canceled-before-driver');
+  assert.deepEqual(calls, [
+    'session',
+    'resolve:discarded_target',
+    'authorize',
+  ]);
+});
+
+test('discard cancellation after action reservation finalizes canceled without dispatching', async () => {
+  const settings = {
+    liveActionEnabled: true,
+    liveActionBatchLimit: 1,
+  };
+  const job = confirmedJob([
+    createQueueItem('reserved_target', 'follow'),
+  ], { settings }, 'live');
+  const controller = new AbortController();
+  const calls = [];
+  const result = await executeReviewedActionJob(job, {
+    settings,
+    signal: controller.signal,
+    now: () => new Date(job.confirmedAt).getTime() + 1_000,
+    driver: {
+      async inspectSession() {
+        calls.push('session');
+        return {};
+      },
+      async resolveProfile(username) {
+        calls.push(`resolve:${username}`);
+        return {
+          username,
+          relationship: 'not-following',
+          resolutionToken: 'reserved-token',
+        };
+      },
+      async inspectLiveAuthorization() {
+        calls.push('authorize');
+        return { authorized: true };
+      },
+      async performReviewedAction() {
+        calls.push('perform');
+        return { result: 'followed' };
+      },
+    },
+    ledger: {
+      async reserve() {
+        calls.push('reserve');
+        controller.abort();
+        return { ok: true, record: { id: 'attempt-canceled' } };
+      },
+      async finalize(id, completion) {
+        calls.push(`finalize:${id}:${completion.status}:${completion.result.reason}`);
+        return { ok: true };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'paused');
+  assert.equal(result.stopReason, 'execution-canceled-before-driver');
+  assert.deepEqual(calls, [
+    'session',
+    'resolve:reserved_target',
+    'authorize',
+    'reserve',
+    'finalize:attempt-canceled:canceled:execution-canceled-before-driver',
+  ]);
+});
+
+test('cancellation after action dispatch preserves postcheck and durable outcome semantics', async () => {
+  const settings = {
+    liveActionEnabled: true,
+    liveActionBatchLimit: 1,
+  };
+  const job = confirmedJob([
+    createQueueItem('in_flight_target', 'follow'),
+  ], { settings }, 'live');
+  const controller = new AbortController();
+  const finalizations = [];
+  let resolutionCount = 0;
+  const result = await executeReviewedActionJob(job, {
+    settings,
+    signal: controller.signal,
+    now: () => new Date(job.confirmedAt).getTime() + 1_000,
+    driver: {
+      async inspectSession() {
+        return {};
+      },
+      async resolveProfile(username) {
+        resolutionCount += 1;
+        return resolutionCount === 1
+          ? { username, relationship: 'not-following', resolutionToken: 'in-flight-token' }
+          : { username, relationship: 'following' };
+      },
+      async inspectLiveAuthorization() {
+        return { authorized: true };
+      },
+      async performReviewedAction() {
+        controller.abort();
+        return { result: 'followed' };
+      },
+    },
+    ledger: {
+      async reserve() {
+        return { ok: true, record: { id: 'attempt-in-flight' } };
+      },
+      async finalize(id, completion) {
+        finalizations.push({ id, completion });
+        return { ok: true };
+      },
+    },
+  });
+
+  assert.equal(result.status, 'completed');
+  assert.equal(result.items[0].status, 'completed');
+  assert.equal(finalizations.length, 1);
+  assert.equal(finalizations[0].completion.status, 'succeeded');
+});
+
 test('ledger enforces daily limits and duplicate prevention before actions', () => {
   const settings = { dailyFollowLimit: 1, dailyUnfollowLimit: 1 };
   const now = Date.UTC(2026, 6, 30, 12);

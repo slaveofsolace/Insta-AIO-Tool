@@ -125,6 +125,11 @@ Instagram cookies, or credentials.
 - The sidecar does not auto-scroll.
 - Live settings remain off by default; the extension accepts at most one
   reviewed account or DM item and consumes its arm before mutation.
+- Discarding the matching PWA reviewed job aborts its in-flight pre-driver work.
+  Any completed reservation is finalized `canceled`, missing-job checkpoints
+  reject, and no new page driver is dispatched. A mutation already dispatched
+  remains subject to postcondition and durable outcome verification because it
+  cannot be recalled.
 - Reviewed DM dry runs resolve only a stable exact identity. Controlled Unsend
   additionally requires two fresh confirmations, the matching Messages gate,
   independent reservations, a one-use row token, newly surfaced ARIA-bound

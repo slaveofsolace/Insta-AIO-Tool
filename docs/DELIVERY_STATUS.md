@@ -28,6 +28,7 @@ The account-action core is complete:
 - Transactional reservation and daily limits
 - Duplicate prevention
 - Durable checkpoints and resume
+- Matching-job discard cancellation and stale-checkpoint rejection
 - Before/after evidence
 - Safe-stop classification
 
@@ -55,6 +56,7 @@ The DM core is complete:
 - Transactional reservation
 - Duplicate prevention
 - Durable checkpoints and resume
+- Pre-dispatch cancellation with durable canceled-reservation finalization
 - Post-action removal verification
 - Source-specific localized Unsend matching
 

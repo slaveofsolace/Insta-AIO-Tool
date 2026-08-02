@@ -7,6 +7,8 @@ import {
 } from '../core/dm-jobs.js';
 import { directThreadId } from './instagram-dm-unsender.js';
 
+const CANCELED_BEFORE_DRIVER = 'execution-canceled-before-driver';
+
 function clone(value) {
   return typeof structuredClone === 'function'
     ? structuredClone(value)
@@ -70,6 +72,15 @@ function stopJob(job, reason, now) {
   return next;
 }
 
+function canceledJob(job, now) {
+  const next = clone(job);
+  next.status = 'paused';
+  next.control = 'paused';
+  next.stopReason = CANCELED_BEFORE_DRIVER;
+  next.updatedAt = new Date(now).toISOString();
+  return next;
+}
+
 export async function executeReviewedDmJob(inputJob, {
   driver,
   ledger = null,
@@ -114,20 +125,24 @@ export async function executeReviewedDmJob(inputJob, {
     }
   }
 
+  if (signal?.aborted) {
+    return save(canceledJob(inputJob, now()), onCheckpoint);
+  }
+
   let job = clone(inputJob);
   job.status = 'running';
   job.control = 'running';
   job.updatedAt = new Date(now()).toISOString();
   await save(job, onCheckpoint);
+  if (signal?.aborted) {
+    return save(canceledJob(job, now()), onCheckpoint);
+  }
 
   for (const sourceItem of job.items) {
     const item = job.items.find((candidate) => candidate.id === sourceItem.id);
     if (['dry-run-complete', 'completed', 'skipped'].includes(item.status)) continue;
     if (signal?.aborted) {
-      job.status = 'paused';
-      job.control = 'paused';
-      job.updatedAt = new Date(now()).toISOString();
-      return save(job, onCheckpoint);
+      return save(canceledJob(job, now()), onCheckpoint);
     }
     if (item.sentByMe !== true) {
       job = appendDmCheckpoint(job, item.id, {
@@ -143,11 +158,17 @@ export async function executeReviewedDmJob(inputJob, {
         ),
       });
       await save(job, onCheckpoint);
+      if (signal?.aborted) {
+        return save(canceledJob(job, now()), onCheckpoint);
+      }
       job = stopJob(job, 'received-message', now());
       return save(job, onCheckpoint);
     }
 
     const session = await driver.inspectSession();
+    if (signal?.aborted) {
+      return save(canceledJob(job, now()), onCheckpoint);
+    }
     const sessionStop = dmStopReason(session);
     if (sessionStop) {
       job = stopJob(job, sessionStop, now());
@@ -155,6 +176,9 @@ export async function executeReviewedDmJob(inputJob, {
     }
 
     const conversation = await driver.resolveConversation(item.conversationId);
+    if (signal?.aborted) {
+      return save(canceledJob(job, now()), onCheckpoint);
+    }
     const conversationStop = dmStopReason(conversation);
     if (conversationStop || conversation?.conversationId !== item.conversationId) {
       const reason = conversationStop || 'wrong-conversation';
@@ -163,6 +187,9 @@ export async function executeReviewedDmJob(inputJob, {
     }
 
     const resolved = await driver.resolveMessage(item);
+    if (signal?.aborted) {
+      return save(canceledJob(job, now()), onCheckpoint);
+    }
     const validation = validateDmResolution(item, conversation, resolved);
     if (!validation.ok) {
       job = appendDmCheckpoint(job, item.id, {
@@ -180,6 +207,9 @@ export async function executeReviewedDmJob(inputJob, {
         ),
       });
       await save(job, onCheckpoint);
+      if (signal?.aborted) {
+        return save(canceledJob(job, now()), onCheckpoint);
+      }
       job = stopJob(job, validation.stopReason, now());
       return save(job, onCheckpoint);
     }
@@ -199,6 +229,9 @@ export async function executeReviewedDmJob(inputJob, {
         ),
       });
       await save(job, onCheckpoint);
+      if (signal?.aborted) {
+        return save(canceledJob(job, now()), onCheckpoint);
+      }
       continue;
     }
 
@@ -207,6 +240,9 @@ export async function executeReviewedDmJob(inputJob, {
         ...item,
         resolutionToken: resolved.resolutionToken,
       });
+      if (signal?.aborted) {
+        return save(canceledJob(job, now()), onCheckpoint);
+      }
       const authorizationStop = dmStopReason(authorization)
         || (authorization?.authorized === true
           ? null
@@ -227,6 +263,9 @@ export async function executeReviewedDmJob(inputJob, {
           ),
         });
         await save(job, onCheckpoint);
+        if (signal?.aborted) {
+          return save(canceledJob(job, now()), onCheckpoint);
+        }
         job = stopJob(job, authorizationStop, now());
         return save(job, onCheckpoint);
       }
@@ -238,6 +277,15 @@ export async function executeReviewedDmJob(inputJob, {
       conversationId: item.conversationId,
       messageId: item.messageId,
     }, now());
+    if (signal?.aborted) {
+      if (reservation?.ok) {
+        await ledger.finalize(reservation.record.id, {
+          status: 'canceled',
+          result: { reason: CANCELED_BEFORE_DRIVER },
+        }, now());
+      }
+      return save(canceledJob(job, now()), onCheckpoint);
+    }
     if (!reservation?.ok) {
       const reason = reservation?.reason || 'ledger-rejected';
       job = stopJob(job, reason, now());

@@ -16,6 +16,17 @@ reservations, durable checkpoints, and safe stops for ambiguous state.
 Execution adapters revalidate the confirmed preview, current enable setting,
 and current batch limit before entering a live path.
 
+Each running PWA account or DM execution owns a matching `AbortController` and
+an immutable reviewed-job identity. Discard aborts only that matching execution.
+The adapters recheck cancellation after every awaited pre-dispatch inspection,
+authorization, and reservation boundary. A cancellation after reservation but
+before the page driver is durably finalized as `canceled`; the driver is not
+called. Atomic checkpoint writers reject a job that no longer exists, so a late
+callback cannot resurrect a discarded preview. Once a browser mutation has
+already been dispatched it cannot be rolled back: the adapter completes its
+postcondition check and records the observed durable outcome instead of
+mislabeling it as canceled.
+
 The distributed extension exposes controlled paths for exactly one reviewed
 account action or sent-message Unsend. Both require signed action permission, a
 fresh reviewed item, matching Instagram context, an exact Instagram-side
@@ -73,7 +84,11 @@ fixed boundary. The 2026-08-02 exact-message DM local-patch review reproduced
 three bounded live-path defects and one packaging-gate hardening gap. All four
 were remediated during the scan, every changed source file received a full-file
 receipt, and no reportable finding survives in the current patch. The complete
-repository suite now passes 123 of 123 tests; extension packaging independently
+routing recovery review also reproduced a low-severity discard race across the
+PWA handler, asynchronous authorization/reservation, and checkpoint store. The
+current patch closes all three layers and adds pre-dispatch, post-reservation,
+post-dispatch, non-resurrection, and legitimate-control regressions. The complete
+repository suite now passes 132 of 132 tests; extension packaging independently
 runs the executable controlled-live safety subset before creating artifacts.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
