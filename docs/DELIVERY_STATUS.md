@@ -9,7 +9,10 @@
 | Follower-checker output | Complete as read-only partial report | Independent parser, non-actionable contract, tests |
 | instagram-dm-unsender | Complete as safe adapter behavior and stateless report | Supplied artifact hash, exact-candidate tests, documentation |
 
-The historical browser executors are not included.
+The historical browser executors are not included. Issues #1 and #2 were
+revalidated against their source-specific migration, reconciliation, archive,
+integrity, cancellation, and documentation tests on 2026-08-02; no regression
+was found.
 
 ## Offline import
 
@@ -40,7 +43,7 @@ Extension 0.4.0 implements the production-controlled one-item account boundary:
 - Short-lived exact DOM resolution token, pre-existing-dialog rejection, target-named Unfollow confirmation, and after-state verification
 - Cross-job duplicate queue-item and same-day action prevention
 
-Automated Follow and Unfollow fixtures pass, including token replay, suggested-account isolation, pre-existing-dialog rejection, extension-side reservation, and ambiguous-control safe stops. A real authenticated batch of one has not yet been accepted, so issue #3 remains open and account live execution remains locked by default.
+Automated Follow and Unfollow fixtures pass, including token replay, suggested-account isolation, pre-existing-dialog rejection, extension-side reservation, and ambiguous-control safe stops. The actual production content script also completes both bounded DOM chains in isolated Chromium. A current authenticated Instagram profile exposed one verified header and one owned Follow control during a read-only diagnostic. No real account mutation was selected or executed, so issue #3 remains open only for that operator-selected acceptance and account live execution remains locked by default.
 
 ## Reviewed DM removal
 
@@ -77,11 +80,12 @@ twice-confirmed sent message:
   uncertain-outcome finalization, duplicate prevention, a finite extension
   daily ceiling, and token replay rejection
 
-Deterministic fixtures cover the successful three-control chain, authorization
+The actual production content script executes the successful three-control
+chain in isolated Chromium. Deterministic coverage also includes authorization
 ordering, duplicate/replay blocking, wrong-thread and identity-loss uncertainty,
 unbound/noninteractive surface rejection, ownership confusion, and zero-control
 pre-existing-dialog stop.
-Authenticated Instagram DOM and one-message live acceptance have not been run,
+Authenticated rendered-message inspection and one-message mutation have not been run,
 so issue #4 remains open and live settings remain disabled by default.
 
 ## Extension
@@ -105,6 +109,8 @@ Complete:
 - Read-only visible-DM evidence and conditional exact-identity no-click dry runs
 - JSON exchange fallback
 - Unpacked and ZIP build artifacts
+- Executable production-script Follow, Unfollow, and one-message DOM acceptance
+- Disposable Chrome-for-Testing installation and signed read-only pairing gate in CI
 
 ## Desktop
 
@@ -120,7 +126,11 @@ Complete and verified on Windows:
 - Silent uninstall
 - Retained local data policy
 
-macOS DMG/ZIP configuration is present. Artifact production, signing, installation, and removal require validation on macOS.
+The macOS CI job builds DMG and ZIP artifacts, mounts the DMG, copies the app to
+a disposable Applications directory, applies an ad-hoc hardened-runtime
+signature, launches the packaged renderer smoke mode, removes the app, and
+uploads the verified artifacts. Developer ID signing and notarization remain a
+release-credential step.
 
 ## UI and browser quality
 
@@ -143,6 +153,8 @@ Implemented:
 - Nine visually reviewed, SHA-256-gated Windows baselines for Overview, Messages, and Settings
 - Browser-delivered framing policy via loopback response headers with a console-clean meta CSP
 - Truthful empty-message copy and assembled-markup regression coverage
+- Production sidecar keyboard/accessibility-tree acceptance in isolated Chromium
+- Real unpacked-extension read-only pairing in disposable Chrome for Testing
 
 The dated walkthrough matrix and screenshots are in
 [`docs/BROWSER_QA.md`](./BROWSER_QA.md).
@@ -151,7 +163,7 @@ Pending acceptance:
 
 - Authenticated Instagram walkthrough with the unpacked extension loaded
 - Human screen-reader walkthrough
-- PWA installation confirmation in Chrome
+- PWA installation/pairing confirmation in the operator's persistent Chrome profile
 - Native screenshot baselines for any additional release platform where they will be gated
 
 These pending checks prevent a claim of complete browser visual acceptance.
@@ -166,7 +178,7 @@ The controlled-action local-patch scan found four low-severity defects and all
 four are remediated with focused regressions. The follow-up exact-message DM
 local-patch scan reproduced three bounded live-path defects plus one packaging
 hardening gap; all were remediated and no reportable finding survived.
-Deterministic assembly, the full 119-test suite, companion source validation,
+Deterministic assembly, the full 123-test suite, companion source validation,
 the unpacked/ZIP extension build, and the nine-image Windows browser baseline
-check pass. Authenticated
-account and DM DOM acceptance remain explicitly not run.
+check pass. Authenticated account-profile DOM structure has been inspected
+read-only; no authenticated account or DM mutation has been run.

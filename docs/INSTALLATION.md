@@ -10,6 +10,10 @@
 
 The application can run offline after the service worker has cached the current release assets.
 
+Maintainers can validate Chrome installability and a real read-only extension
+pairing in a disposable Chrome-for-Testing profile with `pnpm run qa:chrome`.
+This does not install anything into the operator's normal profile.
+
 ## Companion extension
 
 1. Run `pnpm run build:extension`.
@@ -110,6 +114,12 @@ pnpm run dist:mac
 ```
 
 This creates DMG and ZIP targets under `dist/desktop`. Production distribution requires an Apple signing identity and notarization appropriate to the release channel.
+
+After building on macOS, run `pnpm run qa:mac-package`. It mounts the DMG,
+copies the app to a disposable install root, applies an ad-hoc test signature,
+launches `--smoke-test`, removes the copied app, and verifies the ZIP. The ad-hoc
+signature is acceptance evidence, not a substitute for Developer ID signing or
+notarization.
 
 ## Upgrade
 

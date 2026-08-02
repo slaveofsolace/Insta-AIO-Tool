@@ -55,7 +55,8 @@
     const fixtureSearch = new URLSearchParams(location.search);
     const fixtureMode = fixtureSearch.get('mode');
     const fixtureLiveMode = fixtureMode === 'live-follow' || fixtureMode === 'live-unfollow';
-    const fixtureExactDmMode = fixtureMode === 'messages-exact';
+    const fixtureLiveDmMode = fixtureMode === 'messages-live';
+    const fixtureExactDmMode = fixtureMode === 'messages-exact' || fixtureLiveDmMode;
     if (fixtureLiveMode) {
       document.querySelector('.fixture-dialog').hidden = true;
     }
@@ -66,7 +67,10 @@
         <section class="fixture-thread" ${fixtureExactDmMode ? 'data-pagelet="IGDMessagesList"' : ''}>
           <header><h1>studio_friend</h1></header>
           <div role="row" ${fixtureExactDmMode ? 'data-message-id="received-1" data-timestamp-ms="1700000000000" data-sent-by-me="false"' : ''}><div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Did you see the draft?</div></div>
-          <div role="row" data-mine ${fixtureExactDmMode ? 'data-message-id="sent-1" data-timestamp-ms="1700000000100" data-sent-by-me="true"' : ''}><div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Yes — reviewing it now.</div></div>
+          <div role="row" data-mine ${fixtureExactDmMode ? 'data-message-id="sent-1" data-timestamp-ms="1700000000100" data-sent-by-me="true"' : ''}>
+            <div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Yes — reviewing it now.</div>
+            ${fixtureLiveDmMode ? '<button type="button" id="fixture-dm-action" aria-label="See more options for message" aria-haspopup="menu" aria-controls="fixture-dm-menu">More</button>' : ''}
+          </div>
           <div role="row" ${fixtureExactDmMode ? 'data-message-id="received-2" data-timestamp-ms="1700000000200" data-sent-by-me="false"' : ''}><div ${fixtureExactDmMode ? 'data-insta-aio-message-content' : ''} dir="auto">Perfect, thank you.</div></div>
         </section>`;
     } else {
@@ -95,6 +99,49 @@
         });
         document.body.append(dialog);
       }, { once: true });
+    }
+    globalThis.fixtureDmClickCount = 0;
+    if (fixtureLiveDmMode) {
+      const targetRow = document.querySelector('[data-message-id="sent-1"]');
+      const actionControl = document.querySelector('#fixture-dm-action');
+      actionControl.addEventListener('click', () => {
+        globalThis.fixtureDmClickCount += 1;
+        const menu = document.createElement('section');
+        menu.id = 'fixture-dm-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-labelledby', actionControl.id);
+        menu.innerHTML = '<button type="button" role="menuitem" id="fixture-dm-unsend-choice" aria-controls="fixture-dm-confirmation">Unsend</button>';
+        const choice = menu.querySelector('#fixture-dm-unsend-choice');
+        choice.addEventListener('click', () => {
+          globalThis.fixtureDmClickCount += 1;
+          const dialog = document.createElement('section');
+          dialog.id = 'fixture-dm-confirmation';
+          dialog.setAttribute('role', 'dialog');
+          dialog.setAttribute('aria-labelledby', choice.id);
+          dialog.innerHTML = '<p>Unsend this message?</p><button type="button">Unsend</button>';
+          dialog.querySelector('button').addEventListener('click', () => {
+            globalThis.fixtureDmClickCount += 1;
+            targetRow.remove();
+            menu.remove();
+            dialog.remove();
+          }, { once: true });
+          document.body.append(dialog);
+        }, { once: true });
+        document.body.append(menu);
+      }, { once: true });
+      const targetText = targetRow.querySelector('[data-insta-aio-message-content]').textContent.trim();
+      let targetHash = 0x811c9dc5;
+      for (let index = 0; index < targetText.length; index += 1) {
+        targetHash ^= targetText.charCodeAt(index);
+        targetHash = Math.imul(targetHash, 0x01000193);
+      }
+      globalThis.fixtureDmItem = {
+        conversationId: 'inbox/studio_friend_123',
+        contentDigest: (targetHash >>> 0).toString(16).padStart(8, '0'),
+        messageId: 'sent-1',
+        sentByMe: true,
+        timestamp: 1700000000100,
+      };
     }
     const fixtureAction = fixtureMode === 'live-follow' ? 'follow' : 'unfollow';
     const fixtureIntent = fixtureLiveMode ? {

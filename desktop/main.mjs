@@ -4,6 +4,7 @@ import {
   protocol,
   shell,
 } from 'electron';
+import { mkdtempSync } from 'node:fs';
 import {
   cp,
   mkdir,
@@ -20,6 +21,7 @@ const HOST = 'app';
 const PRODUCT_DATA_DIRECTORY = 'Insta AIO Tool';
 const BACKUP_DIRECTORY = 'Insta AIO Tool Backups';
 const BACKUP_RETENTION = 5;
+const DESKTOP_SMOKE_TEST = process.argv.includes('--smoke-test');
 const BACKUP_PATHS = [
   'IndexedDB',
   'Local Storage',
@@ -39,7 +41,23 @@ protocol.registerSchemesAsPrivileged([{
   },
 }]);
 
-const appDataRoot = app.getPath('appData');
+function createDesktopSmokeDataRoot() {
+  const temporaryRoot = path.resolve(app.getPath('temp'));
+  const configuredParent = path.resolve(
+    process.env.INSTA_AIO_DESKTOP_SMOKE_PARENT || '',
+  );
+  if (
+    !configuredParent.startsWith(`${temporaryRoot}${path.sep}`)
+    || path.basename(configuredParent) !== 'insta-aio-desktop-smoke-parent'
+  ) {
+    throw new Error('Desktop smoke mode requires a confined disposable parent directory.');
+  }
+  return mkdtempSync(path.join(configuredParent, 'insta-aio-desktop-smoke-'));
+}
+
+const appDataRoot = DESKTOP_SMOKE_TEST
+  ? createDesktopSmokeDataRoot()
+  : app.getPath('appData');
 const userDataRoot = path.join(appDataRoot, PRODUCT_DATA_DIRECTORY);
 const backupRoot = path.join(appDataRoot, BACKUP_DIRECTORY);
 app.setPath('userData', userDataRoot);
@@ -198,9 +216,50 @@ function createWindow() {
   window.webContents.on('will-navigate', (event, url) => {
     if (new URL(url).protocol !== `${SCHEME}:`) event.preventDefault();
   });
-  window.once('ready-to-show', () => window.show());
+  window.once('ready-to-show', () => {
+    if (!DESKTOP_SMOKE_TEST) window.show();
+  });
   void window.loadURL(`${SCHEME}://${HOST}/`);
   return window;
+}
+
+async function runDesktopSmokeTest(window) {
+  const timeoutMs = 15_000;
+  let timer;
+  let exitCode = 0;
+  let loadedUrl = null;
+  try {
+    await Promise.race([
+      new Promise((resolve, reject) => {
+        window.webContents.once('did-finish-load', resolve);
+        window.webContents.once('did-fail-load', (_event, code, description, url) => {
+          reject(new Error(`Desktop smoke renderer failed ${code}: ${description} (${url})`));
+        });
+        window.webContents.once('render-process-gone', (_event, details) => {
+          reject(new Error(`Desktop smoke renderer exited: ${details.reason}`));
+        });
+      }),
+      new Promise((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(
+          `Desktop smoke renderer timed out after ${timeoutMs}ms.`,
+        )), timeoutMs);
+      }),
+    ]);
+    loadedUrl = window.webContents.getURL();
+    if (loadedUrl !== `${SCHEME}://${HOST}/`) {
+      throw new Error(`Desktop smoke renderer loaded an unexpected URL: ${loadedUrl}`);
+    }
+  } catch (error) {
+    exitCode = 1;
+    console.error(`Insta AIO desktop smoke test failed: ${error.message}`);
+  } finally {
+    clearTimeout(timer);
+    if (!window.isDestroyed()) window.destroy();
+    if (exitCode === 0) {
+      console.log(`Insta AIO desktop smoke test passed: ${loadedUrl}`);
+    }
+    app.exit(exitCode);
+  }
 }
 
 if (hasSingleInstanceLock) {
@@ -221,7 +280,11 @@ if (hasSingleInstanceLock) {
     } catch (error) {
       console.error('Unable to create startup backup:', error.message);
     }
-    createWindow();
+    const window = createWindow();
+    if (DESKTOP_SMOKE_TEST) {
+      await runDesktopSmokeTest(window);
+      return;
+    }
     app.on('activate', () => {
       if (!BrowserWindow.getAllWindows().length) createWindow();
     });
@@ -229,5 +292,5 @@ if (hasSingleInstanceLock) {
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (!DESKTOP_SMOKE_TEST && process.platform !== 'darwin') app.quit();
 });

@@ -73,16 +73,17 @@ fixed boundary. The 2026-08-02 exact-message DM local-patch review reproduced
 three bounded live-path defects and one packaging-gate hardening gap. All four
 were remediated during the scan, every changed source file received a full-file
 receipt, and no reportable finding survives in the current patch. The complete
-repository suite now passes 119 of 119 tests; extension packaging independently
+repository suite now passes 123 of 123 tests; extension packaging independently
 runs the executable controlled-live safety subset before creating artifacts.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
 been run. It remains a separate operator acceptance gate requiring an exact
-target, action, and explicit approval. The production overlay passed desktop,
-mobile, messages, keyboard, and focus-restoration checks against the local
-synthetic fixture in Chrome. The real Instagram profile checked during this
-review was logged out and did not have the unpacked extension installed, so
-authenticated selector and rendered-message identity acceptance remain open.
+target, action, and explicit approval. The actual production content script now
+passes bounded Follow, Unfollow, and one-message Unsend DOM chains in isolated
+Chromium, including accessibility-tree and replay checks. A current authenticated
+Instagram diagnostic found one verified `@instagram` profile header and one owned
+Follow control without injecting the extension or clicking. Authenticated
+rendered-message identity and user-selected mutation acceptance remain open.
 
 ## Dependency review
 

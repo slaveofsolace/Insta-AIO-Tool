@@ -5,20 +5,22 @@ Last reviewed: 2026-08-02
 ## Scope and safety boundary
 
 The production PWA source was served from the repository over the bounded
-loopback development server. The desktop walkthrough used Google Chrome Profile
-2. Deterministic responsive checks used the project's pinned Electron 43.2.0
-Chromium in an isolated, non-persistent session because the Chrome controller
-did not expose viewport resizing and the desktop controller rejected its window
-binding. Only empty or synthetic local workspace data was used.
+loopback development server. Deterministic responsive and production-script
+checks use isolated, non-persistent Chromium sessions. A separate authenticated
+Instagram session was inspected read-only against the public `@instagram`
+profile. Only empty or synthetic local workspace data was used by local app and
+extension automation.
 
 No Instagram action was armed or executed, no message menu was opened, and no
 network-backed account mutation was attempted. The responsive harness navigates
 only local PWA controls, denies browser permissions, and asserts that both live
 settings remain unchecked.
 
-The authenticated extension workflow is not included in this result. The
-available Chrome profile was signed out of Instagram and did not have the
-unpacked extension installed.
+The authenticated Instagram diagnostic found one verified profile header and
+exactly one owned `Follow` relationship control. It did not inject the extension,
+arm an intent, or click the control. The real extension pairing gate instead
+uses a disposable Chrome-for-Testing profile and the local PWA; it does not reuse
+the authenticated Instagram session.
 
 ## Completed checks
 
@@ -33,6 +35,11 @@ unpacked extension installed.
 | Screenshot regression | Pass on Windows Chromium | Overview, Messages, and Settings were captured at all three sizes. A second run reproduced all nine SHA-256 hashes exactly. |
 | Fresh service-worker origin | Pass | The final source was reassembled and loaded from a fresh loopback origin using cache generation `insta-aio-v10`. |
 | No-click safety | Pass | The walkthrough used local PWA state only; live settings stayed disabled and no extension action path was available. |
+| Production account DOM chains | Pass in isolated Chromium | The actual content script resolved and executed bounded local Follow (one control) and Unfollow (relationship plus newly bound confirmation), then rejected token replay without another activation. |
+| Production one-message DOM chain | Pass in isolated Chromium | The actual content script used one exact row action, one bound Unsend menu item, and one bound confirmation, proved retained row/identity disconnection plus exact absence, then rejected replay. |
+| Sidecar accessibility | Pass in Chromium automation | Collapse/reopen focus restoration and named controls were verified in the full accessibility tree. This remains distinct from a human screen-reader result. |
+| PWA installability and pairing defaults | Pass in isolated Chromium | Manifest, icon set, active service worker, and a read-only pairing-code flow were verified while both live settings and action permission remained off. |
+| Authenticated Instagram profile selector | Pass, read-only | Current Instagram rendered one verified `@instagram` profile header with one owned `Follow` control. No action or extension injection occurred. |
 
 ## Defects found and closed
 
@@ -56,7 +63,7 @@ unpacked extension installed.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 119 of 119 tests.
+complete repository suite passes 123 of 123 tests.
 
 ## Representative screenshots
 
@@ -75,7 +82,9 @@ The deterministic Windows Chromium baseline is tracked under
 - [Tablet Messages](../tests/baselines/pwa/win32/tablet-messages.png)
 - [Mobile Settings](../tests/baselines/pwa/win32/mobile-settings.png)
 
-Run `pnpm run qa:browser:check` to reproduce and hash-check all nine captures.
+Run `pnpm run qa:extension` for production-script DOM and accessibility checks,
+`pnpm run qa:chrome` with Chrome for Testing for real unpacked-extension pairing,
+and `pnpm run qa:browser:check` to reproduce and hash-check all nine captures.
 Run `pnpm run qa:browser:update` only when intentionally reviewing and accepting
 a visual change. Baselines are platform-specific; macOS and Linux are not
 claimed by the Windows manifest.
@@ -90,15 +99,15 @@ focus behavior, and cache delivery.
 
 ## Remaining target-environment acceptance
 
-- Install the PWA in the intended Chrome profile.
-- Load and pair the unpacked extension with action permission still disabled.
-- Repeat the walkthrough while authenticated on Instagram and verify the
-  real sidecar/selector surface without arming an action.
+- Install the PWA and pair the unpacked extension in the operator's intended
+  persistent Chrome profile; CI pairing uses a disposable profile.
+- Repeat the authenticated Instagram walkthrough with the real sidecar loaded,
+  without arming an action.
 - Perform a human screen-reader walkthrough.
 - Establish and visually accept native baselines on any additional release
   platform where screenshot hashes will be gated.
-- Build, sign as appropriate, install, launch, and remove the macOS package on
-  macOS.
+- Apply Apple Developer ID signing/notarization for a distributable macOS
+  release; CI uses an ad-hoc signature only for lifecycle acceptance.
 
 These remaining checks prevent a claim of complete human browser or
 cross-platform release acceptance.

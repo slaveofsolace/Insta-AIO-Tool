@@ -173,17 +173,19 @@ See [Installation](./docs/INSTALLATION.md) and [Rollback](./docs/ROLLBACK.md).
 ```bash
 pnpm run assemble
 pnpm test
+pnpm run qa:extension
+pnpm run qa:chrome
 pnpm run qa:browser:check
 pnpm run benchmark:zip
 ```
 
-The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing. The browser QA command also exercises every PWA view at fixed desktop, tablet, and mobile sizes, verifies that live settings remain off, and compares nine Windows Chromium screenshots with tracked SHA-256 baselines.
+The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing. `qa:extension` runs the actual production content script and overlay through bounded local Follow, Unfollow, and one-message Unsend DOM chains in isolated Chromium, then checks keyboard accessibility, the Chromium accessibility tree, PWA installability, and read-only pairing defaults. `qa:chrome` loads and pairs the real unpacked package in a disposable Chrome-for-Testing profile. The browser QA command exercises every PWA view at fixed desktop, tablet, and mobile sizes, verifies that live settings remain off, and compares nine Windows Chromium screenshots with tracked SHA-256 baselines.
 
 Use `pnpm run qa:browser:update` only when intentionally accepting a reviewed
 visual change. Baselines are platform-specific and actual run output stays under
 ignored `test-results`.
 
-Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. The production PWA has a documented desktop Chrome walkthrough plus deterministic Windows Chromium desktop/tablet/mobile checks and screenshot baselines in [Browser QA](./docs/BROWSER_QA.md). Authenticated extension pairing, PWA installation, human screen-reader review, additional native visual baselines, and macOS artifact production still require their target environments before a signed release.
+Windows packaging has been exercised through unpacked launch, packaged-renderer smoke, silent NSIS install, installed-app launch, and silent uninstall. The CI workflow provisions Chrome for Testing for real extension pairing and builds a macOS DMG/ZIP that is mounted, copied, ad-hoc signed, launched in smoke mode, and removed. Apple Developer ID signing/notarization, a human screen-reader review, installation in the operator's intended persistent Chrome profile, and a user-selected real Instagram mutation remain release/operator acceptance rather than automated claims.
 
 ## Documentation
 

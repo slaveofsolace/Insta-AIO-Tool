@@ -45,16 +45,18 @@ Additional gates:
 ```bash
 pnpm run benchmark:zip
 pnpm run build:extension
+pnpm run qa:extension
+pnpm run qa:chrome
 pnpm run pack:desktop
 ```
 
 Run target-platform installers before claiming packaging acceptance.
 
-For sidecar changes, also open
-`tests/fixtures/overlay-preview.html` through a local static server. Exercise the
-profile context, repeated capture deduplication, manual queue status updates,
-collapse/keyboard controls, and `?mode=messages` fixture. This is deterministic
-runtime evidence, not authenticated Instagram acceptance.
+For sidecar changes, run `pnpm run qa:extension`. It serves only the exact local
+fixture and production content assets, exercises the bounded profile and message
+DOM chains, validates keyboard focus plus the Chromium accessibility tree, and
+checks PWA installability/read-only pairing defaults. This is deterministic
+runtime evidence, not an authenticated Instagram mutation.
 
 For controlled account-driver changes, also exercise `?mode=live-follow` and
 `?mode=live-unfollow`. Verify that inspection performs zero activations, the
@@ -71,6 +73,19 @@ outcomes stay uncertain, nested flex-end descendants cannot prove ownership,
 and success uses only the exact row action, bound localized Unsend choice, bound
 confirmation, and stable-identity removal proof. Do not treat this fixture as
 authenticated issue #4 acceptance.
+
+For pairing changes, run `pnpm run qa:chrome` with Chrome for Testing. The gate
+uses a disposable browser profile, pregrants only loopback access in a disposable
+copy of the unpacked manifest, completes the production popup/PWA handshake,
+pings the extension, verifies read-only permissions and live-off defaults, then
+deletes the profile. Branded stable Chrome may reject command-line loading of an
+unpacked extension; do not weaken or modify the user's real profile to bypass
+that policy.
+
+For macOS packaging changes, run `pnpm run dist:mac -- --publish never` followed
+by `pnpm run qa:mac-package` on macOS. CI performs this lifecycle with an ad-hoc
+test signature. A public release still requires its own Developer ID identity
+and notarization.
 
 ## Source integrations
 
