@@ -31,6 +31,21 @@
       "js": [
         "action-labels.js",
         "content-instagram.js",
+        "overlay/shared.js",
+        "overlay/preferences.js",
+        "overlay/route-observer.js",
+        "overlay/theme.js",
+        "overlay/bridge.js",
+        "overlay/downloads.js",
+        "overlay/accessibility.js",
+        "overlay/collision.js",
+        "overlay/icons.js",
+        "overlay/shell.js",
+        "overlay/views/now.js",
+        "overlay/views/capture.js",
+        "overlay/views/queue.js",
+        "overlay/views/messages.js",
+        "overlay/views/workspace.js",
         "instagram-overlay.js"
       ],
       "run_at": "document_idle"

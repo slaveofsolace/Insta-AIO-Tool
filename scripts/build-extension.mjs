@@ -20,11 +20,46 @@ const sourceFiles = [
   'background.js',
   'content-instagram.js',
   'content-pwa.js',
+  'overlay/shared.js',
+  'overlay/preferences.js',
+  'overlay/route-observer.js',
+  'overlay/theme.js',
+  'overlay/bridge.js',
+  'overlay/downloads.js',
+  'overlay/accessibility.js',
+  'overlay/collision.js',
+  'overlay/icons.js',
+  'overlay/shell.js',
+  'overlay/views/now.js',
+  'overlay/views/capture.js',
+  'overlay/views/queue.js',
+  'overlay/views/messages.js',
+  'overlay/views/workspace.js',
   'instagram-overlay.js',
   'manifest.json',
   'popup.css',
   'popup.html',
   'popup.js',
+];
+const instagramScriptOrder = [
+  'action-labels.js',
+  'content-instagram.js',
+  'overlay/shared.js',
+  'overlay/preferences.js',
+  'overlay/route-observer.js',
+  'overlay/theme.js',
+  'overlay/bridge.js',
+  'overlay/downloads.js',
+  'overlay/accessibility.js',
+  'overlay/collision.js',
+  'overlay/icons.js',
+  'overlay/shell.js',
+  'overlay/views/now.js',
+  'overlay/views/capture.js',
+  'overlay/views/queue.js',
+  'overlay/views/messages.js',
+  'overlay/views/workspace.js',
+  'instagram-overlay.js',
 ];
 const libraryFiles = [
   'bridge-protocol.js',
@@ -117,7 +152,9 @@ async function validateSources() {
   }
   const instagramSource = await readFile(path.join(sourceRoot, 'content-instagram.js'), 'utf8');
   const actionLabelsSource = await readFile(path.join(sourceRoot, 'action-labels.js'), 'utf8');
-  const overlaySource = await readFile(path.join(sourceRoot, 'instagram-overlay.js'), 'utf8');
+  const overlaySource = (await Promise.all(
+    instagramScriptOrder.slice(2).map((file) => readFile(path.join(sourceRoot, file), 'utf8')),
+  )).join('\n');
   const allowedLiveActivator = `function activateLiveControl(control) {
     control.click();
   }`;
@@ -137,8 +174,7 @@ async function validateSources() {
     entry.matches?.includes('https://www.instagram.com/*')
   ));
   if (
-    instagramEntry?.js?.[0] !== 'action-labels.js'
-    || instagramEntry.js?.[1] !== 'content-instagram.js'
+    JSON.stringify(instagramEntry?.js) !== JSON.stringify(instagramScriptOrder)
     || !actionLabelsSource.includes("'zurücknehmen'")
     || /\u00c3[\u0080-\u00bf]/u.test(actionLabelsSource)
     || !instagramSource.includes("reason: 'secure-random-unavailable'")
@@ -153,7 +189,11 @@ async function validateSources() {
   ) {
     throw new Error('Instagram content script is missing exact-target DOM binding.');
   }
-  if (!overlaySource.includes('data-ia-section="queue"')) {
+  if (
+    !overlaySource.includes('data-ia-section="${section}"')
+    || !overlaySource.includes("tab('queue', 'Queue'")
+    || !overlaySource.includes('data-ia-view="queue"')
+  ) {
     throw new Error('Instagram overlay is missing the in-page queue workspace.');
   }
   const backgroundSource = await readFile(path.join(sourceRoot, 'background.js'), 'utf8');
@@ -225,7 +265,9 @@ if (!resolvedOutput.startsWith(`${resolvedDist}${path.sep}`)) {
 await rm(resolvedOutput, { recursive: true, force: true });
 await mkdir(path.join(resolvedOutput, 'lib'), { recursive: true });
 for (const file of sourceFiles) {
-  await copyFile(path.join(sourceRoot, file), path.join(resolvedOutput, file));
+  const target = path.join(resolvedOutput, ...file.split('/'));
+  await mkdir(path.dirname(target), { recursive: true });
+  await copyFile(path.join(sourceRoot, file), target);
 }
 for (const file of libraryFiles) {
   await copyFile(

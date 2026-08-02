@@ -16,11 +16,32 @@ const userDataRoot = path.resolve(
   process.env.INSTA_AIO_EXTENSION_ACCEPTANCE_USER_DATA
     || path.join(resultsRoot, 'user-data', String(process.pid)),
 );
+const overlayScriptFiles = [
+  'action-labels.js',
+  'content-instagram.js',
+  'overlay/shared.js',
+  'overlay/preferences.js',
+  'overlay/route-observer.js',
+  'overlay/theme.js',
+  'overlay/bridge.js',
+  'overlay/downloads.js',
+  'overlay/accessibility.js',
+  'overlay/collision.js',
+  'overlay/icons.js',
+  'overlay/shell.js',
+  'overlay/views/now.js',
+  'overlay/views/capture.js',
+  'overlay/views/queue.js',
+  'overlay/views/messages.js',
+  'overlay/views/workspace.js',
+  'instagram-overlay.js',
+];
 const fixtureAssets = new Map([
   ['/fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'overlay-preview.html')],
-  ['/extension/action-labels.js', path.join(repositoryRoot, 'extension', 'action-labels.js')],
-  ['/extension/content-instagram.js', path.join(repositoryRoot, 'extension', 'content-instagram.js')],
-  ['/extension/instagram-overlay.js', path.join(repositoryRoot, 'extension', 'instagram-overlay.js')],
+  ...overlayScriptFiles.map((file) => [
+    `/extension/${file}`,
+    path.join(repositoryRoot, 'extension', ...file.split('/')),
+  ]),
 ]);
 
 if (!userDataRoot.startsWith(`${resultsRoot}${path.sep}`)) {
@@ -257,6 +278,17 @@ async function acceptDmUnsend(webContents, baseUrl) {
 
 async function acceptOverlayAccessibility(webContents, baseUrl) {
   await loadFixture(webContents, baseUrl, 'messages-exact');
+  const initial = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+    return {
+      launcherVisible: !shadow.querySelector('.ia-launcher').hidden,
+      panelHidden: shadow.querySelector('.ia-panel').hidden,
+    };
+  })()`, true);
+  assert.deepEqual(initial, { launcherVisible: true, panelHidden: true });
+  await webContents.executeJavaScript(`(() => {
+    document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('.ia-launcher').click();
+  })()`, true);
   await waitForPageValue(
     webContents,
     `document.querySelector('#insta-aio-sidecar-root')?.shadowRoot?.activeElement?.dataset?.iaSection === 'now'`,
@@ -266,7 +298,7 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
     const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
     return {
       nav: [...shadow.querySelectorAll('[data-ia-section]')].map((button) => ({
-        label: button.textContent.trim(),
+        label: button.getAttribute('aria-label'),
         selected: button.getAttribute('aria-selected'),
       })),
       panelLabel: shadow.querySelector('.ia-panel')?.getAttribute('aria-label'),

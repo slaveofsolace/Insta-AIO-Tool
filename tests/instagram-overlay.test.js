@@ -10,10 +10,14 @@ const inspector = await readFile(
   new URL('../extension/content-instagram.js', import.meta.url),
   'utf8',
 );
-const overlay = await readFile(
-  new URL('../extension/instagram-overlay.js', import.meta.url),
+const instagramEntry = manifest.content_scripts.find((entry) => (
+  entry.matches.includes('https://www.instagram.com/*')
+));
+const overlayFiles = instagramEntry.js.slice(2);
+const overlay = (await Promise.all(overlayFiles.map((file) => readFile(
+  new URL(`../extension/${file}`, import.meta.url),
   'utf8',
-);
+)))).join('\n');
 const background = await readFile(
   new URL('../extension/background.js', import.meta.url),
   'utf8',
@@ -40,12 +44,24 @@ const popupCss = await readFile(
 );
 
 test('Instagram loads the inspector before the visible sidecar', () => {
-  const instagramEntry = manifest.content_scripts.find((entry) => (
-    entry.matches.includes('https://www.instagram.com/*')
-  ));
   assert.deepEqual(instagramEntry.js, [
     'action-labels.js',
     'content-instagram.js',
+    'overlay/shared.js',
+    'overlay/preferences.js',
+    'overlay/route-observer.js',
+    'overlay/theme.js',
+    'overlay/bridge.js',
+    'overlay/downloads.js',
+    'overlay/accessibility.js',
+    'overlay/collision.js',
+    'overlay/icons.js',
+    'overlay/shell.js',
+    'overlay/views/now.js',
+    'overlay/views/capture.js',
+    'overlay/views/queue.js',
+    'overlay/views/messages.js',
+    'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
   assert.equal(manifest.version, '0.4.0');
@@ -64,7 +80,7 @@ test('sidecar migrates the visible capture and manual queue workflow', () => {
 
 test('sidecar exposes every tool family and accessibility controls', () => {
   for (const section of ['now', 'capture', 'queue', 'messages', 'workspace']) {
-    assert.match(overlay, new RegExp(`data-ia-section="${section}"`));
+    assert.match(overlay, new RegExp(`tab\\('${section}'`));
     assert.match(overlay, new RegExp(`data-ia-view="${section}"`));
   }
   assert.match(overlay, /aria-live="polite"/);
@@ -72,13 +88,14 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /aria-expanded=/);
   assert.match(overlay, /prefers-reduced-motion: reduce/);
   assert.match(overlay, /Alt \+ Shift \+ I/);
-  assert.match(overlay, /__instaAioOverlayTestOpenShadow === true \? 'open' : 'closed'/);
+  assert.match(overlay, /openShadow: globalThis\.__instaAioOverlayTestOpenShadow === true/);
+  assert.match(overlay, /attachShadow\(\{ mode: openShadow \? 'open' : 'closed' \}\)/);
 });
 
 test('sidecar captures focus before hiding its launcher and restores a usable target', () => {
   const setOpenBody = overlay.slice(
     overlay.indexOf('function setOpen'),
-    overlay.indexOf('const sectionCopy'),
+    overlay.indexOf('function renderSection'),
   );
   assert.ok(setOpenBody.indexOf('const focusBeforeOpen') < setOpenBody.indexOf('launcher.hidden'));
   assert.match(setOpenBody, /lastFocusedElement = focusBeforeOpen/);
@@ -102,14 +119,14 @@ test('dry runs remain no-click while the one live activator is token-bound and o
 });
 
 test('sidecar exposes an exact, expiring live arm without executing from the overlay', () => {
-  assert.match(overlay, /Controlled live gate/);
+  assert.match(overlay, /data-ia-role="account-live-disclosure"/);
   assert.match(overlay, /ARM \$\{String\(intent\.action/);
   assert.match(overlay, /Arm for 90 seconds/);
   assert.match(overlay, /Arming alone does not click/);
   assert.match(controlledPolicy, /ACCOUNT_ARM_TTL_MS = 90 \* 1000/);
   assert.match(background, /insta-aio-arm-account-action/);
   assert.match(background, /expectedPhrase = `ARM \$\{intent\.action\.toUpperCase\(\)\} @\$\{intent\.username\}`/);
-  assert.match(overlay, /Controlled one-message gate/);
+  assert.match(overlay, /data-ia-role="dm-live-disclosure"/);
   assert.match(overlay, /ARM UNSEND \$\{intent\.armCode\}/);
   assert.match(overlay, /data-ia-action="arm-dm-live"/);
   assert.match(overlay, /Arming does not open a menu or remove anything/);
@@ -126,8 +143,8 @@ test('visible DM evidence stays read-only while reviewed jobs require stable exa
   assert.match(inspector, /data-message-id/);
   assert.match(inspector, /data-timestamp-ms/);
   assert.match(inspector, /message-ownership-unavailable/);
-  assert.match(overlay, /Exact identity is required/);
-  assert.match(overlay, /cannot authorize removal/);
+  assert.match(overlay, /Exact message ID, timestamp, digest, conversation, and sent-by-me ownership must all match/);
+  assert.match(overlay, /Visible text alone cannot authorize removal/);
 });
 
 test('background reveals only sanitized pairing, intent, arm, and run summaries to Instagram', () => {
@@ -146,6 +163,8 @@ test('background reveals only sanitized pairing, intent, arm, and run summaries 
 
 test('runtime fixture exercises the actual production scripts', () => {
   assert.match(fixture, /\/extension\/content-instagram\.js/);
+  assert.match(fixture, /\/extension\/overlay\/shared\.js/);
+  assert.match(fixture, /\/extension\/overlay\/views\/messages\.js/);
   assert.match(fixture, /\/extension\/instagram-overlay\.js/);
   assert.match(fixture, /instaAioOverlayManualQueueV1/);
   assert.match(fixture, /resolved-no-click/);

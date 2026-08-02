@@ -18,10 +18,13 @@ const instagramContent = await readFile(
   new URL('../extension/content-instagram.js', import.meta.url),
   'utf8',
 );
-const instagramOverlay = await readFile(
-  new URL('../extension/instagram-overlay.js', import.meta.url),
+const instagramEntry = manifest.content_scripts.find((entry) => (
+  entry.matches.includes('https://www.instagram.com/*')
+));
+const instagramOverlay = (await Promise.all(instagramEntry.js.slice(2).map((file) => readFile(
+  new URL(`../extension/${file}`, import.meta.url),
   'utf8',
-);
+)))).join('\n');
 const pwaContent = await readFile(
   new URL('../extension/content-pwa.js', import.meta.url),
   'utf8',
@@ -45,9 +48,6 @@ test('extension uses Manifest V3 without cookie or request interception permissi
   assert.equal(permissions.includes('webRequest'), false);
   assert.equal(permissions.includes('webRequestBlocking'), false);
   assert.deepEqual(manifest.host_permissions, ['https://www.instagram.com/*']);
-  const instagramEntry = manifest.content_scripts.find((entry) => (
-    entry.matches.includes('https://www.instagram.com/*')
-  ));
   assert.deepEqual(instagramEntry.js.slice(0, 2), [
     'action-labels.js',
     'content-instagram.js',
@@ -70,7 +70,8 @@ test('Instagram content script isolates its only page-control call behind the re
   assert.match(instagramContent, /extension-stable-visible-message-identity/);
   assert.doesNotMatch(instagramContent, /cookies?|authorization/i);
   assert.doesNotMatch(instagramOverlay, /\.click\s*\(/);
-  assert.match(instagramOverlay, /data-ia-section="queue"/);
+  assert.match(instagramOverlay, /tab\('queue', 'Queue'/);
+  assert.match(instagramOverlay, /data-ia-view="queue"/);
 });
 
 test('reviewed action labels preserve exact UTF-8 localization without mojibake', () => {

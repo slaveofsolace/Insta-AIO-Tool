@@ -268,7 +268,13 @@
             for (const listener of storageListeners) listener({ [key]: { oldValue } }, 'local');
           },
         },
-        onChanged: { addListener: (listener) => storageListeners.push(listener) },
+        onChanged: {
+          addListener: (listener) => storageListeners.push(listener),
+          removeListener: (listener) => {
+            const index = storageListeners.indexOf(listener);
+            if (index >= 0) storageListeners.splice(index, 1);
+          },
+        },
       },
     };
     globalThis.fixtureSendContentMessage = (request) => new Promise((resolve) => {
@@ -282,6 +288,21 @@
   </script>
   <script src="/extension/action-labels.js"></script>
   <script src="/extension/content-instagram.js"></script>
+  <script src="/extension/overlay/shared.js"></script>
+  <script src="/extension/overlay/preferences.js"></script>
+  <script src="/extension/overlay/route-observer.js"></script>
+  <script src="/extension/overlay/theme.js"></script>
+  <script src="/extension/overlay/bridge.js"></script>
+  <script src="/extension/overlay/downloads.js"></script>
+  <script src="/extension/overlay/accessibility.js"></script>
+  <script src="/extension/overlay/collision.js"></script>
+  <script src="/extension/overlay/icons.js"></script>
+  <script src="/extension/overlay/shell.js"></script>
+  <script src="/extension/overlay/views/now.js"></script>
+  <script src="/extension/overlay/views/capture.js"></script>
+  <script src="/extension/overlay/views/queue.js"></script>
+  <script src="/extension/overlay/views/messages.js"></script>
+  <script src="/extension/overlay/views/workspace.js"></script>
   <script src="/extension/instagram-overlay.js"></script>
 </body>
 </html>

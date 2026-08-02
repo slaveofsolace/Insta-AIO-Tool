@@ -21,6 +21,26 @@ const userDataRoot = path.resolve(
   process.env.INSTA_AIO_OVERLAY_CONCEPT_USER_DATA
     || path.join(resultsRoot, 'user-data', String(process.pid)),
 );
+const overlayScriptFiles = [
+  'action-labels.js',
+  'content-instagram.js',
+  'overlay/shared.js',
+  'overlay/preferences.js',
+  'overlay/route-observer.js',
+  'overlay/theme.js',
+  'overlay/bridge.js',
+  'overlay/downloads.js',
+  'overlay/accessibility.js',
+  'overlay/collision.js',
+  'overlay/icons.js',
+  'overlay/shell.js',
+  'overlay/views/now.js',
+  'overlay/views/capture.js',
+  'overlay/views/queue.js',
+  'overlay/views/messages.js',
+  'overlay/views/workspace.js',
+  'instagram-overlay.js',
+];
 
 if (!evidenceRoot.startsWith(`${repositoryRoot}${path.sep}`)) {
   throw new Error('Concept evidence must stay inside the repository.');
@@ -31,9 +51,10 @@ if (!userDataRoot.startsWith(`${resultsRoot}${path.sep}`)) {
 
 const assets = new Map([
   ['/fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'overlay-preview.html')],
-  ['/extension/action-labels.js', path.join(repositoryRoot, 'extension', 'action-labels.js')],
-  ['/extension/content-instagram.js', path.join(repositoryRoot, 'extension', 'content-instagram.js')],
-  ['/extension/instagram-overlay.js', path.join(repositoryRoot, 'extension', 'instagram-overlay.js')],
+  ...overlayScriptFiles.map((file) => [
+    `/extension/${file}`,
+    path.join(repositoryRoot, 'extension', ...file.split('/')),
+  ]),
 ]);
 
 app.disableHardwareAcceleration();
