@@ -34,7 +34,7 @@ jobs:
         run: xvfb-run --auto-servernum pnpm run qa:extension
       - name: Install Chrome for Testing
         id: setup-chrome
-        uses: browser-actions/setup-chrome@73954683cc80eced513145a42b668b9b91f753c3 # v2.1.2
+        uses: browser-actions/setup-chrome@2e1d749697dd1612b833dba4a722266286fbefcd # v2.1.2
         with:
           chrome-version: stable
       - name: Real Chrome extension pairing acceptance

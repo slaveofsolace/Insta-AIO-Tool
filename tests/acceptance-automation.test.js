@@ -83,7 +83,7 @@ test('Chrome for Testing acceptance loads and pairs the real extension in a disp
   assert.match(chromeAcceptance, /await rm\(resolvedResultsRoot/);
   assert.match(
     workflow,
-    /browser-actions\/setup-chrome@73954683cc80eced513145a42b668b9b91f753c3/,
+    /browser-actions\/setup-chrome@2e1d749697dd1612b833dba4a722266286fbefcd/,
   );
   assert.match(workflow, /CHROME_BIN: \$\{\{ steps\.setup-chrome\.outputs\.chrome-path \}\}/);
   assert.match(workflow, /xvfb-run --auto-servernum pnpm run qa:chrome/);
