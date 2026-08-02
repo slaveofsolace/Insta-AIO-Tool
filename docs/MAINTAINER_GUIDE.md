@@ -83,9 +83,10 @@ unpacked extension; do not weaken or modify the user's real profile to bypass
 that policy.
 
 For macOS packaging changes, run `pnpm run dist:mac -- --publish never` followed
-by `pnpm run qa:mac-package` on macOS. CI performs this lifecycle with an ad-hoc
-test signature. A public release still requires its own Developer ID identity
-and notarization.
+by `pnpm run qa:mac-package` on macOS. CI performs this lifecycle with the
+QA-only ad-hoc entitlement file; the release and inherited entitlements omit its
+library-validation exception. A public release still requires its own Developer
+ID identity and notarization.
 
 ## Source integrations
 

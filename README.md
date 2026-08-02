@@ -185,7 +185,7 @@ Use `pnpm run qa:browser:update` only when intentionally accepting a reviewed
 visual change. Baselines are platform-specific and actual run output stays under
 ignored `test-results`.
 
-Windows packaging has been exercised through unpacked launch, packaged-renderer smoke, silent NSIS install, installed-app launch, and silent uninstall. The CI workflow provisions Chrome for Testing for real extension pairing and builds a macOS DMG/ZIP that is mounted, copied, ad-hoc signed, launched in smoke mode, and removed. Apple Developer ID signing/notarization, a human screen-reader review, installation in the operator's intended persistent Chrome profile, and a user-selected real Instagram mutation remain release/operator acceptance rather than automated claims.
+Windows packaging has been exercised through unpacked launch, packaged-renderer smoke, silent NSIS install, installed-app launch, and silent uninstall. The CI workflow provisions Chrome for Testing for real extension pairing and builds a macOS DMG/ZIP that is mounted, copied, QA-only ad-hoc signed with hardened-runtime Electron entitlements, launched in smoke mode, and removed. Release entitlements do not include the ad-hoc library-validation exception. Apple Developer ID signing/notarization, a human screen-reader review, installation in the operator's intended persistent Chrome profile, and a user-selected real Instagram mutation remain release/operator acceptance rather than automated claims.
 
 ## Documentation
 

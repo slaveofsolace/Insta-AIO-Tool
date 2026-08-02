@@ -24,11 +24,21 @@ const macVerifier = await readFile(
   new URL('../scripts/verify-macos-package.mjs', import.meta.url),
   'utf8',
 );
+const macEntitlements = await readFile(
+  new URL('../build/entitlements.mac.plist', import.meta.url),
+  'utf8',
+);
+const macQaEntitlements = await readFile(
+  new URL('../build/entitlements.mac.qa.plist', import.meta.url),
+  'utf8',
+);
 const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
 
 test('isolated Chromium acceptance executes production account and DM DOM chains', () => {
   assert.equal(packageJson.scripts['qa:extension'], 'node scripts/run-extension-acceptance.mjs');
-  assert.match(runner, /spawn\(electronPath/);
+  assert.match(runner, /spawn\(\s*electronPath/);
+  assert.match(runner, /INSTA_AIO_ACCEPTANCE_NO_SANDBOX === '1'/);
+  assert.match(runner, /hostedLinuxNoSandbox \? \['--no-sandbox'\]/);
   assert.match(runner, /INSTA_AIO_EXTENSION_ACCEPTANCE_USER_DATA/);
   assert.match(runner, /await rm\(userDataRoot/);
   assert.match(acceptance, /acceptProfileAction/);
@@ -77,6 +87,7 @@ test('Chrome for Testing acceptance loads and pairs the real extension in a disp
   );
   assert.match(workflow, /CHROME_BIN: \$\{\{ steps\.setup-chrome\.outputs\.chrome-path \}\}/);
   assert.match(workflow, /xvfb-run --auto-servernum pnpm run qa:chrome/);
+  assert.match(workflow, /INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"/);
 });
 
 test('macOS CI builds and exercises the packaged lifecycle without release credentials', () => {
@@ -92,6 +103,7 @@ test('macOS CI builds and exercises the packaged lifecycle without release crede
   assert.match(macVerifier, /process\.platform !== 'darwin'/);
   assert.match(macVerifier, /hdiutil/);
   assert.match(macVerifier, /codesign/);
+  assert.match(macVerifier, /--entitlements', qaEntitlements/);
   assert.match(macVerifier, /--smoke-test/);
   assert.match(macVerifier, /INSTA_AIO_DESKTOP_SMOKE_PARENT: smokeParent/);
   assert.match(macVerifier, /await rm\(installedApp/);
@@ -100,6 +112,15 @@ test('macOS CI builds and exercises the packaged lifecycle without release crede
   assert.match(workflow, /runs-on: macos-14/);
   assert.match(workflow, /CSC_IDENTITY_AUTO_DISCOVERY: "false"/);
   assert.match(workflow, /pnpm run qa:mac-package/);
+  assert.equal(packageJson.build.mac.entitlements, 'build/entitlements.mac.plist');
+  assert.equal(
+    packageJson.build.mac.entitlementsInherit,
+    'build/entitlements.mac.inherit.plist',
+  );
+  assert.match(macEntitlements, /com\.apple\.security\.cs\.allow-jit/);
+  assert.doesNotMatch(macEntitlements, /disable-library-validation/);
+  assert.match(macQaEntitlements, /com\.apple\.security\.cs\.allow-jit/);
+  assert.match(macQaEntitlements, /com\.apple\.security\.cs\.disable-library-validation/);
   assert.match(
     workflow,
     /actions\/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02/,

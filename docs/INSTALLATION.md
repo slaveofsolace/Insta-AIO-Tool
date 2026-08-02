@@ -117,9 +117,11 @@ This creates DMG and ZIP targets under `dist/desktop`. Production distribution r
 
 After building on macOS, run `pnpm run qa:mac-package`. It mounts the DMG,
 copies the app to a disposable install root, applies an ad-hoc test signature,
-launches `--smoke-test`, removes the copied app, and verifies the ZIP. The ad-hoc
-signature is acceptance evidence, not a substitute for Developer ID signing or
-notarization.
+launches `--smoke-test`, removes the copied app, and verifies the ZIP. The QA
+signature uses `build/entitlements.mac.qa.plist` because an ad-hoc identity has
+no Apple Team ID. The release entitlement files retain hardened runtime without
+that library-validation exception. This is acceptance evidence, not a substitute
+for Developer ID signing or notarization.
 
 ## Upgrade
 

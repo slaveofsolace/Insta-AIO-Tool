@@ -28,6 +28,9 @@ jobs:
       - name: Core tests
         run: pnpm test
       - name: Production extension browser acceptance
+        env:
+          # The package-managed Electron sandbox is not root-owned on hosted runners.
+          INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"
         run: xvfb-run --auto-servernum pnpm run qa:extension
       - name: Install Chrome for Testing
         id: setup-chrome

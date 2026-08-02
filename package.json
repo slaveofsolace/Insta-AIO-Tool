@@ -85,7 +85,9 @@
       ],
       "icon": "dist/branding/icon.png",
       "category": "public.app-category.utilities",
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist"
     },
     "nsis": {
       "oneClick": false,

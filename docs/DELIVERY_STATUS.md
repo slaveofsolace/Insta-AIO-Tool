@@ -128,9 +128,10 @@ Complete and verified on Windows:
 
 The macOS CI job builds DMG and ZIP artifacts, mounts the DMG, copies the app to
 a disposable Applications directory, applies an ad-hoc hardened-runtime
-signature, launches the packaged renderer smoke mode, removes the app, and
-uploads the verified artifacts. Developer ID signing and notarization remain a
-release-credential step.
+signature with a QA-only entitlement file, launches the packaged renderer smoke
+mode, removes the app, and uploads the verified artifacts. Release entitlements
+omit the ad-hoc library-validation exception. Developer ID signing and
+notarization remain a release-credential step.
 
 ## UI and browser quality
 

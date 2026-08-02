@@ -19,6 +19,7 @@ if (process.platform !== 'darwin') {
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = path.join(repositoryRoot, 'dist', 'desktop');
+const qaEntitlements = path.join(repositoryRoot, 'build', 'entitlements.mac.qa.plist');
 
 async function walk(root) {
   const found = [];
@@ -96,8 +97,10 @@ try {
     verbatimSymlinks: true,
   });
   await run('/usr/bin/plutil', ['-lint', path.join(installedApp, 'Contents', 'Info.plist')]);
+  await run('/usr/bin/plutil', ['-lint', qaEntitlements]);
   await run('/usr/bin/codesign', [
-    '--force', '--deep', '--sign', '-', '--options', 'runtime', installedApp,
+    '--force', '--deep', '--sign', '-', '--options', 'runtime',
+    '--entitlements', qaEntitlements, installedApp,
   ]);
   await run('/usr/bin/codesign', ['--verify', '--deep', '--strict', '--verbose=2', installedApp]);
 
