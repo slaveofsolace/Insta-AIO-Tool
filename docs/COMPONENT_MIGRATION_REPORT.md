@@ -14,13 +14,22 @@ The dispatcher in `src/adapters/legacy-components.js` identifies supported data 
 
 ## Companion workflow migration
 
-Extension version 0.2.0 migrates the proven in-page workflow from the preserved
+Extension version 0.3.0 migrates the proven in-page workflow from the preserved
 Tampermonkey companion into the Manifest V3 Instagram sidecar. The migration
 retains the existing `insta-aio-visible-list`, `insta-aio-manual-queue`, and
 `insta-aio-companion-state` shapes. It adds repeated capture deduplication,
 current-page inspection, sanitized bridge dry-run history, and read-only DM
 evidence. The userscript remains available as a fallback; it was not removed or
 replaced.
+
+The independently reviewed account-action boundary now has an optional
+production extension driver. It does not reuse SimpleInstaBot's Puppeteer,
+session persistence, private routes, selector set, or retry automation. It
+accepts one fresh reviewed item, requires an Instagram-side exact phrase and
+short-lived one-use arm, consumes that arm before using the exact visible
+control, and returns before/after observations to the PWA ledger. This does not
+change the disposition of migrated SimpleInstaBot records: they remain
+historical and non-actionable.
 
 ## Disposition rules
 

@@ -155,7 +155,7 @@ app.addEventListener('click', async (event) => {
     const job = state.actionJobs?.[0];
     if (!job) return;
     const phrase = await requestExactConfirmation({
-      title: action === 'confirm-action-live' ? 'Confirm live account batch' : 'Confirm no-click dry run',
+      title: action === 'confirm-action-live' ? 'Confirm one-account live action' : 'Confirm no-click dry run',
       description: 'Review every listed username and action before continuing.',
       phrase: job.confirmationPhrase,
       destructive: action === 'confirm-action-live',
@@ -205,6 +205,60 @@ app.addEventListener('click', async (event) => {
       await persist();
     } catch (error) {
       bridgeStatus = `Error: ${error.message}`;
+      render();
+    }
+    return;
+  }
+  if (action === 'run-action-extension-live') {
+    const job = state.actionJobs?.[0];
+    if (!job || job.mode !== 'live' || job.status !== 'ready' || job.items.length !== 1) return;
+    bridgeStatus = 'Checking the signed one-item intent and Instagram-side live arm...';
+    render();
+    try {
+      const prepared = await requestExtensionBridge(
+        state.bridgePairing,
+        'action.account-live-intent',
+        { job },
+        { timeoutMs: 15_000 },
+      );
+      if (prepared.type === 'action.bridge-error') {
+        throw new Error(prepared.payload?.reason || 'extension-rejected-live-intent');
+      }
+      if (prepared.type !== 'action.account-live-intent-result') {
+        throw new Error('The extension returned an unexpected live-intent response.');
+      }
+      if (prepared.payload?.armed !== true) {
+        const item = job.items[0];
+        bridgeStatus = `Signed intent sent. Open @${item.username} on Instagram, use Field Desk → Queue, arm one ${item.action} for 90 seconds, then continue here again.`;
+        render();
+        return;
+      }
+
+      bridgeStatus = 'The exact Instagram action is armed. Revalidating before the durable reservation...';
+      render();
+      const driver = createExtensionAccountActionDriver(state.bridgePairing, {
+        jobId: job.id,
+      });
+      const ledger = createIndexedDbActionLedger();
+      const result = await executeReviewedActionJob(job, {
+        driver,
+        ledger,
+        settings: state.settings,
+        snapshot: activeSnapshot(),
+        async onCheckpoint(checkpointJob) {
+          state = await saveActionJobCheckpoint(checkpointJob);
+          render();
+        },
+      });
+      for (const item of result.items.filter((candidate) => candidate.status === 'completed')) {
+        state.queue = markQueueItem(state.queue, item.queueItemId, 'completed');
+      }
+      bridgeStatus = result.status === 'completed'
+        ? `Controlled live action completed. The job checkpoint and ledger result are durable.`
+        : `Controlled live action stopped safely: ${result.stopReason || 'unknown reason'}.`;
+      await persist();
+    } catch (error) {
+      bridgeStatus = `Stopped: ${error.message}`;
       render();
     }
     return;
@@ -460,7 +514,7 @@ app.addEventListener('click', async (event) => {
     try {
       const response = await requestExtensionBridge(state.bridgePairing, 'bridge.ping');
       bridgeStatus = response.type === 'read.bridge-status'
-        ? `Extension ${response.payload.extensionVersion} connected; live execution is disabled.`
+        ? `Extension ${response.payload.extensionVersion} connected; live account actions are locked by default.`
         : 'Error: The extension returned an unexpected response.';
     } catch (error) {
       bridgeStatus = `Error: ${error.message}`;
@@ -481,7 +535,7 @@ app.addEventListener('click', async (event) => {
     state.settings.waitingDays = Math.max(1, Number(document.querySelector('#waiting-days').value || 7));
     state.settings.dailyFollowLimit = Math.max(1, Number(document.querySelector('#daily-follow-limit').value || 25));
     state.settings.dailyUnfollowLimit = Math.max(1, Number(document.querySelector('#daily-unfollow-limit').value || 25));
-    state.settings.liveActionBatchLimit = Math.max(1, Math.min(25, Number(document.querySelector('#live-action-batch-limit').value || 1)));
+    state.settings.liveActionBatchLimit = 1;
     state.settings.liveDmBatchLimit = Math.max(1, Math.min(25, Number(document.querySelector('#live-dm-batch-limit').value || 1)));
     state.settings.ownerNames = document.querySelector('#owner-names').value.split(',').map((name) => name.trim()).filter(Boolean);
     state.settings.whitelist = lines(document.querySelector('#whitelist').value);

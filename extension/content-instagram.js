@@ -7,6 +7,8 @@
     'challenge', 'directory', 'graphql', 'legal', 'p', 'privacy', 'reel',
     'reels', 'settings', 'static', 'stories', 'terms', 'tv', 'web',
   ]);
+  const PROFILE_RESOLUTION_TTL_MS = 20_000;
+  const profileResolutions = new Map();
 
   function normalizeUsername(value) {
     const username = String(value || '')
@@ -28,6 +30,21 @@
     return String(element.textContent || element.getAttribute('aria-label') || '').trim();
   }
 
+  function resolutionToken() {
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    const bytes = new Uint8Array(16);
+    globalThis.crypto?.getRandomValues?.(bytes);
+    return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  function pruneProfileResolutions(now = Date.now()) {
+    for (const [token, resolution] of profileResolutions) {
+      if (now - resolution.createdAt > PROFILE_RESOLUTION_TTL_MS) {
+        profileResolutions.delete(token);
+      }
+    }
+  }
+
   function inspectSession() {
     const path = location.pathname.toLowerCase();
     const pageText = String(document.body?.innerText || '').toLowerCase();
@@ -40,19 +57,56 @@
     };
   }
 
-  function relationshipFromButtons() {
-    const candidates = [...document.querySelectorAll('main button, main [role="button"]')]
+  function verifiedProfileHeader(username) {
+    const normalized = normalizeUsername(username);
+    if (!normalized) return { root: null, observedProfileCount: 0 };
+    const headers = [...document.querySelectorAll('main header')]
+      .filter((header) => {
+        if (!visibleText(header)) return false;
+        return [...header.querySelectorAll('a[href], h1, h2, [role="heading"]')]
+          .some((element) => {
+            const hrefUsername = normalizeUsername(element.getAttribute?.('href'));
+            const textUsername = normalizeUsername(visibleText(element));
+            return hrefUsername === normalized || textUsername === normalized;
+          });
+      });
+    return {
+      root: headers.length === 1 ? headers[0] : null,
+      observedProfileCount: headers.length,
+    };
+  }
+
+  function relationshipFromButtons(expectedUsername) {
+    const profile = verifiedProfileHeader(expectedUsername);
+    if (!profile.root) {
+      return {
+        relationship: null,
+        ambiguous: true,
+        observedLabels: [],
+        observedControlCount: 0,
+        observedProfileCount: profile.observedProfileCount,
+        profileIdentityVerified: false,
+        profileRoot: null,
+        control: null,
+      };
+    }
+    const candidates = [...profile.root.querySelectorAll('button, [role="button"]')]
       .map((element) => ({
         element,
         label: visibleText(element).toLocaleLowerCase(),
       }))
       .filter(({ label }) => ['follow', 'follow back', 'following', 'requested'].includes(label));
     const uniqueLabels = [...new Set(candidates.map(({ label }) => label))];
-    if (uniqueLabels.length !== 1) {
+    if (candidates.length !== 1 || uniqueLabels.length !== 1) {
       return {
         relationship: null,
         ambiguous: true,
         observedLabels: uniqueLabels,
+        observedControlCount: candidates.length,
+        observedProfileCount: profile.observedProfileCount,
+        profileIdentityVerified: true,
+        profileRoot: profile.root,
+        control: null,
       };
     }
     const label = uniqueLabels[0];
@@ -64,6 +118,11 @@
           : 'not-following',
       ambiguous: false,
       observedLabels: uniqueLabels,
+      observedControlCount: 1,
+      observedProfileCount: profile.observedProfileCount,
+      profileIdentityVerified: true,
+      profileRoot: profile.root,
+      control: candidates[0].element,
     };
   }
 
@@ -73,23 +132,171 @@
       return session;
     }
     const username = normalizeUsername(location.pathname);
-    const relationship = relationshipFromButtons();
+    const relationship = relationshipFromButtons(username);
+    pruneProfileResolutions();
+    let token = null;
+    if (!relationship.ambiguous && username && relationship.control) {
+      token = resolutionToken();
+      profileResolutions.set(token, {
+        control: relationship.control,
+        createdAt: Date.now(),
+        pathname: location.pathname,
+        profileRoot: relationship.profileRoot,
+        relationship: relationship.relationship,
+        username,
+      });
+    }
     return {
       ...session,
-      ...relationship,
+      relationship: relationship.relationship,
+      ambiguous: relationship.ambiguous,
+      observedLabels: relationship.observedLabels,
+      observedControlCount: relationship.observedControlCount,
+      observedProfileCount: relationship.observedProfileCount,
+      profileIdentityVerified: relationship.profileIdentityVerified,
       username,
-      unexpectedUi: !document.querySelector('main'),
+      unexpectedUi: !document.querySelector('main') || !relationship.profileIdentityVerified,
       evidence: {
         url: location.href,
         expectedUsername: normalizeUsername(expectedUsername),
         observedUsername: username,
         observedLabels: relationship.observedLabels,
+        observedControlCount: relationship.observedControlCount,
+        observedProfileCount: relationship.observedProfileCount,
+        profileIdentityVerified: relationship.profileIdentityVerified,
         capturedAt: new Date().toISOString(),
       },
-      resolutionToken: relationship.ambiguous
-        ? null
-        : `${username}:${relationship.relationship}:${Date.now()}`,
+      resolutionToken: token,
     };
+  }
+
+  function waitFor(check, timeoutMs) {
+    const startedAt = Date.now();
+    return new Promise((resolve) => {
+      const inspect = () => {
+        const value = check();
+        if (value || Date.now() - startedAt >= timeoutMs) {
+          resolve(value || null);
+          return;
+        }
+        setTimeout(inspect, 100);
+      };
+      inspect();
+    });
+  }
+
+  function visibleDialogs() {
+    return [...document.querySelectorAll('[role="dialog"]')]
+      .filter((dialog) => visibleText(dialog));
+  }
+
+  function dialogNamesUsername(dialog, username) {
+    const normalized = normalizeUsername(username);
+    if (!normalized) return false;
+    if ([...dialog.querySelectorAll('a[href]')].some((anchor) => (
+      normalizeUsername(anchor.getAttribute('href')) === normalized
+    ))) return true;
+    const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^a-z0-9._])@?${escaped}(?=$|[^a-z0-9._])`, 'i')
+      .test(visibleText(dialog));
+  }
+
+  function exactUnfollowConfirmation(username, excludedDialogs = new Set()) {
+    const dialogs = visibleDialogs()
+      .filter((dialog) => !excludedDialogs.has(dialog))
+      .filter((dialog) => dialogNamesUsername(dialog, username));
+    if (dialogs.length !== 1) return null;
+    const controls = [...dialogs[0].querySelectorAll('button, [role="button"]')]
+      .filter((element) => visibleText(element).toLocaleLowerCase() === 'unfollow');
+    return controls.length === 1 ? controls[0] : null;
+  }
+
+  function activateLiveControl(control) {
+    control.click();
+  }
+
+  async function waitForRelationship(expectedRelationships, username, timeoutMs = 5_000) {
+    return waitFor(() => {
+      const session = inspectSession();
+      if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
+        return { sessionStop: session };
+      }
+      const observed = relationshipFromButtons(username);
+      if (!observed.ambiguous && expectedRelationships.includes(observed.relationship)) {
+        return { relationship: observed.relationship };
+      }
+      return null;
+    }, timeoutMs);
+  }
+
+  async function performReviewedProfileAction(item) {
+    const username = normalizeUsername(item?.username);
+    const action = String(item?.action || '');
+    const token = String(item?.resolutionToken || '');
+    if (!username || !['follow', 'unfollow'].includes(action) || !token) {
+      return { unexpectedUi: true, reason: 'invalid-live-action-request' };
+    }
+
+    const session = inspectSession();
+    if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
+      return session;
+    }
+
+    pruneProfileResolutions();
+    const resolution = profileResolutions.get(token);
+    profileResolutions.delete(token);
+    if (
+      !resolution
+      || resolution.username !== username
+      || resolution.pathname !== location.pathname
+      || resolution.relationship !== item.expectedRelationship
+      || !resolution.control?.isConnected
+    ) {
+      return { ambiguous: true, reason: 'profile-resolution-expired-or-changed' };
+    }
+
+    const current = relationshipFromButtons(username);
+    const expectedRelationship = action === 'follow' ? 'not-following' : 'following';
+    if (
+      current.ambiguous
+      || current.relationship !== expectedRelationship
+      || current.relationship !== resolution.relationship
+      || current.profileRoot !== resolution.profileRoot
+      || current.control !== resolution.control
+      || normalizeUsername(location.pathname) !== username
+    ) {
+      return { ambiguous: true, reason: 'profile-control-changed-before-action' };
+    }
+
+    const dialogsBeforeAction = visibleDialogs();
+    if (dialogsBeforeAction.length) {
+      return { unexpectedUi: true, reason: 'preexisting-dialog-before-live-action' };
+    }
+
+    activateLiveControl(current.control);
+    if (action === 'follow') {
+      const completion = await waitForRelationship(['following', 'requested'], username);
+      if (completion?.sessionStop) return completion.sessionStop;
+      if (!completion) return { unexpectedUi: true, reason: 'follow-not-confirmed' };
+      return {
+        result: completion.relationship === 'requested' ? 'follow-requested' : 'followed',
+        relationship: completion.relationship,
+      };
+    }
+
+    const excludedDialogs = new Set(dialogsBeforeAction);
+    const confirmation = await waitFor(
+      () => exactUnfollowConfirmation(username, excludedDialogs),
+      3_000,
+    );
+    if (!confirmation) {
+      return { unexpectedUi: true, reason: 'unfollow-confirmation-not-exact' };
+    }
+    activateLiveControl(confirmation);
+    const completion = await waitForRelationship(['not-following'], username);
+    if (completion?.sessionStop) return completion.sessionStop;
+    if (!completion) return { unexpectedUi: true, reason: 'unfollow-not-confirmed' };
+    return { result: 'unfollowed', relationship: completion.relationship };
   }
 
   function captureVisibleAccounts() {
@@ -207,6 +414,13 @@
     }
     if (request?.kind === 'insta-aio-inspect-visible-messages') {
       sendResponse(inspectVisibleMessages());
+      return;
+    }
+    if (request?.kind === 'insta-aio-perform-reviewed-profile-action') {
+      performReviewedProfileAction(request.item)
+        .then(sendResponse)
+        .catch(() => sendResponse({ unexpectedUi: true, reason: 'live-action-driver-error' }));
+      return true;
     }
   });
 })();

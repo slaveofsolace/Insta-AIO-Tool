@@ -96,3 +96,63 @@ export async function requestExtensionBridge(pairing, type, payload = {}, option
   const response = await exchange(request, options);
   return verifyResponse(response, pairing, request.requestId);
 }
+
+function responsePayload(response, expectedType) {
+  if (response?.type === 'action.bridge-error') {
+    throw new Error(response.payload?.reason || 'extension-rejected-action');
+  }
+  if (response?.type !== expectedType || !response.payload) {
+    throw new Error(`Extension returned an unexpected response for ${expectedType}.`);
+  }
+  return response.payload;
+}
+
+export function createExtensionAccountActionDriver(pairing, {
+  jobId,
+  request = requestExtensionBridge,
+  timeoutMs = 15_000,
+} = {}) {
+  if (!jobId) throw new Error('An account action job ID is required.');
+
+  async function exchange(type, payload, expectedType) {
+    const response = await request(pairing, type, {
+      jobId,
+      ...payload,
+    }, { timeoutMs });
+    return responsePayload(response, expectedType);
+  }
+
+  return Object.freeze({
+    async inspectSession() {
+      return exchange(
+        'action.account-session',
+        {},
+        'action.account-session-result',
+      );
+    },
+
+    async resolveProfile(username) {
+      return exchange(
+        'action.account-profile',
+        { username },
+        'action.account-profile-result',
+      );
+    },
+
+    async inspectLiveAuthorization(item) {
+      return exchange(
+        'action.account-live-readiness',
+        { item },
+        'action.account-live-readiness-result',
+      );
+    },
+
+    async performReviewedAction(item) {
+      return exchange(
+        'action.account-perform',
+        { item },
+        'action.account-perform-result',
+      );
+    },
+  });
+}

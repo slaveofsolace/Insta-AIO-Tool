@@ -137,6 +137,26 @@ test('migrates schema version 1 state additively for source reports', () => {
   assert.equal(migrated.settings.liveDmUnsendEnabled, false);
 });
 
+test('normalizes restored daily limits before they reach the live ledger', () => {
+  const malformed = migrateState({
+    settings: {
+      dailyFollowLimit: 'not-a-number',
+      dailyUnfollowLimit: 'Infinity',
+    },
+  });
+  assert.equal(malformed.settings.dailyFollowLimit, 1);
+  assert.equal(malformed.settings.dailyUnfollowLimit, 1);
+
+  const bounded = migrateState({
+    settings: {
+      dailyFollowLimit: 12.9,
+      dailyUnfollowLimit: 50_000,
+    },
+  });
+  assert.equal(bounded.settings.dailyFollowLimit, 12);
+  assert.equal(bounded.settings.dailyUnfollowLimit, 500);
+});
+
 test('imports all audited component formats through the application pipeline', async () => {
   const helper = await fixture('instagram-helper/messages.json');
   const followed = await fixture('simpleinstabot/fixture.owner-followed.json');

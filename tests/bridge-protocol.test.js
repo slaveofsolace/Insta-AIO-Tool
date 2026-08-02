@@ -13,6 +13,7 @@ import {
   parseBridgePairingCode,
   verifySignedBridgeMessage,
 } from '../src/core/bridge-protocol.js';
+import { createExtensionAccountActionDriver } from '../src/adapters/extension-bridge-client.js';
 
 test('one-time bridge code reconstructs the same origin-scoped pairing', () => {
   const { pairing, pairingCode } = createBridgePairing({
@@ -162,4 +163,47 @@ test('tampering invalidates bridge signatures', async () => {
     origin: pairing.origin,
   });
   assert.equal(verified.reason, 'invalid-signature');
+});
+
+test('extension account driver keeps inspection and live execution behind signed action messages', async () => {
+  const calls = [];
+  const pairing = { pairingId: 'pairing-1' };
+  const request = async (receivedPairing, type, payload, options) => {
+    calls.push({ receivedPairing, type, payload, options });
+    const responses = {
+      'action.account-session': ['action.account-session-result', { authenticated: true }],
+      'action.account-profile': ['action.account-profile-result', {
+        username: payload.username,
+        relationship: 'not-following',
+        resolutionToken: 'profile-token',
+      }],
+      'action.account-live-readiness': ['action.account-live-readiness-result', {
+        authorized: true,
+      }],
+      'action.account-perform': ['action.account-perform-result', {
+        result: 'followed',
+      }],
+    };
+    const [responseType, responsePayloadValue] = responses[type];
+    return { type: responseType, payload: responsePayloadValue };
+  };
+  const driver = createExtensionAccountActionDriver(pairing, {
+    jobId: 'job-1',
+    request,
+    timeoutMs: 2_000,
+  });
+
+  assert.equal((await driver.inspectSession()).authenticated, true);
+  const profile = await driver.resolveProfile('target');
+  assert.equal(profile.resolutionToken, 'profile-token');
+  assert.equal((await driver.inspectLiveAuthorization({ id: 'item-1' })).authorized, true);
+  assert.equal((await driver.performReviewedAction({ id: 'item-1' })).result, 'followed');
+  assert.deepEqual(calls.map((call) => call.type), [
+    'action.account-session',
+    'action.account-profile',
+    'action.account-live-readiness',
+    'action.account-perform',
+  ]);
+  assert.equal(calls.every((call) => call.payload.jobId === 'job-1'), true);
+  assert.equal(calls.every((call) => call.options.timeoutMs === 2_000), true);
 });

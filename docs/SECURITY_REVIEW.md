@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-07-30
+Last reviewed: 2026-08-01
 
 ## Application boundaries
 
@@ -10,11 +10,25 @@ locally. The optional extension uses exact-origin permissions, signed
 short-lived requests, nonce replay protection, separate read/action
 permissions, and explicit rejection of credential-like payload fields.
 
-Live execution is disabled in the distributed extension. Reviewed account and
-message jobs use no-click dry runs by default, exact confirmation material,
-transactional reservations, durable checkpoints, and safe stops for ambiguous
-state. Execution adapters revalidate the confirmed preview, current enable
-setting, and current batch limit before entering a live path.
+Live execution is locked by default. Reviewed account and message jobs use
+no-click dry runs by default, exact confirmation material, transactional
+reservations, durable checkpoints, and safe stops for ambiguous state.
+Execution adapters revalidate the confirmed preview, current enable setting,
+and current batch limit before entering a live path.
+
+The distributed extension exposes a controlled account-action path only. It
+requires a signed action-permission request, one fresh reviewed item, a matching
+Instagram profile and relationship, an exact action/username phrase, and a
+tab-scoped 90-second arm. The PWA revalidates the arm before reserving its
+ledger. The background worker persists an independent reservation, then
+consumes the one-use arm and signed intent before sending the page-control
+request. The content script requires a short-lived exact DOM token and one
+relationship control owned by a verified profile header. It stops before any
+click when a dialog is already visible and accepts only a newly surfaced
+Unfollow dialog that names the reviewed username. Restored daily limits are
+finite and bounded. Capability replay, stale confirmation, changed controls,
+wrong profiles, duplicate attempts, and ambiguous UI fail closed. Live DM
+removal remains unavailable.
 
 The extension background derives the requesting origin from Chrome's sender
 metadata and rejects a mismatched page claim. The loopback development server
@@ -24,6 +38,21 @@ repository metadata, tests, documentation, and Git internals are not served.
 Workspace exports can contain imported private data and bridge pairing
 secrets. They are explicit user-created backups, not sanitized sharing
 artifacts. Pairings should be revoked before a backup is shared.
+
+## Local-patch review closure
+
+The 2026-08-01 controlled-action review found and remediated four low-severity
+issues before release: profile controls were not structurally bound to the
+reviewed header, an existing Unfollow dialog could be mistaken for a newly
+opened target dialog, the extension lacked its own durable reservation, and
+malformed restored daily limits could fail open. Regression tests exercise each
+fixed boundary, and the complete repository suite passes 89 of 89 tests.
+
+An authenticated Instagram Follow or Unfollow has deliberately not been run.
+It remains a separate operator acceptance gate requiring an exact target,
+action, and explicit approval. Local interactive fixture navigation was also
+blocked by the Codex in-app browser's loopback policy; this is recorded as an
+environment limitation rather than browser acceptance evidence.
 
 ## Dependency review
 

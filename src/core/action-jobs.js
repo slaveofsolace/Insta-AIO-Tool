@@ -3,6 +3,8 @@ import { getUnfollowProtectionReason } from './queue.js';
 
 const ACTIONABLE_STATUSES = new Set(['pending', 'ready', 'paused', 'failed']);
 
+export const ACTION_CONFIRMATION_MAX_AGE_MS = 10 * 60 * 1000;
+
 function fnv1a(value) {
   let hash = 0x811c9dc5;
   for (let index = 0; index < value.length; index += 1) {
@@ -45,6 +47,13 @@ export function actionLiveBatchLimit(settings = {}) {
   return Number.isFinite(requested)
     ? Math.max(1, Math.min(25, Math.floor(requested)))
     : 1;
+}
+
+export function actionConfirmationIsFresh(job, now = Date.now()) {
+  const confirmedAt = new Date(job?.confirmedAt || '').getTime();
+  return Number.isFinite(confirmedAt)
+    && confirmedAt <= now + 30_000
+    && now - confirmedAt <= ACTION_CONFIRMATION_MAX_AGE_MS;
 }
 
 export function createReviewedActionJob(queue, {

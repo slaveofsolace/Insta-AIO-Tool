@@ -10,13 +10,13 @@ The project includes:
 - Message search, sent-message classification, and reviewed unsend jobs
 - Source-specific migrations for Instagram Helper, SimpleInstaBot, and saved follower-checker results
 - A visible Instagram sidecar for capture, manual queue work, and read-only message evidence
-- A signed, origin-paired Manifest V3 extension bridge for reviewed no-click jobs
+- A signed, origin-paired Manifest V3 extension bridge for reviewed no-click jobs and one-item controlled account actions
 - A preserved read-only Tampermonkey fallback
 - Windows and macOS Electron packaging configuration
 
 ## Safety model
 
-Live account changes and DM removal are disabled by default. The PWA requires exact batch previews and confirmation phrases. The companion extension currently exposes read-only inspection and true no-click dry runs; it rejects every live job.
+Live account changes and DM removal are disabled by default. The PWA requires exact batch previews and confirmation phrases. Dry runs never invoke the extension's page-control path. A live Follow or Unfollow requires a fresh signed batch of exactly one item, action permission, an exact phrase entered on the matching Instagram profile, a 90-second one-use arm, PWA and extension-side durable reservations, a relationship control inside a verified profile header, a newly created target-named Unfollow dialog when needed, and post-action relationship verification. Live DM removal is not exposed by the extension.
 
 The project does not implement proxy rotation, fingerprint spoofing, challenge bypass, CAPTCHA solving, private endpoint reverse engineering, or unreviewed destructive actions.
 
@@ -83,9 +83,9 @@ Follow items enter a configurable waiting period before an unfollow review can b
 
 Queue records must be selected explicitly. A preview lists the exact username and action for every item, calculates a digest, and requires the matching confirmation phrase.
 
-Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, ambiguous controls, session expiry, challenges, rate limits, action blocks, or changed protection state. The action ledger reserves a live attempt before any driver call and prevents duplicate or over-limit execution.
+Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-The shipped extension does not expose live clicks. JSON export remains available for review and controlled adapter development.
+Extension 0.3.0 exposes a controlled live account path only for a reviewed batch of one. The PWA sends a signed intent; the Instagram Field Desk requires the matching profile and exact `ARM FOLLOW @username` or `ARM UNFOLLOW @username` phrase; the arm expires after 90 seconds. Immediately before page control, the background persists its own reservation and consumes the arm, then finalizes that mirror as succeeded or uncertain. The PWA independently checkpoints its transactional ledger. This implemented path still requires authenticated selector acceptance before issue #3 can be closed.
 
 ## Reviewed DM jobs
 
@@ -118,12 +118,14 @@ the right side of the page and can be collapsed to its launcher. It provides:
 - Current-page session, profile, relationship, and queue-match inspection
 - Repeated visible-row capture that merges follower or following usernames
 - The existing manual queue JSON workflow with Open, Complete, and Skip controls
-- Sanitized history for signed account and DM dry runs received from the PWA
+- Sanitized history for signed account dry runs, controlled account results, and DM dry runs received from the PWA
+- An Instagram-side, 90-second one-use arm for a fresh signed one-item Follow or Unfollow intent
 - Read-only visible-message evidence with an explicit exact-identity safe stop
 - A direct link back to the exact paired PWA origin
 
-Press **Alt + Shift + I** to toggle the sidecar. Live Follow, Unfollow, and
-Unsend controls are not exposed. See [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
+Press **Alt + Shift + I** to toggle the sidecar. Follow and Unfollow remain
+locked until the controlled one-item workflow is completed; live Unsend is not
+exposed. See [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
 for the runtime and data boundaries.
 
 Pairing is origin-specific:
@@ -174,7 +176,7 @@ pnpm test
 pnpm run benchmark:zip
 ```
 
-The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, transactional ledgers, bridge signing and replay protection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing.
+The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing.
 
 Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. macOS artifact production and interactive Chrome visual acceptance must be performed on their target environments before a signed release.
 

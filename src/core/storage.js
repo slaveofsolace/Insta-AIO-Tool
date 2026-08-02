@@ -4,6 +4,13 @@ const STATE_KEY = 'state';
 const DB_VERSION = 1;
 const STATE_SCHEMA_VERSION = 3;
 
+function normalizedDailyLimit(value, fallback = 25) {
+  if (value == null || value === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, Math.min(500, Math.floor(parsed)));
+}
+
 class AtomicStateUpdaterError extends Error {
   constructor(cause) {
     super(cause?.message || 'Atomic state update failed.');
@@ -50,11 +57,20 @@ export function defaultState() {
 export function migrateState(candidate) {
   const base = defaultState();
   if (!candidate || typeof candidate !== 'object') return base;
+  const settings = { ...base.settings, ...(candidate.settings || {}) };
+  settings.dailyFollowLimit = normalizedDailyLimit(
+    settings.dailyFollowLimit,
+    base.settings.dailyFollowLimit,
+  );
+  settings.dailyUnfollowLimit = normalizedDailyLimit(
+    settings.dailyUnfollowLimit,
+    base.settings.dailyUnfollowLimit,
+  );
   return {
     ...base,
     ...candidate,
     schemaVersion: STATE_SCHEMA_VERSION,
-    settings: { ...base.settings, ...(candidate.settings || {}) },
+    settings,
     snapshots: Array.isArray(candidate.snapshots) ? candidate.snapshots : [],
     queue: Array.isArray(candidate.queue) ? candidate.queue : [],
     messages: Array.isArray(candidate.messages) ? candidate.messages : [],

@@ -18,6 +18,10 @@ const background = await readFile(
   new URL('../extension/background.js', import.meta.url),
   'utf8',
 );
+const controlledPolicy = await readFile(
+  new URL('../src/core/controlled-account-action.js', import.meta.url),
+  'utf8',
+);
 const fixture = await readFile(
   new URL('./fixtures/overlay-preview.html', import.meta.url),
   'utf8',
@@ -39,7 +43,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'content-instagram.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.2.0');
+  assert.equal(manifest.version, '0.3.0');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -66,12 +70,28 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /__instaAioOverlayTestOpenShadow === true \? 'open' : 'closed'/);
 });
 
-test('Instagram scripts contain no synthetic or page-control click path', () => {
-  const combined = `${inspector}\n${overlay}`;
-  assert.doesNotMatch(combined, /\.click\s*\(/);
-  assert.doesNotMatch(combined, /dispatchEvent\s*\(/);
-  assert.doesNotMatch(combined, /Follow.*\.click|Unfollow.*\.click|Unsend.*\.click/is);
-  assert.match(overlay, /No Instagram controls will be clicked/);
+test('dry runs remain no-click while the one live activator is token-bound and one-use', () => {
+  assert.equal((inspector.match(/\.click\s*\(/g) || []).length, 1);
+  assert.match(inspector, /function activateLiveControl\(control\)/);
+  assert.match(inspector, /profileResolutions\.delete\(token\)/);
+  assert.match(inspector, /current\.control !== resolution\.control/);
+  assert.doesNotMatch(overlay, /\.click\s*\(|dispatchEvent\s*\(/);
+  const dryRunBody = background.slice(
+    background.indexOf('async function inspectAccountJob'),
+    background.indexOf('async function accountLiveReadiness'),
+  );
+  assert.doesNotMatch(dryRunBody, /insta-aio-perform-reviewed-profile-action/);
+  assert.match(overlay, /Inspection is no-click/);
+});
+
+test('sidecar exposes an exact, expiring live arm without executing from the overlay', () => {
+  assert.match(overlay, /Controlled live gate/);
+  assert.match(overlay, /ARM \$\{String\(intent\.action/);
+  assert.match(overlay, /Arm for 90 seconds/);
+  assert.match(overlay, /Arming alone does not click/);
+  assert.match(controlledPolicy, /ACCOUNT_ARM_TTL_MS = 90 \* 1000/);
+  assert.match(background, /insta-aio-arm-account-action/);
+  assert.match(background, /expectedPhrase = `ARM \$\{intent\.action\.toUpperCase\(\)\} @\$\{intent\.username\}`/);
 });
 
 test('visible DM evidence remains read-only and identity-incomplete', () => {
@@ -83,14 +103,15 @@ test('visible DM evidence remains read-only and identity-incomplete', () => {
   assert.match(overlay, /cannot authorize removal/);
 });
 
-test('background reveals only sanitized pairing and dry-run summaries to Instagram', () => {
+test('background reveals only sanitized pairing, intent, arm, and run summaries to Instagram', () => {
   const overlayStateBody = background.slice(
     background.indexOf('function overlayState'),
     background.indexOf('function isInstagramSender'),
   );
   assert.match(background, /insta-aio-overlay-state/);
   assert.match(background, /instagram-origin-required/);
-  assert.match(background, /liveExecutionEnabled: false/);
+  assert.match(background, /pendingLiveIntent: publicLiveIntent/);
+  assert.match(background, /liveArm: publicLiveArm/);
   assert.doesNotMatch(overlayStateBody, /secret|signature|nonce/i);
 });
 

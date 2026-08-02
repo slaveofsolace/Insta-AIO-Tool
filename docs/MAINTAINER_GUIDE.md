@@ -4,12 +4,14 @@
 
 - Preserve the PWA, migrations, userscript, tests, and data contracts.
 - Keep live action settings disabled by default.
-- Keep shipped extension execution no-click until controlled acceptance is recorded.
+- Keep every dry-run route no-click; it must never reach `activateLiveControl()`.
+- Keep extension live account execution to one fresh signed item, one exact Instagram-side phrase, one tab-scoped 90-second arm, one background-owned reservation, and one consumed capability.
+- Do not expose extension live DM execution until exact rendered message identity and ownership are proven.
 - Keep `content-instagram.js` loaded before `instagram-overlay.js`.
 - Keep Instagram-side pairing state sanitized; never expose bridge secrets, signatures, or nonces.
 - Preserve `insta-aio-visible-list` and `insta-aio-manual-queue` compatibility.
 - Never infer exact identity from a visually similar profile or message.
-- Reserve ledger attempts before any destructive driver call.
+- Reserve both the PWA ledger and the extension mirror before any destructive driver call.
 - Preserve every import disposition.
 - Keep state migrations additive.
 - Do not introduce credential collection, session export, bypass behavior, or private endpoint dependencies.
@@ -47,6 +49,13 @@ profile context, repeated capture deduplication, manual queue status updates,
 collapse/keyboard controls, and `?mode=messages` fixture. This is deterministic
 runtime evidence, not authenticated Instagram acceptance.
 
+For controlled account-driver changes, also exercise `?mode=live-follow` and
+`?mode=live-unfollow`. Verify that inspection performs zero activations, the
+exact arm is required, suggested-account controls cannot impersonate the
+profile header, Follow activates one control, pre-existing dialogs stop before
+any click, Unfollow activates only a newly surfaced target-named confirmation,
+token replay performs nothing, and duplicate relationship controls safe-stop.
+
 ## Source integrations
 
 A component may be marked integrated only after:
@@ -65,14 +74,18 @@ Driver boundaries return observations and results. They do not write application
 
 Before a live account action:
 
-1. Inspect session safety.
-2. Resolve the exact normalized username.
-3. Resolve one unambiguous relationship state.
-4. Reapply whitelist, preexisting, mutual, and status protections.
-5. Reserve the attempt transactionally.
-6. Invoke the exact driver control.
-7. Reinspect and verify the relationship change.
-8. Finalize the ledger and checkpoint the item.
+1. Require a fresh digest-bound confirmation for exactly one item.
+2. Send the signed intent through an action-permission pairing.
+3. Match the exact Instagram profile header and its owned relationship control.
+4. Require the exact action/username phrase and create a tab-scoped 90-second arm.
+5. Inspect session safety and reapply whitelist, preexisting, mutual, and status protections.
+6. Resolve a short-lived exact DOM control token.
+7. Revalidate the one-use arm immediately before reservation.
+8. Reserve the PWA attempt transactionally.
+9. Persist the extension-side mirror reservation and consume the arm before the page-control request.
+10. Stop on any pre-existing dialog; invoke only the exact token-bound control and, for Unfollow, a newly surfaced dialog that names the reviewed username.
+11. Reinspect and verify the relationship change.
+12. Finalize both ledgers and checkpoint the item.
 
 Before DM removal:
 

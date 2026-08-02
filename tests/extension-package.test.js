@@ -22,6 +22,10 @@ const pwaContent = await readFile(
   new URL('../extension/content-pwa.js', import.meta.url),
   'utf8',
 );
+const controlledPolicy = await readFile(
+  new URL('../src/core/controlled-account-action.js', import.meta.url),
+  'utf8',
+);
 
 test('extension uses Manifest V3 without cookie or request interception permissions', () => {
   assert.equal(manifest.manifest_version, 3);
@@ -35,21 +39,33 @@ test('extension uses Manifest V3 without cookie or request interception permissi
   assert.deepEqual(manifest.host_permissions, ['https://www.instagram.com/*']);
 });
 
-test('Instagram content script exposes inspection only and contains no click path', () => {
+test('Instagram content script isolates its only page-control call behind the reviewed live driver', () => {
   assert.match(instagramContent, /insta-aio-inspect-profile/);
   assert.match(instagramContent, /insta-aio-capture-visible-accounts/);
   assert.match(instagramContent, /replace\(\/\^\\\/\+\/, ''\)/);
-  assert.doesNotMatch(instagramContent, /\.click\s*\(/);
+  assert.equal((instagramContent.match(/\.click\s*\(/g) || []).length, 1);
+  assert.match(instagramContent, /function activateLiveControl\(control\)[\s\S]*?control\.click\(\)/);
+  assert.match(instagramContent, /profileResolutions\.delete\(token\)/);
+  assert.match(instagramContent, /unfollow-confirmation-not-exact/);
   assert.doesNotMatch(instagramContent, /cookies?|authorization/i);
   assert.doesNotMatch(instagramOverlay, /\.click\s*\(/);
   assert.match(instagramOverlay, /data-ia-section="queue"/);
 });
 
-test('bridge transport pins the page origin and background rejects live jobs', () => {
+test('bridge transport pins the page origin and requires one fresh, armed live account intent', () => {
   assert.match(pwaContent, /event\.origin !== location\.origin/);
   assert.match(pwaContent, /window\.postMessage/);
   assert.match(background, /bridgeSenderOrigin\(sender\)/);
   assert.match(background, /origin !== request\.origin/);
-  assert.match(background, /live-execution-disabled/);
-  assert.match(background, /liveExecutionEnabled: false/);
+  assert.match(controlledPolicy, /controlled-live-batch-must-be-one/);
+  assert.match(controlledPolicy, /live-confirmation-expired/);
+  assert.match(background, /live-arm-required/);
+  assert.match(background, /Reserve and consume the one-shot capability durably before the first page control is used/);
+  assert.match(background, /accountActionLedger/);
+  assert.match(background, /reserveExtensionAction/);
+  assert.match(instagramContent, /function verifiedProfileHeader\(username\)/);
+  assert.match(instagramContent, /profileRoot !== resolution\.profileRoot/);
+  assert.match(instagramContent, /preexisting-dialog-before-live-action/);
+  assert.match(instagramContent, /dialogNamesUsername\(dialog, username\)/);
+  assert.match(background, /state\.liveArm = null;[\s\S]*state\.pendingLiveIntent = null;[\s\S]*await saveBridgeState\(state\)/);
 });

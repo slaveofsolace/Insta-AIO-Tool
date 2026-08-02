@@ -25,10 +25,14 @@ Insta AIO Tool:
 - Does not export Instagram session state
 - Does not include analytics or telemetry
 - Rejects bridge payload fields associated with credentials or authorization
-- Keeps live execution disabled by default
-- Rejects live jobs in the shipped extension
+- Keeps live execution locked off by default
+- Keeps dry runs no-click and permits only a fresh, signed, reviewed batch of
+  exactly one Follow or Unfollow item through the short-lived Instagram arm,
+  PWA and extension-side durable ledgers, verified profile-header ownership,
+  target-bound confirmation dialog, and one-use DOM-token boundary
+- Does not expose live DM Unsend execution in the shipped extension
 - Requires reviewed job digests and explicit confirmations
-- Uses transactional duplicate and limit enforcement
+- Uses transactional duplicate and finite-limit enforcement, including restored state
 - Safe-stops on uncertain browser state
 
 Exported workspace and job files can contain imported personal data and

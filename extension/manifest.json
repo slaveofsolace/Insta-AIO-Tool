@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Insta AIO Companion",
-  "version": "0.2.0",
-  "description": "Local-first Instagram sidecar for visible capture, manual queues, and reviewed no-click inspection.",
+  "version": "0.3.0",
+  "description": "Local-first Instagram sidecar for capture, reviewed no-click inspection, and explicitly armed one-item account actions.",
   "permissions": [
     "storage",
     "tabs",

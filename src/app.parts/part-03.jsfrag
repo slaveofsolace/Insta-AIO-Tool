@@ -155,7 +155,7 @@ function renderSettings() {
         <div class="field"><label for="waiting-days">Waiting period before unfollow review</label><input id="waiting-days" type="number" min="1" max="365" value="${escapeHtml(state.settings.waitingDays)}"></div>
         <div class="field"><label for="daily-follow-limit">Daily follow planning limit</label><input id="daily-follow-limit" type="number" min="1" max="500" value="${escapeHtml(state.settings.dailyFollowLimit)}"></div>
         <div class="field"><label for="daily-unfollow-limit">Daily unfollow planning limit</label><input id="daily-unfollow-limit" type="number" min="1" max="500" value="${escapeHtml(state.settings.dailyUnfollowLimit)}"></div>
-        <div class="field"><label for="live-action-batch-limit">Maximum live account-action batch</label><input id="live-action-batch-limit" type="number" min="1" max="25" value="${escapeHtml(state.settings.liveActionBatchLimit || 1)}"></div>
+        <div class="field"><label for="live-action-batch-limit">Maximum live account-action batch</label><input id="live-action-batch-limit" type="number" value="1" readonly aria-describedby="live-action-batch-help"><span id="live-action-batch-help" class="detail">Fixed at one account for the controlled Instagram gate.</span></div>
         <div class="field"><label for="live-dm-batch-limit">Maximum live DM unsend batch</label><input id="live-dm-batch-limit" type="number" min="1" max="25" value="${escapeHtml(state.settings.liveDmBatchLimit || 1)}"></div>
         <div class="field"><label for="owner-names">Your sender/display names in message exports</label><input id="owner-names" value="${escapeHtml(state.settings.ownerNames.join(', '))}" placeholder="Your Instagram display name, username"></div>
         <div class="field full"><label for="whitelist">Whitelist usernames</label><textarea id="whitelist" placeholder="one username per line">${escapeHtml(state.settings.whitelist.join('\n'))}</textarea></div>
@@ -189,13 +189,13 @@ function renderSettings() {
           <button class="danger" data-action="revoke-extension-pairing">${bridgePairing.pairedAt ? 'Revoke PWA pairing' : 'Discard pairing code'}</button>
         </div>
       ` : `
-        <label class="checkbox"><input id="bridge-action-permission" type="checkbox"> Allow transfer of explicitly reviewed dry-run jobs</label>
+        <label class="checkbox"><input id="bridge-action-permission" type="checkbox"> Allow signed dry runs and one-item controlled Follow or Unfollow intents</label>
         <div class="toolbar" style="margin-top:14px">
           <button class="primary" data-action="create-extension-pairing">Create one-time pairing code</button>
         </div>
       `}
       <div class="notice" style="margin-top:14px">
-        The extension currently performs read-only inspection and no-click dry runs. Live Follow, Unfollow, and Unsend execution remains unavailable. JSON job export remains available as a fallback.
+        The extension performs visible-page inspection and true no-click dry runs. With account-action permission, a fresh reviewed Follow or Unfollow batch of exactly one may use the short-lived Instagram arm gate. Live Unsend remains unavailable. JSON job export remains available as a fallback.
       </div>
       ${bridgeStatus ? `<div class="notice ${bridgeStatus.startsWith('Error:') ? 'warning' : ''}" style="margin-top:10px">${escapeHtml(bridgeStatus)}</div>` : ''}
     </section>

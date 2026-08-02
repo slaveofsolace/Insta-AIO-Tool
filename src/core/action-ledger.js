@@ -14,6 +14,13 @@ function attemptId(claim) {
   return `${claim.jobId}:${claim.itemId}:${claim.action}:${normalizeUsername(claim.username)}`;
 }
 
+function boundedDailyLimit(value) {
+  if (value == null || value === '') return 25;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, Math.min(500, Math.floor(parsed)));
+}
+
 export function reserveActionAttempt(candidateState, claim, settings = {}, now = Date.now()) {
   const state = clone(candidateState || {});
   state.actionLedger = Array.isArray(state.actionLedger) ? state.actionLedger : [];
@@ -27,12 +34,31 @@ export function reserveActionAttempt(candidateState, claim, settings = {}, now =
   }
 
   const action = claim.action;
-  const limit = Math.max(
-    1,
-    Number(action === 'follow'
-      ? settings.dailyFollowLimit || 25
-      : settings.dailyUnfollowLimit || 25),
-  );
+  const username = normalizeUsername(claim.username);
+  const priorTarget = state.actionLedger.find((entry) => (
+    entry.action === action
+    && entry.username === username
+    && (
+      (claim.queueItemId && entry.queueItemId === claim.queueItemId)
+      || entry.day === dayKey(now)
+    )
+    && ['reserved', 'succeeded', 'uncertain'].includes(entry.status)
+  ));
+  if (priorTarget) {
+    return {
+      state,
+      result: {
+        ok: false,
+        reason: priorTarget.queueItemId === claim.queueItemId
+          ? 'duplicate-queue-item'
+          : 'duplicate-account-action',
+        existing: priorTarget,
+      },
+    };
+  }
+  const limit = boundedDailyLimit(action === 'follow'
+    ? settings.dailyFollowLimit
+    : settings.dailyUnfollowLimit);
   const today = dayKey(now);
   const used = state.actionLedger.filter((entry) => (
     entry.mode === 'live'
@@ -53,7 +79,7 @@ export function reserveActionAttempt(candidateState, claim, settings = {}, now =
     itemId: claim.itemId,
     queueItemId: claim.queueItemId,
     action,
-    username: normalizeUsername(claim.username),
+    username,
     mode: 'live',
     day: today,
     status: 'reserved',

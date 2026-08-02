@@ -273,6 +273,7 @@ test('reserves live attempts before clicking and confirms the result', async () 
     driver,
     ledger,
     settings,
+    now: () => 1_700_000_000_500,
   });
 
   assert.equal(result.status, 'completed');
@@ -314,6 +315,7 @@ test('revalidates action confirmation, preview, and live limits at execution tim
       driver,
       ledger,
       settings: { ...settings, liveActionEnabled: false },
+      now: () => 1_700_000_000_500,
     }),
     /disabled in settings/,
   );
@@ -322,10 +324,91 @@ test('revalidates action confirmation, preview, and live limits at execution tim
       driver,
       ledger,
       settings: { ...settings, liveActionBatchLimit: Number.NaN },
+      now: () => 1_700_000_000_500,
     }),
     /configured limit is 1/,
   );
   assert.deepEqual(driver.calls, []);
+});
+
+test('rejects stale live confirmations before inspecting or reserving', async () => {
+  const settings = {
+    liveActionEnabled: true,
+    liveActionBatchLimit: 1,
+  };
+  const job = confirmedJob([
+    createQueueItem('stale_target', 'follow'),
+  ], { settings }, 'live');
+  const driver = inspectionDriver([]);
+  let reservations = 0;
+
+  await assert.rejects(
+    executeReviewedActionJob(job, {
+      driver,
+      ledger: {
+        async reserve() {
+          reservations += 1;
+        },
+      },
+      settings,
+      now: () => new Date(job.confirmedAt).getTime() + (11 * 60 * 1000),
+    }),
+    /confirmation expired/,
+  );
+  assert.deepEqual(driver.calls, []);
+  assert.equal(reservations, 0);
+});
+
+test('revalidates one-shot live authorization before ledger reservation', async () => {
+  const settings = {
+    liveActionEnabled: true,
+    liveActionBatchLimit: 1,
+  };
+  const job = confirmedJob([
+    createQueueItem('armed_target', 'follow'),
+  ], { settings }, 'live');
+  const calls = [];
+  const driver = {
+    async inspectSession() {
+      calls.push('session');
+      return {};
+    },
+    async resolveProfile(username) {
+      calls.push(`resolve:${username}`);
+      return {
+        username,
+        relationship: 'not-following',
+        resolutionToken: 'exact-token',
+      };
+    },
+    async inspectLiveAuthorization(item) {
+      calls.push(`authorize:${item.resolutionToken}`);
+      return { authorized: false, reason: 'live-arm-required' };
+    },
+    async performReviewedAction() {
+      calls.push('perform');
+    },
+  };
+  const ledger = {
+    async reserve() {
+      calls.push('reserve');
+    },
+  };
+
+  const result = await executeReviewedActionJob(job, {
+    driver,
+    ledger,
+    settings,
+    now: () => new Date(job.confirmedAt).getTime() + 1_000,
+  });
+
+  assert.equal(result.status, 'stopped');
+  assert.equal(result.stopReason, 'live-arm-required');
+  assert.deepEqual(calls, [
+    'session',
+    'resolve:armed_target',
+    'authorize:exact-token',
+  ]);
 });
 
 test('ledger enforces daily limits and duplicate prevention before actions', () => {
@@ -349,6 +432,15 @@ test('ledger enforces daily limits and duplicate prevention before actions', () 
   }, settings, now);
   assert.equal(duplicate.result.reason, 'duplicate-attempt');
 
+  const duplicateAcrossJobs = reserveActionAttempt(first.state, {
+    jobId: 'job-different',
+    itemId: 'item-different',
+    queueItemId: 'queue-1',
+    action: 'follow',
+    username: 'first',
+  }, settings, now);
+  assert.equal(duplicateAcrossJobs.result.reason, 'duplicate-queue-item');
+
   const limited = reserveActionAttempt(first.state, {
     jobId: 'job-2',
     itemId: 'item-2',
@@ -364,4 +456,28 @@ test('ledger enforces daily limits and duplicate prevention before actions', () 
     { status: 'succeeded', now },
   );
   assert.equal(finalized.actionLedger[0].status, 'succeeded');
+});
+
+test('ledger treats malformed daily limits as a fail-closed limit of one', () => {
+  const now = Date.UTC(2026, 6, 30, 12);
+  const first = reserveActionAttempt(defaultState(), {
+    jobId: 'job-1',
+    itemId: 'item-1',
+    queueItemId: 'queue-1',
+    action: 'follow',
+    username: 'first',
+  }, { dailyFollowLimit: 1 }, now);
+
+  for (const malformed of ['not-a-number', 'Infinity', Number.POSITIVE_INFINITY]) {
+    const outcome = reserveActionAttempt(first.state, {
+      jobId: `job-${String(malformed)}`,
+      itemId: `item-${String(malformed)}`,
+      queueItemId: `queue-${String(malformed)}`,
+      action: 'follow',
+      username: `next_${String(malformed).replaceAll(/[^a-z0-9._]/gi, '_')}`,
+    }, { dailyFollowLimit: malformed }, now);
+    assert.equal(outcome.result.ok, false);
+    assert.equal(outcome.result.reason, 'daily-limit');
+    assert.equal(outcome.result.limit, 1);
+  }
 });

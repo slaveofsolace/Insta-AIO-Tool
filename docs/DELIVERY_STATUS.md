@@ -28,7 +28,19 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-The extension performs read-only profile inspection and rejects live jobs. A controlled live batch of one has not been accepted and live execution remains disabled.
+Extension 0.3.0 now implements the production-controlled account boundary:
+
+- Fresh signed live intent with action permission
+- Exactly one reviewed account item
+- Exact matching Instagram profile header and relationship control ownership
+- Exact `ARM FOLLOW @username` or `ARM UNFOLLOW @username` phrase
+- A 90-second one-use arm scoped to the Instagram tab
+- Authorization revalidation before PWA ledger reservation
+- Independent extension-side reservation plus durable arm consumption before the page-control request
+- Short-lived exact DOM resolution token, pre-existing-dialog rejection, target-named Unfollow confirmation, and after-state verification
+- Cross-job duplicate queue-item and same-day action prevention
+
+Automated Follow and Unfollow fixtures pass, including token replay, suggested-account isolation, pre-existing-dialog rejection, extension-side reservation, and ambiguous-control safe stops. A real authenticated batch of one has not yet been accepted, so issue #3 remains open and account live execution remains locked by default.
 
 ## Reviewed DM removal
 
@@ -61,6 +73,8 @@ Complete:
 - Visible follower/following capture with deduplication and import-compatible JSON
 - Imported manual queue navigation and extension-local Complete/Skip state
 - Sanitized signed dry-run history
+- Sanitized pending live intent, one-use arm, and controlled account-action history
+- Signed one-item Follow/Unfollow execution boundary, locked by default
 - Read-only visible-DM evidence with exact-identity safe stop
 - JSON exchange fallback
 - Unpacked and ZIP build artifacts
@@ -112,3 +126,8 @@ These pending checks prevent a claim of complete browser visual acceptance.
 The production dependency audit is clean. The development dependency review,
 including the documented Electron Builder advisory exception and its
 repeatable verification gate, is in `docs/SECURITY_REVIEW.md`.
+
+The controlled-action local-patch scan found four low-severity defects and all
+four are remediated with focused regressions. Deterministic assembly, the full
+89-test suite, companion source validation, and the unpacked/ZIP extension build
+pass. Authenticated one-account acceptance remains explicitly not run.

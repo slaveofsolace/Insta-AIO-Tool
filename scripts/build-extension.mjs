@@ -24,6 +24,10 @@ const sourceFiles = [
   'popup.html',
   'popup.js',
 ];
+const libraryFiles = [
+  'bridge-protocol.js',
+  'controlled-account-action.js',
+];
 
 function crc32(buffer) {
   let crc = 0xffffffff;
@@ -102,19 +106,52 @@ async function validateSources() {
   }
   const instagramSource = await readFile(path.join(sourceRoot, 'content-instagram.js'), 'utf8');
   const overlaySource = await readFile(path.join(sourceRoot, 'instagram-overlay.js'), 'utf8');
-  if (/\.click\s*\(/.test(`${instagramSource}\n${overlaySource}`)) {
-    throw new Error('Instagram content script must remain no-click.');
+  const allowedLiveActivator = `function activateLiveControl(control) {
+    control.click();
+  }`;
+  if (!instagramSource.includes(allowedLiveActivator)) {
+    throw new Error('Instagram content script is missing the isolated live-control activator.');
+  }
+  if (/\.click\s*\(/.test(instagramSource.replace(allowedLiveActivator, ''))) {
+    throw new Error('Instagram content script contains an unreviewed click path.');
+  }
+  if (/\.click\s*\(|dispatchEvent\s*\(/.test(overlaySource)) {
+    throw new Error('Instagram overlay must not directly control the page.');
   }
   if (!instagramSource.includes('insta-aio-inspect-profile')) {
     throw new Error('Instagram content script is missing profile inspection.');
   }
+  if (
+    !instagramSource.includes('function verifiedProfileHeader(username)')
+    || !instagramSource.includes('profileRoot !== resolution.profileRoot')
+    || !instagramSource.includes('preexisting-dialog-before-live-action')
+    || !instagramSource.includes('dialogNamesUsername(dialog, username)')
+  ) {
+    throw new Error('Instagram content script is missing exact-target DOM binding.');
+  }
   if (!overlaySource.includes('data-ia-section="queue"')) {
     throw new Error('Instagram overlay is missing the in-page queue workspace.');
+  }
+  const backgroundSource = await readFile(path.join(sourceRoot, 'background.js'), 'utf8');
+  const controlledSource = await readFile(
+    path.join(repositoryRoot, 'src', 'core', 'controlled-account-action.js'),
+    'utf8',
+  );
+  if (
+    !controlledSource.includes('controlled-live-batch-must-be-one')
+    || !controlledSource.includes('live-confirmation-expired')
+    || !backgroundSource.includes('Reserve and consume the one-shot capability durably')
+    || !backgroundSource.includes('accountActionLedger')
+    || !backgroundSource.includes('reserveExtensionAction')
+  ) {
+    throw new Error('Controlled live account-action gates are incomplete.');
   }
   for (const file of sourceFiles) {
     await readFile(path.join(sourceRoot, file));
   }
-  await readFile(path.join(repositoryRoot, 'src', 'core', 'bridge-protocol.js'));
+  for (const file of libraryFiles) {
+    await readFile(path.join(repositoryRoot, 'src', 'core', file));
+  }
   return manifest;
 }
 
@@ -134,13 +171,18 @@ await mkdir(path.join(resolvedOutput, 'lib'), { recursive: true });
 for (const file of sourceFiles) {
   await copyFile(path.join(sourceRoot, file), path.join(resolvedOutput, file));
 }
-await copyFile(
-  path.join(repositoryRoot, 'src', 'core', 'bridge-protocol.js'),
-  path.join(resolvedOutput, 'lib', 'bridge-protocol.js'),
-);
+for (const file of libraryFiles) {
+  await copyFile(
+    path.join(repositoryRoot, 'src', 'core', file),
+    path.join(resolvedOutput, 'lib', file),
+  );
+}
 
 const artifactEntries = [];
-for (const file of [...sourceFiles, 'lib/bridge-protocol.js'].sort()) {
+for (const file of [
+  ...sourceFiles,
+  ...libraryFiles.map((libraryFile) => `lib/${libraryFile}`),
+].sort()) {
   artifactEntries.push({
     name: file,
     data: await readFile(path.join(resolvedOutput, ...file.split('/'))),

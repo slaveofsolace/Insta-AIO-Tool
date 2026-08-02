@@ -5,7 +5,7 @@
 Insta AIO Tool is a local-first PWA with three optional delivery surfaces:
 
 1. A read-only Tampermonkey companion for visible-list capture and manual queue navigation
-2. A Manifest V3 extension with an Instagram sidecar and signed, origin-paired inspection requests
+2. A Manifest V3 extension with an Instagram sidecar, signed inspection requests, and a controlled one-item account-action boundary
 3. A hardened Electron shell for Windows and macOS packaging
 
 The stable data model remains independent of Instagram page markup. Imports, migrations, reviews, protections, checkpoints, and ledgers are implemented as browser-neutral modules.
@@ -51,12 +51,14 @@ The PWA owns:
 - Exact-profile and relationship validation
 - True no-click dry runs
 - Immediate protection revalidation
+- Ten-minute live-confirmation freshness validation
+- One-use extension authorization revalidation before ledger reservation
 - Transactional reservation before live driver calls
 - Before/after evidence
 - Pause, resume, stop, and durable per-item checkpoints
 - Safe stops for ambiguous or blocked states
 
-`src/core/action-ledger.js` and `src/adapters/indexeddb-action-ledger.js` enforce duplicate and daily-limit rules.
+`src/core/action-ledger.js` and `src/adapters/indexeddb-action-ledger.js` enforce duplicate and finite daily-limit rules. Restored limits are normalized before use. The extension background also keeps a bounded, independent reservation mirror with a conservative per-action daily ceiling so the privileged page-control boundary never depends only on a cooperative PWA caller.
 
 ### Reviewed DM actions
 
@@ -88,12 +90,25 @@ The sidecar owns only browser-local field state:
 - An imported `insta-aio-manual-queue` and extension-local completion/skip updates
 - Read-only visible-message evidence that never claims exact message identity
 - Sanitized pairing and recent dry-run summaries returned by the background worker
+- A sanitized pending one-item account intent and 90-second one-use arm
 
 The PWA remains the system of record for imports, snapshots, comparisons,
 protections, reviewed jobs, ledgers, and backups. The background worker never
-returns pairing secrets, signatures, or nonces to the Instagram sidecar. Both
-Instagram scripts contain no synthetic click path, and live jobs are rejected
-by the shipped extension.
+returns pairing secrets, signatures, or nonces to the Instagram sidecar.
+
+Account dry runs never reach a page-control method. A live account job must be
+fresh, signed with action permission, contain exactly one item, and match an
+Instagram-side intent. The operator must type the exact action and username on
+the matching profile. The resulting arm expires after 90 seconds. The
+background worker persists its own reservation and consumes the arm before it
+sends the single execution request, then finalizes that reservation after the
+result. The content script binds the request to a short-lived exact DOM token,
+requires one relationship control inside one header that independently names
+the pathname account, stops before any click when a dialog is already visible,
+and accepts only a newly surfaced Unfollow dialog that names the reviewed
+username. It then verifies the resulting relationship. The PWA independently
+rechecks the arm before its transactional reservation and checkpoints the
+before/after result. Live DM execution remains unavailable.
 
 ### Tampermonkey companion
 
@@ -146,6 +161,7 @@ IndexedDB is the primary store. LocalStorage is a fallback for environments with
 - Instagram credentials and session material do not enter the PWA.
 - The extension pairing secret authenticates local bridge messages only.
 - The extension may inspect an existing Instagram tab but does not export its session state.
+- A live account capability is scoped to one signed job item, one Instagram tab, one username/action pair, and a 90-second expiry; it is consumed before page mutation.
 - Destructive drivers cannot mutate application history directly; they return observations and results that the core validates and checkpoints.
 - Exported workspaces and reviewed jobs contain private account/message metadata and should be handled as sensitive personal files.
 

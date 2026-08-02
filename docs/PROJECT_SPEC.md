@@ -62,10 +62,13 @@ A reviewed job shall:
 - Default to dry-run mode
 - Require explicit confirmation
 - Support durable checkpoints and resume
-- Revalidate profile identity, relationship state, and protections immediately before execution
-- Reserve live attempts transactionally
-- Enforce daily limits and duplicate prevention
-- Stop on uncertain identity, ambiguous controls, session expiry, challenge, rate limit, or action block
+- Revalidate profile-header ownership, relationship state, and protections immediately before execution
+- Reserve live attempts transactionally in both the PWA and extension background
+- Enforce finite daily limits and duplicate prevention after state restore and at reservation time
+- Reject live confirmations older than ten minutes
+- Require extension live execution to contain exactly one item
+- Revalidate a tab-scoped one-use arm before ledger reservation
+- Stop on uncertain identity, controls outside the verified profile header, any pre-existing dialog, an unbound confirmation, session expiry, challenge, rate limit, or action block
 - Record before/after evidence and results
 
 Live action flags default to false and the default live batch limit is one.
@@ -126,7 +129,14 @@ The bridge shall:
 - Reject session and authorization material
 - Preserve JSON exchange as a fallback
 
-The shipped extension shall not perform live Instagram clicks.
+The shipped extension shall keep live execution locked by default. A live
+account action may be exposed only for one fresh signed reviewed item after an
+exact Instagram-side action/username phrase creates a short-lived, tab-scoped,
+one-use arm. The arm must be revalidated before the PWA ledger reservation. The
+background must persist its independent reservation and consume the arm before
+the page-control request. Dry-run routes shall never reach the page-control
+activator. The extension shall not expose live DM
+removal until exact rendered message identity and ownership are available.
 
 The Instagram sidecar shall:
 
@@ -137,7 +147,7 @@ The Instagram sidecar shall:
 - Expose current-page inspection and sanitized no-click run history
 - Treat visible DM text as evidence only until exact message identity and ownership are available
 - Remain keyboard reachable, responsive, and reduced-motion aware
-- Keep live execution visibly disabled
+- Keep live execution visibly locked unless the exact one-item arm is active
 
 ## Desktop requirements
 

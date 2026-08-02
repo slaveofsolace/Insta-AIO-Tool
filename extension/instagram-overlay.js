@@ -23,9 +23,12 @@
 
   const model = {
     bridge: {
+      controlledAccountActionsAvailable: false,
       extensionVersion: chrome.runtime.getManifest().version,
       liveExecutionEnabled: false,
+      liveArm: null,
       pairings: [],
+      pendingLiveIntent: null,
       recentRuns: [],
     },
     capture: null,
@@ -144,7 +147,7 @@
       .ia-nav button:hover { background: #20201a; color: #f3efe4; }
       .ia-nav button[aria-selected="true"] { border-left-color: #d8ff45; background: #24241d; color: #fff; }
       .ia-nav button:focus-visible, .ia-icon-button:focus-visible, .ia-button:focus-visible,
-      .ia-select:focus-visible, .ia-file-label:focus-within, .ia-link-button:focus-visible {
+      .ia-select:focus-visible, .ia-text-input:focus-visible, .ia-file-label:focus-within, .ia-link-button:focus-visible {
         outline: 3px solid #168cff;
         outline-offset: -3px;
       }
@@ -249,6 +252,8 @@
       .ia-button:hover, .ia-link-button:hover, .ia-file-label:hover { background: #2c2c24; }
       .ia-button--signal { background: #d8ff45; color: #151510; }
       .ia-button--signal:hover { background: #c8ef33; }
+      .ia-button--danger { border-color: #8e2b21; background: #a9362a; color: #fffdf7; }
+      .ia-button--danger:hover { background: #8f2c23; }
       .ia-button--quiet, .ia-link-button--quiet, .ia-file-label--quiet { background: transparent; color: #151510; }
       .ia-button:disabled, .ia-link-button[aria-disabled="true"] { cursor: not-allowed; opacity: .45; }
 
@@ -288,6 +293,35 @@
       .ia-queue-now h3, .ia-subhead { margin: 0 0 5px; font-size: 14px; }
       .ia-queue-now p { margin: 0; color: #625e54; font-size: 12px; }
       .ia-queue-now .ia-handle { margin-top: 8px; font-family: "Arial Narrow", "Aptos Narrow", sans-serif; font-size: 25px; font-weight: 800; letter-spacing: -.03em; }
+
+      .ia-live-gate {
+        margin: 18px 0;
+        border: 2px solid #151510;
+        padding: 14px;
+        background: #fffdf7;
+        box-shadow: 4px 4px 0 #d7d0c2;
+      }
+
+      .ia-live-gate-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+      .ia-live-gate strong { display: block; font-size: 14px; }
+      .ia-live-gate span[data-ia-role="live-detail"] { display: block; margin-top: 4px; color: #625e54; font-size: 11px; line-height: 1.45; }
+
+      .ia-dialog {
+        width: min(420px, calc(100vw - 28px));
+        border: 3px solid #151510;
+        border-radius: 2px;
+        padding: 0;
+        background: #f4efe4;
+        color: #151510;
+        box-shadow: 10px 10px 0 rgba(21, 21, 16, .32);
+      }
+
+      .ia-dialog::backdrop { background: rgba(16, 16, 13, .72); }
+      .ia-dialog form { display: grid; gap: 14px; padding: 20px; }
+      .ia-dialog h2 { margin: 0; font-family: "Arial Narrow", "Aptos Narrow", sans-serif; font-size: 26px; letter-spacing: -.035em; }
+      .ia-dialog p { margin: 0; color: #5f5b50; font-size: 12px; line-height: 1.5; }
+      .ia-dialog code { display: block; border: 1px solid #151510; padding: 9px; background: #fffdf7; overflow-wrap: anywhere; font-size: 12px; }
+      .ia-text-input { min-height: 44px; width: 100%; border: 2px solid #151510; border-radius: 2px; padding: 9px 10px; background: #fffdf7; color: #151510; }
 
       .ia-badge {
         display: inline-flex;
@@ -368,7 +402,7 @@
             <button type="button" data-ia-section="messages" aria-controls="ia-view-messages" aria-selected="false">Messages</button>
             <button type="button" data-ia-section="workspace" aria-controls="ia-view-workspace" aria-selected="false">Workspace</button>
           </nav>
-          <div class="ia-rail-lock">NO-CLICK<br>DRY RUN</div>
+          <div class="ia-rail-lock">LIVE LOCKED<br>BY DEFAULT</div>
         </div>
 
         <div class="ia-content">
@@ -430,9 +464,21 @@
                 <button class="ia-button ia-button--quiet" type="button" data-ia-action="queue-complete">Mark complete</button>
                 <button class="ia-button ia-button--quiet" type="button" data-ia-action="queue-skip">Skip</button>
               </div>
+              <div class="ia-live-gate" data-ia-role="account-live-gate">
+                <p class="ia-overline">Controlled live gate</p>
+                <div class="ia-live-gate-head">
+                  <div><strong data-ia-role="live-title">Live actions locked</strong><span data-ia-role="live-detail">A signed one-item intent from the paired PWA is required.</span></div>
+                  <span class="ia-badge" data-ia-role="live-badge">locked</span>
+                </div>
+                <div class="ia-toolbar">
+                  <button class="ia-button ia-button--danger" type="button" data-ia-action="arm-account-live" disabled>Arm exact action</button>
+                  <button class="ia-button ia-button--quiet" type="button" data-ia-action="cancel-account-live" hidden>Cancel intent</button>
+                </div>
+                <p class="ia-note">Arming lasts 90 seconds and does not perform the action. The paired PWA must still revalidate the profile, reserve its durable ledger, and send the one-use execution request.</p>
+              </div>
               <hr class="ia-rule">
-              <h3 class="ia-subhead">Signed dry-run history</h3>
-              <p class="ia-note">Results sent through the paired PWA bridge appear here. Live jobs are rejected by the extension.</p>
+              <h3 class="ia-subhead">Signed run history</h3>
+              <p class="ia-note">No-click inspections and one-item controlled live results sent through the paired PWA bridge appear here.</p>
               <ul class="ia-list" data-ia-role="run-list"></ul>
             </section>
 
@@ -467,10 +513,29 @@
             </section>
           </div>
 
-          <div class="ia-footer" role="status" aria-live="polite" data-ia-role="status"><strong>Ready.</strong> Live action execution is disabled.</div>
+          <div class="ia-footer" role="status" aria-live="polite" data-ia-role="status"><strong>Ready.</strong> Live actions are locked until a signed one-item intent is armed.</div>
         </div>
       </div>
     </aside>
+
+    <dialog class="ia-dialog" data-ia-role="arm-dialog" aria-labelledby="ia-arm-title" aria-describedby="ia-arm-description">
+      <form method="dialog">
+        <div>
+          <p class="ia-overline">One use · 90 seconds</p>
+          <h2 id="ia-arm-title">Arm controlled action</h2>
+        </div>
+        <p id="ia-arm-description" data-ia-role="arm-description">Type the exact phrase to arm this reviewed action.</p>
+        <code data-ia-role="arm-phrase"></code>
+        <div class="ia-field">
+          <label for="ia-arm-input">Exact arming phrase</label>
+          <input class="ia-text-input" id="ia-arm-input" data-ia-role="arm-input" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="ia-toolbar">
+          <button class="ia-button ia-button--quiet" value="cancel">Cancel</button>
+          <button class="ia-button ia-button--danger" value="confirm">Arm for 90 seconds</button>
+        </div>
+      </form>
+    </dialog>
   `;
 
   const query = (selector) => shadow.querySelector(selector);
@@ -531,6 +596,48 @@
   function safeText(value, fallback = '') {
     const text = String(value ?? '').trim();
     return (text || fallback).slice(0, MAX_TEXT_LENGTH);
+  }
+
+  function liveArmPhrase(intent) {
+    return intent
+      ? `ARM ${String(intent.action || '').toUpperCase()} @${intent.username}`
+      : '';
+  }
+
+  function liveContextMatches(intent) {
+    const profile = model.context?.profile || {};
+    const expectedRelationship = intent?.action === 'follow' ? 'not-following' : 'following';
+    return Boolean(
+      intent
+      && model.context?.pageKind === 'profile'
+      && model.context.username === intent.username
+      && profile.relationship === expectedRelationship
+      && !profile.ambiguous
+      && !profile.unexpectedUi
+      && !model.context.sessionExpired
+      && !model.context.challenge
+      && !model.context.actionBlocked
+      && !model.context.rateLimited,
+    );
+  }
+
+  function requestLiveArmPhrase(intent) {
+    const dialog = query('[data-ia-role="arm-dialog"]');
+    const input = query('[data-ia-role="arm-input"]');
+    const phrase = liveArmPhrase(intent);
+    setText('arm-description', `This arms one ${intent.action} for @${intent.username}. It still cannot run without the paired PWA ledger.`);
+    setText('arm-phrase', phrase);
+    input.value = '';
+    dialog.returnValue = 'cancel';
+    const focusBeforeDialog = shadow.activeElement;
+    return new Promise((resolve) => {
+      dialog.addEventListener('close', () => {
+        requestAnimationFrame(() => focusBeforeDialog?.focus?.());
+        resolve(dialog.returnValue === 'confirm' ? input.value : null);
+      }, { once: true });
+      dialog.showModal();
+      requestAnimationFrame(() => input.focus());
+    });
   }
 
   function replaceObjectUrl(previous, payload) {
@@ -694,7 +801,7 @@
     if (context?.challenge) return ['Challenge detected', 'Resolve Instagram’s account challenge manually before continuing.', 'danger'];
     if (context?.actionBlocked) return ['Activity restriction detected', 'Stop here and follow Instagram’s guidance.', 'danger'];
     if (context?.rateLimited) return ['Rate limit detected', 'Wait before doing more work in this session.', 'warning'];
-    return ['Page ready', 'Read-only inspection is available. No Instagram controls will be clicked.', 'good'];
+    return ['Page ready', 'Inspection is no-click. A live action requires a signed one-item intent plus a 90-second arm.', 'good'];
   }
 
   function renderContext() {
@@ -723,6 +830,7 @@
           : 'No actionable item loaded',
     );
     setText('page-observed', shortDate(context.capturedAt || Date.now()));
+    renderLiveGate();
   }
 
   async function refreshContext() {
@@ -796,6 +904,89 @@
     status('Visible-list draft cleared. Instagram data was not changed.');
   }
 
+  function renderLiveGate() {
+    const intent = model.bridge.pendingLiveIntent;
+    const arm = model.bridge.liveArm;
+    const armButton = query('[data-ia-action="arm-account-live"]');
+    const cancelButton = query('[data-ia-action="cancel-account-live"]');
+    const badge = query('[data-ia-role="live-badge"]');
+    cancelButton.hidden = !intent;
+
+    if (!intent) {
+      setText('live-title', 'Live actions locked');
+      setText('live-detail', 'Confirm a one-item live job in the paired PWA, then send its signed intent here.');
+      badge.textContent = 'locked';
+      badge.dataset.tone = 'warning';
+      armButton.textContent = 'Arm exact action';
+      armButton.disabled = true;
+      return;
+    }
+
+    const matchingArm = arm
+      && arm.jobId === intent.jobId
+      && arm.itemId === intent.itemId;
+    setText('live-title', `${intent.action} @${intent.username}`);
+    if (matchingArm) {
+      setText('live-detail', `Armed until ${shortDate(arm.expiresAt)}. Return to the PWA and continue the same reviewed job before this one-use gate expires.`);
+      badge.textContent = 'armed';
+      badge.dataset.tone = 'danger';
+      armButton.textContent = 'One action armed';
+      armButton.disabled = true;
+      return;
+    }
+
+    const ready = liveContextMatches(intent);
+    setText(
+      'live-detail',
+      ready
+        ? `This page exactly matches the signed intent. Arming alone does not click; the PWA must still reserve and execute.`
+        : `Open @${intent.username}, inspect the exact ${intent.action === 'follow' ? 'Follow' : 'Following'} control, then arm here.`,
+    );
+    badge.textContent = ready ? 'ready' : 'open target';
+    badge.dataset.tone = ready ? 'warning' : 'danger';
+    armButton.textContent = `Arm one ${intent.action}`;
+    armButton.disabled = !ready;
+  }
+
+  async function armAccountLive() {
+    const intent = model.bridge.pendingLiveIntent;
+    if (!intent) return;
+    model.context = inspector.inspectPageContext();
+    renderContext();
+    if (!liveContextMatches(intent)) {
+      status(`Open @${intent.username} and resolve its exact ${intent.action} control before arming.`, 'error');
+      return;
+    }
+    const phrase = await requestLiveArmPhrase(intent);
+    if (phrase == null) return;
+    const response = await runtimeMessage({
+      kind: 'insta-aio-arm-account-action',
+      action: intent.action,
+      itemId: intent.itemId,
+      jobId: intent.jobId,
+      phrase,
+      username: intent.username,
+    });
+    if (response.error) {
+      status(`Live arm rejected: ${response.error}.`, 'error');
+      return;
+    }
+    if (response.state) model.bridge = response.state;
+    renderBridge();
+    status(`Armed one ${intent.action} for @${intent.username} for 90 seconds. No action has run yet.`, 'good');
+  }
+
+  async function cancelAccountLive() {
+    const response = await runtimeMessage({ kind: 'insta-aio-cancel-account-action' });
+    if (response.error) {
+      status(`Could not cancel the live intent: ${response.error}.`, 'error');
+      return;
+    }
+    if (response.state) model.bridge = response.state;
+    renderBridge();
+    status('Canceled the pending live intent. No Instagram action was performed.', 'good');
+  }
+
   function renderManualQueue() {
     const item = currentQueueItem();
     const container = query('[data-ia-role="queue-current"]');
@@ -833,6 +1024,7 @@
       },
     } : undefined);
     renderContext();
+    renderLiveGate();
   }
 
   async function importManualQueue(file) {
@@ -880,7 +1072,7 @@
     if (!runs.length) {
       const empty = document.createElement('li');
       empty.className = 'ia-empty';
-      empty.textContent = 'No signed dry run has reached this extension yet.';
+      empty.textContent = 'No signed dry run or controlled live result has reached this extension yet.';
       list.append(empty);
       return;
     }
@@ -890,7 +1082,11 @@
       const copy = document.createElement('div');
       const title = document.createElement('strong');
       const isDm = run.kind === 'insta-aio-reviewed-dm-job';
-      title.textContent = isDm ? 'DM identity check' : 'Account profile check';
+      title.textContent = isDm
+        ? 'DM identity check'
+        : run.mode === 'live'
+          ? 'Controlled account action'
+          : 'Account profile check';
       const detail = document.createElement('small');
       const first = run.results?.[0];
       const target = first?.username ? `@${first.username}` : first?.messageId ? `message ${first.messageId}` : run.jobId;
@@ -898,8 +1094,13 @@
       copy.append(title, detail);
       const badge = document.createElement('span');
       badge.className = 'ia-badge';
-      badge.dataset.tone = run.status === 'dry-run-complete' ? 'good' : 'danger';
-      badge.textContent = run.status === 'dry-run-complete' ? 'resolved' : 'safe stop';
+      const succeeded = run.status === 'dry-run-complete' || run.status === 'completed';
+      badge.dataset.tone = succeeded ? 'good' : 'danger';
+      badge.textContent = run.status === 'completed'
+        ? 'completed'
+        : run.status === 'dry-run-complete'
+          ? 'resolved'
+          : 'safe stop';
       row.append(copy, badge);
       list.append(row);
     }
@@ -975,6 +1176,7 @@
       link.setAttribute('aria-disabled', 'true');
     }
     renderRuns();
+    renderLiveGate();
   }
 
   async function refreshBridge() {
@@ -1023,6 +1225,8 @@
     if (action === 'reset-capture') await resetCapture();
     if (action === 'queue-complete') await updateCurrentQueue('completed');
     if (action === 'queue-skip') await updateCurrentQueue('skipped');
+    if (action === 'arm-account-live') await armAccountLive();
+    if (action === 'cancel-account-live') await cancelAccountLive();
     if (action === 'inspect-messages') await inspectMessages();
   });
 
@@ -1046,7 +1250,12 @@
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'local') return;
-    if (changes.bridgePairings || changes.pendingJobs) refreshBridge();
+    if (
+      changes.bridgePairings
+      || changes.pendingJobs
+      || changes.pendingLiveIntent
+      || changes.liveArm
+    ) refreshBridge();
   });
 
   setInterval(() => {

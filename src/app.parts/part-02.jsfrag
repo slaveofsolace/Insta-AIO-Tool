@@ -162,10 +162,17 @@ function renderQueue() {
             Confirmation phrase: <span class="code">${escapeHtml(latestActionJob.confirmationPhrase)}</span>
           </div>
         ` : ''}
+        ${latestActionJob.status === 'ready' && latestActionJob.mode === 'live' ? `
+          <div class="notice warning" style="margin-top:14px">
+            Controlled extension execution accepts exactly one reviewed account. First send the signed intent, then arm that exact action for 90 seconds from the Instagram Field Desk. The PWA rechecks the arm before reserving the durable ledger entry.
+          </div>
+        ` : ''}
+        ${bridgeStatus ? `<div class="notice" style="margin-top:14px">${escapeHtml(bridgeStatus)}</div>` : ''}
         <div class="toolbar" style="margin-top:14px">
           ${latestActionJob.status === 'awaiting-confirmation' && latestActionJob.items.length ? '<button class="primary" data-action="confirm-action-dry-run">Confirm no-click dry run</button>' : ''}
-          ${latestActionJob.status === 'awaiting-confirmation' && latestActionJob.items.length && state.settings.liveActionEnabled ? '<button class="danger" data-action="confirm-action-live">Confirm live batch</button>' : ''}
+          ${latestActionJob.status === 'awaiting-confirmation' && latestActionJob.items.length === 1 && state.settings.liveActionEnabled ? '<button class="danger" data-action="confirm-action-live">Confirm one-account live action</button>' : ''}
           ${latestActionJob.status === 'ready' && latestActionJob.mode === 'dry-run' && state.bridgePairing?.pairedAt && state.bridgePairing.permissions?.includes('action') ? '<button class="primary" data-action="run-action-extension-dry-run">Inspect current Instagram profile</button>' : ''}
+          ${latestActionJob.status === 'ready' && latestActionJob.mode === 'live' && latestActionJob.items.length === 1 && state.bridgePairing?.pairedAt && state.bridgePairing.permissions?.includes('action') ? '<button class="danger" data-action="run-action-extension-live">Continue controlled live action</button>' : ''}
           ${latestActionJob.confirmedAt ? '<button data-action="export-reviewed-action-job">Export reviewed job</button>' : ''}
           <button data-action="discard-action-job">Discard preview</button>
         </div>

@@ -210,6 +210,21 @@ Rules:
 
 ## Live execution boundary
 
-The reviewed sources do not supply a safe live executor that satisfies current contracts. The independent action and DM adapters implement transaction ordering, durable checkpoints, no-click dry runs, and safe stops. The shipped extension intentionally exposes inspection only.
+The reviewed sources do not supply a safe live executor that satisfies current
+contracts. The independent action and DM adapters implement transaction
+ordering, durable checkpoints, no-click dry runs, and safe stops.
 
-A live integration cannot be claimed until a user-selected batch of one has been exercised in an authenticated target environment with exact before/after evidence.
+Extension 0.3.0 adds an independently implemented controlled account driver;
+it does not copy the SimpleInstaBot executor. A fresh signed job of exactly one
+item creates a sanitized intent. The Instagram sidecar requires the matching
+profile, relationship, action/username phrase, and a 90-second one-use arm. The
+PWA revalidates that arm before reserving the ledger; the extension consumes it
+before activating one exact Follow control or the exact Following plus
+Unfollow-confirmation controls. Token replay and ambiguous controls fail closed.
+
+This is implementation and deterministic fixture coverage, not authenticated
+live acceptance. Account live acceptance cannot be claimed until the operator
+selects a batch of one and exact before/after plus durable ledger evidence is
+captured in the intended authenticated environment. The DM extension path
+remains inspection-only because exact rendered message identity and ownership
+are still unavailable.

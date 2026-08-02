@@ -33,14 +33,14 @@
   <div class="instagram-shell">
     <aside class="instagram-nav"><strong>Instagram</strong><ul><li>Home</li><li>Search</li><li>Explore</li><li>Messages</li><li>Profile</li></ul></aside>
     <main>
-      <section class="profile">
+      <header class="profile">
         <div class="avatar" aria-label="Profile photo"></div>
         <div>
           <div><h1>demo_creator</h1><button type="button">Following</button></div>
           <div class="stats"><span><b>126</b> posts</span><span><b>8,420</b> followers</span><span><b>531</b> following</span></div>
           <strong>Demo Creator</strong><p>Runtime fixture for the Insta AIO extension overlay.</p>
         </div>
-      </section>
+      </header>
       <section class="feed-grid" aria-label="Posts"><div class="post"></div><div class="post"></div><div class="post"></div><div class="post"></div><div class="post"></div><div class="post"></div></section>
     </main>
   </div>
@@ -54,6 +54,10 @@
   <script>
     const fixtureSearch = new URLSearchParams(location.search);
     const fixtureMode = fixtureSearch.get('mode');
+    const fixtureLiveMode = fixtureMode === 'live-follow' || fixtureMode === 'live-unfollow';
+    if (fixtureLiveMode) {
+      document.querySelector('.fixture-dialog').hidden = true;
+    }
     if (fixtureMode === 'messages') {
       history.replaceState({}, '', '/direct/t/fixture_conversation/');
       document.querySelector('.fixture-dialog').hidden = true;
@@ -67,6 +71,39 @@
     } else {
       history.replaceState({}, '', '/demo_creator/');
     }
+    const fixtureProfileButton = document.querySelector('.profile button');
+    globalThis.fixtureClickCount = 0;
+    if (fixtureMode === 'live-follow') {
+      fixtureProfileButton.textContent = 'Follow';
+      fixtureProfileButton.addEventListener('click', () => {
+        globalThis.fixtureClickCount += 1;
+        fixtureProfileButton.textContent = 'Following';
+      });
+    }
+    if (fixtureMode === 'live-unfollow') {
+      fixtureProfileButton.addEventListener('click', () => {
+        globalThis.fixtureClickCount += 1;
+        const dialog = document.createElement('section');
+        dialog.className = 'fixture-live-confirmation';
+        dialog.setAttribute('role', 'dialog');
+        dialog.innerHTML = '<p>Unfollow demo_creator?</p><button type="button">Unfollow</button>';
+        dialog.querySelector('button').addEventListener('click', () => {
+          globalThis.fixtureClickCount += 1;
+          fixtureProfileButton.textContent = 'Follow';
+          dialog.remove();
+        });
+        document.body.append(dialog);
+      }, { once: true });
+    }
+    const fixtureAction = fixtureMode === 'live-follow' ? 'follow' : 'unfollow';
+    const fixtureIntent = fixtureLiveMode ? {
+      action: fixtureAction,
+      confirmedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      itemId: 'fixture-action-item-1',
+      jobId: 'fixture-live-job-1',
+      username: 'demo_creator',
+    } : null;
     const fixtureStorage = {
       bridgePairings: [{
         origin: 'http://127.0.0.1:4173',
@@ -74,12 +111,14 @@
         pairedAt: '2026-07-31T12:00:00.000Z',
       }],
       pendingJobs: [],
+      pendingLiveIntent: fixtureIntent,
+      liveArm: null,
       instaAioOverlayManualQueueV1: {
         importedAt: '2026-07-31T12:00:00.000Z',
         queue: [{
           id: 'fixture-queue-1',
           account: { username: 'demo_creator', displayName: 'Demo Creator', source: 'fixture' },
-          action: 'unfollow',
+          action: fixtureAction,
           status: 'ready',
           reason: 'fixture review',
           scheduledFor: '2026-07-31T12:00:00.000Z',
@@ -87,20 +126,24 @@
       },
     };
     const storageListeners = [];
+    const runtimeListeners = [];
     if (fixtureSearch.get('shadow') !== 'closed') {
       globalThis.__instaAioOverlayTestOpenShadow = true;
     }
     globalThis.chrome = {
       runtime: {
         lastError: null,
-        getManifest: () => ({ version: '0.2.0' }),
-        onMessage: { addListener: () => {} },
+        getManifest: () => ({ version: '0.3.0' }),
+        onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
         sendMessage: (request, callback) => {
           if (request.kind === 'insta-aio-overlay-state') {
             callback({ state: {
-              extensionVersion: '0.2.0',
-              liveExecutionEnabled: false,
+              controlledAccountActionsAvailable: true,
+              extensionVersion: '0.3.0',
+              liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
+              liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
+              pendingLiveIntent: fixtureStorage.pendingLiveIntent,
               recentRuns: [{
                 kind: 'insta-aio-reviewed-action-job',
                 jobId: 'fixture-job-1',
@@ -110,6 +153,45 @@
                 stopReason: null,
                 results: [{ username: 'demo_creator', action: 'unfollow', status: 'resolved-no-click' }],
               }],
+            } });
+            return;
+          }
+          if (request.kind === 'insta-aio-arm-account-action') {
+            const expectedPhrase = `ARM ${fixtureAction.toUpperCase()} @demo_creator`;
+            if (request.phrase !== expectedPhrase) {
+              callback({ error: 'live-arm-phrase-mismatch' });
+              return;
+            }
+            fixtureStorage.liveArm = {
+              action: fixtureAction,
+              armedAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 90 * 1000).toISOString(),
+              itemId: fixtureIntent.itemId,
+              jobId: fixtureIntent.jobId,
+              username: fixtureIntent.username,
+            };
+            callback({ state: {
+              controlledAccountActionsAvailable: true,
+              extensionVersion: '0.3.0',
+              liveExecutionEnabled: true,
+              liveArm: fixtureStorage.liveArm,
+              pairings: fixtureStorage.bridgePairings,
+              pendingLiveIntent: fixtureStorage.pendingLiveIntent,
+              recentRuns: [],
+            } });
+            return;
+          }
+          if (request.kind === 'insta-aio-cancel-account-action') {
+            fixtureStorage.pendingLiveIntent = null;
+            fixtureStorage.liveArm = null;
+            callback({ state: {
+              controlledAccountActionsAvailable: true,
+              extensionVersion: '0.3.0',
+              liveExecutionEnabled: false,
+              liveArm: null,
+              pairings: fixtureStorage.bridgePairings,
+              pendingLiveIntent: null,
+              recentRuns: [],
             } });
             return;
           }
@@ -141,6 +223,14 @@
         onChanged: { addListener: (listener) => storageListeners.push(listener) },
       },
     };
+    globalThis.fixtureSendContentMessage = (request) => new Promise((resolve) => {
+      let waiting = false;
+      for (const listener of runtimeListeners) {
+        const result = listener(request, {}, resolve);
+        if (result === true) waiting = true;
+      }
+      if (!waiting) queueMicrotask(() => resolve(undefined));
+    });
   </script>
   <script src="/extension/content-instagram.js"></script>
   <script src="/extension/instagram-overlay.js"></script>

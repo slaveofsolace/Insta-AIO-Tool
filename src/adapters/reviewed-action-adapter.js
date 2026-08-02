@@ -1,4 +1,5 @@
 import {
+  actionConfirmationIsFresh,
   actionLiveBatchLimit,
   actionPreviewDigest,
   actionStopReason,
@@ -69,6 +70,9 @@ export async function executeReviewedActionJob(inputJob, {
     throw new Error('The reviewed action preview changed after confirmation.');
   }
   if (inputJob.mode === 'live') {
+    if (!actionConfirmationIsFresh(inputJob, now())) {
+      throw new Error('Live account action confirmation expired; review the batch again.');
+    }
     if (settings.liveActionEnabled !== true) {
       throw new Error('Live account actions are disabled in settings.');
     }
@@ -181,6 +185,37 @@ export async function executeReviewedActionJob(inputJob, {
       });
       await checkpoint(job, onCheckpoint);
       continue;
+    }
+
+    if (typeof driver.inspectLiveAuthorization === 'function') {
+      const authorization = await driver.inspectLiveAuthorization({
+        ...item,
+        expectedRelationship: before.relationship,
+        resolutionToken: before.resolutionToken,
+      });
+      const authorizationStop = actionStopReason(authorization)
+        || (authorization?.authorized === true
+          ? null
+          : authorization?.reason || 'live-authorization-required');
+      if (authorizationStop) {
+        job = appendActionCheckpoint(job, item.id, {
+          status: 'safe-stopped',
+          beforeEvidence: before.evidence || null,
+          error: authorizationStop,
+        }, {
+          now: now(),
+          activity: activity(
+            'action-safe-stop',
+            item,
+            `Stopped before ${item.action} for @${item.username}: ${authorizationStop}.`,
+            now(),
+            { reason: authorizationStop },
+          ),
+        });
+        await checkpoint(job, onCheckpoint);
+        job = stopJob(job, authorizationStop, now());
+        return checkpoint(job, onCheckpoint);
+      }
     }
 
     const reservation = await ledger.reserve({

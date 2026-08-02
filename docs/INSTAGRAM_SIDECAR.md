@@ -47,7 +47,26 @@ pending, ready, paused, or failed item and exposes three deliberate controls:
 
 Completion and skip do not mutate the PWA automatically. The sidecar can
 download `insta-aio-companion-state` JSON for review or archiving. Signed dry-run
-results sent through the PWA bridge appear in a separate read-only history.
+and controlled live results sent through the PWA bridge appear in a separate
+read-only history.
+
+Queue also contains the **Controlled live gate**. It remains locked until the
+paired PWA sends a fresh signed live intent containing exactly one reviewed
+Follow or Unfollow item. The sidecar then requires:
+
+1. The exact target profile to be open and named by one visible profile header.
+2. One relationship control inside that verified header matching the requested action.
+3. The exact `ARM FOLLOW @username` or `ARM UNFOLLOW @username` phrase.
+
+Arming lasts 90 seconds and performs no Instagram action. The operator must
+return to the PWA and continue the same reviewed job. The PWA reinspects the
+profile and arm, reserves the attempt transactionally, and only then sends the
+one-use execution request. The background worker creates its own durable mirror
+reservation and consumes the arm before the page-control request. Follow may
+activate one exact Follow control. Unfollow stops if any dialog was already
+visible and accepts only a newly surfaced confirmation that names the reviewed
+username.
+The relationship is inspected again before the PWA marks success.
 
 ### Messages
 
@@ -62,9 +81,9 @@ The extension therefore keeps DM action jobs at the existing
 
 Shows sanitized pairing status and links to the exact paired PWA origin. The
 Instagram page receives the origin, permissions, pairing time, extension
-version, and bounded dry-run summaries only. It never receives the pairing
-secret, signed messages, signatures, replay nonces, Instagram cookies, or
-credentials.
+version, bounded run summaries, and sanitized live intent/arm fields only. It
+never receives the pairing secret, signed messages, signatures, replay nonces,
+Instagram cookies, or credentials.
 
 ## Interaction and accessibility
 
@@ -79,22 +98,30 @@ credentials.
 
 ## Safety invariants
 
-- `content-instagram.js` and `instagram-overlay.js` contain no `.click()` or
-  synthetic mouse-event path.
+- Dry-run routing never calls the page-control activator.
+- `instagram-overlay.js` contains no page-control or synthetic-event path.
+- `content-instagram.js` contains one isolated control activator, reachable only
+  after the signed intent, exact phrase, live arm, PWA authorization check,
+  ledger reservation, and short-lived DOM token all match.
 - All Instagram reading is limited to the visible DOM.
 - The sidecar does not auto-scroll.
-- Live Follow, Unfollow, and Unsend controls are absent.
-- The background worker still rejects every non-dry-run reviewed job.
+- Live settings remain off by default; the extension accepts at most one
+  reviewed account item and consumes the arm before mutation.
+- Live Unsend remains absent and DM jobs keep the exact-identity safe stop.
 - Session expiry, challenges, restrictions, rate limits, wrong profiles,
-  ambiguous relationships, and missing message identity remain safe stops.
+  stale confirmations, replayed tokens, ambiguous relationships, and missing
+  message identity remain safe stops.
 
 ## Verification boundary
 
 `tests/fixtures/overlay-preview.html` loads the actual production content scripts
 with deterministic profile, list, queue, pairing, dry-run, and message states.
-It supports `?mode=messages` for the conversation fixture.
+It supports `?mode=messages` for the conversation fixture,
+`?mode=live-follow` for an exact one-control Follow transition, and
+`?mode=live-unfollow` for an exact relationship-plus-confirmation transition.
 
 That fixture validates runtime behavior and visual composition without account
 access. It does not establish authenticated Instagram selector acceptance,
-screen-reader acceptance, or authorization for live execution. Those remain
-separate controlled checks.
+screen-reader acceptance, or a successful real-account action. Those remain
+separate controlled checks, and issue #3 stays open until exact before/after and
+durable ledger evidence are recorded for a user-selected batch of one.
