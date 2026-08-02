@@ -744,7 +744,11 @@
   }
 
   function setOpen(open, { restoreFocus = true } = {}) {
-    model.open = Boolean(open);
+    const shouldOpen = Boolean(open);
+    const focusBeforeOpen = shouldOpen
+      ? shadow.activeElement || document.activeElement
+      : null;
+    model.open = shouldOpen;
     const panel = query('.ia-panel');
     const launcher = query('.ia-launcher');
     panel.hidden = !model.open;
@@ -757,11 +761,16 @@
       },
     });
     if (model.open) {
-      lastFocusedElement = shadow.activeElement || document.activeElement;
+      lastFocusedElement = focusBeforeOpen;
       requestAnimationFrame(() => query(`[data-ia-section="${model.section}"]`)?.focus());
     } else if (restoreFocus) {
       requestAnimationFrame(() => {
-        if (lastFocusedElement instanceof HTMLElement && document.contains(lastFocusedElement)) {
+        if (
+          lastFocusedElement instanceof HTMLElement
+          && document.contains(lastFocusedElement)
+          && lastFocusedElement !== document.body
+          && lastFocusedElement !== document.documentElement
+        ) {
           lastFocusedElement.focus();
         } else {
           launcher.focus();

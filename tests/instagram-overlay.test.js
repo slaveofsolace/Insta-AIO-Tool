@@ -70,6 +70,18 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /__instaAioOverlayTestOpenShadow === true \? 'open' : 'closed'/);
 });
 
+test('sidecar captures focus before hiding its launcher and restores a usable target', () => {
+  const setOpenBody = overlay.slice(
+    overlay.indexOf('function setOpen'),
+    overlay.indexOf('const sectionCopy'),
+  );
+  assert.ok(setOpenBody.indexOf('const focusBeforeOpen') < setOpenBody.indexOf('launcher.hidden'));
+  assert.match(setOpenBody, /lastFocusedElement = focusBeforeOpen/);
+  assert.match(setOpenBody, /lastFocusedElement !== document\.body/);
+  assert.match(setOpenBody, /lastFocusedElement !== document\.documentElement/);
+  assert.match(setOpenBody, /launcher\.focus\(\)/);
+});
+
 test('dry runs remain no-click while the one live activator is token-bound and one-use', () => {
   assert.equal((inspector.match(/\.click\s*\(/g) || []).length, 1);
   assert.match(inspector, /function activateLiveControl\(control\)/);
