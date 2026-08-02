@@ -173,12 +173,17 @@ See [Installation](./docs/INSTALLATION.md) and [Rollback](./docs/ROLLBACK.md).
 ```bash
 pnpm run assemble
 pnpm test
+pnpm run qa:browser:check
 pnpm run benchmark:zip
 ```
 
-The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing.
+The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing. The browser QA command also exercises every PWA view at fixed desktop, tablet, and mobile sizes, verifies that live settings remain off, and compares nine Windows Chromium screenshots with tracked SHA-256 baselines.
 
-Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. The production PWA has a documented desktop Chrome walkthrough and representative screenshots in [Browser QA](./docs/BROWSER_QA.md). Authenticated extension pairing, PWA installation, human screen-reader review, production-PWA tablet/mobile acceptance, and macOS artifact production still require their target environments before a signed release.
+Use `pnpm run qa:browser:update` only when intentionally accepting a reviewed
+visual change. Baselines are platform-specific and actual run output stays under
+ignored `test-results`.
+
+Windows packaging has been exercised through unpacked launch, silent NSIS install, installed-app launch, and silent uninstall. The production PWA has a documented desktop Chrome walkthrough plus deterministic Windows Chromium desktop/tablet/mobile checks and screenshot baselines in [Browser QA](./docs/BROWSER_QA.md). Authenticated extension pairing, PWA installation, human screen-reader review, additional native visual baselines, and macOS artifact production still require their target environments before a signed release.
 
 ## Documentation
 

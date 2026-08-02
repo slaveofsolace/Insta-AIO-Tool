@@ -29,6 +29,8 @@
     "dist:win": "pnpm run assemble && pnpm run build:desktop-assets && electron-builder --win nsis",
     "dist:mac": "pnpm run assemble && pnpm run build:desktop-assets && electron-builder --mac dmg zip",
     "benchmark:zip": "node scripts/benchmark-zip-import.mjs",
+    "qa:browser:update": "node scripts/assemble-app.mjs && node scripts/run-browser-qa.mjs --update",
+    "qa:browser:check": "node scripts/assemble-app.mjs && node scripts/run-browser-qa.mjs --check",
     "verify:dependencies": "node scripts/verify-dependencies.mjs",
     "test": "node scripts/verify-dependencies.mjs && node scripts/build-extension.mjs --check && node --test",
     "serve": "node scripts/serve.mjs"

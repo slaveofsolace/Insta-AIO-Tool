@@ -1,4 +1,4 @@
-const CACHE_NAME = 'insta-aio-v9';
+const CACHE_NAME = 'insta-aio-v10';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './assets/icon-192.png', './assets/icon-512.png', './src/styles.css', './src/app-loader.js',

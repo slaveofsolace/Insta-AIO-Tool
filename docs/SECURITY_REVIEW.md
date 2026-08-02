@@ -42,6 +42,9 @@ The extension background derives the requesting origin from Chrome's sender
 metadata and rejects a mismatched page claim. The loopback development server
 accepts only loopback Host headers and an explicit application-asset allowlist;
 repository metadata, tests, documentation, and Git internals are not served.
+It sends framing protection as response headers. The PWA meta policy intentionally
+omits `frame-ancestors` because browsers ignore that directive in meta-delivered
+policies; deployed hosting must likewise supply framing policy as an HTTP header.
 
 Workspace exports can contain imported private data and bridge pairing
 secrets. They are explicit user-created backups, not sanitized sharing
@@ -56,7 +59,7 @@ opened target dialog, the extension lacked its own durable reservation, and
 malformed restored daily limits could fail open. Regression tests exercise each
 fixed boundary. The 2026-08-02 exact-message DM local-patch review completed with
 full diff coverage and no reportable finding. The complete repository suite now
-passes 99 of 99 tests.
+passes 103 of 103 tests.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
 been run. It remains a separate operator acceptance gate requiring an exact
@@ -104,7 +107,8 @@ Before publishing a release:
 
 1. Install from the committed lockfile with `pnpm install --frozen-lockfile`.
 2. Run `pnpm run assemble` and `pnpm test`.
-3. Run `pnpm audit --prod --audit-level high`.
-4. Run the ZIP-import benchmark.
-5. Build and smoke-test the target installer on its native operating system.
-6. Review the generated artifacts and release notes for private data.
+3. Run `pnpm run qa:browser:check` on a platform with a committed baseline.
+4. Run `pnpm audit --prod --audit-level high`.
+5. Run the ZIP-import benchmark.
+6. Build and smoke-test the target installer on its native operating system.
+7. Review the generated artifacts and release notes for private data.

@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "kind": "insta-aio-pwa-screenshot-baseline",
+  "platform": "win32",
+  "electron": "43.2.0",
+  "deviceScaleFactor": 1,
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1134,
+      "height": 700
+    },
+    {
+      "id": "tablet",
+      "width": 820,
+      "height": 900
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "captures": [
+    {
+      "file": "desktop-overview.png",
+      "viewport": "desktop",
+      "width": 1134,
+      "height": 700,
+      "view": "overview",
+      "sha256": "486d4ddf9d5eb6e885317d446dcc5c476cade6588f9d7fadb93a9bbe4772f679"
+    },
+    {
+      "file": "desktop-messages.png",
+      "viewport": "desktop",
+      "width": 1134,
+      "height": 700,
+      "view": "messages",
+      "sha256": "413826c97b72fad3332a26f3c064b03b11a51c505478715ba5b303c7e84de38c"
+    },
+    {
+      "file": "desktop-settings.png",
+      "viewport": "desktop",
+      "width": 1134,
+      "height": 700,
+      "view": "settings",
+      "sha256": "3a61e48073c14fddab47ba1b90013ab5811b94ff91c8ed384db7aeb9acdd4386"
+    },
+    {
+      "file": "tablet-overview.png",
+      "viewport": "tablet",
+      "width": 820,
+      "height": 900,
+      "view": "overview",
+      "sha256": "d4e0ee07e3def7b732a520e476cb6ebf37c22312c21e968db694b44b54b67ac4"
+    },
+    {
+      "file": "tablet-messages.png",
+      "viewport": "tablet",
+      "width": 820,
+      "height": 900,
+      "view": "messages",
+      "sha256": "eb50ad69782c142e39d44d8819c772ccceb16b7807d08ea59ee9e7e8eb80d391"
+    },
+    {
+      "file": "tablet-settings.png",
+      "viewport": "tablet",
+      "width": 820,
+      "height": 900,
+      "view": "settings",
+      "sha256": "522d1eaf5919c9e051e3cfae9ed9b59a68eb8589a87d777579467448c07647c7"
+    },
+    {
+      "file": "mobile-overview.png",
+      "viewport": "mobile",
+      "width": 390,
+      "height": 844,
+      "view": "overview",
+      "sha256": "87be014d3b1b874c6ca0c8d9936da563f251ce4cd36a989f5827b9ece3c948e0"
+    },
+    {
+      "file": "mobile-messages.png",
+      "viewport": "mobile",
+      "width": 390,
+      "height": 844,
+      "view": "messages",
+      "sha256": "bdbfe45903ae129c7ca22eb0da3192173a3dba1c5f154a4206ff75896455aaed"
+    },
+    {
+      "file": "mobile-settings.png",
+      "viewport": "mobile",
+      "width": 390,
+      "height": 844,
+      "view": "settings",
+      "sha256": "a54cc0f5201e3bc73d6a51b63f99bb1714046a7e1cd6b25a727e1620aaa89ce6"
+    }
+  ]
+}

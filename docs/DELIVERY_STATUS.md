@@ -118,6 +118,9 @@ Implemented:
 - Confirmation and error states
 - Interactive Chrome walkthrough of all seven primary PWA views using empty or synthetic local data
 - Representative desktop screenshots for Overview, Action Queue, Messages, and Activity
+- Deterministic Windows Chromium checks of all seven views at desktop, tablet, and mobile widths
+- Nine visually reviewed, SHA-256-gated Windows baselines for Overview, Messages, and Settings
+- Browser-delivered framing policy via loopback response headers with a console-clean meta CSP
 - Truthful empty-message copy and assembled-markup regression coverage
 
 The dated walkthrough matrix and screenshots are in
@@ -126,10 +129,9 @@ The dated walkthrough matrix and screenshots are in
 Pending acceptance:
 
 - Authenticated Instagram walkthrough with the unpacked extension loaded
-- Production PWA walkthrough at tablet and mobile viewport widths
-- Screenshot regression baselines
 - Human screen-reader walkthrough
 - PWA installation confirmation in Chrome
+- Native screenshot baselines for any additional release platform where they will be gated
 
 These pending checks prevent a claim of complete browser visual acceptance.
 
@@ -142,6 +144,6 @@ repeatable verification gate, is in `docs/SECURITY_REVIEW.md`.
 The controlled-action local-patch scan found four low-severity defects and all
 four are remediated with focused regressions. The follow-up exact-message DM
 local-patch scan found no reportable security issue. Deterministic assembly, the
-full 99-test suite, companion source validation, and the unpacked/ZIP extension
-build pass. Authenticated account and DM DOM acceptance remain explicitly not
-run.
+full 103-test suite, companion source validation, the unpacked/ZIP extension
+build, and the nine-image Windows browser baseline check pass. Authenticated
+account and DM DOM acceptance remain explicitly not run.
