@@ -9,6 +9,12 @@ The selected quiet-operator design is implemented on
   preferences, fixture wiring, and focused contracts
 - `6f8bc7b` — lifecycle-owned persistence plus package checks for polling,
   remote UI assets, and unsafe dynamic markup
+- `75de3b2` — documented modular overlay checkpoint and acceptance boundary
+- `b88f926` — preserved expired/canceled/executing arm outcomes in the overlay
+
+The working tree also contains the uncommitted overlay QA harness described in
+[`OVERLAY_QA.md`](./OVERLAY_QA.md). It is intentionally not listed as a commit
+or as runtime-accepted evidence.
 
 This is an implementation checkpoint, not visual or release acceptance.
 
@@ -126,18 +132,27 @@ Lightweight checks completed after the implementation:
   passed and package validation passed
 - Overlay source scan: no `.click()`, `dispatchEvent()`, or `setInterval()`
 
-The production Electron/Chromium overlay acceptance, screenshot/geometry matrix,
-200% zoom, mobile landscape, forced colors, performance measurements, full
-`assemble`/test suite, and fresh built archive inspection have not yet run after
-this UI change. They were deliberately deferred during the host stability
-advisory; prior results do not count as evidence for the new pixels.
+The QA sources cover 38 unique scenarios, state-specific assertions on all 20
+required states, selector contracts, child-process watchdog escalation, and
+rejection of a deliberately wrong semantic state. On Windows, all scenarios
+rendered through the production content-script graph and passed semantics,
+geometry, collision, accessibility-tree, and screenshot checks. The full image
+set was inspected in an agent visual review and reproduced by the non-updating
+baseline check.
+
+The 2026-08-03 guarded matrix also passed frozen installation, assembly, all 153
+repository tests, production extension fixture acceptance, real Chrome pairing,
+nine PWA screenshot baselines, the 38-state overlay update/check, the ZIP
+benchmark, and whitespace validation. The measured overlay probe rendered one
+bounded current item after a 2,000-item queue update in 25.9 ms with 234 overlay
+nodes; route transition was 97.8 ms. The review procedure and platform boundary
+are recorded in [`OVERLAY_QA.md`](./OVERLAY_QA.md).
 
 ## Nonclaims
 
 - No authenticated Instagram mutation was attempted.
-- The new overlay is not claimed visually accepted, perfect, production ready,
-  or fully verified.
+- Agent visual review is not a human visual or screen-reader acceptance claim.
 - Deterministic fixture checks do not prove current authenticated Instagram DOM
   compatibility.
 - Automated accessibility checks do not replace human screen-reader review.
-- The draft pull request has not been updated with these local commits.
+- Windows screenshot hashes do not establish Linux or macOS visual parity.

@@ -129,7 +129,9 @@ remain locked until their controlled one-item workflows are completed. See
 [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
 for the runtime and data boundaries and
 [Overlay UI implementation](./docs/OVERLAY_UI_IMPLEMENTATION.md) for the
-module, migration, and current verification status.
+module and migration status. The dedicated screenshot/state matrix, baseline
+workflow, and current nonclaims are documented in
+[Overlay QA](./docs/OVERLAY_QA.md).
 
 Pairing is origin-specific:
 
@@ -183,6 +185,7 @@ pnpm test
 pnpm run qa:extension
 pnpm run qa:chrome
 pnpm run qa:browser:check
+pnpm run qa:overlay:check
 pnpm run benchmark:zip
 ```
 
@@ -192,12 +195,21 @@ Use `pnpm run qa:browser:update` only when intentionally accepting a reviewed
 visual change. Baselines are platform-specific and actual run output stays under
 ignored `test-results`.
 
+The overlay-specific commands rebuild the production extension before loading
+its manifest-ordered content scripts in the deterministic Instagram fixture.
+Use `pnpm run qa:overlay:update` only for an intentional, manually reviewed
+baseline replacement. The 38-state Windows baseline has been agent-reviewed and
+reproduced by `qa:overlay:check`; CI runs the non-updating check on Windows.
+Human screen-reader review, persistent-profile installation, and authenticated
+Instagram selector acceptance remain separate operator/release gates.
+
 Windows packaging has been exercised through unpacked launch, packaged-renderer smoke, silent NSIS install, installed-app launch, and silent uninstall. The CI workflow provisions Chrome for Testing for real extension pairing and builds a macOS DMG/ZIP that is mounted, copied, QA-only ad-hoc signed with hardened-runtime Electron entitlements, launched in smoke mode, and removed. Release entitlements do not include the ad-hoc library-validation exception. Apple Developer ID signing/notarization, a human screen-reader review, installation in the operator's intended persistent Chrome profile, and a user-selected real Instagram mutation remain release/operator acceptance rather than automated claims.
 
 ## Documentation
 
 - [Architecture](./docs/ARCHITECTURE.md)
 - [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
+- [Overlay QA](./docs/OVERLAY_QA.md)
 - [Product specification](./docs/PROJECT_SPEC.md)
 - [Source audit](./docs/SOURCE_AUDIT.md)
 - [Component integration audit](./docs/COMPONENT_INTEGRATION_AUDIT.md)

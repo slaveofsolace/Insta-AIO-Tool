@@ -15,6 +15,11 @@ const chromeAcceptance = await readFile(
   new URL('../scripts/chrome-pairing-acceptance.mjs', import.meta.url),
   'utf8',
 );
+const overlayQa = await readFile(new URL('../scripts/overlay-qa.mjs', import.meta.url), 'utf8');
+const overlayQaRunner = await readFile(
+  new URL('../scripts/run-overlay-qa.mjs', import.meta.url),
+  'utf8',
+);
 const fixture = await readFile(
   new URL('./fixtures/overlay-preview.html', import.meta.url),
   'utf8',
@@ -66,15 +71,19 @@ test('browser acceptance covers accessibility, installability, and read-only pai
   assert.match(acceptance, /setPermissionRequestHandler/);
 });
 
-test('Chrome for Testing acceptance loads and pairs the real extension in a disposable profile', () => {
+test('Chrome acceptance loads and pairs the real extension through the restricted DevTools pipe', () => {
   assert.equal(
     packageJson.scripts['qa:chrome'],
     'node scripts/build-extension.mjs && node scripts/chrome-pairing-acceptance.mjs',
   );
   assert.match(chromeAcceptance, /process\.env\.CHROME_BIN/);
   assert.match(chromeAcceptance, /'chrome-acceptance'/);
-  assert.match(chromeAcceptance, /--disable-extensions-except=/);
-  assert.match(chromeAcceptance, /--load-extension=/);
+  assert.match(chromeAcceptance, /--enable-unsafe-extension-debugging/);
+  assert.match(chromeAcceptance, /--remote-debugging-pipe/);
+  assert.match(chromeAcceptance, /Extensions\.loadUnpacked/);
+  assert.match(chromeAcceptance, /Target\.attachToTarget/);
+  assert.doesNotMatch(chromeAcceptance, /--disable-extensions-except=/);
+  assert.doesNotMatch(chromeAcceptance, /--load-extension=/);
   assert.match(chromeAcceptance, /INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX === '1'/);
   assert.match(chromeAcceptance, /chromeArguments\.unshift\('--no-sandbox'\)/);
   assert.match(chromeAcceptance, /Page\.getAppManifest/);
@@ -91,6 +100,34 @@ test('Chrome for Testing acceptance loads and pairs the real extension in a disp
   assert.match(workflow, /xvfb-run --auto-servernum pnpm run qa:chrome/);
   assert.match(workflow, /INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"/);
   assert.match(workflow, /INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"/);
+});
+
+test('CI checks reviewed overlay baselines on their native Windows platform', () => {
+  assert.equal(
+    packageJson.scripts['qa:overlay:check'],
+    'pnpm run build:extension && node scripts/run-overlay-qa.mjs --check',
+  );
+  assert.match(workflow, /overlay-windows:/);
+  assert.match(workflow, /runs-on: windows-latest/);
+  assert.match(workflow, /pnpm run qa:overlay:check/);
+  assert.doesNotMatch(workflow, /qa:overlay:update/);
+});
+
+test('overlay QA is loopback-confined and has bounded child-process cleanup', () => {
+  assert.match(overlayQa, /server\.listen\(0, '127\.0\.0\.1'/);
+  assert.match(overlayQa, /"connect-src 'none'"/);
+  assert.match(overlayQa, /setPermissionCheckHandler\(\(\) => false\)/);
+  assert.match(overlayQa, /setPermissionRequestHandler/);
+  assert.match(overlayQa, /nodeIntegration: false/);
+  assert.match(overlayQa, /sandbox: true/);
+  assert.match(overlayQa, /webSecurity: true/);
+  assert.match(overlayQa, /setWindowOpenHandler/);
+  assert.match(overlayQa, /will-navigate/);
+  assert.match(overlayQa, /assert\.equal\(queueResult\.renderedItems, 1/);
+  assert.match(overlayQaRunner, /const childWatchdogMs = 5 \* 60 \* 1000/);
+  assert.match(overlayQaRunner, /child\.kill\('SIGTERM'\)/);
+  assert.match(overlayQaRunner, /child\.kill\('SIGKILL'\)/);
+  assert.doesNotMatch(overlayQaRunner, /taskkill|killall|Stop-Process/i);
 });
 
 test('macOS CI builds and exercises the packaged lifecycle without release credentials', () => {

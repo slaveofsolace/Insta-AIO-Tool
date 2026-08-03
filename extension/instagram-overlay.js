@@ -474,6 +474,10 @@
 
   function applyCollision(next) {
     model.collision = next;
+    host.dataset.dock = model.preferences?.dock || 'right';
+    host.dataset.width = model.preferences?.width || 'standard';
+    host.removeAttribute('data-adaptive-dock');
+    host.removeAttribute('data-adaptive-width');
     host.dataset.collision = next.active ? 'active' : 'inactive';
     const strip = query('[data-ia-role="collision-strip"]');
     if (!strip) return;
@@ -482,6 +486,30 @@
       strip.style.removeProperty('left');
       strip.style.removeProperty('top');
       host.removeAttribute('data-collision-placement');
+      requestAnimationFrame(() => {
+        if (!active || model.collision.active || !model.open) return;
+        const target = next.reviewedRectangles?.[0];
+        const panel = query('.ia-panel');
+        if (!target || !panel || panel.hidden) return;
+        const panelRectangle = panel.getBoundingClientRect();
+        if (!collision.intersects(panelRectangle, target)) return;
+        host.dataset.dock = (model.preferences?.dock || 'right') === 'right' ? 'left' : 'right';
+        host.dataset.adaptiveDock = 'reviewed-target';
+        requestAnimationFrame(() => {
+          if (!active || model.collision.active || !model.open) return;
+          if (!collision.intersects(panel.getBoundingClientRect(), target)) return;
+          host.dataset.width = 'compact';
+          host.dataset.adaptiveWidth = 'reviewed-target';
+          const preferredDock = model.preferences?.dock || 'right';
+          for (const candidateDock of [preferredDock, preferredDock === 'right' ? 'left' : 'right']) {
+            host.dataset.dock = candidateDock;
+            if (!collision.intersects(panel.getBoundingClientRect(), target)) {
+              host.dataset.adaptiveDock = 'reviewed-target';
+              return;
+            }
+          }
+        });
+      });
       return;
     }
 
@@ -499,7 +527,7 @@
       const rectangle = strip.getBoundingClientRect();
       const position = collision.placement({
         dock: model.preferences?.dock || 'right',
-        obstacles: next.rectangles,
+        obstacles: [...next.rectangles, ...(next.reviewedRectangles || [])],
         strip: {
           height: rectangle.height || 52,
           width: rectangle.width || 320,
@@ -739,6 +767,7 @@
         ),
         dmIntent: model.bridge.pendingDmIntent || model.executionGuard?.dmIntent || null,
       }),
+      getReviewedTarget: (state) => inspector.reviewedTargetElement(state),
       onChange: applyCollision,
       window,
     });

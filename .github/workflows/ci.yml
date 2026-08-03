@@ -44,6 +44,20 @@ jobs:
           INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"
         run: xvfb-run --auto-servernum pnpm run qa:chrome
 
+  overlay-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify reviewed Windows overlay baselines
+        run: pnpm run qa:overlay:check
+
   package-macos:
     runs-on: macos-14
     env:

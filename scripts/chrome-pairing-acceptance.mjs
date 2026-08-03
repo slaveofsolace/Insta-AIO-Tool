@@ -18,7 +18,6 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const resultsRoot = path.resolve(repositoryRoot, 'test-results', 'chrome-acceptance');
 const userDataRoot = path.join(resultsRoot, 'user-data');
 const testExtensionRoot = path.join(resultsRoot, 'extension');
-const devToolsPortPath = path.join(userDataRoot, 'DevToolsActivePort');
 
 function chromeCandidates() {
   const candidates = [process.env.CHROME_BIN].filter(Boolean);
@@ -93,41 +92,46 @@ async function prepareExtension() {
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 }
 
-class CdpClient {
-  constructor(socket) {
-    this.socket = socket;
+class PipeCdpClient {
+  constructor(readable, writable) {
+    this.readable = readable;
+    this.writable = writable;
     this.nextId = 1;
     this.pending = new Map();
-    socket.addEventListener('message', (event) => {
-      const message = JSON.parse(String(event.data));
-      if (!message.id || !this.pending.has(message.id)) return;
-      const pending = this.pending.get(message.id);
-      this.pending.delete(message.id);
-      clearTimeout(pending.timer);
-      if (message.error) pending.reject(new Error(message.error.message));
-      else pending.resolve(message.result || {});
-    });
-    socket.addEventListener('close', () => {
-      for (const pending of this.pending.values()) {
-        clearTimeout(pending.timer);
-        pending.reject(new Error('Chrome DevTools connection closed.'));
+    this.buffer = Buffer.alloc(0);
+    readable.on('data', (chunk) => {
+      this.buffer = Buffer.concat([this.buffer, chunk]);
+      let boundary = this.buffer.indexOf(0);
+      while (boundary !== -1) {
+        const frame = this.buffer.subarray(0, boundary).toString('utf8');
+        this.buffer = this.buffer.subarray(boundary + 1);
+        if (frame) this.receive(JSON.parse(frame));
+        boundary = this.buffer.indexOf(0);
       }
-      this.pending.clear();
     });
+    readable.on('error', (error) => this.fail(error));
+    readable.on('close', () => this.fail(new Error('Chrome DevTools pipe closed.')));
+    writable.on('error', (error) => this.fail(error));
   }
 
-  static async connect(url) {
-    const socket = new WebSocket(url);
-    await new Promise((resolve, reject) => {
-      socket.addEventListener('open', resolve, { once: true });
-      socket.addEventListener('error', () => reject(new Error(
-        `Unable to connect to Chrome DevTools target ${url}.`,
-      )), { once: true });
-    });
-    return new CdpClient(socket);
+  receive(message) {
+    if (!message.id || !this.pending.has(message.id)) return;
+    const pending = this.pending.get(message.id);
+    this.pending.delete(message.id);
+    clearTimeout(pending.timer);
+    if (message.error) pending.reject(new Error(message.error.message));
+    else pending.resolve(message.result || {});
   }
 
-  send(method, params = {}, timeoutMs = 10_000) {
+  fail(error) {
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
+    this.pending.clear();
+  }
+
+  send(method, params = {}, timeoutMs = 10_000, sessionId = null) {
     const id = this.nextId;
     this.nextId += 1;
     return new Promise((resolve, reject) => {
@@ -136,13 +140,45 @@ class CdpClient {
         reject(new Error(`${method} timed out after ${timeoutMs}ms.`));
       }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });
-      this.socket.send(JSON.stringify({ id, method, params }));
+      const message = { id, method, params };
+      if (sessionId) message.sessionId = sessionId;
+      this.writable.write(`${JSON.stringify(message)}\0`);
     });
   }
 
   close() {
-    this.socket.close();
+    this.fail(new Error('Chrome DevTools client closed.'));
   }
+}
+
+class CdpSession {
+  constructor(browser, sessionId) {
+    this.browser = browser;
+    this.sessionId = sessionId;
+    this.closed = false;
+  }
+
+  send(method, params = {}, timeoutMs = 10_000) {
+    return this.browser.send(method, params, timeoutMs, this.sessionId);
+  }
+
+  async close() {
+    if (this.closed) return;
+    this.closed = true;
+    try {
+      await this.browser.send('Target.detachFromTarget', { sessionId: this.sessionId });
+    } catch {
+      // Chrome may already be closing.
+    }
+  }
+}
+
+async function attachToTarget(browser, targetId) {
+  const { sessionId } = await browser.send('Target.attachToTarget', {
+    targetId,
+    flatten: true,
+  });
+  return new CdpSession(browser, sessionId);
 }
 
 async function evaluate(client, expression, { userGesture = false } = {}) {
@@ -162,46 +198,6 @@ async function evaluate(client, expression, { userGesture = false } = {}) {
   return result.result?.value;
 }
 
-async function targets(port) {
-  const response = await fetch(`http://127.0.0.1:${port}/json/list`);
-  if (!response.ok) throw new Error(`Chrome target list returned ${response.status}.`);
-  return response.json();
-}
-
-async function createTarget(port, url) {
-  const response = await fetch(
-    `http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`,
-    { method: 'PUT' },
-  );
-  if (!response.ok) throw new Error(`Chrome target creation returned ${response.status}.`);
-  return response.json();
-}
-
-async function extensionIdFromPreferences() {
-  const candidates = [
-    path.join(userDataRoot, 'Default', 'Preferences'),
-    path.join(userDataRoot, 'Default', 'Secure Preferences'),
-  ];
-  return waitFor(async () => {
-    for (const candidate of candidates) {
-      let preferences;
-      try {
-        preferences = JSON.parse(await readFile(candidate, 'utf8'));
-      } catch {
-        continue;
-      }
-      for (const [id, setting] of Object.entries(preferences.extensions?.settings || {})) {
-        const configuredPath = String(setting?.path || '');
-        const samePath = process.platform === 'win32'
-          ? path.resolve(configuredPath).toLowerCase() === path.resolve(testExtensionRoot).toLowerCase()
-          : path.resolve(configuredPath) === path.resolve(testExtensionRoot);
-        if (samePath || setting?.manifest?.name === 'Insta AIO Companion') return id;
-      }
-    }
-    return null;
-  }, 'unpacked extension identity');
-}
-
 async function run() {
   const chromePath = await findChrome();
   await rm(resultsRoot, { recursive: true, force: true });
@@ -218,11 +214,8 @@ async function run() {
     '--disable-component-update',
     '--disable-default-apps',
     '--disable-dev-shm-usage',
-    '--disable-extensions-http-throttling',
-    `--disable-extensions-except=${testExtensionRoot}`,
-    `--load-extension=${testExtensionRoot}`,
-    '--remote-debugging-port=0',
-    '--remote-allow-origins=*',
+    '--enable-unsafe-extension-debugging',
+    '--remote-debugging-pipe',
     `--user-data-dir=${userDataRoot}`,
     '--window-position=-32000,-32000',
     '--window-size=1200,900',
@@ -238,25 +231,25 @@ async function run() {
   const chrome = spawn(chromePath, chromeArguments, {
     cwd: repositoryRoot,
     env: process.env,
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe'],
     windowsHide: true,
   });
   let chromeOutput = '';
   chrome.stdout.on('data', (chunk) => { chromeOutput = `${chromeOutput}${chunk}`.slice(-20_000); });
   chrome.stderr.on('data', (chunk) => { chromeOutput = `${chromeOutput}${chunk}`.slice(-20_000); });
+  const browser = new PipeCdpClient(chrome.stdio[4], chrome.stdio[3]);
   const clients = [];
   try {
-    const port = await waitFor(async () => {
-      const lines = (await readFile(devToolsPortPath, 'utf8')).trim().split(/\r?\n/);
-      const value = Number(lines[0]);
-      return Number.isInteger(value) && value > 0 ? value : null;
-    }, 'Chrome remote-debugging port');
-    const targetList = () => targets(port);
+    await browser.send('Browser.getVersion', {}, 15_000);
+    const targetList = async () => (await browser.send('Target.getTargets')).targetInfos;
     const pwaTarget = await waitFor(async () => (
       (await targetList()).find((target) => target.type === 'page' && target.url === pwaUrl)
     ), 'PWA Chrome target');
-    const extensionId = await extensionIdFromPreferences();
-    const pwa = await CdpClient.connect(pwaTarget.webSocketDebuggerUrl);
+    const { id: extensionId } = await browser.send('Extensions.loadUnpacked', {
+      path: testExtensionRoot,
+    });
+    assert.match(extensionId, /^[a-p]{32}$/, 'Chrome returned an invalid extension ID');
+    const pwa = await attachToTarget(browser, pwaTarget.targetId);
     clients.push(pwa);
     await pwa.send('Runtime.enable');
     await pwa.send('Page.enable');
@@ -297,8 +290,10 @@ async function run() {
     ), 'PWA pairing code in Google Chrome');
     assert.ok(pairingCode.length > 40);
 
-    const popupTarget = await createTarget(port, `chrome-extension://${extensionId}/popup.html`);
-    const popup = await CdpClient.connect(popupTarget.webSocketDebuggerUrl);
+    const { targetId: popupTargetId } = await browser.send('Target.createTarget', {
+      url: `chrome-extension://${extensionId}/popup.html`,
+    });
+    const popup = await attachToTarget(browser, popupTargetId);
     clients.push(popup);
     await popup.send('Runtime.enable');
     await popup.send('Page.enable');
@@ -372,7 +367,8 @@ async function run() {
   } catch (error) {
     throw new Error(`${error.message}\nChrome output:\n${chromeOutput}`, { cause: error });
   } finally {
-    for (const client of clients.reverse()) client.close();
+    for (const client of clients.reverse()) await client.close();
+    browser.close();
     if (!chrome.killed) chrome.kill('SIGTERM');
     await new Promise((resolve) => {
       const timer = setTimeout(() => {

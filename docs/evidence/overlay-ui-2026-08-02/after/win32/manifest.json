@@ -1,0 +1,6705 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-03T18:10:03.191Z",
+  "platform": "win32",
+  "builtExtensionVersion": "0.4.0",
+  "screenshots": [
+    {
+      "id": "profile-not-following-no-match",
+      "sha256": "757fddbdee2c243a1b9c9b514159a798c4b9b486e3e7e3b67f2c17a68a36bbd8",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-not-following",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "includes": [
+              "@demo_creator",
+              "not-following",
+              "Next: @someone_else",
+              "Inspection is no-click"
+            ],
+            "selector": "[data-ia-role=\"now-content\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 718.171875,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 649,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 719.171875,
+            "height": 665.171875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.19503496334876544,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 719.171875,
+            "height": 665.171875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"now-content\"]": {
+              "attributes": {
+                "data-ia-role": "now-content"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Page readyIdentity and state were read without clicking.@@demo_creatorProfile reviewnot-followingRouteprofileQueueNext: @someone_elseNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 873.5,
+            "top": 60,
+            "width": 78.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-following-queue-match",
+      "sha256": "43a84089c983fb1b53f10b8447e85e7bb0c2b1170d7c3a97f724bc5c6abade48",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "includes": [
+              "@demo_creator",
+              "following",
+              "Matches unfollow",
+              "Inspection is no-click"
+            ],
+            "selector": "[data-ia-role=\"now-content\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 680.15625,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 610.984375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.18388840663580247,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"now-content\"]": {
+              "attributes": {
+                "data-ia-role": "now-content"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Page readyIdentity and state were read without clicking.@@demo_creatorProfile reviewfollowingRouteprofileQueueMatches unfollowNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-ambiguous-safe-stop",
+      "sha256": "6d594d37a197efe1babfc2756c5f240f088941365837a09f3abd2cf63df12893",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-ambiguous",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "includes": [
+              "@demo_creator",
+              "Ambiguous — safe stop",
+              "Refresh no-click inspection"
+            ],
+            "selector": "[data-ia-role=\"now-content\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 716.71875,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 647.546875,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 717.71875,
+            "height": 663.71875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.1946088927469136,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 717.71875,
+            "height": 663.71875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"now-content\"]": {
+              "attributes": {
+                "data-ia-role": "now-content"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Page readyIdentity and state were read without clicking.@@demo_creatorProfile reviewAmbiguous — safe stopRouteprofileQueueMatches unfollowNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "followers-first-capture",
+      "sha256": "c9633af7919083c5259d86d98dd816abe899bece536b398e46b4da802ec1aca1",
+      "scenario": {
+        "after": "capture-visible",
+        "captureListType": "followers",
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-followers-first",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "capture",
+        "targetSelector": ".fixture-dialog",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "numberEquals": 3,
+            "selector": "[data-ia-role=\"capture-count\"]"
+          },
+          {
+            "includes": [
+              "followers · updated"
+            ],
+            "selector": "[data-ia-role=\"capture-detail\"]"
+          },
+          {
+            "equals": "3 unique accounts in this draft",
+            "selector": "[data-ia-role=\"capture-state-title\"]"
+          },
+          {
+            "includes": [
+              "3 rendered",
+              "3 added",
+              "0 duplicates ignored"
+            ],
+            "selector": "[data-ia-role=\"capture-state-detail\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "capture",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 698.265625,
+            "height": 51.78125,
+            "left": 1080,
+            "right": 1410,
+            "top": 646.484375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 699.265625,
+            "height": 645.265625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.18919825424382716,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 699.265625,
+            "height": 645.265625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"capture-count\"]": {
+              "attributes": {
+                "data-ia-role": "capture-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "3",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-detail\"]": {
+              "attributes": {
+                "data-ia-role": "capture-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "followers · updated Aug 2, 2026, 12:00 PM",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-state-title\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "3 unique accounts in this draft",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-state-detail\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "3 rendered; 3 added; 0 duplicates ignored.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Read 3 rendered rows; 3 unique in the local draft.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 872,
+            "height": 161.78125,
+            "left": 280,
+            "right": 590,
+            "top": 710.21875,
+            "width": 310
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 298
+            },
+            {
+              "height": 44,
+              "label": "Capture visible rows",
+              "width": 159.03125
+            },
+            {
+              "height": 44,
+              "label": "New draft",
+              "width": 92.515625
+            },
+            {
+              "height": 44,
+              "label": "Download import JSON",
+              "width": 182.078125
+            }
+          ],
+          "viewTitle": "Visible capture",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "following-repeated-capture",
+      "sha256": "7d43f6572c622e1bd264e771de7dbbef0121397c8ba6eb561ef8198a06c6fa82",
+      "scenario": {
+        "after": "capture-visible",
+        "captureListType": "following",
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-following-repeat",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "capture",
+        "targetSelector": ".fixture-dialog",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "numberEquals": 4,
+            "selector": "[data-ia-role=\"capture-count\"]"
+          },
+          {
+            "includes": [
+              "following · updated"
+            ],
+            "selector": "[data-ia-role=\"capture-detail\"]"
+          },
+          {
+            "equals": "4 unique accounts in this draft",
+            "selector": "[data-ia-role=\"capture-state-title\"]"
+          },
+          {
+            "includes": [
+              "3 rendered",
+              "2 added",
+              "1 duplicate ignored"
+            ],
+            "selector": "[data-ia-role=\"capture-state-detail\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "capture",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 757.5,
+            "height": 51.78125,
+            "left": 1080,
+            "right": 1410,
+            "top": 705.71875,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 758.5,
+            "height": 704.5,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.20656635802469137,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 758.5,
+            "height": 704.5,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"capture-count\"]": {
+              "attributes": {
+                "data-ia-role": "capture-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "4",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-detail\"]": {
+              "attributes": {
+                "data-ia-role": "capture-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "following · updated Aug 2, 2026, 12:00 PM",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-state-title\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "4 unique accounts in this draft",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-state-detail\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "3 rendered; 2 added; 1 duplicate ignored.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Read 3 rendered rows; 4 unique in the local draft.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 872,
+            "height": 161.78125,
+            "left": 280,
+            "right": 590,
+            "top": 710.21875,
+            "width": 310
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 298
+            },
+            {
+              "height": 44,
+              "label": "Capture visible rows",
+              "width": 159.03125
+            },
+            {
+              "height": 44,
+              "label": "New draft",
+              "width": 92.515625
+            },
+            {
+              "height": 44,
+              "label": "Download import JSON",
+              "width": 182.078125
+            }
+          ],
+          "viewTitle": "Visible capture",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-locked",
+      "sha256": "8c8cd6c181b2837e842ee971692ca916160cc3fddd34cfa0bdc2999bdf7d0ea7",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-queue-locked",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Live actions locked",
+            "selector": "[data-ia-role=\"live-title\"]"
+          },
+          {
+            "equals": "locked",
+            "tone": "warning",
+            "selector": "[data-ia-role=\"live-badge\"]"
+          },
+          {
+            "includes": [
+              "Confirm one live item in the paired PWA"
+            ],
+            "selector": "[data-ia-role=\"live-detail\"]"
+          },
+          {
+            "disabled": true,
+            "selector": "[data-ia-action=\"arm-account-live\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 595.609375,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 526.4375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 137.375,
+            "height": 82.375,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 596.609375,
+            "height": 542.609375,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.15909842785493827,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 596.609375,
+            "height": 542.609375,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"live-title\"]": {
+              "attributes": {
+                "data-ia-role": "live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Live actions locked",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "live-badge",
+                "data-tone": "warning"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "locked",
+              "tone": "warning",
+              "visible": true
+            },
+            "[data-ia-role=\"live-detail\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "live-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Confirm one live item in the paired PWA before an exact arm is even available.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"arm-account-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-account-live",
+                "disabled": ""
+              },
+              "disabled": true,
+              "exists": true,
+              "hidden": false,
+              "text": "Arm exact action",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.734375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-exact-target-ready",
+      "sha256": "0442174b37b42bac7bf219f661f9d1f49a9084dcdc52e4eef3652cab0f911c22",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-account-ready",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "unfollow @demo_creator",
+            "selector": "[data-ia-role=\"live-title\"]"
+          },
+          {
+            "equals": "ready",
+            "tone": "warning",
+            "selector": "[data-ia-role=\"live-badge\"]"
+          },
+          {
+            "includes": [
+              "exactly match the signed intent",
+              "Arming alone does not click"
+            ],
+            "selector": "[data-ia-role=\"live-detail\"]"
+          },
+          {
+            "disabled": false,
+            "selector": "[data-ia-action=\"arm-account-live\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 770.5625,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 701.390625,
+            "width": 330
+          },
+          "header": {
+            "bottom": 137.375,
+            "height": 82.375,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 771.5625,
+            "height": 717.5625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.21039641203703704,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 771.5625,
+            "height": 717.5625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"live-title\"]": {
+              "attributes": {
+                "data-ia-role": "live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "unfollow @demo_creator",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "live-badge",
+                "data-tone": "warning"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "ready",
+              "tone": "warning",
+              "visible": true
+            },
+            "[data-ia-role=\"live-detail\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "live-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "This profile and relationship exactly match the signed intent. Arming alone does not click.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"arm-account-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-account-live"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "text": "Arm one unfollow",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm one unfollow",
+              "width": 145.15625
+            },
+            {
+              "height": 44,
+              "label": "Cancel intent",
+              "width": 112.21875
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-armed-countdown",
+      "sha256": "dc2a77d3b73b91abfbd5dad36cd6ed6f7d74a46f1d5f4a75f071caadc766795a",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-account-armed",
+        "open": true,
+        "pairing": "action",
+        "presentation": "strip",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "unfollow @demo_creator",
+            "selector": "[data-ia-role=\"live-title\"]"
+          },
+          {
+            "equals": "armed",
+            "tone": "danger",
+            "selector": "[data-ia-role=\"live-badge\"]"
+          },
+          {
+            "hidden": false,
+            "includes": [
+              "s remaining"
+            ],
+            "selector": "[data-ia-role=\"live-countdown\"]"
+          },
+          {
+            "disabled": true,
+            "selector": "[data-ia-action=\"arm-account-live\"]"
+          },
+          {
+            "equals": "One-use arm active · page controls remain untouched",
+            "selector": "[data-ia-role=\"collision-state\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": null,
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "active",
+          "collisionPlacement": "safe",
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": null,
+          "header": null,
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": null,
+          "panelAreaShare": 0.01654320987654321,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 886,
+            "height": 67,
+            "left": 260,
+            "right": 580,
+            "top": 819,
+            "width": 320
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"live-title\"]": {
+              "attributes": {
+                "data-ia-role": "live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "unfollow @demo_creator",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-role=\"live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "live-badge",
+                "data-tone": "danger"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "armed",
+              "tone": "danger",
+              "visible": false
+            },
+            "[data-ia-role=\"live-countdown\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "live-countdown"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "90s remaining",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-action=\"arm-account-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-account-live",
+                "disabled": ""
+              },
+              "disabled": true,
+              "exists": true,
+              "hidden": false,
+              "text": "One action armed",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-role=\"collision-state\"]": {
+              "attributes": {
+                "data-ia-role": "collision-state"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "One-use arm active · page controls remain untouched",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": {
+            "bottom": 886,
+            "height": 67,
+            "left": 260,
+            "right": 580,
+            "top": 819,
+            "width": 320
+          },
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-arm-expired",
+      "sha256": "2eeff9e230dfb0c602c21a876b35d6751d08bdafc5b35c4c2e1cdf56fce821c2",
+      "scenario": {
+        "after": "wait-account-expired",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-account-expiring",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "unfollow @demo_creator",
+            "selector": "[data-ia-role=\"live-title\"]"
+          },
+          {
+            "equals": "expired",
+            "tone": "danger",
+            "selector": "[data-ia-role=\"live-badge\"]"
+          },
+          {
+            "includes": [
+              "prior arm expired",
+              "old expiry is never extended"
+            ],
+            "selector": "[data-ia-role=\"live-detail\"]"
+          },
+          {
+            "hidden": true,
+            "selector": "[data-ia-role=\"live-countdown\"]"
+          },
+          {
+            "disabled": false,
+            "selector": "[data-ia-action=\"arm-account-live\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": null,
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 839.953125,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 770.78125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 137.375,
+            "height": 82.375,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 840.953125,
+            "height": 786.953125,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.2307424286265432,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 840.953125,
+            "height": 786.953125,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"live-title\"]": {
+              "attributes": {
+                "data-ia-role": "live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "unfollow @demo_creator",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "live-badge",
+                "data-tone": "danger"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "expired",
+              "tone": "danger",
+              "visible": true
+            },
+            "[data-ia-role=\"live-detail\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "live-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "The prior arm expired. Type the exact phrase again to create a new 90-second arm; the old expiry is never extended.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"live-countdown\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "live-countdown",
+                "hidden": ""
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": true,
+              "text": "1s remaining",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-action=\"arm-account-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-account-live"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "text": "Arm fresh unfollow",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm fresh unfollow",
+              "width": 153.59375
+            },
+            {
+              "height": 44,
+              "label": "Cancel intent",
+              "width": 112.21875
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "messages-evidence-only",
+      "sha256": "1d2d43a94b2ccefc0951bd835118b6661a0e5a0978ee7c9bf0aabd8ca40bfd2a",
+      "scenario": {
+        "after": "inspect-messages",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "messages",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "messages",
+        "targetSelector": ".fixture-thread [role=\"row\"]",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "numberEquals": 3,
+            "selector": "[data-ia-role=\"message-count\"]"
+          },
+          {
+            "equals": "Visible evidence captured",
+            "selector": "[data-ia-role=\"message-state-title\"]"
+          },
+          {
+            "includes": [
+              "local evidence only",
+              "sender ownership remain unresolved"
+            ],
+            "selector": "[data-ia-role=\"message-state-detail\"]"
+          },
+          {
+            "equals": "locked",
+            "tone": "warning",
+            "selector": "[data-ia-role=\"dm-live-badge\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "messages",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1440,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1440,
+          "dock": "right",
+          "footer": {
+            "bottom": 813.625,
+            "height": 51.78125,
+            "left": 1095,
+            "right": 1425,
+            "top": 761.84375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1095,
+            "right": 1425,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 814.625,
+            "height": 760.625,
+            "left": 1046,
+            "right": 1426,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.223022762345679,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 814.625,
+            "height": 760.625,
+            "left": 1046,
+            "right": 1426,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"message-count\"]": {
+              "attributes": {
+                "data-ia-role": "message-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "3",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"message-state-title\"]": {
+              "attributes": {
+                "data-ia-role": "message-state-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Visible evidence captured",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"message-state-detail\"]": {
+              "attributes": {
+                "data-ia-role": "message-state-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Text fragments are local evidence only; exact identity and sender ownership remain unresolved.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"dm-live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "dm-live-badge",
+                "data-tone": "warning"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "locked",
+              "tone": "warning",
+              "visible": true
+            }
+          },
+          "status": "Ready. Captured 3 visible text fragments without opening a menu.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 177.984375,
+            "height": 41.59375,
+            "left": 541,
+            "right": 1000.359375,
+            "top": 136.390625,
+            "width": 459.359375
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Read visible thread",
+              "width": 151.40625
+            },
+            {
+              "height": 44,
+              "label": "Download evidence",
+              "width": 155.125
+            },
+            {
+              "height": 44,
+              "label": "Arm exact message",
+              "width": 153.515625
+            }
+          ],
+          "viewTitle": "Message evidence",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "messages-exact-target-ready",
+      "sha256": "276cf8e8654e1aa8993a912c204c542a3b26759a2f509c2efa9386112234ee58",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-messages-ready",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "messages",
+        "targetSelector": "[data-message-id=\"sent-1\"]",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Message sent-1",
+            "selector": "[data-ia-role=\"dm-live-title\"]"
+          },
+          {
+            "equals": "ready",
+            "tone": "warning",
+            "selector": "[data-ia-role=\"dm-live-badge\"]"
+          },
+          {
+            "includes": [
+              "Exactly one rendered sent-message identity matches",
+              "does not open a menu"
+            ],
+            "selector": "[data-ia-role=\"dm-live-detail\"]"
+          },
+          {
+            "disabled": false,
+            "selector": "[data-ia-action=\"arm-dm-live\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "messages",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": null,
+          "bodyWidth": 1440,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1440,
+          "dock": "left",
+          "footer": {
+            "bottom": 816.6875,
+            "height": 69.171875,
+            "left": 63,
+            "right": 393,
+            "top": 747.515625,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 63,
+            "right": 393,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 817.6875,
+            "height": 763.6875,
+            "left": 14,
+            "right": 394,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.2239207175925926,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 817.6875,
+            "height": 763.6875,
+            "left": 14,
+            "right": 394,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"dm-live-title\"]": {
+              "attributes": {
+                "data-ia-role": "dm-live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Message sent-1",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"dm-live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "dm-live-badge",
+                "data-tone": "warning"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "ready",
+              "tone": "warning",
+              "visible": true
+            },
+            "[data-ia-role=\"dm-live-detail\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "dm-live-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Exactly one rendered sent-message identity matches. Arming does not open a menu or remove anything.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"arm-dm-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-dm-live"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "text": "Arm one Unsend",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 237.578125,
+            "height": 41.59375,
+            "left": 683.640625,
+            "right": 1143,
+            "top": 195.984375,
+            "width": 459.359375
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Read visible thread",
+              "width": 151.40625
+            },
+            {
+              "height": 44,
+              "label": "Download evidence",
+              "width": 155.125
+            },
+            {
+              "height": 44,
+              "label": "Arm one Unsend",
+              "width": 136.078125
+            },
+            {
+              "height": 44,
+              "label": "Cancel intent",
+              "width": 112.21875
+            }
+          ],
+          "viewTitle": "Message evidence",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "messages-wrong-conversation",
+      "sha256": "eaa175f699defbcb56560674bb832f09d0732c971414401869304df6cc2dab38",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-messages-wrong",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "messages",
+        "targetSelector": "[data-message-id=\"sent-1\"]",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Message sent-1",
+            "selector": "[data-ia-role=\"dm-live-title\"]"
+          },
+          {
+            "equals": "open message",
+            "tone": "danger",
+            "selector": "[data-ia-role=\"dm-live-badge\"]"
+          },
+          {
+            "includes": [
+              "Open the exact conversation"
+            ],
+            "selector": "[data-ia-role=\"dm-live-detail\"]"
+          },
+          {
+            "disabled": true,
+            "selector": "[data-ia-action=\"arm-dm-live\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "messages",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": null,
+          "bodyWidth": 1440,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1440,
+          "dock": "left",
+          "footer": {
+            "bottom": 799.296875,
+            "height": 69.171875,
+            "left": 63,
+            "right": 393,
+            "top": 730.125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 63,
+            "right": 393,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 800.296875,
+            "height": 746.296875,
+            "left": 14,
+            "right": 394,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.21882161458333332,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 800.296875,
+            "height": 746.296875,
+            "left": 14,
+            "right": 394,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"dm-live-title\"]": {
+              "attributes": {
+                "data-ia-role": "dm-live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Message sent-1",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"dm-live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "dm-live-badge",
+                "data-tone": "danger"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "open message",
+              "tone": "danger",
+              "visible": true
+            },
+            "[data-ia-role=\"dm-live-detail\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "dm-live-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Open the exact conversation and keep sent message sent-1 rendered before arming.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"arm-dm-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-dm-live",
+                "disabled": ""
+              },
+              "disabled": true,
+              "exists": true,
+              "hidden": false,
+              "text": "Arm one Unsend",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 237.578125,
+            "height": 41.59375,
+            "left": 683.640625,
+            "right": 1143,
+            "top": 195.984375,
+            "width": 459.359375
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Read visible thread",
+              "width": 151.40625
+            },
+            {
+              "height": 44,
+              "label": "Download evidence",
+              "width": 155.125
+            },
+            {
+              "height": 44,
+              "label": "Arm one Unsend",
+              "width": 136.078125
+            },
+            {
+              "height": 44,
+              "label": "Cancel intent",
+              "width": 112.21875
+            }
+          ],
+          "viewTitle": "Message evidence",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "messages-armed-countdown",
+      "sha256": "8bd6744d0527b6f042c75d31ebcec9dcd08b4673f2fab6dd5deb7c13ac605e7f",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-messages-armed",
+        "open": true,
+        "pairing": "action",
+        "presentation": "strip",
+        "queue": "loaded",
+        "section": "messages",
+        "targetSelector": "[data-message-id=\"sent-1\"]",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Message sent-1",
+            "selector": "[data-ia-role=\"dm-live-title\"]"
+          },
+          {
+            "equals": "armed",
+            "tone": "danger",
+            "selector": "[data-ia-role=\"dm-live-badge\"]"
+          },
+          {
+            "hidden": false,
+            "includes": [
+              "s remaining"
+            ],
+            "selector": "[data-ia-role=\"dm-live-countdown\"]"
+          },
+          {
+            "disabled": true,
+            "selector": "[data-ia-action=\"arm-dm-live\"]"
+          },
+          {
+            "equals": "message sent-1",
+            "selector": "[data-ia-role=\"collision-target\"]"
+          },
+          {
+            "equals": "One-use arm active · page controls remain untouched",
+            "selector": "[data-ia-role=\"collision-state\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": null,
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1440,
+          "collision": "active",
+          "collisionPlacement": "safe",
+          "documentWidth": 1440,
+          "dock": "right",
+          "footer": null,
+          "header": null,
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": null,
+          "panelAreaShare": 0.01654320987654321,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 886,
+            "height": 67,
+            "left": 260,
+            "right": 580,
+            "top": 819,
+            "width": 320
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"dm-live-title\"]": {
+              "attributes": {
+                "data-ia-role": "dm-live-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Message sent-1",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-role=\"dm-live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "dm-live-badge",
+                "data-tone": "danger"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "armed",
+              "tone": "danger",
+              "visible": false
+            },
+            "[data-ia-role=\"dm-live-countdown\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "dm-live-countdown"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "90s remaining",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-action=\"arm-dm-live\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "arm-dm-live",
+                "disabled": ""
+              },
+              "disabled": true,
+              "exists": true,
+              "hidden": false,
+              "text": "One message armed",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-role=\"collision-target\"]": {
+              "attributes": {
+                "data-ia-role": "collision-target"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "message sent-1",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"collision-state\"]": {
+              "attributes": {
+                "data-ia-role": "collision-state"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "One-use arm active · page controls remain untouched",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": {
+            "bottom": 886,
+            "height": 67,
+            "left": 260,
+            "right": 580,
+            "top": 819,
+            "width": 320
+          },
+          "target": {
+            "bottom": 237.578125,
+            "height": 41.59375,
+            "left": 683.640625,
+            "right": 1143,
+            "top": 195.984375,
+            "width": 459.359375
+          },
+          "theme": "light",
+          "touchTargets": [],
+          "viewTitle": "Message evidence",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "workspace-unpaired",
+      "sha256": "45aaced38566f8340aea1ff05c126d41537ed4a1d2a592e23de07d96cec3ea53",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-workspace",
+        "open": true,
+        "pairing": "none",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "workspace",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Workspace not paired",
+            "selector": "[data-ia-role=\"bridge-title\"]"
+          },
+          {
+            "includes": [
+              "pair the exact PWA tab"
+            ],
+            "selector": "[data-ia-role=\"bridge-detail\"]"
+          },
+          {
+            "equals": "None",
+            "selector": "[data-ia-role=\"bridge-facts\"] div:nth-child(2) dd"
+          },
+          {
+            "attributes": {
+              "aria-disabled": "true"
+            },
+            "selector": "[data-ia-role=\"workspace-link\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "workspace",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 583.875,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 514.703125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 584.875,
+            "height": 530.875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.15565779320987655,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 584.875,
+            "height": 530.875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"bridge-title\"]": {
+              "attributes": {
+                "data-ia-role": "bridge-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Workspace not paired",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bridge-detail\"]": {
+              "attributes": {
+                "data-ia-role": "bridge-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Create a code in PWA Settings, then pair the exact PWA tab from extension setup.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bridge-facts\"] div:nth-child(2) dd": {
+              "attributes": {},
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "None",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"workspace-link\"]": {
+              "attributes": {
+                "class": "ia-link-button",
+                "data-ia-role": "workspace-link",
+                "aria-disabled": "true",
+                "rel": "noreferrer"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Open workspace",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open workspace",
+              "width": 134.796875
+            }
+          ],
+          "viewTitle": "Workspace",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "workspace-read-only",
+      "sha256": "0fd6fa5df9060b41d4555d3dc0c6bfd2be1c36261c452512859c572128718cfa",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-workspace",
+        "open": true,
+        "pairing": "read",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "workspace",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Workspace paired",
+            "selector": "[data-ia-role=\"bridge-title\"]"
+          },
+          {
+            "equals": "read",
+            "selector": "[data-ia-role=\"bridge-facts\"] div:nth-child(2) dd"
+          },
+          {
+            "attributes": {
+              "aria-disabled": null
+            },
+            "selector": "[data-ia-role=\"workspace-link\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "workspace",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 602.71875,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 533.546875,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 603.71875,
+            "height": 549.71875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.16118296682098765,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 603.71875,
+            "height": 549.71875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"bridge-title\"]": {
+              "attributes": {
+                "data-ia-role": "bridge-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Workspace paired",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bridge-facts\"] div:nth-child(2) dd": {
+              "attributes": {},
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "read",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"workspace-link\"]": {
+              "attributes": {
+                "class": "ia-link-button",
+                "data-ia-role": "workspace-link",
+                "rel": "noreferrer",
+                "href": "http://127.0.0.1:4173",
+                "target": "_blank"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Open workspace",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open workspace",
+              "width": 134.796875
+            }
+          ],
+          "viewTitle": "Workspace",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "workspace-action-permission",
+      "sha256": "4ef84fc97f579855e89cf83728b06d89a29dffdad8f9d5eee361c2c708e28494",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-workspace",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "workspace",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Workspace paired",
+            "selector": "[data-ia-role=\"bridge-title\"]"
+          },
+          {
+            "equals": "read + action",
+            "selector": "[data-ia-role=\"bridge-facts\"] div:nth-child(2) dd"
+          },
+          {
+            "attributes": {
+              "aria-disabled": null
+            },
+            "selector": "[data-ia-role=\"workspace-link\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "workspace",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 602.71875,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 533.546875,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 603.71875,
+            "height": 549.71875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.16118296682098765,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 603.71875,
+            "height": 549.71875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"bridge-title\"]": {
+              "attributes": {
+                "data-ia-role": "bridge-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Workspace paired",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bridge-facts\"] div:nth-child(2) dd": {
+              "attributes": {},
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "read + action",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"workspace-link\"]": {
+              "attributes": {
+                "class": "ia-link-button",
+                "data-ia-role": "workspace-link",
+                "rel": "noreferrer",
+                "href": "http://127.0.0.1:4173",
+                "target": "_blank"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Open workspace",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open workspace",
+              "width": 134.796875
+            }
+          ],
+          "viewTitle": "Workspace",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "native-dialog-coexistence",
+      "sha256": "2cd636a5f9074945b7b0a7ddb16d920c92cde9f91e775c476e482d2fc3f5fe16",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-native-dialog",
+        "open": true,
+        "pairing": "action",
+        "presentation": "strip",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".fixture-native-surface",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "armed",
+            "tone": "danger",
+            "selector": "[data-ia-role=\"live-badge\"]"
+          },
+          {
+            "equals": "@demo_creator",
+            "selector": "[data-ia-role=\"collision-target\"]"
+          },
+          {
+            "equals": "Instagram action surface visible · overlay controls suspended",
+            "selector": "[data-ia-role=\"collision-state\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": null,
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "active",
+          "collisionPlacement": "safe",
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": null,
+          "header": null,
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": null,
+          "panelAreaShare": 0.01654320987654321,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 886,
+            "height": 67,
+            "left": 260,
+            "right": 580,
+            "top": 819,
+            "width": 320
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"live-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "live-badge",
+                "data-tone": "danger"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "armed",
+              "tone": "danger",
+              "visible": false
+            },
+            "[data-ia-role=\"collision-target\"]": {
+              "attributes": {
+                "data-ia-role": "collision-target"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "@demo_creator",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"collision-state\"]": {
+              "attributes": {
+                "data-ia-role": "collision-state"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Instagram action surface visible · overlay controls suspended",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": {
+            "bottom": 886,
+            "height": 67,
+            "left": 260,
+            "right": 580,
+            "top": 819,
+            "width": 320
+          },
+          "target": {
+            "bottom": 290.59375,
+            "height": 110.59375,
+            "left": 512.5,
+            "right": 912.5,
+            "top": 180,
+            "width": 400
+          },
+          "theme": "light",
+          "touchTargets": [],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "session-expired",
+      "sha256": "674d81ca0012b0a0f214a958f0fc90653658e76b69168f40c6e780b045d383ae",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-session-expired",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "includes": [
+              "Login required",
+              "Sign in manually before inspecting again"
+            ],
+            "selector": "[data-ia-role=\"now-content\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 718.171875,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 649,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 719.171875,
+            "height": 665.171875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.19503496334876544,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 719.171875,
+            "height": 665.171875,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"now-content\"]": {
+              "attributes": {
+                "data-ia-role": "now-content"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Login requiredSign in manually before inspecting again.IGNo exact target on this routeInstagram contextloginRouteloginQueueNext: @demo_creatorNext safe stepRefresh page contextInspection remains available; account and message actions stay unavailable.Refresh page contextObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh page context",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "session-challenge",
+      "sha256": "bf99ec6af7d4461b512df225cdffa19a84f172b3da13087c992d6cfd699c7bb6",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-session-challenge",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "includes": [
+              "Challenge detected",
+              "Resolve Instagram’s challenge manually"
+            ],
+            "selector": "[data-ia-role=\"now-content\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 735.5625,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 666.390625,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 736.5625,
+            "height": 682.5625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.2001340663580247,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 736.5625,
+            "height": 682.5625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"now-content\"]": {
+              "attributes": {
+                "data-ia-role": "now-content"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Challenge detectedResolve Instagram’s challenge manually before continuing.IGNo exact target on this routeInstagram contextfeedRoutefeedQueueNext: @demo_creatorNext safe stepRefresh page contextInspection remains available; account and message actions stay unavailable.Refresh page contextObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh page context",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "session-rate-limited",
+      "sha256": "108a5b7db9092e3fd92aacd46eb7fd86e7c958075a96b4c9ae9582963b5ffeca",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-session-rate-limit",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "includes": [
+              "Rate limit detected",
+              "Wait before doing more work in this session"
+            ],
+            "selector": "[data-ia-role=\"now-content\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 699.328125,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 630.15625,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 700.328125,
+            "height": 646.328125,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.1895097897376543,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 700.328125,
+            "height": 646.328125,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"now-content\"]": {
+              "attributes": {
+                "data-ia-role": "now-content"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "text": "Rate limit detectedWait before doing more work in this session.@@demo_creatorProfile reviewNot resolvedRouteprofileQueueMatches unfollowNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-dark-desktop",
+      "sha256": "9b4cd219df78b074e6b9fb6617b9aadf82616d72e0a7052bb3eacc50fc37dc1d",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 680.15625,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 610.984375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.18388840663580247,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-dark-desktop",
+      "sha256": "a3ce256b5bc6709c4a44595306617af49f7829df9244cf8bfe6822dad5a387de",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 595.609375,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 526.4375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 137.375,
+            "height": 82.375,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 596.609375,
+            "height": 542.609375,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.15909842785493827,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 596.609375,
+            "height": 542.609375,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.734375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-short-laptop",
+      "sha256": "a5467a69718c593cfcb22656274631340180d8d9416d9865ae6add1a1c8e79fe",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "laptop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1265,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1265,
+          "dock": "right",
+          "footer": {
+            "bottom": 680.15625,
+            "height": 69.171875,
+            "left": 920,
+            "right": 1250,
+            "top": 610.984375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 920,
+            "right": 1250,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 720,
+          "innerWidth": 1280,
+          "launcher": null,
+          "panel": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 871,
+            "right": 1251,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.25859307183159724,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 871,
+            "right": 1251,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 715.296875,
+            "right": 813.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-short-laptop-dark",
+      "sha256": "318496bd195da7de2c3af0bfba14936b920989ed97f4b9442219c1abc96faf4d",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "laptop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1265,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1265,
+          "dock": "right",
+          "footer": {
+            "bottom": 595.609375,
+            "height": 69.171875,
+            "left": 920,
+            "right": 1250,
+            "top": 526.4375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 137.375,
+            "height": 82.375,
+            "left": 920,
+            "right": 1250,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 720,
+          "innerWidth": 1280,
+          "launcher": null,
+          "panel": {
+            "bottom": 596.609375,
+            "height": 542.609375,
+            "left": 871,
+            "right": 1251,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.22373216417100694,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 596.609375,
+            "height": 542.609375,
+            "left": 871,
+            "right": 1251,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 715.296875,
+            "right": 813.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.734375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-narrow-tablet",
+      "sha256": "820fc4aebf638189fd41690bdf6a34e2cf76a0983f08c4262fac184336bf84b0",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "tablet",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": null,
+          "bodyWidth": 820,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 820,
+          "dock": "left",
+          "footer": {
+            "bottom": 680.15625,
+            "height": 69.171875,
+            "left": 63,
+            "right": 393,
+            "top": 610.984375,
+            "width": 330
+          },
+          "header": {
+            "bottom": 154.765625,
+            "height": 99.765625,
+            "left": 63,
+            "right": 393,
+            "top": 55,
+            "width": 330
+          },
+          "innerHeight": 900,
+          "innerWidth": 820,
+          "launcher": null,
+          "panel": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 14,
+            "right": 394,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.32292598238482384,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 681.15625,
+            "height": 627.15625,
+            "left": 14,
+            "right": 394,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 117,
+            "height": 31,
+            "left": 530,
+            "right": 628.203125,
+            "top": 86,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 270
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "messages-narrow-tablet-dark",
+      "sha256": "2e34b4fa011dbc3a815192f173a6398cfaedb3f499cc88a7d09dd236e1f919f1",
+      "scenario": {
+        "after": "inspect-messages",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "messages",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "messages",
+        "targetSelector": ".fixture-thread [role=\"row\"]",
+        "theme": "dark",
+        "viewport": "tablet",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "messages",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": "reviewed-target",
+          "bodyWidth": 820,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 820,
+          "dock": "left",
+          "footer": {
+            "bottom": 883,
+            "height": 69.171875,
+            "left": 63,
+            "right": 309,
+            "top": 813.828125,
+            "width": 246
+          },
+          "header": {
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 63,
+            "right": 309,
+            "top": 55,
+            "width": 246
+          },
+          "innerHeight": 900,
+          "innerWidth": 820,
+          "launcher": null,
+          "panel": {
+            "bottom": 882,
+            "height": 828,
+            "left": 14,
+            "right": 310,
+            "top": 54,
+            "width": 296
+          },
+          "panelAreaShare": 0.3320975609756098,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 882,
+            "height": 828,
+            "left": 14,
+            "right": 310,
+            "top": 54,
+            "width": 296
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Captured 3 visible text fragments without opening a menu.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 177.984375,
+            "height": 41.59375,
+            "left": 325,
+            "right": 649,
+            "top": 136.390625,
+            "width": 324
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Read visible thread",
+              "width": 151.40625
+            },
+            {
+              "height": 44,
+              "label": "Download evidence",
+              "width": 155.125
+            },
+            {
+              "height": 44,
+              "label": "Arm exact message",
+              "width": 153.515625
+            }
+          ],
+          "viewTitle": "Message evidence",
+          "width": "compact"
+        }
+      }
+    },
+    {
+      "id": "profile-mobile-portrait",
+      "sha256": "5a025b98473b526ac0abdd96587d26882a01bef17c48956f9f831d257940a984",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "mobile",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 390,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 390,
+          "dock": "right",
+          "footer": {
+            "bottom": 792,
+            "height": 51.78125,
+            "left": 1,
+            "right": 389,
+            "top": 740.21875,
+            "width": 388
+          },
+          "header": {
+            "bottom": 286.453125,
+            "height": 99.765625,
+            "left": 1,
+            "right": 389,
+            "top": 186.6875,
+            "width": 388
+          },
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "launcher": null,
+          "panel": {
+            "bottom": 844,
+            "height": 658.3125,
+            "left": 0,
+            "right": 390,
+            "top": 185.6875,
+            "width": 390
+          },
+          "panelAreaShare": 0.7799911137440758,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 844,
+            "height": 658.3125,
+            "left": 0,
+            "right": 390,
+            "top": 185.6875,
+            "width": 390
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61,
+            "height": 31,
+            "left": 258.796875,
+            "right": 357,
+            "top": 30,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 74.390625
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 74.40625
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 74.390625
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 74.40625
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 74.40625
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 313
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-mobile-portrait-dark",
+      "sha256": "692bcb8626e442517ed6281af8478185a474bf0305203082b37596dffdedf553",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "mobile",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 390,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 390,
+          "dock": "right",
+          "footer": {
+            "bottom": 790,
+            "height": 51.78125,
+            "left": 1,
+            "right": 389,
+            "top": 738.21875,
+            "width": 388
+          },
+          "header": {
+            "bottom": 349.15625,
+            "height": 82.375,
+            "left": 1,
+            "right": 389,
+            "top": 266.78125,
+            "width": 388
+          },
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "launcher": null,
+          "panel": {
+            "bottom": 844,
+            "height": 578.21875,
+            "left": 0,
+            "right": 390,
+            "top": 265.78125,
+            "width": 390
+          },
+          "panelAreaShare": 0.6850933056872038,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 844,
+            "height": 578.21875,
+            "left": 0,
+            "right": 390,
+            "top": 265.78125,
+            "width": 390
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61,
+            "height": 31,
+            "left": 258.796875,
+            "right": 357,
+            "top": 30,
+            "width": 98.203125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 74.390625
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 74.40625
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 74.390625
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 74.40625
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 74.40625
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 71.25
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.734375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-mobile-landscape",
+      "sha256": "646833bf0dc688e7e1e9090fabbbf0e8de5ac1eb4091bb93e2e3ba9d1db219ee",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "landscape",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": null,
+          "bodyWidth": 829,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 829,
+          "dock": "left",
+          "footer": {
+            "bottom": 383,
+            "height": 69.171875,
+            "left": 63,
+            "right": 393,
+            "top": 313.828125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 74,
+            "height": 65,
+            "left": 63,
+            "right": 393,
+            "top": 9,
+            "width": 330
+          },
+          "innerHeight": 390,
+          "innerWidth": 844,
+          "launcher": null,
+          "panel": {
+            "bottom": 382,
+            "height": 374,
+            "left": 14,
+            "right": 394,
+            "top": 8,
+            "width": 380
+          },
+          "panelAreaShare": 0.43176570664722325,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 382,
+            "height": 374,
+            "left": 14,
+            "right": 394,
+            "top": 8,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 665.296875,
+            "right": 763.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 255
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-mobile-landscape-dark",
+      "sha256": "ca06a2160f9c70145e810c9e78f8b1fe4eed1e75a03127f336e3664d69537988",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "landscape",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": null,
+          "bodyWidth": 829,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 829,
+          "dock": "left",
+          "footer": {
+            "bottom": 383,
+            "height": 69.171875,
+            "left": 63,
+            "right": 393,
+            "top": 313.828125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 74,
+            "height": 65,
+            "left": 63,
+            "right": 393,
+            "top": 9,
+            "width": 330
+          },
+          "innerHeight": 390,
+          "innerWidth": 844,
+          "launcher": null,
+          "panel": {
+            "bottom": 382,
+            "height": 374,
+            "left": 14,
+            "right": 394,
+            "top": 8,
+            "width": 380
+          },
+          "panelAreaShare": 0.43176570664722325,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 382,
+            "height": 374,
+            "left": 14,
+            "right": 394,
+            "top": 8,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 665.296875,
+            "right": 763.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.734375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "profile-zoom-200-light",
+      "sha256": "71002b287cb53a2aa407ff3ced36424b3551001dfe78a7417c2bbe4ad41aa9bf",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 2,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": "reviewed-target",
+          "bodyWidth": 713,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 712,
+          "dock": "right",
+          "footer": {
+            "bottom": 443,
+            "height": 86.59375,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 356.40625,
+            "width": 246
+          },
+          "header": {
+            "bottom": 74,
+            "height": 65,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 9,
+            "width": 246
+          },
+          "innerHeight": 450,
+          "innerWidth": 720,
+          "launcher": null,
+          "panel": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "panelAreaShare": 0.3964938271604938,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61.5,
+            "height": 31.5,
+            "left": 258.7890625,
+            "right": 356.984375,
+            "top": 30,
+            "width": 98.1953125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 53.59375,
+              "label": "Refresh no-click inspection",
+              "width": 178.5
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "compact"
+        }
+      }
+    },
+    {
+      "id": "profile-zoom-200-dark",
+      "sha256": "a9355bb91c9ed22fbdf6ea72d55e0f78b7d5d723ce9a44bb5cb9e82e60c7dfb8",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 2,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": "reviewed-target",
+          "bodyWidth": 713,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 712,
+          "dock": "right",
+          "footer": {
+            "bottom": 443,
+            "height": 86.59375,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 356.40625,
+            "width": 246
+          },
+          "header": {
+            "bottom": 74,
+            "height": 65,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 9,
+            "width": 246
+          },
+          "innerHeight": 450,
+          "innerWidth": 720,
+          "launcher": null,
+          "panel": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "panelAreaShare": 0.3964938271604938,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61.5,
+            "height": 31.5,
+            "left": 258.7890625,
+            "right": 356.984375,
+            "top": 30,
+            "width": 98.1953125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 53.59375,
+              "label": "Refresh no-click inspection",
+              "width": 178.5
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "compact"
+        }
+      }
+    },
+    {
+      "id": "queue-zoom-200-light",
+      "sha256": "1c93451fb2ed7d50fff12dad510b011cbf05133fa8521af4a36d79d7609f2cdc",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 2,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": "reviewed-target",
+          "bodyWidth": 713,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 712,
+          "dock": "right",
+          "footer": {
+            "bottom": 443,
+            "height": 86.59375,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 356.40625,
+            "width": 246
+          },
+          "header": {
+            "bottom": 74,
+            "height": 65,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 9,
+            "width": 246
+          },
+          "innerHeight": 450,
+          "innerWidth": 720,
+          "launcher": null,
+          "panel": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "panelAreaShare": 0.3964938271604938,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61.5,
+            "height": 31.5,
+            "left": 258.7890625,
+            "right": 356.984375,
+            "top": 30,
+            "width": 98.1953125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.6484375
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.3359375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.7265625
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.7109375
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "compact"
+        }
+      }
+    },
+    {
+      "id": "queue-zoom-200-dark",
+      "sha256": "9fbe6034b9ca294b3dd38d5ab5c42a86aba90fee37b695f103b9478c510d489e",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "dark",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 2,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": "reviewed-target",
+          "adaptiveWidth": "reviewed-target",
+          "bodyWidth": 713,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 712,
+          "dock": "right",
+          "footer": {
+            "bottom": 443,
+            "height": 86.59375,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 356.40625,
+            "width": 246
+          },
+          "header": {
+            "bottom": 74,
+            "height": 65,
+            "left": 451.5,
+            "right": 697.5,
+            "top": 9,
+            "width": 246
+          },
+          "innerHeight": 450,
+          "innerWidth": 720,
+          "launcher": null,
+          "panel": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "panelAreaShare": 0.3964938271604938,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 442,
+            "height": 434,
+            "left": 402.5,
+            "right": 698.5,
+            "top": 8,
+            "width": 296
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61.5,
+            "height": 31.5,
+            "left": 258.7890625,
+            "right": 356.984375,
+            "top": 30,
+            "width": 98.1953125
+          },
+          "theme": "dark",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 218
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.6484375
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.3359375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.7265625
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.7109375
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "compact"
+        }
+      }
+    },
+    {
+      "id": "profile-forced-colors",
+      "sha256": "22a583511c7568a9bb68230fc710c04ea9d87ce983db001264ed59390a4762d9",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": true,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 681.15625,
+            "height": 69.171875,
+            "left": 1081,
+            "right": 1409,
+            "top": 611.984375,
+            "width": 328
+          },
+          "header": {
+            "bottom": 155.765625,
+            "height": 99.765625,
+            "left": 1081,
+            "right": 1409,
+            "top": 56,
+            "width": 328
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 683.15625,
+            "height": 629.15625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.1844748263888889,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 683.15625,
+            "height": 629.15625,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 268
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "queue-forced-colors",
+      "sha256": "ab97d50551fb1fd34ec1e0e5dbc339deb7eabbb43426676da360f79c90b6280f",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": true,
+        "mode": "qa-profile-following-queue",
+        "open": true,
+        "pairing": "action",
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 596.609375,
+            "height": 69.171875,
+            "left": 1081,
+            "right": 1409,
+            "top": 527.4375,
+            "width": 328
+          },
+          "header": {
+            "bottom": 138.375,
+            "height": 82.375,
+            "left": 1081,
+            "right": 1409,
+            "top": 56,
+            "width": 328
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": null,
+          "panel": {
+            "bottom": 598.609375,
+            "height": 544.609375,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.1596848476080247,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 598.609375,
+            "height": 544.609375,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Now",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Capture",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Queue",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Messages",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "RightLeft",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "CompactStandardWide",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "Match InstagramLightDark",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "ComfortableCompact",
+              "width": 216
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 108.65625
+            },
+            {
+              "height": 44,
+              "label": "Complete",
+              "width": 89.328125
+            },
+            {
+              "height": 44,
+              "label": "Skip",
+              "width": 54.34375
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 137.734375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 173.71875
+            }
+          ],
+          "viewTitle": "Review queue",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "collapsed-desktop",
+      "sha256": "74f927328a8cdce8e521f426671cf11d9061b9c86888cc3996bffd7d2d296542",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": false,
+        "pairing": "action",
+        "presentation": "launcher",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": null,
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": null,
+          "header": null,
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "launcher": {
+            "bottom": 886,
+            "height": 44,
+            "left": 1367,
+            "right": 1411,
+            "top": 842,
+            "width": 44
+          },
+          "panel": null,
+          "panelAreaShare": 0.001493827160493827,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 886,
+            "height": 44,
+            "left": 1367,
+            "right": 1411,
+            "top": 842,
+            "width": 44
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 91,
+            "height": 31,
+            "left": 795.296875,
+            "right": 893.5,
+            "top": 60,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Open Insta AIO sidecar",
+              "width": 44
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "collapsed-mobile",
+      "sha256": "134f51ba68aa389fea823937030db782af940352926f9e519334ef8523d3719d",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "mode": "qa-profile-following-queue",
+        "open": false,
+        "pairing": "action",
+        "presentation": "launcher",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": ".profile button",
+        "theme": "light",
+        "viewport": "mobile",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [],
+        "metrics": {
+          "activeElementSection": null,
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 390,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 390,
+          "dock": "right",
+          "footer": null,
+          "header": null,
+          "innerHeight": 844,
+          "innerWidth": 390,
+          "launcher": {
+            "bottom": 830,
+            "height": 44,
+            "left": 332,
+            "right": 376,
+            "top": 786,
+            "width": 44
+          },
+          "panel": null,
+          "panelAreaShare": 0.005881638109126261,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 830,
+            "height": 44,
+            "left": 332,
+            "right": 376,
+            "top": 786,
+            "width": 44
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {},
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": {
+            "bottom": 61,
+            "height": 31,
+            "left": 258.796875,
+            "right": 357,
+            "top": 30,
+            "width": 98.203125
+          },
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Open Insta AIO sidecar",
+              "width": 44
+            }
+          ],
+          "viewTitle": "Review target",
+          "width": "standard"
+        }
+      }
+    }
+  ],
+  "performance": {
+    "collapsedTaskMs": 4.694,
+    "openTaskMs": 5.742999999999999,
+    "queue": {
+      "durationMs": 25.900000002235174,
+      "renderedItems": 1,
+      "totalOverlayNodes": 234
+    },
+    "routeTransitionMs": 97.79999999701977
+  }
+}

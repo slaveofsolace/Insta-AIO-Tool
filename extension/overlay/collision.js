@@ -85,6 +85,7 @@
     window: targetWindow,
     actionLabels,
     getExecutionState,
+    getReviewedTarget,
     onChange,
     debounceMs = 40,
   }) {
@@ -110,11 +111,23 @@
           width: rect.width,
         };
       });
+      const reviewedTarget = getReviewedTarget?.(state) || null;
+      const reviewedRectangles = visible(reviewedTarget, targetWindow)
+        ? [reviewedTarget.getBoundingClientRect()].map((rect) => ({
+          bottom: rect.bottom,
+          height: rect.height,
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          width: rect.width,
+        }))
+        : [];
       const armed = Boolean(state.accountArm || state.dmArm);
       const next = {
         active: armed || rectangles.length > 0,
         kind: rectangles.length ? 'native-surface' : armed ? 'armed' : null,
         rectangles,
+        reviewedRectangles,
         target: state.accountIntent?.username
           ? `@${state.accountIntent.username}`
           : state.dmIntent?.messageId

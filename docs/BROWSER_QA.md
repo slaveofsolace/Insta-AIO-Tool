@@ -1,6 +1,6 @@
 # Browser QA
 
-Last reviewed: 2026-08-02
+Last reviewed: 2026-08-03
 
 ## Scope and safety boundary
 
@@ -63,7 +63,7 @@ the authenticated Instagram session.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 123 of 123 tests.
+complete repository suite passes 153 of 153 tests.
 
 ## Representative screenshots
 
@@ -88,6 +88,30 @@ and `pnpm run qa:browser:check` to reproduce and hash-check all nine captures.
 Run `pnpm run qa:browser:update` only when intentionally reviewing and accepting
 a visual change. Baselines are platform-specific; macOS and Linux are not
 claimed by the Windows manifest.
+
+Branded Chrome removed command-line `--load-extension` support beginning with
+Chrome 137. The acceptance harness therefore loads the unpacked package through
+the DevTools `Extensions.loadUnpacked` command over `--remote-debugging-pipe`
+with `--enable-unsafe-extension-debugging`. Those switches are confined to the
+disposable QA child/profile; the harness exposes no TCP debugging port and does
+not alter production extension permissions.
+
+## Overlay-specific QA checkpoint
+
+The redesigned Instagram overlay now has a separate 38-scenario harness that
+loads the production-built content-script graph and checks state semantics,
+geometry, target intersection, responsive presentations, accessibility-tree
+names, and bounded performance before comparing screenshots. Its commands are
+`pnpm run qa:overlay:update` and `pnpm run qa:overlay:check`.
+
+All 38 Windows scenarios passed their semantic, geometry, collision,
+accessibility-tree, and performance checks. Every generated image was inspected
+in an agent visual review, the reviewed baseline reproduced through
+`qa:overlay:check`, and the non-updating Windows check is wired into CI. That is
+runtime evidence for the synthetic fixture—not human screen-reader acceptance,
+cross-platform visual proof, persistent-profile acceptance, or authenticated
+Instagram selector acceptance. See [Overlay QA](./OVERLAY_QA.md) for the
+matrix, evidence layout, measured results, and explicit nonclaims.
 
 ## Design judgment
 

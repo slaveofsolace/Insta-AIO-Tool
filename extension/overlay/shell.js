@@ -46,6 +46,7 @@
 
     :host([data-width="compact"]) { --ia-panel-width: 336px; }
     :host([data-width="wide"]) { --ia-panel-width: 480px; }
+    :host([data-adaptive-width="reviewed-target"]) { --ia-panel-width: 296px; }
     :host([data-dock="left"]) {
       --ia-panel-inline-start: max(14px, env(safe-area-inset-left));
       --ia-panel-inline-end: auto;

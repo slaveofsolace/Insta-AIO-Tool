@@ -337,6 +337,44 @@
     return { ...resolved.observation, resolutionToken: token };
   }
 
+  function reviewedTargetElement({ accountIntent = null, dmIntent = null } = {}) {
+    if (dmIntent) {
+      const exact = resolveReviewedDmItem(dmIntent).candidate?.row || null;
+      if (exact) return exact;
+      const scope = document.querySelector('[data-pagelet="IGDMessagesList"]')
+        || document.querySelector('main');
+      const identitySelector = DM_MESSAGE_ID_ATTRIBUTES
+        .map((attribute) => `[${attribute}]`)
+        .join(', ');
+      const rows = new Set(
+        [...(scope?.querySelectorAll?.(identitySelector) || [])]
+          .filter((element) => visibleText(element))
+          .filter((element) => {
+            const row = element.closest?.('[role="row"], [role="listitem"]') || element;
+            return (dmMessageId(element) || dmMessageId(row))?.value === String(dmIntent.messageId || '');
+          })
+          .map((element) => element.closest?.('[role="row"], [role="listitem"]') || element),
+      );
+      return rows.size === 1 ? [...rows][0] : null;
+    }
+    if (pageKind() === 'messages') {
+      const scope = document.querySelector('[data-pagelet="IGDMessagesList"]')
+        || document.querySelector('main');
+      const row = [...(scope?.querySelectorAll?.('[role="row"], [role="listitem"]') || [])]
+        .find((element) => visibleText(element));
+      if (row) return row;
+    }
+    const usernames = [...new Set([
+      normalizeUsername(accountIntent?.username),
+      normalizeUsername(location.pathname),
+    ].filter(Boolean))];
+    for (const username of usernames) {
+      const relationship = relationshipFromButtons(username);
+      if (!relationship.ambiguous && relationship.control) return relationship.control;
+    }
+    return null;
+  }
+
   function dmResolutionMatches(resolution, item) {
     if (
       !resolution
@@ -965,6 +1003,7 @@
     inspectSession,
     inspectVisibleMessages,
     normalizeUsername,
+    reviewedTargetElement,
   });
 
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {

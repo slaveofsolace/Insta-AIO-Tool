@@ -160,9 +160,20 @@ Implemented:
 - Truthful empty-message copy and assembled-markup regression coverage
 - Production sidecar keyboard/accessibility-tree acceptance in isolated Chromium
 - Real unpacked-extension read-only pairing in disposable Chrome for Testing
+- Modular quiet-operator overlay source, V1-to-V2 preferences, bounded SPA
+  observation, target-aware collision handling, and a reviewed 38-scenario
+  Windows overlay baseline with a non-updating CI gate
 
 The dated walkthrough matrix and screenshots are in
 [`docs/BROWSER_QA.md`](./BROWSER_QA.md).
+The separate post-redesign overlay matrix and its evidence boundary are
+in [`docs/OVERLAY_QA.md`](./OVERLAY_QA.md).
+
+On 2026-08-03 the frozen install, assemble, 153-test repository suite,
+production extension fixture acceptance, real Chrome pairing, nine-state PWA
+baseline check, 38-state overlay update/check, ZIP benchmark, and whitespace
+validation all passed in one guarded recovery-worktree run. No authenticated
+Instagram mutation was part of that matrix.
 
 Pending acceptance:
 
@@ -171,7 +182,8 @@ Pending acceptance:
 - PWA installation/pairing confirmation in the operator's persistent Chrome profile
 - Native screenshot baselines for any additional release platform where they will be gated
 
-These pending checks prevent a claim of complete browser visual acceptance.
+These pending checks prevent a claim of complete target-environment visual,
+accessibility, or authenticated-selector acceptance.
 
 ## Security review
 
@@ -190,3 +202,7 @@ suite, companion source validation,
 the unpacked/ZIP extension build, and the nine-image Windows browser baseline
 check pass. Authenticated account-profile DOM structure has been inspected
 read-only; no authenticated account or DM mutation has been run.
+
+Those recorded green results predate the uncommitted overlay recovery QA work.
+They remain valid historical evidence for their original revision, but do not
+verify the redesigned overlay or its new screenshot matrix.

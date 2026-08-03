@@ -27,6 +27,27 @@
     .fixture-thread header h1 { margin: 0; font-size: 16px; }
     .fixture-thread [role="row"] { max-width: 72%; margin: 18px; padding: 11px 14px; border-radius: 16px; background: #efefef; }
     .fixture-thread [data-mine] { margin-left: auto; background: #3e8df5; color: #fff; }
+    .fixture-live-confirmation, .fixture-native-surface { position: fixed; z-index: 20; top: 180px; left: 50%; width: min(400px, calc(100vw - 32px)); transform: translateX(-50%); padding: 20px; border: 1px solid #bbb; border-radius: 12px; background: #fff; box-shadow: 0 18px 50px rgba(0,0,0,.24); }
+    body[data-fixture-theme="dark"] { background: #000; color: #f5f5f5; }
+    body[data-fixture-theme="dark"] .instagram-nav,
+    body[data-fixture-theme="dark"] .fixture-dialog,
+    body[data-fixture-theme="dark"] .fixture-thread,
+    body[data-fixture-theme="dark"] .fixture-live-confirmation,
+    body[data-fixture-theme="dark"] .fixture-native-surface { border-color: #363636; background: #121212; color: #f5f5f5; }
+    body[data-fixture-theme="dark"] .profile button,
+    body[data-fixture-theme="dark"] .fixture-thread [role="row"] { background: #262626; color: #f5f5f5; }
+    body[data-fixture-theme="dark"] .fixture-thread [data-mine] { background: #1769aa; }
+    body[data-fixture-theme="dark"] .fixture-dialog a { color: #f5f5f5; }
+    body[data-fixture-theme="dark"] .post { background: #262626; }
+    @media (max-width: 760px) {
+      .instagram-shell { grid-template-columns: 1fr; }
+      .instagram-nav { display: none; }
+      main { width: 100%; padding: 28px 18px; }
+      .profile { grid-template-columns: 80px 1fr; gap: 18px; }
+      .avatar { width: 76px; height: 76px; }
+      .stats { gap: 12px; font-size: 12px; }
+      .fixture-dialog { right: 12px; bottom: 12px; left: 12px; width: auto; }
+    }
   </style>
 </head>
 <body>
@@ -51,16 +72,57 @@
     <a href="/charlie.studio/">charlie.studio</a>
   </section>
 
-  <script>
+  <script nonce="insta-aio-overlay-qa">
+    const FixtureNativeDate = Date;
+    const fixtureClockStartedAt = FixtureNativeDate.now();
+    const fixtureClockOrigin = FixtureNativeDate.parse('2026-08-02T17:00:00.000Z');
+    class FixtureDate extends FixtureNativeDate {
+      constructor(...argumentsList) {
+        super(...(argumentsList.length
+          ? argumentsList
+          : [fixtureClockOrigin + (FixtureNativeDate.now() - fixtureClockStartedAt)]));
+      }
+
+      static now() {
+        return fixtureClockOrigin + (FixtureNativeDate.now() - fixtureClockStartedAt);
+      }
+    }
+    globalThis.Date = FixtureDate;
+
     const fixtureSearch = new URLSearchParams(location.search);
     const fixtureMode = fixtureSearch.get('mode');
+    const fixtureTheme = fixtureSearch.get('theme') === 'dark' ? 'dark' : 'light';
+    document.body.dataset.fixtureTheme = fixtureTheme;
     const fixtureLiveMode = fixtureMode === 'live-follow' || fixtureMode === 'live-unfollow';
     const fixtureLiveDmMode = fixtureMode === 'messages-live';
-    const fixtureExactDmMode = fixtureMode === 'messages-exact' || fixtureLiveDmMode;
-    if (fixtureLiveMode) {
+    const fixtureAccountIntentMode = fixtureLiveMode || [
+      'qa-account-ready',
+      'qa-account-armed',
+      'qa-account-expiring',
+      'qa-native-dialog',
+    ].includes(fixtureMode);
+    const fixtureDmIntentMode = [
+      'qa-messages-ready',
+      'qa-messages-wrong',
+      'qa-messages-armed',
+    ].includes(fixtureMode);
+    const fixtureExactDmMode = fixtureMode === 'messages-exact'
+      || fixtureLiveDmMode
+      || fixtureDmIntentMode;
+    const fixtureMessageMode = fixtureMode === 'messages' || fixtureExactDmMode;
+    const fixtureListMode = ['qa-followers-first', 'qa-following-repeat'].includes(fixtureMode);
+    if (fixtureLiveMode || fixtureAccountIntentMode || fixtureMessageMode || (
+      fixtureMode?.startsWith('qa-') && !fixtureListMode
+    )) {
       document.querySelector('.fixture-dialog').hidden = true;
     }
-    if (fixtureMode === 'messages' || fixtureExactDmMode) {
+    if (fixtureListMode) {
+      const listType = fixtureMode === 'qa-followers-first' ? 'Followers' : 'Following';
+      const dialog = document.querySelector('.fixture-dialog');
+      dialog.setAttribute('aria-label', listType);
+      dialog.querySelector('h2').textContent = listType;
+    }
+    if (fixtureMessageMode) {
       history.replaceState({}, '', fixtureExactDmMode ? '/direct/t/123/' : '/direct/t/fixture_conversation/');
       document.querySelector('.fixture-dialog').hidden = true;
       document.querySelector('main').innerHTML = `
@@ -78,8 +140,16 @@
     }
     const fixtureProfileButton = document.querySelector('.profile button');
     globalThis.fixtureClickCount = 0;
-    if (fixtureMode === 'live-follow') {
+    if (fixtureProfileButton && ['live-follow', 'qa-profile-not-following'].includes(fixtureMode)) {
       fixtureProfileButton.textContent = 'Follow';
+    }
+    if (fixtureMode === 'qa-profile-ambiguous') {
+      const duplicate = document.createElement('button');
+      duplicate.type = 'button';
+      duplicate.textContent = 'Follow';
+      fixtureProfileButton.parentElement.append(duplicate);
+    }
+    if (fixtureMode === 'live-follow') {
       fixtureProfileButton.addEventListener('click', () => {
         globalThis.fixtureClickCount += 1;
         fixtureProfileButton.textContent = 'Following';
@@ -143,8 +213,40 @@
         timestamp: 1700000000100,
       };
     }
+    if (fixtureExactDmMode && !globalThis.fixtureDmItem) {
+      const targetRow = document.querySelector('[data-message-id="sent-1"]');
+      const targetText = targetRow.querySelector('[data-insta-aio-message-content]').textContent.trim();
+      let targetHash = 0x811c9dc5;
+      for (let index = 0; index < targetText.length; index += 1) {
+        targetHash ^= targetText.charCodeAt(index);
+        targetHash = Math.imul(targetHash, 0x01000193);
+      }
+      globalThis.fixtureDmItem = {
+        conversationId: 'inbox/studio_friend_123',
+        contentDigest: (targetHash >>> 0).toString(16).padStart(8, '0'),
+        messageId: 'sent-1',
+        sentByMe: true,
+        timestamp: 1700000000100,
+      };
+    }
+    if (fixtureMode === 'qa-session-expired') {
+      history.replaceState({}, '', '/accounts/login/');
+      const input = document.createElement('input');
+      input.name = 'username';
+      input.setAttribute('aria-label', 'Instagram username');
+      document.querySelector('main').prepend(input);
+    }
+    if (fixtureMode === 'qa-session-challenge') {
+      history.replaceState({}, '', '/challenge/');
+    }
+    if (fixtureMode === 'qa-session-rate-limit') {
+      document.querySelector('main').append(' Please wait a few minutes before you try again.');
+    }
+    if (fixtureMode === 'qa-session-action-blocked') {
+      document.querySelector('main').append(' We restrict certain activity to protect our community.');
+    }
     const fixtureAction = fixtureMode === 'live-follow' ? 'follow' : 'unfollow';
-    const fixtureIntent = fixtureLiveMode ? {
+    const fixtureIntent = fixtureAccountIntentMode ? {
       action: fixtureAction,
       confirmedAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
@@ -152,27 +254,106 @@
       jobId: 'fixture-live-job-1',
       username: 'demo_creator',
     } : null;
+    const fixtureDmIntent = fixtureDmIntentMode ? {
+      armCode: 'FIXTURE7',
+      confirmedAt: new Date().toISOString(),
+      contentDigest: globalThis.fixtureDmItem.contentDigest,
+      conversationId: fixtureMode === 'qa-messages-wrong'
+        ? 'inbox/not_this_thread'
+        : globalThis.fixtureDmItem.conversationId,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      itemId: 'fixture-dm-item-1',
+      jobId: 'fixture-dm-job-1',
+      messageId: globalThis.fixtureDmItem.messageId,
+      timestamp: globalThis.fixtureDmItem.timestamp,
+    } : null;
+    const fixturePairingMode = fixtureSearch.get('pairing') || 'action';
+    const fixturePairings = fixturePairingMode === 'none' ? [] : [{
+      origin: 'http://127.0.0.1:4173',
+      permissions: fixturePairingMode === 'read' ? ['read'] : ['read', 'action'],
+      pairedAt: '2026-07-31T12:00:00.000Z',
+    }];
+    const fixtureSection = ['now', 'capture', 'queue', 'messages', 'workspace']
+      .includes(fixtureSearch.get('section'))
+      ? fixtureSearch.get('section')
+      : 'now';
+    const fixturePreferences = fixtureSearch.has('open') || fixtureSearch.has('section')
+      ? {
+        schemaVersion: 2,
+        open: fixtureSearch.get('open') !== 'false',
+        section: fixtureSection,
+        dock: fixtureSearch.get('dock') === 'left' ? 'left' : 'right',
+        width: ['compact', 'standard', 'wide'].includes(fixtureSearch.get('width'))
+          ? fixtureSearch.get('width')
+          : 'standard',
+        theme: fixtureTheme,
+        density: fixtureSearch.get('density') === 'compact' ? 'compact' : 'comfortable',
+        firstRunComplete: true,
+      }
+      : null;
+    const fixtureQueueUsername = fixtureMode === 'qa-profile-not-following'
+      ? 'someone_else'
+      : 'demo_creator';
+    const fixtureQueue = fixtureSearch.get('queue') === 'none' ? [] : [{
+      id: 'fixture-queue-1',
+      account: { username: fixtureQueueUsername, displayName: 'Demo Creator', source: 'fixture' },
+      action: fixtureAction,
+      status: 'ready',
+      reason: 'fixture review',
+      scheduledFor: '2026-07-31T12:00:00.000Z',
+    }];
+    const fixtureAccountArm = ['qa-account-armed', 'qa-native-dialog', 'qa-account-expiring']
+      .includes(fixtureMode)
+      ? {
+        action: fixtureAction,
+        armedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + (fixtureMode === 'qa-account-expiring' ? 700 : 90_000)).toISOString(),
+        itemId: fixtureIntent.itemId,
+        jobId: fixtureIntent.jobId,
+        username: fixtureIntent.username,
+      }
+      : null;
+    const fixtureDmArm = fixtureMode === 'qa-messages-armed' ? {
+      armedAt: new Date().toISOString(),
+      conversationId: fixtureDmIntent.conversationId,
+      expiresAt: new Date(Date.now() + 90_000).toISOString(),
+      itemId: fixtureDmIntent.itemId,
+      jobId: fixtureDmIntent.jobId,
+      messageId: fixtureDmIntent.messageId,
+    } : null;
     const fixtureStorage = {
-      bridgePairings: [{
-        origin: 'http://127.0.0.1:4173',
-        permissions: ['read', 'action'],
-        pairedAt: '2026-07-31T12:00:00.000Z',
-      }],
+      bridgePairings: fixturePairings,
       pendingJobs: [],
       pendingLiveIntent: fixtureIntent,
-      liveArm: null,
+      pendingDmIntent: fixtureDmIntent,
+      liveArm: fixtureAccountArm,
+      dmArm: fixtureDmArm,
+      ...(fixturePreferences ? { instaAioOverlayPreferencesV2: fixturePreferences } : {}),
+      ...(fixtureMode === 'qa-following-repeat' ? {
+        instaAioOverlayCaptureDraftV1: {
+          schemaVersion: 1,
+          kind: 'insta-aio-visible-list',
+          listType: 'following',
+          capturedAt: '2026-07-31T12:00:00.000Z',
+          following: [
+            { username: 'alpha.friend', displayName: '', source: 'extension-visible-dom' },
+            { username: 'older_account', displayName: '', source: 'extension-visible-dom' },
+          ],
+        },
+      } : {}),
       instaAioOverlayManualQueueV1: {
         importedAt: '2026-07-31T12:00:00.000Z',
-        queue: [{
-          id: 'fixture-queue-1',
-          account: { username: 'demo_creator', displayName: 'Demo Creator', source: 'fixture' },
-          action: fixtureAction,
-          status: 'ready',
-          reason: 'fixture review',
-          scheduledFor: '2026-07-31T12:00:00.000Z',
-        }],
+        queue: fixtureQueue,
       },
     };
+    globalThis.fixtureStorage = fixtureStorage;
+    if (fixtureMode === 'qa-native-dialog') {
+      const dialog = document.createElement('section');
+      dialog.className = 'fixture-native-surface';
+      dialog.setAttribute('role', 'dialog');
+      dialog.innerHTML = '<p>Unfollow demo_creator?</p><button type="button">Unfollow</button>';
+      document.body.append(dialog);
+    }
     const storageListeners = [];
     const runtimeListeners = [];
     if (fixtureSearch.get('shadow') !== 'closed') {
@@ -187,10 +368,13 @@
           if (request.kind === 'insta-aio-overlay-state') {
             callback({ state: {
               controlledAccountActionsAvailable: true,
+              controlledDmUnsendAvailable: true,
+              dmArm: fixtureStorage.dmArm,
               extensionVersion: '0.4.0',
-              liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
+              liveExecutionEnabled: Boolean(fixtureStorage.liveArm || fixtureStorage.dmArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
+              pendingDmIntent: fixtureStorage.pendingDmIntent,
               pendingLiveIntent: fixtureStorage.pendingLiveIntent,
               recentRuns: [{
                 kind: 'insta-aio-reviewed-action-job',
@@ -220,10 +404,13 @@
             };
             callback({ state: {
               controlledAccountActionsAvailable: true,
+              controlledDmUnsendAvailable: true,
+              dmArm: fixtureStorage.dmArm,
               extensionVersion: '0.4.0',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
+              pendingDmIntent: fixtureStorage.pendingDmIntent,
               pendingLiveIntent: fixtureStorage.pendingLiveIntent,
               recentRuns: [],
             } });
@@ -234,11 +421,59 @@
             fixtureStorage.liveArm = null;
             callback({ state: {
               controlledAccountActionsAvailable: true,
+              controlledDmUnsendAvailable: true,
+              dmArm: fixtureStorage.dmArm,
               extensionVersion: '0.4.0',
               liveExecutionEnabled: false,
               liveArm: null,
               pairings: fixtureStorage.bridgePairings,
+              pendingDmIntent: fixtureStorage.pendingDmIntent,
               pendingLiveIntent: null,
+              recentRuns: [],
+            } });
+            return;
+          }
+          if (request.kind === 'insta-aio-arm-dm-unsend') {
+            const expectedPhrase = `ARM UNSEND ${fixtureDmIntent.armCode}`;
+            if (request.phrase !== expectedPhrase) {
+              callback({ error: 'dm-live-arm-phrase-mismatch' });
+              return;
+            }
+            fixtureStorage.dmArm = {
+              armedAt: new Date().toISOString(),
+              conversationId: fixtureDmIntent.conversationId,
+              expiresAt: new Date(Date.now() + 90 * 1000).toISOString(),
+              itemId: fixtureDmIntent.itemId,
+              jobId: fixtureDmIntent.jobId,
+              messageId: fixtureDmIntent.messageId,
+            };
+            callback({ state: {
+              controlledAccountActionsAvailable: true,
+              controlledDmUnsendAvailable: true,
+              dmArm: fixtureStorage.dmArm,
+              extensionVersion: '0.4.0',
+              liveExecutionEnabled: true,
+              liveArm: fixtureStorage.liveArm,
+              pairings: fixtureStorage.bridgePairings,
+              pendingDmIntent: fixtureStorage.pendingDmIntent,
+              pendingLiveIntent: fixtureStorage.pendingLiveIntent,
+              recentRuns: [],
+            } });
+            return;
+          }
+          if (request.kind === 'insta-aio-cancel-dm-unsend') {
+            fixtureStorage.pendingDmIntent = null;
+            fixtureStorage.dmArm = null;
+            callback({ state: {
+              controlledAccountActionsAvailable: true,
+              controlledDmUnsendAvailable: true,
+              dmArm: null,
+              extensionVersion: '0.4.0',
+              liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
+              liveArm: fixtureStorage.liveArm,
+              pairings: fixtureStorage.bridgePairings,
+              pendingDmIntent: null,
+              pendingLiveIntent: fixtureStorage.pendingLiveIntent,
               recentRuns: [],
             } });
             return;
