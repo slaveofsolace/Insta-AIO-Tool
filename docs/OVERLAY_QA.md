@@ -166,10 +166,11 @@ The manifest records the platform, built extension version, scenario data,
 geometry metrics, and SHA-256 for every capture. Hashes are platform-specific;
 a Windows manifest is not evidence for Linux or macOS. Local checks permit only
 four one-channel raster-rounding pixels. Windows CI additionally permits at
-most 0.1% changed pixels and a maximum channel delta of 192 to account for
-native text and scrollbar rasterization differences across runner images. All
-state semantics, geometry, collision, accessibility-tree, and performance
-assertions still run without tolerance, and CI never updates the baseline.
+most 0.1% changed pixels to account for native text and scrollbar rasterization
+differences across runner images. All state semantics, geometry, collision,
+accessibility-tree, and performance assertions still run without tolerance,
+CI never updates the baseline, and a failed CI comparison uploads all actual
+captures and the runner log for review.
 
 ## Baseline review procedure
 

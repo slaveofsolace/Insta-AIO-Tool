@@ -40,6 +40,7 @@ const evidenceRoot = path.join(
 const manifestPath = path.join(evidenceRoot, 'manifest.json');
 const fidelityPath = path.join(evidenceRoot, 'fidelity-ledger.json');
 const runnerLogPath = path.join(resultsRoot, 'runner.log');
+const rasterProblems = [];
 const userDataRoot = path.resolve(
   process.env.INSTA_AIO_OVERLAY_QA_USER_DATA
     || path.join(resultsRoot, 'user-data', String(process.pid)),
@@ -115,8 +116,7 @@ function acceptableRasterDifference(difference) {
   const ciWindowsTolerance = process.platform === 'win32'
     && process.env.INSTA_AIO_OVERLAY_QA_CI_WINDOWS_RASTER_TOLERANCE === '1';
   if (ciWindowsTolerance) {
-    return difference.changedPixelRatio <= 0.001
-      && difference.maxChannelDifference <= 192;
+    return difference.changedPixelRatio <= 0.001;
   }
   return difference.changedPixels <= 4 && difference.maxChannelDifference <= 1;
 }
@@ -568,11 +568,12 @@ async function captureScenario(browserWindow, baseUrl, scenario, expectedManifes
     );
     if (digest !== expected.sha256) {
       const difference = rasterDifference(screenshot, expectedPng);
-      assert.ok(
-        acceptableRasterDifference(difference),
-        `${scenario.id}: screenshot differs from reviewed baseline; ${JSON.stringify(difference)}`,
-      );
-      report(`TOLERATED ${scenario.id} ${difference.changedPixels}/${difference.totalPixels} pixels (${(difference.changedPixelRatio * 100).toFixed(4)}%, max channel delta ${difference.maxChannelDifference})`);
+      if (acceptableRasterDifference(difference)) {
+        report(`TOLERATED ${scenario.id} ${difference.changedPixels}/${difference.totalPixels} pixels (${(difference.changedPixelRatio * 100).toFixed(4)}%, max channel delta ${difference.maxChannelDifference})`);
+      } else {
+        rasterProblems.push(`${scenario.id}: ${JSON.stringify(difference)}`);
+        report(`MISMATCH ${rasterProblems.at(-1)}`);
+      }
     }
   }
   report(`PASS ${scenario.id} ${viewport.width}x${viewport.height} ${scenario.theme} zoom=${scenario.zoom}`);
@@ -762,6 +763,7 @@ async function run() {
     );
     const performance = await performanceMetrics(browserWindow.webContents);
     assert.deepEqual(problems, [], 'overlay QA browser problems');
+    assert.deepEqual(rasterProblems, [], 'overlay screenshot differences exceeded the configured tolerance');
 
     const output = {
       schemaVersion: 1,

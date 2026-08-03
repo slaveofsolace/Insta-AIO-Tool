@@ -60,6 +60,16 @@ jobs:
           # Native text/scrollbar rasterization differs slightly across Windows runner images.
           INSTA_AIO_OVERLAY_QA_CI_WINDOWS_RASTER_TOLERANCE: "1"
         run: pnpm run qa:overlay:check
+      - name: Upload failed overlay comparison evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: overlay-windows-failure-${{ github.sha }}
+          path: |
+            test-results/overlay-qa/actual/win32
+            test-results/overlay-qa/runner.log
+          if-no-files-found: warn
+          retention-days: 3
 
   package-macos:
     runs-on: macos-14
