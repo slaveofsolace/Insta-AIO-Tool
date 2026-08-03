@@ -110,6 +110,7 @@ test('CI checks reviewed overlay baselines on their native Windows platform', ()
   assert.match(workflow, /overlay-windows:/);
   assert.match(workflow, /runs-on: windows-latest/);
   assert.match(workflow, /pnpm run qa:overlay:check/);
+  assert.match(workflow, /INSTA_AIO_OVERLAY_QA_CI_WINDOWS_RASTER_TOLERANCE: "1"/);
   assert.doesNotMatch(workflow, /qa:overlay:update/);
 });
 
@@ -124,6 +125,9 @@ test('overlay QA is loopback-confined and has bounded child-process cleanup', ()
   assert.match(overlayQa, /setWindowOpenHandler/);
   assert.match(overlayQa, /will-navigate/);
   assert.match(overlayQa, /assert\.equal\(queueResult\.renderedItems, 1/);
+  assert.match(overlayQa, /difference\.changedPixelRatio <= 0\.001/);
+  assert.match(overlayQa, /difference\.maxChannelDifference <= 192/);
+  assert.match(overlayQa, /difference\.changedPixels <= 4/);
   assert.match(overlayQaRunner, /const childWatchdogMs = 5 \* 60 \* 1000/);
   assert.match(overlayQaRunner, /child\.kill\('SIGTERM'\)/);
   assert.match(overlayQaRunner, /child\.kill\('SIGKILL'\)/);

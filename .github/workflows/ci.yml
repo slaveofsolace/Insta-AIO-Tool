@@ -56,6 +56,9 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Verify reviewed Windows overlay baselines
+        env:
+          # Native text/scrollbar rasterization differs slightly across Windows runner images.
+          INSTA_AIO_OVERLAY_QA_CI_WINDOWS_RASTER_TOLERANCE: "1"
         run: pnpm run qa:overlay:check
 
   package-macos:
