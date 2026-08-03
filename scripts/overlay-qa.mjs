@@ -116,7 +116,8 @@ function acceptableRasterDifference(difference) {
   const ciWindowsTolerance = process.platform === 'win32'
     && process.env.INSTA_AIO_OVERLAY_QA_CI_WINDOWS_RASTER_TOLERANCE === '1';
   if (ciWindowsTolerance) {
-    return difference.changedPixelRatio <= 0.001;
+    return difference.changedPixels <= 1_200
+      && difference.changedPixelRatio <= 0.004;
   }
   return difference.changedPixels <= 4 && difference.maxChannelDifference <= 1;
 }

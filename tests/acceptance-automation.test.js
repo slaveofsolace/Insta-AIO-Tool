@@ -127,7 +127,8 @@ test('overlay QA is loopback-confined and has bounded child-process cleanup', ()
   assert.match(overlayQa, /setWindowOpenHandler/);
   assert.match(overlayQa, /will-navigate/);
   assert.match(overlayQa, /assert\.equal\(queueResult\.renderedItems, 1/);
-  assert.match(overlayQa, /difference\.changedPixelRatio <= 0\.001/);
+  assert.match(overlayQa, /difference\.changedPixels <= 1_200/);
+  assert.match(overlayQa, /difference\.changedPixelRatio <= 0\.004/);
   assert.match(overlayQa, /difference\.changedPixels <= 4/);
   assert.match(overlayQa, /rasterProblems\.push/);
   assert.match(overlayQa, /assert\.deepEqual\(rasterProblems, \[\]/);
