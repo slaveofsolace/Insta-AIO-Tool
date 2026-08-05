@@ -864,7 +864,7 @@
     if (headerTitle) headerTitle.textContent = 'Instagram Toolbox';
     const headerSubtitle = query('.header p');
     if (headerSubtitle) headerSubtitle.textContent = 'Follower, account, and message tools';
-    setText('mode-label', 'Runs locally in this tab');
+    setText('mode-label', 'Live actions enabled in this tab');
     const nowLead = query('[data-panel="now"] .lead');
     if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
     const messageLead = query('[data-panel="messages"] .lead');
