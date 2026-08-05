@@ -201,4 +201,4 @@ None. The current UI is distinctive and deliberately industrial.
 Automated pixels, geometry, contrast checks, and accessibility trees can reject
 regressions; they cannot accept subjective visual quality or a screen-reader
 experience for the user. Authenticated selector fit and any real Instagram
-mutation remain `Codex-Handoff` items.
+mutation remain `Pending verification` items.

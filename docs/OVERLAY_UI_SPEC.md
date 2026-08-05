@@ -5,7 +5,7 @@
 - Selected direction: **Quiet professional operator panel**
 
 This specification implements the acceptance contract in
-`docs/CODEX_OVERLAY_UI_PERFECTION_PROMPT.md`. It does not reopen the PWA,
+`docs/OVERLAY_UI_BRIEF.md`. It does not reopen the PWA,
 pairing, exact-intent, reservation, one-item, or page-driver architecture.
 
 ## Concept decision
@@ -334,7 +334,7 @@ are explicitly updated and platform-specific.
 The concept score is an engineering selection, not human visual acceptance. The
 final implementation still requires automated matrix evidence and a user review.
 Authenticated persistent-profile fit, human screen-reader acceptance, and any
-real Follow, Unfollow, or Unsend remain `Codex-Handoff` items.
+real Follow, Unfollow, or Unsend remain `Pending verification` items.
 
 Implementation is now tracked in [OVERLAY_UI_IMPLEMENTATION.md](./OVERLAY_UI_IMPLEMENTATION.md).
 The source checkpoint satisfies the modular and static safety design, while the

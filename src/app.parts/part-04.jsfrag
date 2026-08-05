@@ -473,7 +473,7 @@ app.addEventListener('click', async (event) => {
       }
       if (prepared.payload?.armed !== true) {
         const item = job.items[0];
-        bridgeStatus = `Signed intent sent. Open conversation ${item.conversationName} on Instagram, use Field Desk â†’ Messages, arm exact message ${item.messageId} for 90 seconds, then continue here again.`;
+        bridgeStatus = `Signed intent sent. Open conversation ${item.conversationName} on Instagram, use Field Desk → Messages, arm exact message ${item.messageId} for 90 seconds, then continue here again.`;
         render();
         return;
       }

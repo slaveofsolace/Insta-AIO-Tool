@@ -1,15 +1,12 @@
-# Codex Task — Perfect the Insta AIO Overlay UI and Close the Remaining Quality Gaps
+# Overlay UI brief — quality goals for the in-page toolbox
 
-Continue development in:
+This is the design brief the Instagram overlay is built against. It records the
+requirements, the defects that had to be fixed, and the visual direction, so the
+UI can be changed later without relosing the reasoning.
 
-`slaveofsolace/Insta-AIO-Tool`
-
-Active branch and pull request:
-
-- Branch: `codex/issue-3-controlled-account-action`
-- Pull request: `#8 — Add Instagram Field Desk and controlled account/DM actions`
-
-Do **not** replace the repository, reset the branch, reopen completed architecture decisions, merge the pull request, or weaken the existing controlled-action model. Treat the current branch as the working product and perform a bounded refinement pass.
+Ground rules for any refinement pass: do not reopen settled architecture
+decisions, and do not weaken the controlled-action model that keeps live Follow,
+Unfollow, and Unsend behind explicit verification.
 
 ## Mission
 
@@ -672,7 +669,7 @@ Do not execute an authenticated Instagram Follow, Unfollow, or Unsend action as 
 
 A read-only authenticated walkthrough with the sidecar loaded is acceptable only when it does not arm an intent or open a destructive menu. Any step requiring the user’s persistent profile, selected target, or actual message must remain labeled exactly:
 
-`Codex-Handoff`
+`Pending verification`
 
 Provide a bounded operator checklist for that step; do not claim it was completed.
 
@@ -711,7 +708,7 @@ Return:
 9. Visual-regression matrix and evidence paths
 10. Complete test-command results
 11. Security/permission review result
-12. Remaining `Codex-Handoff` items
+12. Remaining `Pending verification` items
 13. Explicit nonclaims
 
 Do not say the overlay is “perfect,” “production ready,” or “fully verified” unless every gate above has direct evidence.

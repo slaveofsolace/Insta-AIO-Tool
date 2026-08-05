@@ -236,5 +236,5 @@ Remaining:
 - Repeat read-only selector acceptance against the intended authenticated
   Instagram account before any operator-selected live action.
 
-Authenticated Follow, Unfollow, or Unsend acceptance remains `Codex-Handoff`.
+Authenticated Follow, Unfollow, or Unsend acceptance remains `Pending verification`.
 No real Instagram mutation belongs to this overlay UI pass.

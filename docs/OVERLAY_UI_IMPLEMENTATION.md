@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 The selected quiet-operator design is implemented on
-`codex/overlay-ui-perfection-recovery` in these local commits:
+the overlay work branch in these local commits:
 
 - `6da61d8` — modular production overlay, ordered packaging, V1-to-V2
   preferences, fixture wiring, and focused contracts

@@ -1,18 +1,50 @@
 # Insta AIO Tool
 
-Insta AIO Tool is a local-first workspace for reviewing Instagram relationship exports, maintaining follow/unfollow queues, and examining message exports. Imported data stays in the browser or desktop app unless the user explicitly exports a file.
+Three Instagram tools in one place, running entirely on your own machine:
 
-The project includes:
+- **Follower checker** — see who doesn't follow you back, who you don't follow back, and who's mutual.
+- **Follow / Unfollow** — work through a list of accounts one at a time, or let the batch runner pace it for you.
+- **DM Unsend** — find the messages *you* sent in a conversation and remove them, one or many.
+
+Your data never leaves your machine. Nothing is uploaded, and there is no account
+or server to sign in to. Instagram exports you import stay in local browser
+storage until you choose to export a file.
+
+## Which version should I install?
+
+| | What you get | Best for |
+|---|---|---|
+| **Userscript** (Tampermonkey) | The three tools in a movable panel on Instagram. Read-only: it inspects and compares, but never clicks Instagram for you. | Fastest start — one click, no build step. |
+| **Browser extension** | Everything above **plus** live Follow, Unfollow, and Unsend, including batch runs with pacing and safety stops. | Actually changing your account. |
+| **Desktop / web app** | The full workspace: import Instagram ZIP exports, snapshots, message search, queue history. | Working with exported data in bulk. |
+
+Most people want the **extension**. Start with [Installation](./docs/INSTALLATION.md).
+
+### Quickest start — userscript
+
+Install [Tampermonkey](https://www.tampermonkey.net/), then open this link and
+select **Install**:
+
+**[Install Insta AIO Toolbox](https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js)**
+
+Reload Instagram and press **Alt + Shift + I**. Updates arrive automatically.
+The userscript inspects and compares only — for live Follow, Unfollow, and
+Unsend, install the extension.
+
+<details>
+<summary>Full feature list</summary>
 
 - An installable progressive web app with offline support
 - Direct, local Instagram ZIP import with a reviewed manifest
 - Relationship snapshots, comparisons, protections, and queue history
 - Message search, sent-message classification, and reviewed unsend jobs
-- Source-specific migrations for Instagram Helper, SimpleInstaBot, and saved follower-checker results
-- A visible Instagram sidecar for capture, manual queue work, and read-only message evidence
-- A signed, origin-paired Manifest V3 extension bridge for reviewed no-click jobs and one-item controlled account actions
-- A preserved read-only Tampermonkey fallback
-- Windows and macOS Electron packaging configuration
+- Migrations for Instagram Helper, SimpleInstaBot, and saved follower-checker results
+- A visible Instagram panel for capture, queue work, and message evidence
+- A signed, origin-paired Manifest V3 extension bridge
+- A read-only Tampermonkey userscript
+- Windows and macOS desktop packaging
+
+</details>
 
 ## Safety model
 
@@ -42,9 +74,12 @@ pnpm test
 pnpm run serve
 ```
 
-Open [http://127.0.0.1:4173](http://127.0.0.1:4173).
+`pnpm run serve` prints the local address to open in your browser. It listens on
+your own machine only and is not reachable from your network.
 
-`pnpm run assemble` materializes the deterministic UI fragments as the ignored `src/app.js` development file.
+`pnpm run assemble` rebuilds `src/app.js` from the UI fragments in
+`src/app.parts/`. That generated file is not committed, so run it after a fresh
+clone or you will get a blank app.
 
 ## Import workflow
 
@@ -124,8 +159,47 @@ operator requests it. It provides:
 - Read-only visible-message evidence plus conditional exact-identity DM dry runs that never open a menu
 - A direct link back to the exact paired PWA origin
 
-Press **Alt + Shift + I** to toggle the sidecar. Follow, Unfollow, and Unsend
-remain locked until their controlled one-item workflows are completed. See
+Press **Alt + Shift + I** to toggle the sidecar.
+
+### All-in-one tools
+
+The sidecar carries the three tools in one place, each on its own tab.
+
+**Follower checker.** Open your Followers or Following dialog and press
+**Scan full list**. The scan auto-scrolls the open dialog and reads every row it
+renders, so it is not limited to the first screen. It reports `complete` only
+when the list actually reaches its end; a truncated scan says so instead of
+silently under-reporting. Capture both lists to get mutuals, not-following-me-back,
+and I-don't-follow-back counts, computed locally.
+
+**Follow / Unfollow bot.** In the Follow / Unfollow tab, pick a target source
+(either checker result, or the manual queue), an action, and how many to run.
+Each target is opened, re-verified, and acted on one at a time.
+
+**Mass DM unsend.** Open a conversation and press **Scan my sent messages**. Only
+messages you sent that are exactly identifiable are listed. Choose a scope, then
+unsend. Every message is re-verified by id, timestamp, and content digest
+immediately before removal. Unsending is permanent.
+
+### Batch pacing and safety
+
+Batch runs reuse the audited one-item path: each item still runs a complete
+inspect, exact-resolution, reserve, act, and record cycle. A batch arm replaces
+per-item phrase typing; it is consumed by the run it authorises and cannot be
+replayed.
+
+- Randomised delays between items, plus a longer rest every 20 items
+- Configurable daily caps and delays under **Settings → Batch pacing**, clamped
+  to hard ceilings (400 account actions/day, 300 unsends/day, 1.5 s minimum delay)
+- The whole run stops on the first rate limit, checkpoint, block, session
+  expiry, or unexpected screen
+- A target whose relationship no longer matches is skipped, not forced
+- **Stop** aborts before the next item
+
+Automated following and bulk activity run against Instagram's terms and can get
+an account actioned. Pacing is yours to set; the ceilings only bound the worst case.
+
+See
 [Instagram sidecar](./docs/INSTAGRAM_SIDECAR.md)
 for the runtime and data boundaries and
 [Overlay UI implementation](./docs/OVERLAY_UI_IMPLEMENTATION.md) for the
