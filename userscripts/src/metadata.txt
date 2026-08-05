@@ -8,9 +8,6 @@
 // @supportURL   https://github.com/slaveofsolace/Insta-AIO-Tool/issues
 // @downloadURL  https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js
 // @updateURL    https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js
-// @require      https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/extension/action-labels.js
-// @require      https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/extension/content-instagram.js
-// @require      https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/src/toolbox-shell.js
 // @icon         data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ffffff'/%3E%3Crect x='1' y='1' width='62' height='62' rx='15' fill='none' stroke='%23dbdbdb' stroke-width='2'/%3E%3Ctext x='32' y='42' font-family='system-ui,sans-serif' font-size='25' font-weight='700' text-anchor='middle' fill='%23262626'%3EAIO%3C/text%3E%3C/svg%3E
 // @license      MIT
 // @match        https://www.instagram.com/*
