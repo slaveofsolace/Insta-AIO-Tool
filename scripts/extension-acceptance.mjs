@@ -431,7 +431,11 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   const initial = await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
     return {
-      labels: [...shadow.querySelectorAll('[data-go-view] strong')].map((element) => element.textContent),
+      labels: [...shadow.querySelectorAll('[data-view]')].map((element) => element.textContent.trim()),
+      resizeCorners: [
+        Boolean(shadow.querySelector('[data-role="resize"]')),
+        Boolean(shadow.querySelector('[data-role="resize-tl"]')),
+      ],
       move: shadow.querySelector('[data-role="move"]')?.getAttribute('aria-label'),
       open: !shadow.querySelector('.panel').hidden,
       opacity: shadow.querySelector('[data-preference="opacity"]')?.value,
@@ -446,9 +450,11 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       ],
     };
   })()`, true);
-  assert.deepEqual(initial.labels, ['Follower checker', 'Follow / Unfollow', 'DM Unsend']);
+  // Exactly the three tools, with no landing tab in front of them.
+  assert.deepEqual(initial.labels, ['Checker', 'Follow', 'Unsend']);
+  assert.deepEqual(initial.resizeCorners, [true, true], 'both resize corners exist');
   assert.equal(initial.open, true);
-  assert.equal(initial.opacity, '88');
+  assert.equal(initial.opacity, '94');
   assert.match(initial.move, /Move toolbox/);
   assert.match(initial.resize, /Resize toolbox/);
   assert.match(initial.mode, /live actions enabled/i);
@@ -462,7 +468,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     shadow.querySelector('[data-role="move"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
     shadow.querySelector('[data-role="resize"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     const opacity = shadow.querySelector('[data-preference="opacity"]');
-    opacity.value = '74';
+    opacity.value = '80';
     opacity.dispatchEvent(new Event('input', { bubbles: true }));
     opacity.dispatchEvent(new Event('change', { bubbles: true }));
     shadow.querySelector('[data-view="checker"]').click();
@@ -479,7 +485,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       const shadow = document.querySelector('#insta-aio-userscript-root')?.shadowRoot;
       const saved = globalThis.fixtureGmStore.instaAioUserscriptPreferencesV1;
       const text = shadow?.querySelector('[data-role="comparison"]')?.textContent || '';
-      return saved?.position && saved?.width > 390 && saved?.opacity === 0.74
+      return saved?.position && saved?.width > 390 && saved?.opacity === 0.8
         && text.includes('1 mutual') && text.includes('1 not following me back')
         ? { saved, text } : null;
     })()`,

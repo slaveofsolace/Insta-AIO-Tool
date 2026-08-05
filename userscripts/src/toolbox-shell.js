@@ -11,7 +11,7 @@
     'accounts', 'about', 'api', 'developer', 'direct', 'emails', 'explore',
     'legal', 'privacy', 'reels', 'settings', 'stories', 'terms', 'web',
   ]);
-  const VIEWS = ['now', 'checker', 'account', 'messages'];
+  const VIEWS = ['checker', 'account', 'messages'];
   const WIDTH_MIN = 320;
   const WIDTH_MAX = 560;
   const HEIGHT_MIN = 320;
@@ -106,11 +106,11 @@
     return {
       schemaVersion: 1,
       open: true,
-      view: 'now',
+      view: 'checker',
       position: null,
       width: 390,
       height: 620,
-      opacity: 0.88,
+      opacity: 0.94,
     };
   }
 
@@ -163,11 +163,11 @@
     return {
       schemaVersion: 1,
       open: typeof source.open === 'boolean' ? source.open : true,
-      view: VIEWS.includes(source.view) ? source.view : 'now',
+      view: VIEWS.includes(source.view) ? source.view : 'checker',
       position,
       width: Math.round(clamp(source.width || 390, WIDTH_MIN, WIDTH_MAX)),
       height: Math.round(clamp(source.height || 620, HEIGHT_MIN, HEIGHT_MAX)),
-      opacity: Math.round(clamp(source.opacity || 0.88, 0.7, 1) * 100) / 100,
+      opacity: Math.round(clamp(source.opacity || 0.94, 0.75, 1) * 100) / 100,
     };
   }
 
@@ -365,13 +365,13 @@
   const shadow = host.attachShadow({ mode: 'open' });
   shadow.innerHTML = `
     <style>
-      :host { all: initial; --aio-alpha: 88%; --aio-alpha-strong: 96%; --aio-width: 390px; --aio-height: 620px; color-scheme: light; font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+      :host { all: initial; --aio-alpha: 94%; --aio-alpha-strong: 98%; --ig-bg: rgb(var(--ig-primary-background, 255 255 255)); --ig-bg-elevated: rgb(var(--ig-elevated-background, 255 255 255)); --ig-secondary-bg: rgb(var(--ig-secondary-background, 250 250 250)); --ig-text: rgb(var(--ig-primary-text, 0 0 0)); --ig-text-secondary: rgb(var(--ig-secondary-text, 115 115 115)); --ig-line: rgb(var(--ig-separator, 219 219 219)); --ig-accent: rgb(var(--ig-primary-button, 0 149 246)); --aio-ease: 160ms cubic-bezier(.2,.7,.3,1); --aio-width: 390px; --aio-height: 620px; color-scheme: light; font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
       *, *::before, *::after { box-sizing: border-box; }
       button, input, select { font: inherit; }
       button, label, summary { cursor: pointer; }
       [hidden] { display: none !important; }
       .launcher { position: fixed; z-index: 2147482900; right: 16px; bottom: 16px; width: 46px; height: 46px; border: 1px solid #cfd5cc; border-radius: 14px; background: rgba(255,255,255,.9); color: #172018; box-shadow: 0 10px 32px rgba(0,0,0,.2); font-weight: 850; }
-      .panel { position: fixed; z-index: 2147482900; top: 62px; right: 16px; width: min(var(--aio-width), calc(100vw - 24px)); height: min(var(--aio-height), calc(100dvh - 74px)); display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; overflow: hidden; border: 1px solid #cfd5cc; border-radius: 14px; background: color-mix(in srgb, #f7f8f5 var(--aio-alpha), transparent); color: #1b211c; box-shadow: 0 20px 60px rgba(0,0,0,.24); backdrop-filter: blur(10px) saturate(.95); -webkit-backdrop-filter: blur(10px) saturate(.95); font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+      .panel { animation: aio-in var(--aio-ease) both; position: fixed; z-index: 2147482900; top: 62px; right: 16px; width: min(var(--aio-width), calc(100vw - 24px)); height: min(var(--aio-height), calc(100dvh - 74px)); display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; overflow: hidden; border: 1px solid #cfd5cc; border-radius: 14px; background: color-mix(in srgb, #f7f8f5 var(--aio-alpha), transparent); color: #1b211c; box-shadow: 0 20px 60px rgba(0,0,0,.24); backdrop-filter: blur(10px) saturate(.95); -webkit-backdrop-filter: blur(10px) saturate(.95); font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
       :host([data-floating="true"]) .panel { top: var(--aio-top); right: auto; left: var(--aio-left); }
       .header { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; min-height: 66px; padding: 10px; border-bottom: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); }
       .handle, .icon { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: inherit; }
@@ -385,8 +385,8 @@
       .header h1 { margin: 0; font-size: 17px; line-height: 1.15; }
       .header p { margin: 2px 0 0; color: #667067; font-size: 11px; }
       .mode { display: inline-flex; margin-top: 4px; border: 1px solid #8b6a20; border-radius: 999px; padding: 2px 7px; color: #72520d; font-size: 10px; font-weight: 750; }
-      .tabs { display: grid; grid-template-columns: repeat(4,minmax(44px,1fr)); border-bottom: 1px solid #d8ddd4; background: color-mix(in srgb, #eef1ec var(--aio-alpha-strong), transparent); }
-      .tab { min-height: 48px; border: 0; border-bottom: 3px solid transparent; padding: 6px 3px; background: transparent; color: #616a61; font-size: 11px; font-weight: 700; }
+      .tabs { display: grid; grid-template-columns: repeat(3,minmax(44px,1fr)); border-bottom: 1px solid #d8ddd4; background: color-mix(in srgb, #eef1ec var(--aio-alpha-strong), transparent); }
+      .tab { transition: background var(--aio-ease), color var(--aio-ease); min-height: 48px; border: 0; border-bottom: 3px solid transparent; padding: 6px 3px; background: transparent; color: #616a61; font-size: 11px; font-weight: 700; }
       .tab[aria-selected="true"] { border-bottom-color: #347844; color: #172018; background: color-mix(in srgb, #fff 72%, transparent); }
       .scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; }
       .view { padding: 14px; }
@@ -423,7 +423,8 @@
       .settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; width: 250px; padding: 12px; border: 1px solid #cfd5cc; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 16px 46px rgba(0,0,0,.2); }
       .range-row { display:grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items:center; }
       .footer { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); color: #687068; font-size: 11px; }
-      .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
+      .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; z-index: 6; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
+      .resize-tl { right: auto; bottom: auto; left: 0; top: 0; cursor: nwse-resize; }
       .resize::before { content:""; position:absolute; right:8px; bottom:8px; width:12px; height:12px; border-right:2px solid #687068; border-bottom:2px solid #687068; }
       button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .file:focus-within { outline: 3px solid #168cff; outline-offset: 2px; }
       @media (max-width: 600px) { .panel { top:auto; right:0; bottom:0; left:0; width:100%; height:min(78dvh,720px); border-radius:14px 14px 0 0; } .handle,.resize { display:none; } .header { grid-template-columns:minmax(0,1fr) auto; } }
@@ -438,7 +439,8 @@
       .button.primary { background: rgb(var(--ig-primary-button, 0 149 246)); color: #fff; border: 0; font-weight: 600; }
       .button.primary:hover { filter: brightness(1.08); }
       .button.big { width: 100%; padding: 10px 12px; font-size: var(--system-14-font-size, 14px); line-height: var(--system-14-line-height, 18px); border-radius: 8px; }
-      @media (prefers-reduced-motion: reduce) { .run-bar span { transition: none; } }
+      @keyframes aio-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { .run-bar span, .tab, .button { transition: none; } .panel { animation: none; } }
       @media (forced-colors: active) { .panel,.card,.tool,.metric,.header,.footer,.run-panel { background:Canvas; } .panel,.card,.tool,.metric { border:2px solid CanvasText; } }
     </style>
     <button class="launcher" type="button" data-action="open" aria-label="Open Insta AIO Instagram toolbox" aria-expanded="false">AIO</button>
@@ -446,23 +448,21 @@
       <header class="header">
         <button class="handle" type="button" data-role="move" aria-label="Move toolbox; use arrow keys for precise movement" title="Drag to move">✥</button>
         <div><h1>Insta AIO Toolbox</h1><p>Tools injected directly on Instagram</p><span class="mode" data-role="mode-label">Userscript mode · live actions enabled</span></div>
-        <div style="display:flex"><details class="settings"><summary aria-label="Toolbox preferences">⚙</summary><div class="settings-panel"><strong>Layout</strong><div class="field"><label for="aio-opacity">Surface transparency</label><div class="range-row"><input id="aio-opacity" type="range" min="70" max="100" value="88" data-preference="opacity"><output data-role="opacity-output">88%</output></div></div><button class="button quiet" type="button" data-action="reset-layout">Reset position and size</button><strong>Pacing</strong><div class="field"><label for="aio-limit-actions">Follow/unfollow per day</label><input id="aio-limit-actions" type="number" min="1" max="400" data-role="limit-actions"></div><div class="field"><label for="aio-limit-unsends">Unsends per day</label><input id="aio-limit-unsends" type="number" min="1" max="300" data-role="limit-unsends"></div><div class="field"><label for="aio-limit-min">Min delay (seconds)</label><input id="aio-limit-min" type="number" min="2" max="600" data-role="limit-min"></div><div class="field"><label for="aio-limit-max">Max delay (seconds)</label><input id="aio-limit-max" type="number" min="2" max="900" data-role="limit-max"></div><button class="button quiet" type="button" data-action="save-limits">Save pacing</button><p class="lead">Drag the header handle or lower corner. Arrow keys work on both.</p></div></details><button class="icon" type="button" data-action="close" aria-label="Collapse Insta AIO toolbox">×</button></div>
+        <div style="display:flex"><details class="settings"><summary aria-label="Toolbox preferences">⚙</summary><div class="settings-panel"><strong>Layout</strong><div class="field"><label for="aio-opacity">Surface transparency</label><div class="range-row"><input id="aio-opacity" type="range" min="75" max="100" value="94" data-preference="opacity"><output data-role="opacity-output">88%</output></div></div><button class="button quiet" type="button" data-action="reset-layout">Reset position and size</button><strong>Pacing</strong><div class="field"><label for="aio-limit-actions">Follow/unfollow per day</label><input id="aio-limit-actions" type="number" min="1" max="400" data-role="limit-actions"></div><div class="field"><label for="aio-limit-unsends">Unsends per day</label><input id="aio-limit-unsends" type="number" min="1" max="300" data-role="limit-unsends"></div><div class="field"><label for="aio-limit-min">Min delay (seconds)</label><input id="aio-limit-min" type="number" min="2" max="600" data-role="limit-min"></div><div class="field"><label for="aio-limit-max">Max delay (seconds)</label><input id="aio-limit-max" type="number" min="2" max="900" data-role="limit-max"></div><button class="button quiet" type="button" data-action="save-limits">Save pacing</button><p class="lead">Drag the header handle or lower corner. Arrow keys work on both.</p></div></details><button class="icon" type="button" data-action="close" aria-label="Collapse Insta AIO toolbox">×</button></div>
       </header>
       <nav class="tabs" role="tablist" aria-label="Insta AIO userscript tools">
-        <button class="tab" type="button" role="tab" data-view="now" aria-selected="true">Tools</button>
-        <button class="tab" type="button" role="tab" data-view="checker" aria-selected="false" tabindex="-1">Checker</button>
+        <button class="tab" type="button" role="tab" data-view="checker" aria-selected="true" aria-selected="false" tabindex="-1">Checker</button>
         <button class="tab" type="button" role="tab" data-view="account" aria-selected="false" tabindex="-1">Follow</button>
         <button class="tab" type="button" role="tab" data-view="messages" aria-selected="false" tabindex="-1">Unsend</button>
       </nav>
       <div class="scroll">
-        <section class="view" role="tabpanel" data-panel="now"><p class="lead">All three requested workflows are available here in safe userscript mode. Live Instagram controls remain extension-only.</p><div class="tool-grid" data-role="tool-grid"></div></section>
         <section class="view" role="tabpanel" data-panel="checker" hidden><p class="lead"><strong>Follower checker.</strong> Open Followers or Following, scroll manually, and capture each rendered batch. Both drafts are compared locally.</p><div class="metrics"><div class="metric"><span>Followers</span><strong data-role="followers-count">0</strong></div><div class="metric"><span>Following</span><strong data-role="following-count">0</strong></div></div><div class="field"><label for="aio-list-type">List being captured</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div><div class="toolbar"><button class="button" type="button" data-action="scan-list">Scan full list</button><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download selected list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
         <section class="view" role="tabpanel" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div><div class="card" data-role="queue-current"></div><div class="toolbar"><button class="button" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="card" data-role="account-result"></div>
-          <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="queue">Imported queue</option></select></div>
+          <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts">Start run</button></div>
-          <p class="notice">Each profile must be open when its turn comes. The run stops itself on any rate limit, security check, or block.</p></section>
+          <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
         <section class="view" role="tabpanel" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all">Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
           <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
           <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
@@ -471,6 +471,7 @@
       </div>
       <div class="run-panel" data-role="run-panel" hidden><div class="run-head"><strong data-role="run-title"></strong><button class="button danger" type="button" data-action="stop-run" data-role="stop-run">Stop</button></div><div class="run-bar"><span data-role="run-fill"></span></div><p class="lead" data-role="run-detail"></p><ul class="list" data-role="run-results"></ul></div>
       <footer class="footer" role="status" aria-live="polite"><span data-role="status">Ready. No Instagram control has been used.</span><strong>Local only</strong></footer>
+      <button class="resize resize-tl" type="button" data-role="resize-tl" aria-label="Resize toolbox from the top left; use arrow keys for precise sizing" title="Drag to resize"></button>
       <button class="resize" type="button" data-role="resize" aria-label="Resize toolbox; use arrow keys for precise sizing" title="Drag to resize"></button>
     </aside>`;
 
@@ -573,8 +574,43 @@
     const detail = document.createElement('p');
     detail.textContent = state.capture.followers.length && state.capture.following.length
       ? `${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following me back · ${comparison.iDoNotFollowBack.length} I don't follow back.`
-      : 'Open each Instagram list, scroll manually, and capture every rendered batch. No private endpoint or console paste is used.';
+      : 'Open your Followers list and choose Scan full list, then do the same for Following.';
     result.append(title, detail);
+
+    // A scan that stopped early would otherwise be read as the whole list, and
+    // every number below it would quietly be wrong.
+    const partial = ['followers', 'following']
+      .filter((type) => state.capture[type].length && state.capture.complete?.[type] !== true);
+    if (partial.length) {
+      const warning = document.createElement('p');
+      warning.className = 'notice';
+      warning.textContent = `The ${partial.join(' and ')} ${partial.length === 1 ? 'list' : 'lists'} did not reach the end, so these counts are incomplete. Scan again to finish.`;
+      result.append(warning);
+    }
+
+    if (state.capture.followers.length && state.capture.following.length) {
+      const actions = document.createElement('div');
+      actions.className = 'toolbar';
+      for (const [label, key, file] of [
+        ["Export who doesn't follow me back", 'notFollowingMeBack', 'not-following-me-back'],
+        ["Export who I don't follow back", 'iDoNotFollowBack', 'i-do-not-follow-back'],
+      ]) {
+        const button = document.createElement('button');
+        button.className = 'button quiet';
+        button.type = 'button';
+        button.textContent = `${label} (${comparison[key].length})`;
+        button.addEventListener('click', () => downloadJson(`insta-aio-${file}-${Date.now()}.json`, {
+          schemaVersion: 1,
+          kind: 'insta-aio-comparison',
+          list: file,
+          generatedAt: nowIso(),
+          complete: state.capture.complete || {},
+          accounts: comparison[key],
+        }));
+        actions.append(button);
+      }
+      result.append(actions);
+    }
 
     const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
     const list = query('[data-role="capture-list"]');
@@ -645,7 +681,6 @@
   function renderAll() {
     applyLayout();
     renderShellState();
-    renderNow();
     renderChecker();
     renderAccount();
     renderMessages();
@@ -1160,13 +1195,36 @@
       const source = query('[data-role="bot-source"]')?.value || 'not-following-me-back';
       const count = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
       const comparison = compareCapture();
-      const pool = source === 'queue'
-        ? (state.queue.items || []).filter((i) => i.status === 'pending').map((i) => i.account?.username)
-        : (source === 'i-do-not-follow-back' ? comparison.iDoNotFollowBack : comparison.notFollowingMeBack)
-          .map((a) => a.username || a);
-      const items = pool.filter(Boolean).slice(0, count).map((username) => ({ username }));
+      const names = (list) => (list || []).map((entry) => entry.username || entry);
+      const pools = {
+        queue: () => (state.queue.queue || [])
+          .filter((entry) => ACTIONABLE_STATUSES.has(entry.status))
+          .map((entry) => entry.account?.username),
+        'i-do-not-follow-back': () => names(comparison.iDoNotFollowBack),
+        'not-following-me-back': () => names(comparison.notFollowingMeBack),
+        // Scanning works on whichever list is open, including another account's,
+        // so these two are how you build an audience from someone else's people.
+        'scanned-followers': () => names(state.capture.followers),
+        'scanned-following': () => names(state.capture.following),
+      };
+      let pool = (pools[source] || pools['not-following-me-back'])();
+
+      // Following someone you already follow is a wasted action and a needless
+      // request, so drop anyone already in the Following draft.
+      if (action === 'follow' && state.capture.following.length) {
+        const already = new Set(names(state.capture.following));
+        pool = pool.filter((username) => !already.has(username));
+      }
+
+      const items = [...new Set(pool.filter(Boolean))]
+        .slice(0, count)
+        .map((username) => ({ username }));
       if (!items.length) {
-        status('No targets. Scan both lists in the checker first, or import a queue.');
+        status(
+          source.startsWith('scanned')
+            ? 'That list is empty. Open the list you want and use Scan full list first.'
+            : 'No targets. Scan both your lists in the checker first, or import a queue.',
+        );
         return;
       }
       if (!confirmRun(
@@ -1366,6 +1424,7 @@
   const panel = query('.panel');
   const moveHandle = query('[data-role="move"]');
   const resizeHandle = query('[data-role="resize"]');
+  const resizeTopLeftHandle = query('[data-role="resize-tl"]');
 
   function beginInteraction(event, kind) {
     if (event.button !== 0 || innerWidth <= 600) return;
@@ -1381,9 +1440,25 @@
     if (interaction.kind === 'move') {
       return { position: constrainedPosition({ x: interaction.rectangle.left + deltaX, y: interaction.rectangle.top + deltaY }) };
     }
+    const maxWidth = Math.min(WIDTH_MAX, innerWidth - (INSET * 2));
+    const maxHeight = Math.min(HEIGHT_MAX, innerHeight - (INSET * 2));
+    if (interaction.kind === 'resize-tl') {
+      // Dragging the top-left grip grows the panel toward the top left, so the
+      // opposite corner has to stay put while the origin moves with it.
+      const width = Math.round(clamp(interaction.rectangle.width - deltaX, WIDTH_MIN, maxWidth));
+      const height = Math.round(clamp(interaction.rectangle.height - deltaY, HEIGHT_MIN, maxHeight));
+      return {
+        width,
+        height,
+        position: constrainedPosition({
+          x: interaction.rectangle.right - width,
+          y: interaction.rectangle.bottom - height,
+        }),
+      };
+    }
     return {
-      width: Math.round(clamp(interaction.rectangle.width + deltaX, WIDTH_MIN, Math.min(WIDTH_MAX, innerWidth - (INSET * 2)))),
-      height: Math.round(clamp(interaction.rectangle.height + deltaY, HEIGHT_MIN, Math.min(HEIGHT_MAX, innerHeight - (INSET * 2)))),
+      width: Math.round(clamp(interaction.rectangle.width + deltaX, WIDTH_MIN, maxWidth)),
+      height: Math.round(clamp(interaction.rectangle.height + deltaY, HEIGHT_MIN, maxHeight)),
     };
   }
 
@@ -1427,6 +1502,8 @@
     beginInteraction(event, 'move');
   });
   resizeHandle.addEventListener('pointerdown', (event) => beginInteraction(event, 'resize'));
+  resizeTopLeftHandle?.addEventListener('pointerdown', (event) => beginInteraction(event, 'resize-tl'));
+  resizeTopLeftHandle?.addEventListener('keydown', (event) => keyboardLayout(event, 'resize'));
   moveHandle.addEventListener('keydown', (event) => keyboardLayout(event, 'move'));
   resizeHandle.addEventListener('keydown', (event) => keyboardLayout(event, 'resize'));
   window.addEventListener('pointermove', moveInteraction, { passive: false });
