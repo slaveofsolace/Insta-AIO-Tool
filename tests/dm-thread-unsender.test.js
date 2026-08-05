@@ -96,7 +96,8 @@ test('extension message view uses the shared runner and Instagram design tokens'
 });
 
 test('Tampermonkey entry point auto-updates from main and embeds the shared sources', () => {
-  assert.match(metadata, /@version\s+0\.8\.0/);
+  // Assert the shape, not one release, so a version bump does not fail here.
+  assert.match(metadata, /@version\s+\d+\.\d+\.\d+/);
   assert.match(metadata, /@downloadURL\s+https:\/\/raw\.githubusercontent\.com\/slaveofsolace\/Insta-AIO-Tool\/main\/userscripts\/insta-aio-companion\.user\.js/);
   assert.doesNotMatch(metadata, /@require|@resource/);
   assert.equal(generated.startsWith(metadata), true);

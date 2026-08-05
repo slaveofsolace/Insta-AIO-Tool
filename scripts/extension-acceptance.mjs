@@ -21,6 +21,7 @@ const overlayScriptFiles = instagramScriptOrder;
 const fixtureAssets = new Map([
   ['/fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'overlay-preview.html')],
   ['/userscript-fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'userscript-preview.html')],
+  ['/direct/t/17800000000000001/', path.join(repositoryRoot, 'tests', 'fixtures', 'dm-thread-fixture.html')],
   ['/userscripts/insta-aio-companion.user.js', path.join(repositoryRoot, 'userscripts', 'insta-aio-companion.user.js')],
   ...overlayScriptFiles.map((file) => [
     `/extension/${file}`,
@@ -380,6 +381,43 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
   console.log('Accepted overlay keyboard focus and Chromium accessibility-tree contract.');
 }
 
+// Drives the thread-wide unsend against a stand-in that reproduces the two
+// shapes that previously broke it: a menu portalled outside the row with no
+// role="menu", and rows that stay in place as an "unsent" note instead of
+// being removed. Both of those made every message report as a failure.
+async function acceptThreadUnsend(webContents, baseUrl) {
+  await withTimeout(
+    webContents.loadURL(`${baseUrl}/direct/t/17800000000000001/`),
+    'thread unsend fixture load',
+  );
+  await waitForPageValue(
+    webContents,
+    'Boolean(globalThis.InstaAioDmThreadUnsender)',
+    'thread unsend: engine ready',
+  );
+
+  const outcome = await webContents.executeJavaScript(`(async () => {
+    const runner = globalThis.InstaAioDmThreadUnsender;
+    const result = await runner.start({ minDelayMs: 0, maxDelayMs: 0 });
+    const rows = [...document.querySelectorAll('#thread .row')];
+    return {
+      result,
+      fixtureUnsentCount: globalThis.fixtureUnsentCount,
+      remainingSent: rows.filter((row) => row.classList.contains('mine')).length,
+      leftoverDialogs: document.querySelectorAll('[role="dialog"]').length,
+      status: runner.inspect?.().status ?? null,
+    };
+  })()`, true);
+
+  // Six of the twelve fixture rows are sent by this account.
+  assert.equal(outcome.fixtureUnsentCount, 6, 'every sent message was actually unsent');
+  assert.equal(outcome.remainingSent, 0, 'no sent message was left behind');
+  assert.equal(outcome.leftoverDialogs, 0, 'no confirmation dialog was left open');
+  assert.equal(outcome.result?.processed, 6);
+  assert.equal(outcome.result?.failures ?? 0, 0, 'a working thread produces no failures');
+  console.log(`Accepted thread-wide Unsend against a portalled menu (${outcome.fixtureUnsentCount} removed, 0 failures).`);
+}
+
 async function acceptUserscriptToolbox(webContents, baseUrl) {
   await withTimeout(
     webContents.loadURL(`${baseUrl}/userscript-fixture.html`),
@@ -568,6 +606,7 @@ async function run() {
     });
     await acceptDmUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptOverlayAccessibility(overlay.window.webContents, overlayBaseUrl);
+    await acceptThreadUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptUserscriptToolbox(overlay.window.webContents, overlayBaseUrl);
     await acceptPwaInstallability(pwa.window.webContents, pwaBaseUrl);
     assert.deepEqual(overlay.problems, [], 'extension fixture browser problems');

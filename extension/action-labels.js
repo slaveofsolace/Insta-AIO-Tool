@@ -362,14 +362,27 @@
     return [...document.querySelectorAll(selector)].filter((element) => visibleText(element));
   }
 
-  function unsendControl(scope) {
-    const controls = [];
-    for (const element of scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"], span, div') || []) {
+  // Instagram renders the message menu in a portal near the end of <body>, and
+  // that container does not reliably carry role="menu". Scoping the search to
+  // newly added menu surfaces therefore finds nothing and every message times
+  // out, so the search runs over the whole document.
+  //
+  // Only leaf elements are considered — ones whose own first child is a text
+  // node. An ancestor's textContent also reads "Unsend", and matching those
+  // produced several candidates for one item.
+  function unsendCandidates(scope = document) {
+    const found = [];
+    for (const element of scope?.querySelectorAll?.('span, div, button, [role="button"], [role="menuitem"]') || []) {
+      if (element.firstChild?.nodeType !== 3) continue;
       if (!actionLabels.isDmUnsendLabel(visibleText(element))) continue;
-      const control = clickable(element, scope) || (element.matches?.('button, [role="button"], [role="menuitem"]') ? element : null);
-      if (control) controls.push(control);
+      if (!isVisible(element)) continue;
+      found.push(clickable(element, document) || element);
     }
-    return [...new Set(controls)].length === 1 ? [...new Set(controls)][0] : null;
+    return [...new Set(found)];
+  }
+
+  function unsendControl(scope = document) {
+    return unsendCandidates(scope)[0] || null;
   }
 
   async function dismissStaleSurfaces(signal) {
@@ -396,38 +409,44 @@
   }
 
   async function openUnsendMenu(control, signal) {
-    const existing = new Set(visibleSurfaces('[role="menu"], [role="listbox"]'));
     const pending = waitForElement(document.body, () => {
-      const surfaces = visibleSurfaces('[role="menu"], [role="listbox"]')
-        .filter((surface) => !existing.has(surface));
-      for (const surface of surfaces) {
-        const candidate = unsendControl(surface);
-        if (candidate) return { surface, control: candidate };
-      }
-      return null;
+      const candidate = unsendControl(document);
+      return candidate ? { control: candidate } : null;
     }, signal, 3_000);
     activateControl(control);
     return pending;
   }
 
   async function confirmUnsend(menuControl, row, signal) {
-    const existing = new Set(visibleSurfaces('[role="dialog"]'));
-    const pending = waitForElement(document.body, () => {
-      if (!row.isConnected) return { immediate: true };
-      const dialogs = visibleSurfaces('[role="dialog"]').filter((dialog) => !existing.has(dialog));
-      for (const dialog of dialogs) {
-        const control = unsendControl(dialog);
-        if (control) return { dialog, control };
-      }
-      return null;
-    }, signal, 3_000);
+    // Selecting Unsend raises a confirmation dialog with a single button.
+    const pending = waitForElement(
+      document.body,
+      () => document.querySelector('[role="dialog"] button'),
+      signal,
+      3_000,
+    );
     activateControl(menuControl);
-    const result = await pending;
-    if (result?.immediate) return true;
-    if (!result?.control) return false;
-    activateControl(result.control);
-    const removed = await waitForElement(document.body, () => !row.isConnected, signal, 4_000);
-    return removed === true;
+    const dialogButton = await pending;
+    if (!dialogButton) return false;
+
+    const closed = waitForElement(
+      document.body,
+      () => document.querySelector('[role="dialog"] button') === null,
+      signal,
+      5_000,
+    );
+    activateControl(dialogButton);
+    // Parenthesised deliberately: `await closed !== true` binds as
+    // `await (closed !== true)`, which is always true for a promise and made
+    // every successful removal report as a failure.
+    if ((await closed) !== true) return false;
+
+    // Instagram usually leaves the row in place and swaps its content for an
+    // "unsent" note rather than removing it, so requiring the row to disappear
+    // would mark successful removals as failures. Either outcome counts.
+    if (!row.isConnected) return true;
+    await delay(250, signal);
+    return !row.isConnected || !hasMessageContent(row) || actionButton(row) === null;
   }
 
   async function unsendRow(row, signal) {
@@ -509,34 +528,29 @@
 
   async function nextSentRow(context, signal) {
     const { scroller } = context;
-    const current = firstVisibleCandidate(scroller);
-    if (current) return current;
-    const reversed = reversedLayout(scroller);
+    // Prefer a row already on screen, but never require one. Sweeping scroll
+    // offsets and hoping a candidate lands in the viewport left the last row of
+    // a thread unprocessed; bringing the row to the viewport is deterministic.
+    const visible = firstVisibleCandidate(scroller);
+    if (visible) return visible;
+
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
-      const start = newestOffset(scroller, reversed);
-      const end = oldestOffset(scroller, reversed);
-      const range = Math.abs(end - start);
-      const step = range < 500 ? 30 : 150;
-      if (reversed) {
-        for (let position = start; position >= end; position -= step) {
-          if (signal.aborted) return null;
-          scroller.scrollTop = position;
-          dispatch(scroller, new Event('scroll', { bubbles: true }));
-          await delay(8, signal);
-          const row = firstVisibleCandidate(scroller);
-          if (row) return row;
-        }
-      } else {
-        for (let position = start; position >= end; position -= step) {
-          if (signal.aborted) return null;
-          scroller.scrollTop = position;
-          dispatch(scroller, new Event('scroll', { bubbles: true }));
-          await delay(8, signal);
-          const row = firstVisibleCandidate(scroller);
-          if (row) return row;
-        }
+      if (signal.aborted) return null;
+      const [row] = candidateRows(scroller).reverse();
+      if (row) {
+        row.scrollIntoView({ block: 'center' });
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
+        await delay(60, signal);
+        if (isVisible(row)) return row;
+        // Still hidden: hand it back anyway on the final pass so a row that
+        // simply cannot be scrolled into view is attempted rather than skipped.
+        if (pass === MAX_SCAN_PASSES - 1) return row;
       }
-      await delay(100, signal);
+      // Nothing left here; page toward older history and look again.
+      const reversed = reversedLayout(scroller);
+      scroller.scrollTop = oldestOffset(scroller, reversed);
+      dispatch(scroller, new Event('scroll', { bubbles: true }));
+      await delay(120, signal);
     }
     return null;
   }
@@ -604,9 +618,11 @@
 
         publish({ status: 'running', current: label, message: `Unsending message ${processed + 1}…` });
         try {
+          // unsendRow already proves the removal: the confirmation dialog
+          // closed and the row either went away or lost its content and menu.
+          // Re-checking isConnected here rejected every success, because
+          // Instagram leaves an "unsent" placeholder row in the thread.
           await unsendRow(row, signal);
-          await delay(800, signal);
-          if (row.isConnected) throw new Error('Instagram kept the message in the thread.');
           processed += 1;
           consecutiveFailures = 0;
           lastUnsendAt = Date.now();

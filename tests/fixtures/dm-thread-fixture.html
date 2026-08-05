@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Insta AIO thread unsend fixture</title>
+  <style>
+    body { margin: 0; font: 14px system-ui, sans-serif; }
+    #thread { display: flex; flex-direction: column-reverse; height: 420px; overflow-y: auto; border: 1px solid #ccc; }
+    .row { display: flex; padding: 6px 10px; }
+    .row.mine { justify-content: flex-end; }
+    .bubble { max-width: 60%; padding: 8px 12px; border-radius: 14px; background: #efefef; }
+    .row.mine .bubble { background: #3797f0; color: #fff; }
+    .menu-btn { display: none; margin: 0 6px; }
+    .row.hovered .menu-btn { display: inline-block; }
+    /* The portal deliberately carries no role="menu" — this is the shape that
+       broke the previous implementation. */
+    #portal { position: fixed; top: 10px; left: 10px; background: #fff; border: 1px solid #999; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div data-pagelet="IGDMessagesList">
+    <div id="thread"></div>
+  </div>
+  <div id="portal" class="hidden"></div>
+
+  <script>
+    // Minimal stand-in for Instagram's thread: column-reverse layout, sent
+    // messages right-aligned, a menu button revealed on hover, a menu rendered
+    // into a portal without role="menu", a confirmation dialog, and rows that
+    // remain in place as an "unsent" tombstone after removal.
+    const thread = document.getElementById('thread');
+    const portal = document.getElementById('portal');
+    globalThis.fixtureUnsentCount = 0;
+
+    function makeRow(index, mine) {
+      const row = document.createElement('div');
+      row.className = `row ${mine ? 'mine' : 'theirs'}`;
+      row.setAttribute('role', 'row');
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.setAttribute('dir', 'auto');
+      bubble.textContent = `${mine ? 'Sent' : 'Received'} message ${index}`;
+      row.append(bubble);
+      if (mine) {
+        const button = document.createElement('div');
+        button.className = 'menu-btn';
+        button.setAttribute('role', 'button');
+        button.setAttribute('aria-haspopup', 'menu');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('aria-label', 'See more options for message');
+        button.append(svg);
+        button.addEventListener('click', () => openMenu(row));
+        row.append(button);
+      }
+      row.addEventListener('pointerover', () => row.classList.add('hovered'));
+      row.addEventListener('mouseover', () => row.classList.add('hovered'));
+      row.addEventListener('pointerout', () => row.classList.remove('hovered'));
+      return row;
+    }
+
+    // Newest first, matching column-reverse rendering.
+    for (let index = 12; index >= 1; index -= 1) {
+      thread.append(makeRow(index, index % 2 === 1));
+    }
+
+    function openMenu(row) {
+      portal.classList.remove('hidden');
+      portal.replaceChildren();
+      for (const label of ['Reply', 'Forward', 'Unsend']) {
+        const item = document.createElement('div');
+        item.setAttribute('role', 'button');
+        const span = document.createElement('span');
+        span.textContent = label;
+        item.append(span);
+        if (label === 'Unsend') item.addEventListener('click', () => openDialog(row));
+        portal.append(item);
+      }
+    }
+
+    function openDialog(row) {
+      portal.classList.add('hidden');
+      const dialog = document.createElement('div');
+      dialog.setAttribute('role', 'dialog');
+      dialog.id = 'confirm-dialog';
+      const confirm = document.createElement('button');
+      confirm.textContent = 'Unsend';
+      confirm.addEventListener('click', () => {
+        dialog.remove();
+        // Instagram leaves the row in place and replaces its content.
+        row.replaceChildren();
+        const note = document.createElement('div');
+        note.setAttribute('dir', 'auto');
+        note.textContent = 'You unsent a message';
+        row.append(note);
+        row.classList.remove('mine');
+        globalThis.fixtureUnsentCount += 1;
+      });
+      dialog.append(confirm);
+      document.body.append(dialog);
+    }
+  </script>
+  <!-- The engine exactly as shipped; the toolbox shell is not needed here. -->
+  <script src="/extension/action-labels.js"></script>
+  <script src="/extension/content-instagram.js"></script>
+</body>
+</html>
