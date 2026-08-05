@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Insta AIO userscript runtime fixture</title>
+  <style>
+    body { margin: 0; background: #fafafa; color: #111; font: 14px/1.4 system-ui, sans-serif; }
+    main { width: min(760px, calc(100vw - 40px)); margin: 40px auto; }
+    header { padding: 24px; border: 1px solid #ddd; background: #fff; }
+    header h1 { display: inline; margin-right: 18px; font-size: 20px; }
+    button { padding: 8px 14px; }
+    [role="dialog"] { width: 320px; margin-top: 20px; padding: 16px; border: 1px solid #ddd; background: #fff; }
+    [role="dialog"] a { display: block; padding: 7px 0; color: inherit; }
+    [role="row"] { max-width: 70%; margin: 14px 0; padding: 10px; border-radius: 12px; background: #eee; }
+    [data-sent-by-me="true"] { margin-left: auto; background: #2884e8; color: #fff; }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>demo_creator</h1><button id="relationship" type="button">Following</button></header>
+    <section role="dialog" aria-label="Following"><h2>Following</h2><a href="/mutual_friend/">mutual_friend</a><a href="/not_back/">not_back</a></section>
+  </main>
+  <script>
+    globalThis.fixtureProfileClickCount = 0;
+    document.querySelector('#relationship').addEventListener('click', () => { globalThis.fixtureProfileClickCount += 1; });
+    history.replaceState({}, '', '/demo_creator/');
+    const dmText = 'Yes — reviewing it now.';
+    let dmHash = 0x811c9dc5;
+    for (let index = 0; index < dmText.length; index += 1) {
+      dmHash ^= dmText.charCodeAt(index);
+      dmHash = Math.imul(dmHash, 0x01000193);
+    }
+    const dmTarget = {
+      conversationId: 'inbox/studio_friend_123',
+      contentDigest: (dmHash >>> 0).toString(16).padStart(8, '0'),
+      messageId: 'sent-1',
+      sentByMe: true,
+      timestamp: 1700000000100,
+    };
+    globalThis.fixtureGmStore = {
+      instaAioUserscriptStateV2: {
+        schemaVersion: 2,
+        capture: { followers: [], following: [], capturedAt: { followers: null, following: null } },
+        queue: {
+          importedAt: '2026-08-04T00:00:00.000Z',
+          queue: [{
+            id: 'fixture-queue-1',
+            account: { username: 'demo_creator', displayName: 'Demo Creator' },
+            action: 'unfollow',
+            status: 'ready',
+            reason: 'fixture review',
+          }],
+        },
+        dmTarget,
+        history: [],
+      },
+    };
+    globalThis.GM_getValue = (key, fallback) => structuredClone(
+      Object.hasOwn(globalThis.fixtureGmStore, key) ? globalThis.fixtureGmStore[key] : fallback,
+    );
+    globalThis.GM_setValue = (key, value) => {
+      globalThis.fixtureGmStore[key] = structuredClone(value);
+    };
+    globalThis.fixtureSetList = (type) => {
+      const dialog = document.querySelector('[role="dialog"]');
+      dialog.setAttribute('aria-label', type === 'followers' ? 'Followers' : 'Following');
+      dialog.querySelector('h2').textContent = type === 'followers' ? 'Followers' : 'Following';
+      dialog.querySelectorAll('a').forEach((element) => element.remove());
+      const values = type === 'followers'
+        ? ['mutual_friend', 'follower_only']
+        : ['mutual_friend', 'not_back'];
+      for (const username of values) {
+        const anchor = document.createElement('a');
+        anchor.href = `/${username}/`;
+        anchor.textContent = username;
+        dialog.append(anchor);
+      }
+    };
+    globalThis.fixtureSetMessages = () => {
+      history.replaceState({}, '', '/direct/t/123/');
+      document.querySelector('main').innerHTML = `
+        <section data-pagelet="IGDMessagesList">
+          <header><h1>studio_friend</h1></header>
+          <div role="row" data-message-id="received-1" data-timestamp-ms="1700000000000" data-sent-by-me="false"><div dir="auto">Did you see the draft?</div></div>
+          <div role="row" data-message-id="sent-1" data-timestamp-ms="1700000000100" data-sent-by-me="true"><div data-insta-aio-message-content dir="auto">${dmText}</div></div>
+        </section>`;
+    };
+  </script>
+  <script src="/userscripts/insta-aio-companion.user.js"></script>
+</body>
+</html>
