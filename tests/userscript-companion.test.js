@@ -80,7 +80,7 @@ test('a run stops itself on any Instagram interruption and can be aborted', () =
   assert.match(source, /data-action="stop-run"/);
 });
 
-test('runs are paced and bounded, and a reload never resumes one', () => {
+test('runs are paced and bounded by a per-day allowance', () => {
   assert.match(shell, /dailyActions: \[1, 400\]/);
   assert.match(shell, /dailyUnsends: \[1, 300\]/);
   assert.match(shell, /minDelayMs: \[1_500, 600_000\]/);
@@ -90,8 +90,38 @@ test('runs are paced and bounded, and a reload never resumes one', () => {
   // Destructive runs are confirmed before they start.
   assert.match(shell, /Permanently unsend \$\{selected\.length\}/);
   assert.match(shell, /This cannot be undone/);
-  // A stored run must not restart against a page nobody verified.
-  assert.match(shell, /A run never survives a reload/);
+  // The allowance is spent against today's ledger, so a resumed run cannot
+  // reset its own budget by reloading.
+  assert.match(shell, /function usedToday\(kind\)/);
+  assert.match(shell, /ledger\.day === today\(\)/);
+  assert.match(shell, /function recordAction\(kind\)/);
+});
+
+test('an account run moves between profiles and survives the navigation it causes', () => {
+  // Navigating tears the userscript down, so without a persisted queue a
+  // multi-account run would only ever act on the profile already open.
+  assert.match(shell, /function resumableAccountRun\(\)/);
+  assert.match(shell, /async function continueAccountRun\(\)/);
+  assert.match(shell, /location\.href = `https:\/\/www\.instagram\.com\/\$\{encodeURIComponent\(username\)\}\/`;/);
+  assert.match(shell, /const onTarget = engine\.normalizeUsername\(location\.pathname\) === username;/);
+  // Resuming must never inherit trust: the target is re-resolved on arrival.
+  assert.match(shell, /Resuming run: \$\{pending\} account/);
+  assert.match(shell, /resuming never inherits trust from the previous page/);
+  // Stopping has to clear the queue, or the next page load would carry on.
+  assert.match(shell, /status: 'aborted', stopReason: 'stopped by you', nextAt: null, current: '', queue: \[\]/);
+});
+
+test('a DM run is dropped on reload while an account run is kept', () => {
+  assert.match(shell, /value\.run\.kind === 'account' && value\.run\.status === 'running'/);
+  assert.match(shell, /Array\.isArray\(value\.run\.queue\) && value\.run\.queue\.length/);
+  assert.match(shell, /the thread it was working in is gone/);
+});
+
+test('the follower checker remembers whether a scan actually finished', () => {
+  // A partial scan that forgets it was partial would silently under-report.
+  assert.match(shell, /complete: \{ followers: false, following: false \}/);
+  assert.match(shell, /followers: value\.capture\?\.complete\?\.followers === true/);
+  assert.match(shell, /following: value\.capture\?\.complete\?\.following === true/);
 });
 
 test('the toolbox keeps every byte local and never calls out', () => {

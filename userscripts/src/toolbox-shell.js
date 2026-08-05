@@ -81,6 +81,7 @@
         followers: [],
         following: [],
         capturedAt: { followers: null, following: null },
+        complete: { followers: false, following: false },
       },
       queue: { queue: [], importedAt: null },
       accountCheck: null,
@@ -127,6 +128,10 @@
           followers: safeText(value.capture?.capturedAt?.followers) || null,
           following: safeText(value.capture?.capturedAt?.following) || null,
         },
+        complete: {
+          followers: value.capture?.complete?.followers === true,
+          following: value.capture?.complete?.following === true,
+        },
       },
       queue: normalizeQueue(value.queue?.queue?.length ? value.queue : legacyQueue),
       accountCheck: value.accountCheck && typeof value.accountCheck === 'object' ? value.accountCheck : null,
@@ -138,9 +143,14 @@
       sentDmsComplete: value.sentDmsComplete === true,
       limits: { ...defaults.limits, ...(value.limits && typeof value.limits === 'object' ? value.limits : {}) },
       ledger: value.ledger && typeof value.ledger === 'object' ? value.ledger : defaults.ledger,
-      // A run never survives a reload: the page it was driving is gone, so
-      // resuming from stored state could act on a screen nobody verified.
-      run: null,
+      // Only an account run survives a reload, because navigating between
+      // profiles is how it advances and every target is re-resolved on arrival.
+      // A DM run is dropped: it drives one open conversation, so after a reload
+      // the thread it was working in is gone.
+      run: (value.run && value.run.kind === 'account' && value.run.status === 'running'
+        && Array.isArray(value.run.queue) && value.run.queue.length)
+        ? value.run
+        : null,
     };
   }
 
@@ -895,6 +905,105 @@
     return { status: 'completed', reason: 'unsent', fatal: false };
   }
 
+  // An account run has to visit each target's profile, and navigating tears this
+  // script down and reloads it. So an account run is persisted with its
+  // remaining queue and picked up again on the next page load: one profile per
+  // load. That is safe because every item is independently re-resolved on
+  // arrival and still has to pass the exact-target checks before anything
+  // happens — resuming never inherits trust from the previous page.
+  //
+  // DM runs stay in-memory: they act inside one already-open conversation and
+  // never navigate, so a reload means the thread they were driving is gone.
+  function resumableAccountRun() {
+    const run = state.run;
+    if (!run || run.kind !== 'account' || run.status !== 'running') return null;
+    return Array.isArray(run.queue) && run.queue.length ? run : null;
+  }
+
+  async function continueAccountRun() {
+    const run = resumableAccountRun();
+    if (!run) return;
+    const username = run.queue[0];
+    const onTarget = engine.normalizeUsername(location.pathname) === username;
+
+    if (!onTarget) {
+      setRun({ current: `@${username}` });
+      status(`Opening @${username} to continue the run.`);
+      location.href = `https://www.instagram.com/${encodeURIComponent(username)}/`;
+      return;
+    }
+
+    setRun({ current: `@${username}` });
+    let outcome;
+    try {
+      outcome = await runOneAccount(username, run.action);
+    } catch (error) {
+      outcome = { status: 'failed', reason: error.message, fatal: false };
+    }
+
+    const current = state.run || {};
+    const patch = {
+      queue: (current.queue || []).slice(1),
+      results: [{ label: `@${username}`, status: outcome.status, reason: outcome.reason },
+        ...(current.results || [])].slice(0, 40),
+    };
+    if (outcome.status === 'completed') patch.completed = (current.completed || 0) + 1;
+    else if (outcome.status === 'skipped') patch.skipped = (current.skipped || 0) + 1;
+    else patch.failed = (current.failed || 0) + 1;
+    setRun(patch);
+
+    if (outcome.fatal) {
+      setRun({ status: 'stopped', stopReason: outcome.reason, current: '', queue: [] });
+      status(`Stopped: ${outcome.reason}. Nothing further was attempted.`);
+      return;
+    }
+    if (!(state.run?.queue || []).length) {
+      const done = state.run || {};
+      setRun({ status: 'completed', current: '', nextAt: null });
+      status(`Run finished: ${done.completed || 0} done, ${done.skipped || 0} skipped, ${done.failed || 0} failed.`);
+      return;
+    }
+
+    const bounds = limits();
+    const processed = (state.run.total || 0) - state.run.queue.length;
+    let wait = bounds.minDelayMs
+      + Math.floor(Math.random() * (Math.max(bounds.maxDelayMs, bounds.minDelayMs) - bounds.minDelayMs + 1));
+    if (processed % REST_EVERY === 0) wait += REST_MS;
+    setRun({ nextAt: Date.now() + wait });
+    await sleep(wait);
+    if (batchAbort || state.run?.status !== 'running') return;
+    await continueAccountRun();
+  }
+
+  async function startAccountRun({ action, usernames }) {
+    if (state.run?.status === 'running') {
+      status('A run is already going. Stop it first.');
+      return;
+    }
+    const bounds = limits();
+    const allowance = Math.max(0, bounds.dailyActions - usedToday('actions'));
+    if (!allowance) {
+      status(`Daily limit reached (${bounds.dailyActions}). Raise it in preferences or continue tomorrow.`);
+      return;
+    }
+    const queue = usernames.slice(0, allowance);
+    batchAbort = false;
+    setRun({
+      status: 'running',
+      kind: 'account',
+      action,
+      queue,
+      total: queue.length,
+      completed: 0,
+      skipped: 0,
+      failed: 0,
+      current: '',
+      stopReason: null,
+      results: [],
+    });
+    await continueAccountRun();
+  }
+
   async function runBatch({ kind, action, items }) {
     if (state.run?.status === 'running') {
       status('A run is already going. Stop it first.');
@@ -989,8 +1098,12 @@
     close: () => savePreferences({ open: false }),
     'stop-run': () => {
       batchAbort = true;
-      setRun({ status: 'aborted', stopReason: 'stopped by you', nextAt: null });
-      status('Run stopped.');
+      // Clearing the queue is what actually stops a resumable account run; the
+      // in-memory flag alone would not survive the next page load.
+      setRun({
+        status: 'aborted', stopReason: 'stopped by you', nextAt: null, current: '', queue: [],
+      });
+      status('Run stopped. It will not resume.');
     },
     'scan-list': async () => {
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
@@ -1049,9 +1162,9 @@
       }
       if (!confirmRun(
         `${action === 'follow' ? 'Follow' : 'Unfollow'} ${items.length} account${items.length === 1 ? '' : 's'}?\n\n`
-        + 'Each profile must be open for its turn. This changes your account.',
+        + 'This tab will move between profiles and the run continues across page loads. It changes your account.',
       )) return;
-      await runBatch({ kind: 'account', action, items });
+      await startAccountRun({ action, usernames: items.map((item) => item.username) });
     },
     'run-unsend': async () => {
       const found = state.sentDms || [];
@@ -1284,4 +1397,14 @@
   saveState();
   savePreferences(preferences);
   renderAll();
+
+  // Pick a paused account run back up after the navigation that advanced it.
+  if (resumableAccountRun()) {
+    const pending = state.run.queue.length;
+    status(`Resuming run: ${pending} account${pending === 1 ? '' : 's'} left. Use Stop to end it.`);
+    void continueAccountRun().catch((error) => {
+      setRun({ status: 'stopped', stopReason: error.message, current: '' });
+      status(`Run stopped: ${error.message}`);
+    });
+  }
 })();

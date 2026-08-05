@@ -296,6 +296,51 @@ test('batch stops the whole run when Instagram signals a rate limit', async () =
   }
 });
 
+test('a slow-loading profile is retried rather than silently skipped', async () => {
+  const stored = baseStored();
+  // The first two inspections land before Instagram has hydrated the header,
+  // exactly as they would on a slow connection.
+  let attempts = 0;
+  const profileResponses = {};
+  Object.defineProperty(profileResponses, 'alpha', {
+    enumerable: true,
+    get() {
+      attempts += 1;
+      return attempts > 2
+        ? { username: 'alpha', relationship: 'following', resolutionToken: 'token-alpha' }
+        : { unexpectedUi: true, reason: 'inspector-unavailable' };
+    },
+  });
+
+  const { cleanup, deliver, performed } = await loadBackground({
+    profileResponses,
+    performResponses: {},
+    stored,
+  });
+  try {
+    await deliver({
+      kind: 'insta-aio-arm-batch',
+      batchKind: 'account',
+      action: 'unfollow',
+      count: 1,
+      phrase: 'ARM BATCH UNFOLLOW 1',
+    }, sender);
+    await deliver({
+      kind: 'insta-aio-start-batch',
+      batchKind: 'account',
+      items: [{ id: 'i-1', username: 'alpha' }],
+    }, sender);
+
+    const run = await waitForRun(deliver, (value) => value?.status === 'completed');
+    assert.equal(run.completed, 1, 'the target was acted on once it resolved');
+    assert.equal(run.skipped, 0);
+    assert.ok(attempts > 2, 'the runner retried before giving up');
+    assert.deepEqual(performed.map((item) => item.username), ['alpha']);
+  } finally {
+    await cleanup();
+  }
+});
+
 test('starting a batch without a valid arm is rejected', async () => {
   const stored = baseStored();
   const { cleanup, deliver } = await loadBackground({

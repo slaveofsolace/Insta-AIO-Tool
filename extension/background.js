@@ -772,7 +772,17 @@ async function runBatchAccountItem(state, tabId, jobId, item, limits) {
   if (!await navigateToProfile(tabId, item.username)) {
     return { status: 'skipped', reason: 'profile-navigation-failed', fatal: false };
   }
-  const observation = await inspectProfileInTab(tabId, item.username);
+  // Instagram hydrates the profile header after load, and the content script may
+  // not have re-injected yet. A single attempt would report the target as
+  // unresolvable and silently skip it, which on a slow connection could drop
+  // most of a batch. Retry briefly before believing the target is not there.
+  let observation = await inspectProfileInTab(tabId, item.username);
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if (sessionStopReason(observation)) break;
+    if (observation?.username === item.username && observation?.resolutionToken) break;
+    await sleep(1_000);
+    observation = await inspectProfileInTab(tabId, item.username);
+  }
   const stop = sessionStopReason(observation);
   if (stop) return { status: 'stopped', stopReason: stop, fatal: true };
 
