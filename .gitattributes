@@ -8,6 +8,7 @@
 *.md text eol=lf
 *.mjs text eol=lf
 *.svg text eol=lf
+*.txt text eol=lf
 *.webmanifest text eol=lf
 *.yaml text eol=lf
 *.yml text eol=lf

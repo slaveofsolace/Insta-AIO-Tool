@@ -54,10 +54,14 @@ if (/@require|@resource/.test(metadata)) {
   throw new Error('The Tampermonkey bundle must remain self-contained.');
 }
 
-const assembled = `${metadata}${banner}${engine}`;
+// .gitattributes stores this file with LF. Comparing raw text would report a
+// fresh bundle as stale on Windows purely because of line endings, so both
+// sides of the check are normalised and the file is written with LF.
+const normalize = (value) => value.replaceAll('\r\n', '\n');
+const assembled = normalize(`${metadata}${banner}${engine}`);
 
 if (checkOnly) {
-  const current = await readFile(output, 'utf8').catch(() => '');
+  const current = normalize(await readFile(output, 'utf8').catch(() => ''));
   if (current !== assembled) {
     throw new Error('userscripts/insta-aio-companion.user.js is stale; run pnpm run build:userscript.');
   }
