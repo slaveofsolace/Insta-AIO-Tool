@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 const labelsSource = await readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8');
+const contentSource = await readFile(new URL('../extension/content-instagram.js', import.meta.url), 'utf8');
+const shellSource = await readFile(new URL('../userscripts/src/toolbox-shell.js', import.meta.url), 'utf8');
 const messagesSource = await readFile(new URL('../extension/overlay/views/messages.js', import.meta.url), 'utf8');
 const metadata = await readFile(new URL('../userscripts/src/metadata.txt', import.meta.url), 'utf8');
 const generated = await readFile(new URL('../userscripts/insta-aio-companion.user.js', import.meta.url), 'utf8');
@@ -93,15 +95,15 @@ test('extension message view uses the shared runner and Instagram design tokens'
   assert.doesNotMatch(messagesSource, /\bAI\b/i);
 });
 
-test('Tampermonkey entry point auto-updates from main and loads the shared sources', () => {
+test('Tampermonkey entry point auto-updates from main and embeds the shared sources', () => {
   assert.match(metadata, /@version\s+0\.8\.0/);
   assert.match(metadata, /@downloadURL\s+https:\/\/raw\.githubusercontent\.com\/slaveofsolace\/Insta-AIO-Tool\/main\/userscripts\/insta-aio-companion\.user\.js/);
-  for (const source of [
-    'extension/action-labels.js',
-    'extension/content-instagram.js',
-    'userscripts/src/toolbox-shell.js',
-  ]) assert.match(metadata, new RegExp(`@require\\s+https://raw\\.githubusercontent\\.com/slaveofsolace/Insta-AIO-Tool/main/${source.replaceAll('.', '\\.')}`));
-  assert.equal(generated.startsWith(metadata.trimEnd()), true);
+  assert.doesNotMatch(metadata, /@require|@resource/);
+  assert.equal(generated.startsWith(metadata), true);
+  assert.ok(generated.includes(labelsSource.trim()), 'thread runner is embedded verbatim');
+  assert.ok(generated.includes(contentSource.trim()), 'exact-target engine is embedded verbatim');
+  assert.ok(generated.includes(shellSource.trim()), 'toolbox shell is embedded verbatim');
+  assert.match(generated, /Generated file\. Do not edit\./);
   assert.match(generated, /InstaAioDmThreadUnsender/);
   assert.doesNotMatch(generated, /\bAI\b/i);
 });
