@@ -45,8 +45,10 @@ if (!engine.includes('performReviewedProfileAction')
 if (!engine.includes("if (!globalThis.chrome?.runtime?.onMessage?.addListener) return;")) {
   throw new Error('The shared engine must tolerate running without an extension runtime.');
 }
-if (!metadata.includes('// @version      0.8.0')) {
-  throw new Error('Userscript metadata version must be 0.8.0.');
+// Pinning an exact version here means every future release fails this guard,
+// so require the shape instead of one value.
+if (!/^\/\/ @version\s+\d+\.\d+\.\d+\s*$/m.test(metadata)) {
+  throw new Error('Userscript metadata needs a semantic @version line.');
 }
 if (/@require|@resource/.test(metadata)) {
   throw new Error('The Tampermonkey bundle must remain self-contained.');

@@ -17,7 +17,7 @@ calibrated like a full operator dashboard rather than a subordinate Instagram
 utility. Its shell, contrast, and explanation density compete with the exact
 Instagram context the operator is meant to inspect.
 
-The existing industrial visual language is not generic AI output. It has no
+The existing industrial visual language is deliberate, not template output. It has no
 purple gradient, gradient headline, stock three-card grid, untouched component
 library, or decorative glass. The problem is contextual fit: a successful PWA
 language was reused at full intensity in an injected surface.
@@ -155,7 +155,7 @@ workspace action. Keep privacy/protocol detail in a disclosure.
 | Object URL lifecycle | Partial | Replacement works; teardown must revoke every retained URL |
 | Storage failure | Missing | Surface a safe next step when extension storage fails |
 
-## AI-tell catalog pass
+## Generic-styling catalog pass
 
 Profile: `app-component` / `dashboard`; surgical rigor, not decorative novelty.
 
