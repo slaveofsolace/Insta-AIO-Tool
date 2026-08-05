@@ -244,10 +244,95 @@
     runtime.status('Canceled the pending DM intent. No Instagram control was used.', 'good');
   }
 
+  function renderSentScan(runtime) {
+    const { query, setText } = runtime;
+    const found = runtime.model.sentDms || [];
+    const disclosure = query('[data-ia-role="unsend-disclosure"]');
+    if (disclosure) disclosure.hidden = !found.length;
+    setText('unsend-badge', `${found.length} found`);
+    const countField = query('[data-ia-role="unsend-count"]');
+    if (countField) {
+      countField.max = String(found.length);
+      if (Number(countField.value) > found.length) countField.value = String(found.length);
+    }
+    const detail = query('[data-ia-role="unsend-detail"]');
+    if (detail && found.length) {
+      const complete = runtime.model.sentDmsComplete;
+      detail.textContent = complete
+        ? `${found.length} of your sent messages are exactly identified in this conversation.`
+        : `${found.length} sent messages found so far. The thread did not reach its start, so older messages may be missing.`;
+    }
+  }
+
+  // Reads the open conversation and lists only messages this account sent.
+  async function scanSent(runtime) {
+    const { inspector, model, status } = runtime;
+    if (typeof inspector.enumerateSentDms !== 'function') {
+      status('This page is running an older content script. Reload Instagram and try again.', 'error');
+      return;
+    }
+    status('Scanning this conversation for messages you sent. Keep the tab in front.', 'warning');
+    const outcome = await inspector.enumerateSentDms();
+    if (outcome?.sessionExpired || outcome?.challenge || outcome?.actionBlocked || outcome?.rateLimited) {
+      status('Instagram interrupted the scan (session, checkpoint, or rate limit). Nothing was changed.', 'error');
+      return;
+    }
+    const messages = outcome?.messages || [];
+    model.sentDms = messages;
+    model.sentDmsComplete = outcome?.complete === true;
+    renderSentScan(runtime);
+    if (!messages.length) {
+      status(
+        outcome?.reason === 'open-an-instagram-conversation'
+          ? 'Open a conversation first.'
+          : 'No exactly identifiable sent messages were found in this thread. Mass unsend stays locked without exact identity.',
+        'error',
+      );
+      return;
+    }
+    status(
+      `Found ${messages.length} sent message${messages.length === 1 ? '' : 's'} you can unsend.${outcome.complete ? '' : ' Older messages may still be unloaded.'}`,
+      'good',
+    );
+  }
+
+  async function massUnsend(runtime) {
+    const { model, query } = runtime;
+    const found = model.sentDms || [];
+    if (!found.length) {
+      runtime.status('Scan your sent messages first.', 'error');
+      return;
+    }
+    const scope = query('[data-ia-role="unsend-scope"]')?.value || 'all';
+    const requested = Number(query('[data-ia-role="unsend-count"]')?.value) || found.length;
+    // enumerateSentDms returns newest first.
+    let selected = found;
+    if (scope === 'newest') selected = found.slice(0, requested);
+    if (scope === 'oldest') selected = found.slice(-requested);
+
+    const items = selected.map((message, index) => ({
+      id: `unsend-${message.messageId}-${index}`,
+      conversationId: message.conversationId,
+      messageId: message.messageId,
+      contentDigest: message.contentDigest,
+      timestamp: message.timestamp,
+      preview: message.preview,
+    }));
+
+    await modules.batch.start(runtime, {
+      kind: 'dm',
+      items,
+      description: `This permanently unsends ${items.length} message${items.length === 1 ? '' : 's'} you sent in this conversation. Each one is re-verified immediately before removal. This cannot be undone.`,
+    });
+  }
+
   shared.install('messagesView', {
     arm,
     cancel,
     inspect,
+    massUnsend,
+    renderSentScan,
+    scanSent,
     inspectIntent,
     matchingArm,
     observationMatches,

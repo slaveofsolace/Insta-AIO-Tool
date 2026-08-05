@@ -54,8 +54,10 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/bridge.js',
     'overlay/downloads.js',
     'overlay/accessibility.js',
+    'overlay/layout.js',
     'overlay/collision.js',
     'overlay/icons.js',
+    'overlay/batch.js',
     'overlay/shell.js',
     'overlay/views/now.js',
     'overlay/views/capture.js',
@@ -64,7 +66,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.4.0');
+  assert.equal(manifest.version, '0.5.0');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -74,7 +76,8 @@ test('sidecar migrates the visible capture and manual queue workflow', () => {
   assert.match(overlay, /data-ia-action="capture-visible"/);
   assert.match(overlay, /data-ia-action="queue-complete"/);
   assert.match(overlay, /data-ia-action="queue-skip"/);
-  assert.match(overlay, /Download import JSON/);
+  assert.match(overlay, /Download selected list/);
+  assert.match(overlay, /compareCaptureWorkspace/);
   assert.match(overlay, /extension-local queue only/);
 });
 
@@ -88,6 +91,12 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /aria-expanded=/);
   assert.match(overlay, /prefers-reduced-motion: reduce/);
   assert.match(overlay, /Alt \+ Shift \+ I/);
+  assert.match(overlay, /data-ia-role="move-handle"/);
+  assert.match(overlay, /data-ia-role="resize-handle"/);
+  assert.match(overlay, /data-ia-preference="opacity"/);
+  assert.match(overlay, /Follower checker/);
+  assert.match(overlay, /Follow \/ Unfollow/);
+  assert.match(overlay, /DM Unsend/);
   assert.match(overlay, /openShadow: globalThis\.__instaAioOverlayTestOpenShadow === true/);
   assert.match(overlay, /attachShadow\(\{ mode: openShadow \? 'open' : 'closed' \}\)/);
 });
@@ -101,7 +110,8 @@ test('sidecar captures focus before hiding its launcher and restores a usable ta
   assert.match(setOpenBody, /lastFocusedElement = focusBeforeOpen/);
   assert.match(setOpenBody, /lastFocusedElement !== document\.body/);
   assert.match(setOpenBody, /lastFocusedElement !== document\.documentElement/);
-  assert.match(setOpenBody, /launcher\.focus\(\)/);
+  assert.match(setOpenBody, /\)\s*\?\s*lastFocusedElement\s*:\s*launcher;/);
+  assert.match(setOpenBody, /restoreTarget\.focus\(\{ preventScroll: true \}\)/);
 });
 
 test('dry runs remain no-click while the one live activator is token-bound and one-use', () => {

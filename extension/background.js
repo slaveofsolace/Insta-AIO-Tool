@@ -30,9 +30,57 @@ const MAX_REPLAY_NONCES = 512;
 const MAX_PENDING_JOBS = 50;
 const MAX_ACCOUNT_ACTION_LEDGER = 500;
 const MAX_DM_ACTION_LEDGER = 500;
-const EXTENSION_DAILY_ACTION_LIMIT = 25;
-const EXTENSION_DAILY_DM_LIMIT = 5;
+const DEFAULT_DAILY_ACTION_LIMIT = 100;
+const DEFAULT_DAILY_DM_LIMIT = 50;
+// Ceilings the user cannot raise. Instagram penalises fast bulk activity, so the
+// batch runner stays well inside commonly reported action thresholds.
+const MAX_DAILY_ACTION_LIMIT = 400;
+const MAX_DAILY_DM_LIMIT = 300;
+const MAX_BATCH_ITEMS = 250;
+const BATCH_ARM_TTL_MS = 30 * 60 * 1000;
+const DEFAULT_BATCH_MIN_DELAY_MS = 4_000;
+const DEFAULT_BATCH_MAX_DELAY_MS = 11_000;
+const MIN_ALLOWED_BATCH_DELAY_MS = 1_500;
+// After this many consecutive items the runner takes a longer cooldown.
+const BATCH_REST_EVERY = 20;
+const BATCH_REST_MS = 90_000;
 let requestTail = Promise.resolve();
+let activeBatchAbort = false;
+
+function clampInteger(value, fallback, min, max) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(numeric)));
+}
+
+function normalizeBatchLimits(limits) {
+  return {
+    dailyActionLimit: clampInteger(
+      limits?.dailyActionLimit,
+      DEFAULT_DAILY_ACTION_LIMIT,
+      1,
+      MAX_DAILY_ACTION_LIMIT,
+    ),
+    dailyDmLimit: clampInteger(
+      limits?.dailyDmLimit,
+      DEFAULT_DAILY_DM_LIMIT,
+      1,
+      MAX_DAILY_DM_LIMIT,
+    ),
+    minDelayMs: clampInteger(
+      limits?.minDelayMs,
+      DEFAULT_BATCH_MIN_DELAY_MS,
+      MIN_ALLOWED_BATCH_DELAY_MS,
+      600_000,
+    ),
+    maxDelayMs: clampInteger(
+      limits?.maxDelayMs,
+      DEFAULT_BATCH_MAX_DELAY_MS,
+      MIN_ALLOWED_BATCH_DELAY_MS,
+      900_000,
+    ),
+  };
+}
 
 async function loadBridgeState() {
   const stored = await chrome.storage.local.get([
@@ -45,6 +93,9 @@ async function loadBridgeState() {
     'liveArm',
     'pendingDmIntent',
     'dmArm',
+    'batchArm',
+    'batchRun',
+    'batchLimits',
   ]);
   return {
     pairings: Array.isArray(stored.bridgePairings) ? stored.bridgePairings : [],
@@ -60,6 +111,9 @@ async function loadBridgeState() {
     liveArm: stored.liveArm || null,
     pendingDmIntent: stored.pendingDmIntent || null,
     dmArm: stored.dmArm || null,
+    batchArm: stored.batchArm || null,
+    batchRun: stored.batchRun || null,
+    batchLimits: normalizeBatchLimits(stored.batchLimits),
   };
 }
 
@@ -74,6 +128,9 @@ async function saveBridgeState(state) {
     liveArm: state.liveArm || null,
     pendingDmIntent: state.pendingDmIntent || null,
     dmArm: state.dmArm || null,
+    batchArm: state.batchArm || null,
+    batchRun: state.batchRun || null,
+    batchLimits: normalizeBatchLimits(state.batchLimits),
   });
 }
 
@@ -310,10 +367,11 @@ function extensionReservationConflict(state, jobId, intent, now = Date.now()) {
     && entry.action === intent.action
     && counted.has(entry.status)
   )).length;
-  if (used >= EXTENSION_DAILY_ACTION_LIMIT) {
+  const dailyActionLimit = normalizeBatchLimits(state.batchLimits).dailyActionLimit;
+  if (used >= dailyActionLimit) {
     return {
       reason: 'extension-daily-limit',
-      limit: EXTENSION_DAILY_ACTION_LIMIT,
+      limit: dailyActionLimit,
       used,
     };
   }
@@ -370,8 +428,9 @@ function extensionDmReservationConflict(state, jobId, intent, now = Date.now()) 
 
   const day = accountActionDay(now);
   const used = ledger.filter((entry) => entry.day === day && counted.has(entry.status)).length;
-  if (used >= EXTENSION_DAILY_DM_LIMIT) {
-    return { reason: 'extension-daily-dm-limit', limit: EXTENSION_DAILY_DM_LIMIT, used };
+  const dailyDmLimit = normalizeBatchLimits(state.batchLimits).dailyDmLimit;
+  if (used >= dailyDmLimit) {
+    return { reason: 'extension-daily-dm-limit', limit: dailyDmLimit, used };
   }
   return null;
 }
@@ -602,6 +661,407 @@ async function performLiveAccountAction(state, pairing, jobId, item) {
   });
   await saveBridgeState(state);
   return result || { unexpectedUi: true, reason: 'empty-live-action-result' };
+}
+
+// ---------------------------------------------------------------------------
+// Batch runner
+//
+// The audited controlled path stays one-shot: every item below still runs a
+// complete inspect -> exact-resolution -> reserve -> perform -> finalize cycle
+// against the live DOM. The batch layer only removes the need to retype a
+// confirmation phrase for each item, and it stops the whole run the moment
+// Instagram signals a challenge, rate limit, block, or an unexpected surface.
+// ---------------------------------------------------------------------------
+
+function batchArmPhrase(kind, action, count) {
+  if (kind === 'dm') return `ARM MASS UNSEND ${count}`;
+  return `ARM BATCH ${String(action || '').toUpperCase()} ${count}`;
+}
+
+function sessionStopReason(observation) {
+  if (observation?.sessionExpired) return 'session-expired';
+  if (observation?.challenge) return 'challenge-required';
+  if (observation?.actionBlocked) return 'action-blocked';
+  if (observation?.rateLimited) return 'rate-limited';
+  return null;
+}
+
+function jitteredDelay(limits) {
+  const min = Math.min(limits.minDelayMs, limits.maxDelayMs);
+  const max = Math.max(limits.minDelayMs, limits.maxDelayMs);
+  return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => { setTimeout(resolve, ms); });
+}
+
+function batchArmValid(state, now = Date.now()) {
+  const arm = state.batchArm;
+  if (!arm) return false;
+  return Date.parse(arm.expiresAt) > now;
+}
+
+async function armBatch(request, sender) {
+  const state = await loadBridgeState();
+  if (!Number.isInteger(sender?.tab?.id)) return { error: 'instagram-tab-required' };
+  const kind = request?.batchKind === 'dm' ? 'dm' : 'account';
+  const action = kind === 'account' ? String(request?.action || '') : null;
+  if (kind === 'account' && !['follow', 'unfollow'].includes(action)) {
+    return { error: 'batch-action-invalid' };
+  }
+  const count = clampInteger(request?.count, 0, 1, MAX_BATCH_ITEMS);
+  if (!count) return { error: 'batch-count-invalid' };
+
+  const expected = batchArmPhrase(kind, action, count);
+  if (String(request?.phrase || '').trim() !== expected) {
+    return { error: 'batch-arm-phrase-mismatch', expectedPhrase: expected };
+  }
+
+  const now = Date.now();
+  state.batchArm = {
+    kind,
+    action,
+    count,
+    jobId: String(request?.jobId || `batch-${now}`),
+    tabId: sender.tab.id,
+    armedAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + BATCH_ARM_TTL_MS).toISOString(),
+  };
+  await saveBridgeState(state);
+  return { arm: { ...state.batchArm }, state: overlayState(state) };
+}
+
+async function tabSettled(tabId, timeoutMs = 20_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    let tab;
+    try {
+      tab = await chrome.tabs.get(tabId);
+    } catch {
+      return false;
+    }
+    if (tab.status === 'complete') return true;
+    await sleep(250);
+  }
+  return false;
+}
+
+// Follow/unfollow targets live on their own profile pages, so the armed tab is
+// navigated to each target before the exact-resolution check runs.
+async function navigateToProfile(tabId, username) {
+  const target = `https://www.instagram.com/${username}/`;
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    const current = normalizeUsername(new URL(tab.url || '').pathname);
+    if (current === username) return true;
+    await chrome.tabs.update(tabId, { url: target });
+  } catch {
+    return false;
+  }
+  if (!await tabSettled(tabId)) return false;
+  // Instagram hydrates its profile header after load; give it a moment.
+  await sleep(1_200);
+  return true;
+}
+
+async function runBatchAccountItem(state, tabId, jobId, item, limits) {
+  if (!item.username) {
+    return { status: 'skipped', reason: 'invalid-username', fatal: false };
+  }
+  if (!await navigateToProfile(tabId, item.username)) {
+    return { status: 'skipped', reason: 'profile-navigation-failed', fatal: false };
+  }
+  const observation = await inspectProfileInTab(tabId, item.username);
+  const stop = sessionStopReason(observation);
+  if (stop) return { status: 'stopped', stopReason: stop, fatal: true };
+
+  const expectedRelationship = item.action === 'follow' ? 'not-following' : 'following';
+  if (
+    observation?.username !== item.username
+    || observation?.relationship !== expectedRelationship
+    || observation?.ambiguous
+    || observation?.unexpectedUi
+    || !observation?.resolutionToken
+  ) {
+    return {
+      status: 'skipped',
+      reason: observation?.username !== item.username
+        ? 'wrong-profile'
+        : observation?.reason || 'relationship-mismatch',
+      fatal: false,
+    };
+  }
+
+  const intent = {
+    action: item.action,
+    itemId: item.id,
+    jobId,
+    username: item.username,
+  };
+  const reservation = reserveExtensionAction(state, jobId, intent, tabId);
+  if (!reservation.ok) {
+    return {
+      status: 'skipped',
+      reason: reservation.reason,
+      fatal: reservation.reason === 'extension-daily-limit',
+    };
+  }
+  await saveBridgeState(state);
+
+  let result;
+  try {
+    result = await chrome.tabs.sendMessage(tabId, {
+      kind: 'insta-aio-perform-reviewed-profile-action',
+      item: {
+        action: item.action,
+        expectedRelationship,
+        resolutionToken: observation.resolutionToken,
+        username: item.username,
+      },
+    });
+  } catch {
+    result = { unexpectedUi: true, reason: 'live-action-inspector-unavailable' };
+  }
+
+  const succeeded = Boolean(result?.result)
+    && !result?.ambiguous
+    && !result?.unexpectedUi
+    && !result?.sessionExpired
+    && !result?.challenge
+    && !result?.actionBlocked
+    && !result?.rateLimited;
+  finalizeExtensionAction(state, reservation.record.id, result, succeeded);
+  await saveBridgeState(state);
+
+  const resultStop = sessionStopReason(result);
+  if (resultStop) return { status: 'stopped', stopReason: resultStop, fatal: true };
+  return succeeded
+    ? { status: 'completed', result: String(result.result), fatal: false }
+    : { status: 'failed', reason: result?.reason || 'live-action-not-confirmed', fatal: false };
+}
+
+async function runBatchDmItem(state, pairingId, tabId, jobId, item, limits) {
+  const observation = await inspectDmItemInTab(tabId, {
+    conversationId: item.conversationId,
+    contentDigest: item.contentDigest,
+    messageId: item.messageId,
+    sentByMe: true,
+    timestamp: item.timestamp,
+  });
+  const stop = sessionStopReason(observation);
+  if (stop) return { status: 'stopped', stopReason: stop, fatal: true };
+
+  if (
+    observation?.conversationId !== String(item.conversationId)
+    || observation?.messageId !== String(item.messageId)
+    || Number(observation?.timestamp) !== Number(item.timestamp)
+    || observation?.contentDigest !== item.contentDigest
+    || observation?.sentByMe !== true
+    || observation?.exactIdentityAvailable !== true
+    || observation?.ownershipAvailable !== true
+    || observation?.ambiguous
+    || observation?.unexpectedUi
+    || !observation?.resolutionToken
+  ) {
+    return {
+      status: 'skipped',
+      reason: observation?.reason || 'exact-dm-resolution-required',
+      fatal: false,
+    };
+  }
+
+  const intent = {
+    conversationId: String(item.conversationId),
+    contentDigest: item.contentDigest,
+    itemId: item.id,
+    jobId,
+    messageId: String(item.messageId),
+    timestamp: Number(item.timestamp),
+  };
+  const reservation = reserveExtensionDmAction(state, jobId, intent, pairingId, tabId);
+  if (!reservation.ok) {
+    return {
+      status: 'skipped',
+      reason: reservation.reason,
+      fatal: reservation.reason === 'extension-daily-dm-limit',
+    };
+  }
+  await saveBridgeState(state);
+
+  let result;
+  try {
+    result = await chrome.tabs.sendMessage(tabId, {
+      kind: 'insta-aio-perform-reviewed-dm-unsend',
+      item: {
+        conversationId: intent.conversationId,
+        contentDigest: intent.contentDigest,
+        messageId: intent.messageId,
+        resolutionToken: observation.resolutionToken,
+        sentByMe: true,
+        timestamp: intent.timestamp,
+      },
+    });
+  } catch {
+    result = { unexpectedUi: true, reason: 'live-dm-inspector-unavailable' };
+  }
+
+  const succeeded = verifiedControlledDmResult(intent, result);
+  finalizeExtensionDmAction(state, reservation.record.id, result, succeeded);
+  await saveBridgeState(state);
+
+  const resultStop = sessionStopReason(result);
+  if (resultStop) return { status: 'stopped', stopReason: resultStop, fatal: true };
+  return succeeded
+    ? { status: 'completed', result: 'unsent', fatal: false }
+    : { status: 'failed', reason: result?.reason || 'live-dm-not-confirmed', fatal: false };
+}
+
+async function startBatch(request, sender, pairingId = null) {
+  const state = await loadBridgeState();
+  const now = Date.now();
+  if (!batchArmValid(state, now)) return { error: 'batch-arm-required' };
+  const arm = state.batchArm;
+  if (!Number.isInteger(sender?.tab?.id) || sender.tab.id !== arm.tabId) {
+    return { error: 'armed-instagram-tab-unavailable' };
+  }
+  if (state.batchRun?.status === 'running') return { error: 'batch-already-running' };
+
+  const items = Array.isArray(request?.items) ? request.items.slice(0, arm.count) : [];
+  if (!items.length) return { error: 'batch-items-required' };
+  if (request?.batchKind !== arm.kind) return { error: 'batch-kind-mismatch' };
+
+  const limits = normalizeBatchLimits(state.batchLimits);
+  const runId = `run-${now}`;
+  state.batchRun = {
+    id: runId,
+    kind: arm.kind,
+    action: arm.action,
+    jobId: arm.jobId,
+    status: 'running',
+    total: items.length,
+    completed: 0,
+    failed: 0,
+    skipped: 0,
+    startedAt: new Date(now).toISOString(),
+    finishedAt: null,
+    stopReason: null,
+    currentIndex: 0,
+    currentLabel: '',
+    nextActionAt: null,
+    results: [],
+  };
+  // The arm authorises exactly this run; it cannot be replayed for another.
+  state.batchArm = null;
+  activeBatchAbort = false;
+  await saveBridgeState(state);
+
+  // Run detached so the caller gets an immediate acknowledgement and can poll.
+  void executeBatch(runId, arm, items, limits, pairingId);
+  return { run: { ...state.batchRun }, state: overlayState(state) };
+}
+
+async function executeBatch(runId, arm, items, limits, pairingId) {
+  let index = 0;
+  for (const rawItem of items) {
+    if (activeBatchAbort) break;
+    const state = await loadBridgeState();
+    if (state.batchRun?.id !== runId || state.batchRun.status !== 'running') return;
+
+    const item = {
+      ...rawItem,
+      id: String(rawItem?.id || `${runId}-${index}`),
+      username: arm.kind === 'account' ? normalizeUsername(rawItem?.username) : null,
+      action: arm.kind === 'account' ? arm.action : null,
+    };
+    state.batchRun.currentIndex = index;
+    state.batchRun.currentLabel = arm.kind === 'account'
+      ? `@${item.username}`
+      : String(item.preview || item.messageId || '');
+    await saveBridgeState(state);
+
+    let outcome;
+    try {
+      outcome = arm.kind === 'account'
+        ? await runBatchAccountItem(state, arm.tabId, arm.jobId, item, limits)
+        : await runBatchDmItem(state, pairingId, arm.tabId, arm.jobId, item, limits);
+    } catch {
+      outcome = { status: 'failed', reason: 'batch-item-threw', fatal: false };
+    }
+
+    const after = await loadBridgeState();
+    if (after.batchRun?.id !== runId) return;
+    after.batchRun.results.unshift({
+      index,
+      label: arm.kind === 'account' ? item.username : item.messageId,
+      status: outcome.status,
+      reason: outcome.reason || outcome.stopReason || null,
+      at: new Date().toISOString(),
+    });
+    after.batchRun.results = after.batchRun.results.slice(0, MAX_BATCH_ITEMS);
+    if (outcome.status === 'completed') after.batchRun.completed += 1;
+    else if (outcome.status === 'skipped') after.batchRun.skipped += 1;
+    else after.batchRun.failed += 1;
+
+    if (outcome.fatal) {
+      after.batchRun.status = 'stopped';
+      after.batchRun.stopReason = outcome.stopReason || outcome.reason || 'safe-stop';
+      after.batchRun.finishedAt = new Date().toISOString();
+      await saveBridgeState(after);
+      return;
+    }
+
+    index += 1;
+    const isLast = index >= items.length;
+    let waitMs = 0;
+    if (!isLast) {
+      waitMs = jitteredDelay(limits);
+      if (index % BATCH_REST_EVERY === 0) waitMs += BATCH_REST_MS;
+      after.batchRun.nextActionAt = new Date(Date.now() + waitMs).toISOString();
+    }
+    await saveBridgeState(after);
+    if (!isLast) await sleep(waitMs);
+  }
+
+  const final = await loadBridgeState();
+  if (final.batchRun?.id !== runId) return;
+  final.batchRun.status = activeBatchAbort ? 'aborted' : 'completed';
+  final.batchRun.stopReason = activeBatchAbort ? 'stopped-by-user' : null;
+  final.batchRun.nextActionAt = null;
+  final.batchRun.finishedAt = new Date().toISOString();
+  await saveBridgeState(final);
+}
+
+async function abortBatch() {
+  activeBatchAbort = true;
+  const state = await loadBridgeState();
+  if (state.batchRun?.status === 'running') {
+    state.batchRun.status = 'aborted';
+    state.batchRun.stopReason = 'stopped-by-user';
+    state.batchRun.nextActionAt = null;
+    state.batchRun.finishedAt = new Date().toISOString();
+    await saveBridgeState(state);
+  }
+  return { run: state.batchRun ? { ...state.batchRun } : null };
+}
+
+async function batchStatus() {
+  const state = await loadBridgeState();
+  return {
+    run: state.batchRun ? { ...state.batchRun } : null,
+    arm: batchArmValid(state) ? { ...state.batchArm } : null,
+    limits: normalizeBatchLimits(state.batchLimits),
+  };
+}
+
+async function updateBatchLimits(request) {
+  const state = await loadBridgeState();
+  state.batchLimits = normalizeBatchLimits({
+    ...normalizeBatchLimits(state.batchLimits),
+    ...(request?.limits || {}),
+  });
+  await saveBridgeState(state);
+  return { limits: state.batchLimits };
 }
 
 async function armPendingAccountIntent(request, sender) {
@@ -1180,6 +1640,56 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const operation = requestTail.then(() => cancelPendingDmIntent());
     requestTail = operation.catch(() => {});
     operation.then(sendResponse).catch(() => sendResponse({ error: 'dm-live-intent-cancel-failed' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-arm-batch') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    const operation = requestTail.then(() => armBatch(request, sender));
+    requestTail = operation.catch(() => {});
+    operation.then(sendResponse).catch(() => sendResponse({ error: 'batch-arm-unavailable' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-start-batch') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    const operation = requestTail.then(() => startBatch(request, sender));
+    requestTail = operation.catch(() => {});
+    operation.then(sendResponse).catch(() => sendResponse({ error: 'batch-start-unavailable' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-batch-status') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    batchStatus()
+      .then(sendResponse)
+      .catch(() => sendResponse({ error: 'batch-status-unavailable' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-abort-batch') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    abortBatch()
+      .then(sendResponse)
+      .catch(() => sendResponse({ error: 'batch-abort-unavailable' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-batch-limits') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    const operation = requestTail.then(() => updateBatchLimits(request));
+    requestTail = operation.catch(() => {});
+    operation.then(sendResponse).catch(() => sendResponse({ error: 'batch-limits-unavailable' }));
     return true;
   }
   if (request?.kind !== 'insta-aio-bridge-request') return false;

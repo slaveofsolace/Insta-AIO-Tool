@@ -19,38 +19,76 @@
     const list = query('[data-ia-role="capture-list"]');
     if (!list) return;
     list.replaceChildren();
-
-    if (!model.capture) {
-      setText('capture-count', '0');
-      setText('capture-detail', 'No draft yet');
-      setState(
-        runtime,
-        'Ready for a rendered list',
-        'Open Followers or Following, scroll manually, then capture the visible batch.',
-      );
-      const empty = document.createElement('li');
-      empty.className = 'ia-empty';
-      empty.textContent = 'Instagram is not auto-scrolled and hidden accounts are not inferred.';
-      list.append(empty);
-      downloads.clear('capture', query('[data-ia-role="capture-download"]'));
-      return;
-    }
-
-    const accounts = model.capture[model.capture.listType] || [];
+    const workspace = model.capture || shared.captureWorkspaceDefaults();
+    const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
+      ? 'followers'
+      : 'following';
+    const accounts = workspace[listType] || [];
+    const comparison = shared.compareCaptureWorkspace(workspace);
     const batch = model.captureMeta;
+    setText('followers-count', String(workspace.followers.length));
+    setText('following-count', String(workspace.following.length));
     setText('capture-count', String(accounts.length));
     setText(
       'capture-detail',
-      `${model.capture.listType} · updated ${shared.shortDate(model.capture.capturedAt)}`,
+      accounts.length
+        ? `${listType} · updated ${shared.shortDate(workspace.capturedAt[listType])}`
+        : `${listType} · not captured yet`,
     );
-    setState(
-      runtime,
-      `${accounts.length} unique account${accounts.length === 1 ? '' : 's'} in this draft`,
-      batch
-        ? `${batch.visible} rendered; ${batch.added} added; ${batch.duplicates} duplicate${batch.duplicates === 1 ? '' : 's'} ignored.`
-        : 'Stored locally from rendered Instagram rows.',
-      'good',
-    );
+    if (workspace.followers.length && workspace.following.length) {
+      setState(
+        runtime,
+        'Partial follower comparison ready',
+        `${comparison.mutuals.length} mutual; ${comparison.notFollowingMeBack.length} not following you back; ${comparison.iDoNotFollowBack.length} you do not follow back.`,
+        'good',
+      );
+    } else {
+      const missing = workspace.followers.length ? 'Following' : 'Followers';
+      setState(
+        runtime,
+        'Capture both Instagram lists',
+        `The ${missing} draft is still empty. Open that list, scroll manually, and capture its rendered rows.`,
+      );
+    }
+
+    const checker = query('[data-ia-role="checker-result"]');
+    if (checker) {
+      checker.replaceChildren();
+      const heading = document.createElement('h2');
+      heading.textContent = workspace.followers.length && workspace.following.length
+        ? 'Rendered-row comparison'
+        : 'How the checker works';
+      checker.append(heading);
+      if (workspace.followers.length && workspace.following.length) {
+        const facts = document.createElement('dl');
+        for (const [label, value] of [
+          ['Mutuals', comparison.mutuals.length],
+          ['Not following me back', comparison.notFollowingMeBack.length],
+          ["I don't follow back", comparison.iDoNotFollowBack.length],
+        ]) {
+          const term = document.createElement('dt');
+          term.textContent = label;
+          const detail = document.createElement('dd');
+          detail.textContent = String(value);
+          facts.append(term, detail);
+        }
+        checker.append(facts);
+      } else {
+        const detail = document.createElement('p');
+        detail.className = 'ia-note';
+        detail.textContent = 'Capture visible Followers, then visible Following. The overlay compares normalized usernames locally without private endpoints or console code.';
+        checker.append(detail);
+      }
+    }
+
+    if (batch?.listType === listType) {
+      setState(
+        runtime,
+        `${accounts.length} unique ${listType} account${accounts.length === 1 ? '' : 's'} captured`,
+        `${batch.visible} rendered; ${batch.added} added; ${batch.duplicates} duplicate${batch.duplicates === 1 ? '' : 's'} ignored.`,
+        'good',
+      );
+    }
 
     for (const account of accounts.slice(0, 12)) {
       const row = document.createElement('li');
@@ -68,10 +106,18 @@
       more.textContent = `+ ${accounts.length - 12} more in the download`;
       list.append(more);
     }
-    downloads.update('capture', query('[data-ia-role="capture-download"]'), {
-      filename: `insta-aio-visible-${model.capture.listType}-${Date.now()}.json`,
-      payload: model.capture,
-    });
+    if (accounts.length) {
+      downloads.update('capture', query('[data-ia-role="capture-download"]'), {
+        filename: `insta-aio-visible-${listType}-${Date.now()}.json`,
+        payload: shared.captureRecord(workspace, listType),
+      });
+    } else {
+      const empty = document.createElement('li');
+      empty.className = 'ia-empty';
+      empty.textContent = 'Instagram is not auto-scrolled and hidden accounts are not inferred.';
+      list.append(empty);
+      downloads.clear('capture', query('[data-ia-role="capture-download"]'));
+    }
   }
 
   async function captureVisible(runtime) {
@@ -84,16 +130,19 @@
       status('No rendered account rows were found. Open or scroll the Instagram list and try again.', 'error');
       return;
     }
-    const existing = model.capture?.listType === listType ? model.capture[listType] : [];
+    const workspace = model.capture || shared.captureWorkspaceDefaults();
+    const existing = workspace[listType] || [];
     const accounts = new Map(existing.map((account) => [account.username, account]));
     const before = accounts.size;
     for (const account of visible) accounts.set(account.username, account);
-    model.capture = shared.normalizeCapture({
-      listType,
-      capturedAt: new Date().toISOString(),
+    const capturedAt = new Date().toISOString();
+    model.capture = shared.normalizeCaptureWorkspace({
+      ...workspace,
       [listType]: [...accounts.values()],
+      capturedAt: { ...workspace.capturedAt, [listType]: capturedAt },
     }, inspector.normalizeUsername);
     model.captureMeta = {
+      listType,
       added: model.capture[listType].length - before,
       duplicates: Math.max(0, visible.length - (model.capture[listType].length - before)),
       visible: visible.length,
@@ -106,13 +155,71 @@
     );
   }
 
+  async function mergeAccounts(runtime, listType, accounts, { complete, label }) {
+    const { inspector, model, status } = runtime;
+    const workspace = model.capture || shared.captureWorkspaceDefaults();
+    const existing = workspace[listType] || [];
+    const merged = new Map(existing.map((account) => [account.username, account]));
+    const before = merged.size;
+    for (const account of accounts) merged.set(account.username, account);
+    const capturedAt = new Date().toISOString();
+    model.capture = shared.normalizeCaptureWorkspace({
+      ...workspace,
+      [listType]: [...merged.values()],
+      capturedAt: { ...workspace.capturedAt, [listType]: capturedAt },
+      complete: { ...(workspace.complete || {}), [listType]: complete === true },
+    }, inspector.normalizeUsername);
+    const added = model.capture[listType].length - before;
+    model.captureMeta = {
+      listType,
+      added,
+      duplicates: Math.max(0, accounts.length - added),
+      visible: accounts.length,
+    };
+    await runtime.persistCapture(model.capture);
+    render(runtime);
+    status(
+      `${label} ${accounts.length} row${accounts.length === 1 ? '' : 's'}; ${model.capture[listType].length} unique in the ${listType} draft.${complete ? '' : ' The list did not reach its end — scroll further or rerun.'}`,
+      complete ? 'good' : 'warning',
+    );
+  }
+
+  // Auto-scrolls the open Followers/Following dialog and reads every rendered row.
+  async function scanFullList(runtime) {
+    const { inspector, query, status } = runtime;
+    const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
+      ? 'followers'
+      : 'following';
+    if (typeof inspector.collectAccountList !== 'function') {
+      status('This page is running an older content script. Reload Instagram and try again.', 'error');
+      return;
+    }
+    status(`Scanning the open ${listType} list. Leave the dialog open and this tab in front.`, 'warning');
+    const outcome = await inspector.collectAccountList();
+    if (outcome?.sessionExpired || outcome?.challenge || outcome?.actionBlocked || outcome?.rateLimited) {
+      status('Instagram interrupted the scan (session, checkpoint, or rate limit). Nothing was changed.', 'error');
+      return;
+    }
+    const accounts = outcome?.accounts || [];
+    if (!accounts.length) {
+      status(`No rows were readable. Open the ${listType} dialog on your profile first.`, 'error');
+      return;
+    }
+    await mergeAccounts(runtime, listType, accounts, {
+      complete: outcome.complete === true,
+      label: 'Scanned',
+    });
+  }
+
   async function reset(runtime) {
-    runtime.model.capture = null;
+    runtime.model.capture = shared.captureWorkspaceDefaults();
     runtime.model.captureMeta = null;
     await runtime.persistCapture(null);
     render(runtime);
-    runtime.status('Visible-list draft cleared. Instagram data was not changed.', 'neutral');
+    runtime.status('Follower checker drafts cleared. Instagram data was not changed.', 'neutral');
   }
 
-  shared.install('captureView', { captureVisible, render, reset });
+  shared.install('captureView', {
+    captureVisible, render, reset, scanFullList,
+  });
 })();

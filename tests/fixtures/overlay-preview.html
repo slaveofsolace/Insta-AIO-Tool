@@ -277,9 +277,10 @@
       .includes(fixtureSearch.get('section'))
       ? fixtureSearch.get('section')
       : 'now';
+    const fixtureFloatingLayout = fixtureSearch.get('layout') === 'floating';
     const fixturePreferences = fixtureSearch.has('open') || fixtureSearch.has('section')
       ? {
-        schemaVersion: 2,
+        schemaVersion: fixtureFloatingLayout ? 3 : 2,
         open: fixtureSearch.get('open') !== 'false',
         section: fixtureSection,
         dock: fixtureSearch.get('dock') === 'left' ? 'left' : 'right',
@@ -289,6 +290,15 @@
         theme: fixtureTheme,
         density: fixtureSearch.get('density') === 'compact' ? 'compact' : 'comfortable',
         firstRunComplete: true,
+        ...(fixtureFloatingLayout ? {
+          opacity: Number(fixtureSearch.get('opacity')),
+          panelHeight: Number(fixtureSearch.get('panelHeight')),
+          panelWidth: Number(fixtureSearch.get('panelWidth')),
+          position: {
+            x: Number(fixtureSearch.get('positionX')),
+            y: Number(fixtureSearch.get('positionY')),
+          },
+        } : {}),
       }
       : null;
     const fixtureQueueUsername = fixtureMode === 'qa-profile-not-following'
@@ -328,7 +338,18 @@
       pendingDmIntent: fixtureDmIntent,
       liveArm: fixtureAccountArm,
       dmArm: fixtureDmArm,
-      ...(fixturePreferences ? { instaAioOverlayPreferencesV2: fixturePreferences } : {}),
+      batchArm: null,
+      batchRun: null,
+      batchLimits: {
+        dailyActionLimit: 100,
+        dailyDmLimit: 50,
+        minDelayMs: 4000,
+        maxDelayMs: 11000,
+      },
+      ...(fixturePreferences ? {
+        [fixtureFloatingLayout ? 'instaAioOverlayPreferencesV3' : 'instaAioOverlayPreferencesV2']:
+          fixturePreferences,
+      } : {}),
       ...(fixtureMode === 'qa-following-repeat' ? {
         instaAioOverlayCaptureDraftV1: {
           schemaVersion: 1,
@@ -362,7 +383,7 @@
     globalThis.chrome = {
       runtime: {
         lastError: null,
-        getManifest: () => ({ version: '0.4.0' }),
+        getManifest: () => ({ version: '0.5.0' }),
         onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
         sendMessage: (request, callback) => {
           if (request.kind === 'insta-aio-overlay-state') {
@@ -370,7 +391,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.4.0',
+              extensionVersion: '0.5.0',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm || fixtureStorage.dmArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -406,7 +427,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.4.0',
+              extensionVersion: '0.5.0',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -423,7 +444,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.4.0',
+              extensionVersion: '0.5.0',
               liveExecutionEnabled: false,
               liveArm: null,
               pairings: fixtureStorage.bridgePairings,
@@ -451,7 +472,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.4.0',
+              extensionVersion: '0.5.0',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -468,7 +489,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: null,
-              extensionVersion: '0.4.0',
+              extensionVersion: '0.5.0',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -476,6 +497,78 @@
               pendingLiveIntent: fixtureStorage.pendingLiveIntent,
               recentRuns: [],
             } });
+            return;
+          }
+          if (request.kind === 'insta-aio-batch-status') {
+            callback({
+              run: fixtureStorage.batchRun || null,
+              arm: fixtureStorage.batchArm || null,
+              limits: fixtureStorage.batchLimits,
+            });
+            return;
+          }
+          if (request.kind === 'insta-aio-arm-batch') {
+            const expected = request.batchKind === 'dm'
+              ? `ARM MASS UNSEND ${request.count}`
+              : `ARM BATCH ${String(request.action || '').toUpperCase()} ${request.count}`;
+            if (request.phrase !== expected) {
+              callback({ error: 'batch-arm-phrase-mismatch' });
+              return;
+            }
+            fixtureStorage.batchArm = {
+              kind: request.batchKind,
+              action: request.action,
+              count: request.count,
+            };
+            callback({ arm: fixtureStorage.batchArm });
+            return;
+          }
+          if (request.kind === 'insta-aio-start-batch') {
+            if (!fixtureStorage.batchArm) {
+              callback({ error: 'batch-arm-required' });
+              return;
+            }
+            const items = request.items || [];
+            fixtureStorage.batchRun = {
+              id: 'fixture-run',
+              kind: request.batchKind,
+              action: fixtureStorage.batchArm.action,
+              status: 'running',
+              total: items.length,
+              completed: 1,
+              failed: 0,
+              skipped: 0,
+              currentLabel: request.batchKind === 'dm'
+                ? (items[1]?.preview || 'message')
+                : `@${items[1]?.username || items[0]?.username || ''}`,
+              nextActionAt: new Date(Date.now() + 6000).toISOString(),
+              stopReason: null,
+              results: items.slice(0, 1).map((item, index) => ({
+                index,
+                label: request.batchKind === 'dm' ? item.messageId : item.username,
+                status: 'completed',
+                reason: null,
+              })),
+            };
+            fixtureStorage.batchArm = null;
+            callback({ run: fixtureStorage.batchRun });
+            return;
+          }
+          if (request.kind === 'insta-aio-abort-batch') {
+            if (fixtureStorage.batchRun) {
+              fixtureStorage.batchRun.status = 'aborted';
+              fixtureStorage.batchRun.stopReason = 'stopped-by-user';
+              fixtureStorage.batchRun.nextActionAt = null;
+            }
+            callback({ run: fixtureStorage.batchRun });
+            return;
+          }
+          if (request.kind === 'insta-aio-batch-limits') {
+            fixtureStorage.batchLimits = {
+              ...fixtureStorage.batchLimits,
+              ...request.limits,
+            };
+            callback({ limits: fixtureStorage.batchLimits });
             return;
           }
           callback({});
@@ -530,8 +623,10 @@
   <script src="/extension/overlay/bridge.js"></script>
   <script src="/extension/overlay/downloads.js"></script>
   <script src="/extension/overlay/accessibility.js"></script>
+  <script src="/extension/overlay/layout.js"></script>
   <script src="/extension/overlay/collision.js"></script>
   <script src="/extension/overlay/icons.js"></script>
+  <script src="/extension/overlay/batch.js"></script>
   <script src="/extension/overlay/shell.js"></script>
   <script src="/extension/overlay/views/now.js"></script>
   <script src="/extension/overlay/views/capture.js"></script>

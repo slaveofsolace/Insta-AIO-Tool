@@ -12,8 +12,10 @@
     'bridge',
     'downloads',
     'accessibility',
+    'layout',
     'collision',
     'icons',
+    'batch',
     'shell',
     'nowView',
     'captureView',
@@ -30,10 +32,12 @@
 
   const {
     accessibility,
+    batch: batchController,
     bridge,
     captureView,
     collision,
     downloads: downloadsModule,
+    layout,
     messagesView,
     nowView,
     preferences,
@@ -58,6 +62,7 @@
   let collisionController = null;
   let countdownTimer = null;
   let lastFocusedElement = null;
+  let layoutController = null;
   let routeController = null;
   let themeController = null;
 
@@ -205,6 +210,10 @@
       const value = model.preferences[control.dataset.iaPreference];
       if (value !== undefined) control.value = value;
     }
+    const opacityControl = query('[data-ia-preference="opacity"]');
+    if (opacityControl) opacityControl.value = String(Math.round(model.preferences.opacity * 100));
+    setText('opacity-output', `${Math.round(model.preferences.opacity * 100)}%`);
+    layoutController?.apply(model.preferences);
     themeController?.setPreference(model.preferences.theme);
   }
 
@@ -229,13 +238,15 @@
 
   function setOpen(open, {
     focus = true,
+    opener = null,
     persist = true,
     refresh = true,
     restoreFocus = true,
     } = {}) {
     const shouldOpen = Boolean(open);
-    const focusBeforeOpen = shouldOpen
-      ? shadow.activeElement || document.activeElement
+    const opening = shouldOpen && !model.open;
+    const focusBeforeOpen = opening
+      ? opener || shadow.activeElement || document.activeElement
       : null;
     model.open = shouldOpen;
     const panel = query('.ia-panel');
@@ -247,7 +258,8 @@
     if (persist) void savePreference({ open: shouldOpen });
 
     if (shouldOpen) {
-      lastFocusedElement = focusBeforeOpen;
+      if (opening) lastFocusedElement = focusBeforeOpen;
+      requestAnimationFrame(() => layoutController?.constrain());
       if (focus && !model.collision.active) {
         requestAnimationFrame(() => query(`[data-ia-section="${model.section}"]`)?.focus());
       }
@@ -258,18 +270,14 @@
         ]);
       }
     } else if (restoreFocus && focus) {
-      requestAnimationFrame(() => {
-        if (
-          lastFocusedElement instanceof HTMLElement
-          && lastFocusedElement.isConnected
-          && lastFocusedElement !== document.body
-          && lastFocusedElement !== document.documentElement
-        ) {
-          lastFocusedElement.focus();
-        } else {
-          launcher.focus();
-        }
-      });
+      const restoreTarget = (
+        lastFocusedElement
+        && typeof lastFocusedElement.focus === 'function'
+        && lastFocusedElement.isConnected
+        && lastFocusedElement !== document.body
+        && lastFocusedElement !== document.documentElement
+      ) ? lastFocusedElement : launcher;
+      window.setTimeout(() => restoreTarget.focus({ preventScroll: true }), 0);
     }
   }
 
@@ -277,7 +285,10 @@
     if (section === 'now') nowView.render(runtime);
     if (section === 'capture') captureView.render(runtime);
     if (section === 'queue') queueView.render(runtime);
-    if (section === 'messages') messagesView.render(runtime);
+    if (section === 'messages') {
+      messagesView.render(runtime);
+      messagesView.renderSentScan(runtime);
+    }
     if (section === 'workspace') workspaceView.render(runtime);
   }
 
@@ -329,9 +340,7 @@
   }
 
   function persistCapture(value) {
-    return value == null
-      ? storage.remove(shared.STORAGE_KEYS.capture)
-      : storage.set({ [shared.STORAGE_KEYS.capture]: value });
+    return storage.set({ [shared.STORAGE_KEYS.captureV2]: value });
   }
 
   function persistManualQueue(value) {
@@ -474,6 +483,7 @@
 
   function applyCollision(next) {
     model.collision = next;
+    layoutController?.apply(model.preferences || preferences.defaults());
     host.dataset.dock = model.preferences?.dock || 'right';
     host.dataset.width = model.preferences?.width || 'standard';
     host.removeAttribute('data-adaptive-dock');
@@ -493,6 +503,7 @@
         if (!target || !panel || panel.hidden) return;
         const panelRectangle = panel.getBoundingClientRect();
         if (!collision.intersects(panelRectangle, target)) return;
+        host.dataset.layout = 'docked';
         host.dataset.dock = (model.preferences?.dock || 'right') === 'right' ? 'left' : 'right';
         host.dataset.adaptiveDock = 'reviewed-target';
         requestAnimationFrame(() => {
@@ -585,14 +596,26 @@
       model.bridge.pendingDmIntent ? messagesView.cancel(runtime) : queueView.cancel(runtime)
     ),
     'cancel-dm-live': () => messagesView.cancel(runtime),
+    'batch-stop': () => batchController.abort(runtime),
+    'bot-start': () => queueView.botStart(runtime),
     'capture-visible': () => captureView.captureVisible(runtime),
     close: () => setOpen(false),
     'inspect-messages': () => messagesView.inspect(runtime),
-    open: () => setOpen(true),
+    'mass-unsend': () => messagesView.massUnsend(runtime),
+    'save-limits': () => batchController.saveLimits(runtime),
+    'scan-full-list': () => captureView.scanFullList(runtime),
+    'scan-sent-dms': () => messagesView.scanSent(runtime),
+    open: (opener) => setOpen(true, { opener }),
     'queue-complete': () => queueView.updateCurrent(runtime, 'completed'),
     'queue-skip': () => queueView.updateCurrent(runtime, 'skipped'),
     'refresh-context': () => refreshContext(),
     'reset-capture': () => captureView.reset(runtime),
+    'reset-layout': () => savePreference({
+      opacity: preferences.defaults().opacity,
+      panelHeight: null,
+      panelWidth: null,
+      position: null,
+    }),
   });
 
   function onShadowClick(event) {
@@ -603,10 +626,15 @@
       setSection(sectionButton.dataset.iaSection);
       return;
     }
+    const sectionLink = event.target.closest?.('[data-ia-go-section]');
+    if (sectionLink) {
+      setSection(sectionLink.dataset.iaGoSection, { focus: true });
+      return;
+    }
     const target = event.target.closest?.('[data-ia-action]');
     if (!target || target.disabled) return;
     const handler = actionHandlers[target.dataset.iaAction];
-    if (handler) void execute(handler);
+    if (handler) void execute(() => handler(target));
   }
 
   function onShadowKeydown(event) {
@@ -619,14 +647,34 @@
   function onShadowChange(event) {
     const preference = event.target.dataset?.iaPreference;
     if (preference) {
-      if (preference === 'theme') themeController?.setPreference(event.target.value);
-      void savePreference({ [preference]: event.target.value });
+      const rawValue = preference === 'opacity'
+        ? Number(event.target.value) / 100
+        : event.target.value;
+      if (preference === 'theme') themeController?.setPreference(rawValue);
+      if (preference === 'dock') {
+        void savePreference({ dock: rawValue, position: null });
+      } else if (preference === 'width') {
+        void savePreference({ panelWidth: null, width: rawValue });
+      } else {
+        void savePreference({ [preference]: rawValue });
+      }
+      return;
+    }
+    if (event.target.matches?.('[data-ia-role="list-type"]')) {
+      captureView.render(runtime);
       return;
     }
     if (!event.target.matches?.('[data-ia-role="queue-file"]')) return;
     const file = event.target.files?.[0];
     if (file) void execute(() => queueView.importQueue(runtime, file));
     event.target.value = '';
+  }
+
+  function onShadowInput(event) {
+    if (event.target.dataset?.iaPreference !== 'opacity') return;
+    const opacity = Number(event.target.value) / 100;
+    setText('opacity-output', `${Math.round(opacity * 100)}%`);
+    layoutController?.previewOpacity(opacity);
   }
 
   function onDocumentKeydown(event) {
@@ -645,7 +693,7 @@
 
   function onStorageChanged(changes, areaName) {
     if (!active || areaName !== 'local') return;
-    const preferenceChange = changes[shared.STORAGE_KEYS.preferencesV2];
+    const preferenceChange = changes[shared.STORAGE_KEYS.preferencesV3];
     if (preferenceChange?.newValue) {
       applyPreferences(preferenceChange.newValue);
       setSection(model.preferences.section, { persist: false });
@@ -656,13 +704,11 @@
         restoreFocus: false,
       });
     }
-    if (changes[shared.STORAGE_KEYS.capture]) {
-      model.capture = changes[shared.STORAGE_KEYS.capture].newValue
-        ? shared.normalizeCapture(
-          changes[shared.STORAGE_KEYS.capture].newValue,
-          inspector.normalizeUsername,
-        )
-        : null;
+    if (changes[shared.STORAGE_KEYS.captureV2]) {
+      model.capture = shared.normalizeCaptureWorkspace(
+        changes[shared.STORAGE_KEYS.captureV2].newValue,
+        inspector.normalizeUsername,
+      );
       captureView.render(runtime);
     }
     if (changes[shared.STORAGE_KEYS.manualQueue]) {
@@ -685,6 +731,11 @@
     ].some((key) => changes[key])) void refreshBridge({ announce: false });
   }
 
+  function onWindowResize() {
+    layoutController?.constrain();
+    collisionController?.checkNow();
+  }
+
   function onRouteChange() {
     model.context = null;
     model.messages = null;
@@ -701,14 +752,16 @@
     if (countdownTimer !== null) clearTimeout(countdownTimer);
     countdownTimer = null;
     collisionController?.teardown();
+    layoutController?.teardown();
     routeController?.teardown();
     themeController?.teardown();
     downloadManager.teardown();
     shadow.removeEventListener('click', onShadowClick);
     shadow.removeEventListener('keydown', onShadowKeydown);
     shadow.removeEventListener('change', onShadowChange);
+    shadow.removeEventListener('input', onShadowInput);
     document.removeEventListener('keydown', onDocumentKeydown);
-    window.removeEventListener('resize', collisionController?.checkNow);
+    window.removeEventListener('resize', onWindowResize);
     chromeApi.storage.onChanged.removeListener?.(onStorageChanged);
     host.remove();
     globalThis.__instaAioOverlayInstalled = false;
@@ -727,11 +780,15 @@
     try {
       const stored = await storage.get([
         shared.STORAGE_KEYS.capture,
+        shared.STORAGE_KEYS.captureV2,
         shared.STORAGE_KEYS.manualQueue,
       ]);
-      model.capture = stored[shared.STORAGE_KEYS.capture]
-        ? shared.normalizeCapture(stored[shared.STORAGE_KEYS.capture], inspector.normalizeUsername)
-        : null;
+      const captureMigration = shared.migrateCaptureWorkspace({
+        v1: stored[shared.STORAGE_KEYS.capture],
+        v2: stored[shared.STORAGE_KEYS.captureV2],
+      }, inspector.normalizeUsername);
+      model.capture = captureMigration.workspace;
+      if (captureMigration.shouldPersist) await persistCapture(model.capture);
       model.manualQueue = shared.normalizeManualQueue(
         stored[shared.STORAGE_KEYS.manualQueue],
         inspector.normalizeUsername,
@@ -749,6 +806,15 @@
       root: host,
       window,
     });
+    layoutController = layout.create({
+      host,
+      moveHandle: query('[data-ia-role="move-handle"]'),
+      onCommit: (patch) => { void savePreference(patch); },
+      panel: query('.ia-panel'),
+      resizeHandle: query('[data-ia-role="resize-handle"]'),
+      window,
+    });
+    layoutController.apply(model.preferences);
     routeController = routeObserver.create({
       document,
       onRouteChange,
@@ -771,7 +837,7 @@
       onChange: applyCollision,
       window,
     });
-    window.addEventListener('resize', collisionController.checkNow);
+    window.addEventListener('resize', onWindowResize);
 
     setSection(model.preferences.section, { persist: false });
     setOpen(model.preferences.open, {
@@ -784,6 +850,7 @@
     const [contextOk, bridgeOk] = await Promise.all([
       refreshContext({ announce: false }),
       refreshBridge({ announce: false }),
+      batchController.hydrate(runtime).catch(() => {}),
     ]);
     if (contextOk && bridgeOk) {
       status('Inspection ready. Live actions remain locked until one signed exact-item intent is armed.', 'good');
@@ -793,6 +860,7 @@
   shadow.addEventListener('click', onShadowClick);
   shadow.addEventListener('keydown', onShadowKeydown);
   shadow.addEventListener('change', onShadowChange);
+  shadow.addEventListener('input', onShadowInput);
   document.addEventListener('keydown', onDocumentKeydown);
   chromeApi.storage.onChanged.addListener(onStorageChanged);
   document.documentElement.append(host);

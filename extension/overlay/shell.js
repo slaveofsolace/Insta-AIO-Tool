@@ -23,6 +23,8 @@
       --ia-focus: #168cff;
       --ia-shadow: 0 18px 54px rgba(0, 0, 0, .18);
       --ia-panel-width: 380px;
+      --ia-panel-alpha: 88%;
+      --ia-panel-alpha-strong: 96%;
       --ia-panel-inline-start: auto;
       --ia-panel-inline-end: max(14px, env(safe-area-inset-right));
       color-scheme: light;
@@ -87,21 +89,30 @@
       top: max(54px, env(safe-area-inset-top));
       left: var(--ia-panel-inline-start);
       right: var(--ia-panel-inline-end);
-      width: min(var(--ia-panel-width), calc(100vw - 28px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+      width: min(var(--ia-panel-custom-width, var(--ia-panel-width)), calc(100vw - 28px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+      height: var(--ia-panel-custom-height, auto);
       max-height: calc(100dvh - 72px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       overflow: hidden;
       border: 1px solid var(--ia-line);
       border-radius: 12px;
-      background: var(--ia-surface);
+      background: color-mix(in srgb, var(--ia-surface) var(--ia-panel-alpha), transparent);
       color: var(--ia-ink);
       box-shadow: var(--ia-shadow);
+      backdrop-filter: blur(10px) saturate(.94);
+      -webkit-backdrop-filter: blur(10px) saturate(.94);
       font-size: 14px;
       line-height: 1.45;
       animation: ia-open 150ms cubic-bezier(.2, .8, .2, 1);
     }
 
-    .ia-shell { display: grid; max-height: inherit; grid-template-columns: 48px minmax(0, 1fr); }
-    .ia-rail { display: flex; min-height: 0; flex-direction: column; align-items: center; gap: 2px; padding: 8px 3px; border-right: 1px solid var(--ia-line); background: var(--ia-rail); }
+    :host([data-layout="floating"]) .ia-panel {
+      top: var(--ia-panel-top);
+      right: auto;
+      left: var(--ia-panel-left);
+    }
+
+    .ia-shell { display: grid; height: 100%; max-height: inherit; grid-template-columns: 48px minmax(0, 1fr); }
+    .ia-rail { display: flex; min-height: 0; flex-direction: column; align-items: center; gap: 2px; padding: 8px 3px; border-right: 1px solid var(--ia-line); background: color-mix(in srgb, var(--ia-rail) var(--ia-panel-alpha-strong), transparent); }
     .ia-brand-mark { display: grid; width: 38px; height: 38px; margin-bottom: 8px; place-items: center; border-radius: 10px; background: var(--ia-ink); color: var(--ia-surface); font-weight: 800; }
     .ia-tab { position: relative; display: grid; width: 44px; height: 44px; place-items: center; border: 0; border-radius: 9px; background: transparent; color: var(--ia-muted); }
     .ia-tab:hover { background: var(--ia-surface-raised); color: var(--ia-ink); }
@@ -110,21 +121,26 @@
     .ia-tab-signal { position: absolute; top: 7px; right: 6px; width: 7px; height: 7px; border: 2px solid var(--ia-rail); border-radius: 50%; background: var(--ia-signal); }
 
     .ia-body { display: grid; min-width: 0; min-height: 0; max-height: inherit; grid-template-rows: auto minmax(0, 1fr) auto; }
-    .ia-header { position: relative; z-index: 2; display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 16px; border-bottom: 1px solid var(--ia-line); background: var(--ia-surface-raised); }
+    .ia-header { position: relative; z-index: 2; display: grid; min-height: 66px; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px; border-bottom: 1px solid var(--ia-line); background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); }
     .ia-header-copy { min-width: 0; }
     .ia-context-label { margin: 0 0 2px; color: var(--ia-muted); font-size: 12px; }
     .ia-header h1 { margin: 0; overflow-wrap: anywhere; font-size: 18px; line-height: 1.2; letter-spacing: -.015em; }
     .ia-header-subtitle { margin: 3px 0 0; color: var(--ia-muted); font-size: 12px; }
     .ia-header-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; }
     .ia-icon-button, .ia-settings summary { display: grid; width: 44px; height: 44px; place-items: center; border: 0; border-radius: 9px; background: transparent; color: var(--ia-ink); list-style: none; }
+    .ia-move-handle { cursor: grab; touch-action: none; }
+    :host([data-layout-interaction="move"]) .ia-move-handle { cursor: grabbing; }
     .ia-settings summary::-webkit-details-marker { display: none; }
     .ia-icon-button:hover, .ia-settings summary:hover, .ia-settings[open] summary { background: var(--ia-surface); }
     .ia-settings { position: relative; }
-    .ia-settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; display: grid; width: 248px; gap: 12px; padding: 14px; border: 1px solid var(--ia-line); border-radius: 10px; background: var(--ia-surface-raised); box-shadow: var(--ia-shadow); }
+    .ia-settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; display: grid; width: 260px; max-height: min(520px, calc(100dvh - 92px)); overflow: auto; gap: 12px; padding: 14px; border: 1px solid var(--ia-line); border-radius: 10px; background: color-mix(in srgb, var(--ia-surface-raised) 96%, transparent); box-shadow: var(--ia-shadow); }
     .ia-settings-panel strong { font-size: 13px; }
     .ia-field { display: grid; gap: 5px; }
     .ia-field label { color: var(--ia-muted); font-size: 12px; }
     .ia-select, .ia-text-input { min-height: 44px; width: 100%; border: 1px solid var(--ia-line); border-radius: 8px; padding: 8px 10px; background: var(--ia-surface-raised); color: var(--ia-ink); }
+    .ia-range-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+    .ia-range { width: 100%; accent-color: var(--ia-good); }
+    .ia-range-output { min-width: 40px; color: var(--ia-muted); font-variant-numeric: tabular-nums; text-align: right; }
 
     .ia-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-color: var(--ia-muted) var(--ia-surface); }
     .ia-view { padding: 16px; }
@@ -140,7 +156,7 @@
     .ia-state-row strong { font-size: 13px; }
     .ia-state-row span { margin-top: 2px; color: var(--ia-muted); font-size: 12px; }
 
-    .ia-card { border: 1px solid var(--ia-line); border-radius: 10px; background: var(--ia-surface-raised); }
+    .ia-card { border: 1px solid var(--ia-line); border-radius: 10px; background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); }
     .ia-card-pad { padding: 14px; }
     .ia-target-top { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 14px; }
     .ia-target-avatar { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 9px; background: var(--ia-rail); color: var(--ia-muted); font-size: 12px; font-weight: 700; }
@@ -160,6 +176,25 @@
     .ia-next-label { margin: 0; color: var(--ia-muted); font-size: 12px; }
     .ia-next h2, .ia-next h3 { margin: 3px 0 0; font-size: 16px; }
     .ia-next p:last-child { margin: 5px 0 0; color: var(--ia-muted); font-size: 12px; }
+
+    .ia-tool-heading { margin: 18px 0 8px; font-size: 13px; }
+    .ia-tool-grid { display: grid; gap: 8px; }
+    .ia-tool-card { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; border: 1px solid var(--ia-line); border-radius: 10px; padding: 12px; background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); color: var(--ia-ink); text-align: left; }
+    .ia-tool-card:hover { border-color: var(--ia-muted); }
+    .ia-tool-card strong, .ia-tool-card span { display: block; }
+    .ia-tool-card span { margin-top: 3px; color: var(--ia-muted); font-size: 12px; }
+    .ia-tool-card em { color: var(--ia-good); font-size: 11px; font-style: normal; font-weight: 700; white-space: nowrap; }
+
+    .ia-checker-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+    .ia-checker-metric { padding: 11px; border: 1px solid var(--ia-line); border-radius: 9px; background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); }
+    .ia-checker-metric span, .ia-checker-metric strong { display: block; }
+    .ia-checker-metric span { color: var(--ia-muted); font-size: 12px; }
+    .ia-checker-metric strong { margin-top: 2px; font-size: 20px; }
+    .ia-checker-result { margin-top: 12px; padding: 12px; border: 1px solid var(--ia-line); border-radius: 9px; background: color-mix(in srgb, var(--ia-rail) var(--ia-panel-alpha-strong), transparent); }
+    .ia-checker-result h2 { margin: 0 0 7px; font-size: 14px; }
+    .ia-checker-result dl { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin: 0; }
+    .ia-checker-result dt { color: var(--ia-muted); font-size: 12px; }
+    .ia-checker-result dd { margin: 0; font-weight: 700; }
 
     .ia-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .ia-button, .ia-link-button, .ia-file-label { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--ia-line); border-radius: 8px; padding: 9px 12px; background: var(--ia-ink); color: var(--ia-surface); font-size: 14px; font-weight: 700; line-height: 1.2; text-decoration: none; }
@@ -182,6 +217,18 @@
     .ia-empty { padding: 14px 0; color: var(--ia-muted); font-size: 12px; }
     .ia-note { margin: 10px 0 0; color: var(--ia-muted); font-size: 12px; }
 
+    .ia-batch-panel { padding: 12px 16px; border-top: 1px solid var(--ia-line); background: var(--ia-surface-raised, transparent); }
+    .ia-batch-panel .ia-state-row { margin-bottom: 8px; align-items: center; }
+    .ia-batch-panel .ia-state-row > div { flex: 1 1 auto; min-width: 0; }
+    .ia-progress { overflow: hidden; height: 6px; border-radius: 999px; background: var(--ia-line); }
+    .ia-progress-bar { display: block; width: 0%; height: 100%; border-radius: 999px; background: var(--ia-signal); transition: width 240ms ease; }
+    .ia-list--compact { max-height: 148px; overflow-y: auto; margin-top: 10px; }
+    .ia-list--compact .ia-list-item { padding: 6px 0; }
+    .ia-list--compact .ia-list-item[data-status="completed"] strong { color: var(--ia-good, inherit); }
+    .ia-list--compact .ia-list-item[data-status="failed"] strong,
+    .ia-list--compact .ia-list-item[data-status="stopped"] strong { color: var(--ia-danger); }
+    @media (prefers-reduced-motion: reduce) { .ia-progress-bar { transition: none; } }
+
     .ia-disclosure { margin-top: 12px; border-top: 1px solid var(--ia-line); }
     .ia-disclosure > summary { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; color: var(--ia-ink); font-size: 13px; list-style: none; }
     .ia-disclosure > summary::-webkit-details-marker { display: none; }
@@ -198,7 +245,7 @@
     .ia-message-row[data-ownership="sent"] { margin-left: auto; border-radius: 12px 12px 4px; background: var(--ia-rail); }
     .ia-message-meta { margin-top: 4px; color: var(--ia-muted); font-size: 12px; }
 
-    .ia-footer { display: flex; min-height: 42px; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--ia-line); background: var(--ia-surface-raised); color: var(--ia-muted); font-size: 12px; }
+    .ia-footer { display: flex; min-height: 42px; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--ia-line); background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); color: var(--ia-muted); font-size: 12px; }
     .ia-footer-message { min-width: 0; overflow-wrap: anywhere; }
     .ia-footer strong { color: var(--ia-ink); }
     .ia-footer-lock { flex: 0 0 auto; white-space: nowrap; }
@@ -218,11 +265,14 @@
     :host([data-collision="active"]) .ia-panel, :host([data-collision="active"]) .ia-launcher { display: none !important; }
 
     .ia-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+    .ia-resize-handle { position: absolute; z-index: 4; right: 2px; bottom: 2px; width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--ia-muted); cursor: nwse-resize; touch-action: none; }
+    .ia-resize-handle::before { content: ""; position: absolute; right: 8px; bottom: 8px; width: 12px; height: 12px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; box-shadow: 4px 4px 0 -2px currentColor; }
 
     .ia-launcher:focus-visible, .ia-tab:focus-visible, .ia-icon-button:focus-visible,
     .ia-settings summary:focus-visible, .ia-select:focus-visible, .ia-text-input:focus-visible,
     .ia-button:focus-visible, .ia-link-button:focus-visible, .ia-file-label:focus-within,
-    .ia-disclosure > summary:focus-visible {
+    .ia-disclosure > summary:focus-visible, .ia-tool-card:focus-visible, .ia-range:focus-visible,
+    .ia-resize-handle:focus-visible {
       outline: 3px solid var(--ia-focus);
       outline-offset: 2px;
     }
@@ -243,6 +293,7 @@
         max-height: min(78dvh, calc(100dvh - env(safe-area-inset-top)));
         border-radius: 14px 14px 0 0;
       }
+      .ia-move-handle, .ia-resize-handle { display: none; }
       .ia-shell { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
       .ia-rail { grid-row: 2; display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); padding: 4px max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); border-top: 1px solid var(--ia-line); border-right: 0; }
       .ia-brand-mark { display: none; }
@@ -272,6 +323,7 @@
       .ia-panel, .ia-launcher, .ia-collision-strip, .ia-settings-panel, .ia-dialog { border: 2px solid CanvasText; box-shadow: none; }
       .ia-tab[aria-selected="true"] { outline: 2px solid Highlight; outline-offset: -3px; box-shadow: none; }
       .ia-state-dot, .ia-launcher-signal, .ia-tab-signal { border: 2px solid CanvasText; }
+      .ia-panel, .ia-header, .ia-footer, .ia-card, .ia-tool-card, .ia-checker-metric, .ia-checker-result { background: Canvas; }
     }
   `;
 
@@ -285,6 +337,7 @@
     host.dataset.collision = 'inactive';
     host.dataset.density = 'comfortable';
     host.dataset.dock = 'right';
+    host.dataset.layout = 'docked';
     host.dataset.theme = 'light';
     host.dataset.width = 'standard';
     const shadow = host.attachShadow({ mode: openShadow ? 'open' : 'closed' });
@@ -298,18 +351,19 @@
         <div class="ia-shell">
           <nav class="ia-rail" role="tablist" aria-label="Insta AIO tools" aria-orientation="vertical">
             <div class="ia-brand-mark" title="Insta AIO" aria-hidden="true">A</div>
-            ${tab('now', 'Now', 'now', true)}
-            ${tab('capture', 'Capture', 'capture')}
-            ${tab('queue', 'Queue', 'queue')}
-            ${tab('messages', 'Messages', 'messages')}
+            ${tab('now', 'Toolbox', 'now', true)}
+            ${tab('capture', 'Follower checker', 'capture')}
+            ${tab('queue', 'Follow / Unfollow', 'queue')}
+            ${tab('messages', 'DM Unsend', 'messages')}
             ${tab('workspace', 'Workspace', 'workspace')}
           </nav>
           <div class="ia-body">
             <header class="ia-header">
+              <button class="ia-icon-button ia-move-handle" type="button" data-ia-role="move-handle" aria-label="Move sidecar; use arrow keys for precise movement" title="Drag to move · Arrow keys move">${icons.svg('move')}</button>
               <div class="ia-header-copy">
                 <p class="ia-context-label" data-ia-role="view-context">Now · Instagram</p>
-                <h1 data-ia-role="view-title">Review target</h1>
-                <p class="ia-header-subtitle" data-ia-role="view-subtitle">Current Instagram context and one safe next step.</p>
+                <h1 data-ia-role="view-title">Instagram tools</h1>
+                <p class="ia-header-subtitle" data-ia-role="view-subtitle">Follower checker, account review, and DM Unsend.</p>
               </div>
               <div class="ia-header-actions">
                 <details class="ia-settings" data-ia-role="settings">
@@ -320,7 +374,15 @@
                     <div class="ia-field"><label for="ia-pref-width">Panel width</label><select class="ia-select" id="ia-pref-width" data-ia-preference="width"><option value="compact">Compact</option><option value="standard">Standard</option><option value="wide">Wide</option></select></div>
                     <div class="ia-field"><label for="ia-pref-theme">Theme</label><select class="ia-select" id="ia-pref-theme" data-ia-preference="theme"><option value="auto">Match Instagram</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
                     <div class="ia-field"><label for="ia-pref-density">Density</label><select class="ia-select" id="ia-pref-density" data-ia-preference="density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
-                    <p class="ia-note">Shortcut: Alt + Shift + I</p>
+                    <div class="ia-field"><label for="ia-pref-opacity">Surface transparency</label><div class="ia-range-row"><input class="ia-range" id="ia-pref-opacity" type="range" min="70" max="100" step="1" value="88" data-ia-preference="opacity"><output class="ia-range-output" for="ia-pref-opacity" data-ia-role="opacity-output">88%</output></div></div>
+                    <button class="ia-button ia-button--quiet" type="button" data-ia-action="reset-layout">Reset position and size</button>
+                    <strong>Batch pacing</strong>
+                    <div class="ia-field"><label for="ia-limit-actions">Follow/unfollow per day</label><input class="ia-text-input" id="ia-limit-actions" type="number" min="1" max="400" data-ia-role="limit-actions"></div>
+                    <div class="ia-field"><label for="ia-limit-dms">Unsends per day</label><input class="ia-text-input" id="ia-limit-dms" type="number" min="1" max="300" data-ia-role="limit-dms"></div>
+                    <div class="ia-field"><label for="ia-limit-min-delay">Min delay (seconds)</label><input class="ia-text-input" id="ia-limit-min-delay" type="number" min="2" max="600" data-ia-role="limit-min-delay"></div>
+                    <div class="ia-field"><label for="ia-limit-max-delay">Max delay (seconds)</label><input class="ia-text-input" id="ia-limit-max-delay" type="number" min="2" max="900" data-ia-role="limit-max-delay"></div>
+                    <button class="ia-button ia-button--quiet" type="button" data-ia-action="save-limits">Save pacing</button>
+                    <p class="ia-note">Drag the header handle or resize from the lower corner. Arrow keys work on both controls. Shortcut: Alt + Shift + I.</p>
                   </div>
                 </details>
                 <button class="ia-icon-button" type="button" data-ia-action="close" aria-label="Collapse Insta AIO sidecar">${icons.svg('close')}</button>
@@ -330,22 +392,40 @@
               <section class="ia-view" id="ia-view-now" role="tabpanel" aria-labelledby="ia-tab-now" tabindex="0" data-ia-view="now"><div data-ia-role="now-content"></div></section>
               <section class="ia-view" id="ia-view-capture" role="tabpanel" aria-labelledby="ia-tab-capture" tabindex="0" data-ia-view="capture" hidden>
                 <div class="ia-state-row" data-ia-role="capture-state" data-tone="neutral"><span class="ia-state-dot"></span><div><strong data-ia-role="capture-state-title">No list detected</strong><span data-ia-role="capture-state-detail">Open Followers or Following, then capture the rendered batch.</span></div></div>
+                <div class="ia-checker-metrics" aria-label="Follower checker draft counts"><div class="ia-checker-metric"><span>Followers captured</span><strong data-ia-role="followers-count">0</strong></div><div class="ia-checker-metric"><span>Following captured</span><strong data-ia-role="following-count">0</strong></div></div>
                 <div class="ia-field"><label for="ia-list-type">List type</label><select class="ia-select" id="ia-list-type" data-ia-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div>
-                <div class="ia-toolbar"><button class="ia-button" type="button" data-ia-action="capture-visible">Capture visible rows</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="reset-capture">New draft</button></div>
+                <div class="ia-toolbar"><button class="ia-button" type="button" data-ia-action="scan-full-list">Scan full list</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="capture-visible">Capture visible rows</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="reset-capture">Clear checker</button></div>
+                <p class="ia-note" data-ia-role="scan-note">Scan full list auto-scrolls the open Followers/Following dialog and reads every row it renders. It only reads; nothing is followed, unfollowed, or messaged.</p>
+                <div class="ia-checker-result" data-ia-role="checker-result"></div>
                 <div class="ia-count"><strong data-ia-role="capture-count">0</strong><span data-ia-role="capture-detail">No draft yet</span></div>
                 <ul class="ia-list" data-ia-role="capture-list"></ul>
-                <details class="ia-disclosure"><summary>Export and method</summary><div class="ia-disclosure-body"><a class="ia-link-button ia-link-button--quiet" data-ia-role="capture-download" aria-disabled="true">Download import JSON</a><p class="ia-note">Only rendered rows are read. Repeated captures merge by username; the page is never auto-scrolled.</p></div></details>
+                <details class="ia-disclosure"><summary>Export and method</summary><div class="ia-disclosure-body"><a class="ia-link-button ia-link-button--quiet" data-ia-role="capture-download" aria-disabled="true">Download selected list</a><p class="ia-note">Only rendered rows are read. Repeated captures merge by username; the page is never auto-scrolled. The comparison is partial until you have manually captured every row in both lists.</p></div></details>
               </section>
               <section class="ia-view" id="ia-view-queue" role="tabpanel" aria-labelledby="ia-tab-queue" tabindex="0" data-ia-view="queue" hidden>
                 <div data-ia-role="queue-current"></div>
                 <div class="ia-toolbar" data-ia-role="queue-controls" hidden><a class="ia-link-button" data-ia-role="queue-open" rel="noreferrer">Open profile</a><button class="ia-button ia-button--quiet" type="button" data-ia-action="queue-complete">Complete</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="queue-skip">Skip</button></div>
                 <details class="ia-disclosure ia-gate" data-ia-role="account-live-disclosure"><summary><span class="ia-gate-summary"><span class="ia-state-dot"></span><strong data-ia-role="live-title">Live action locked</strong></span><span class="ia-badge" data-ia-role="live-badge">locked</span></summary><div class="ia-disclosure-body"><p class="ia-gate-detail" data-ia-role="live-detail">A signed one-item intent from the paired PWA is required.</p><p class="ia-gate-detail" data-ia-role="live-countdown" hidden></p><div class="ia-toolbar"><button class="ia-button ia-button--danger" type="button" data-ia-action="arm-account-live" disabled>Arm exact action</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="cancel-account-live" hidden>Cancel intent</button></div><p class="ia-note">Arming does not perform the action. The PWA must revalidate and reserve the same reviewed item.</p></div></details>
+                <details class="ia-disclosure ia-gate" data-ia-role="bot-disclosure"><summary><span class="ia-gate-summary"><span class="ia-state-dot"></span><strong>Follow / Unfollow bot</strong></span><span class="ia-badge" data-ia-role="bot-badge">idle</span></summary><div class="ia-disclosure-body">
+                  <div class="ia-field"><label for="ia-bot-source">Targets</label><select class="ia-select" id="ia-bot-source" data-ia-role="bot-source"><option value="not-following-me-back">Not following me back (from checker)</option><option value="i-do-not-follow-back">I don't follow back (from checker)</option><option value="queue">Manual queue</option></select></div>
+                  <div class="ia-field"><label for="ia-bot-action">Action</label><select class="ia-select" id="ia-bot-action" data-ia-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
+                  <div class="ia-field"><label for="ia-bot-count">How many this run</label><input class="ia-text-input" id="ia-bot-count" type="number" min="1" max="250" value="20" data-ia-role="bot-count"></div>
+                  <p class="ia-gate-detail" data-ia-role="bot-detail">Each target is opened, verified, and acted on one at a time with randomised pacing.</p>
+                  <div class="ia-toolbar"><button class="ia-button ia-button--danger" type="button" data-ia-action="bot-start">Start run</button></div>
+                  <p class="ia-note">The run stops itself on any rate limit, checkpoint, block, or unexpected screen. Instagram's terms discourage automated following; you are responsible for how you pace it.</p>
+                </div></details>
                 <details class="ia-disclosure"><summary>Queue files</summary><div class="ia-disclosure-body"><div class="ia-toolbar"><label class="ia-file-label ia-file-label--quiet">Import queue JSON<input type="file" accept=".json,application/json" aria-label="Import Insta AIO manual queue JSON" data-ia-role="queue-file"></label><a class="ia-link-button ia-link-button--quiet" data-ia-role="queue-download" aria-disabled="true">Download queue state</a></div></div></details>
                 <details class="ia-disclosure"><summary>Signed run history</summary><div class="ia-disclosure-body"><ul class="ia-list" data-ia-role="run-list"></ul></div></details>
               </section>
               <section class="ia-view" id="ia-view-messages" role="tabpanel" aria-labelledby="ia-tab-messages" tabindex="0" data-ia-view="messages" hidden>
                 <div class="ia-state-row" data-ia-role="message-state" data-tone="neutral"><span class="ia-state-dot"></span><div><strong data-ia-role="message-state-title">Open a conversation</strong><span data-ia-role="message-state-detail">Visible evidence is read-only until exact identity is available.</span></div></div>
-                <div class="ia-toolbar"><button class="ia-button" type="button" data-ia-action="inspect-messages">Read visible thread</button><a class="ia-link-button ia-link-button--quiet" data-ia-role="message-download" aria-disabled="true">Download evidence</a></div>
+                <div class="ia-toolbar"><button class="ia-button" type="button" data-ia-action="scan-sent-dms">Scan my sent messages</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="inspect-messages">Read visible thread</button><a class="ia-link-button ia-link-button--quiet" data-ia-role="message-download" aria-disabled="true">Download evidence</a></div>
+                <details class="ia-disclosure ia-gate" data-ia-role="unsend-disclosure" hidden><summary><span class="ia-gate-summary"><span class="ia-state-dot"></span><strong>Mass unsend</strong></span><span class="ia-badge" data-ia-role="unsend-badge">0 found</span></summary><div class="ia-disclosure-body">
+                  <div class="ia-field"><label for="ia-unsend-scope">Scope</label><select class="ia-select" id="ia-unsend-scope" data-ia-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
+                  <div class="ia-field"><label for="ia-unsend-count">How many</label><input class="ia-text-input" id="ia-unsend-count" type="number" min="1" max="250" value="20" data-ia-role="unsend-count"></div>
+                  <p class="ia-gate-detail" data-ia-role="unsend-detail">Each message is re-verified by id, timestamp, and content digest immediately before it is removed.</p>
+                  <div class="ia-toolbar"><button class="ia-button ia-button--danger" type="button" data-ia-action="mass-unsend">Unsend selected</button></div>
+                  <p class="ia-note">Unsending is permanent and cannot be undone. Only messages you sent are eligible.</p>
+                </div></details>
                 <div class="ia-count"><strong data-ia-role="message-count">0</strong><span data-ia-role="message-detail">No evidence yet</span></div>
                 <ul class="ia-fragments" data-ia-role="message-list"></ul>
                 <details class="ia-disclosure ia-gate" data-ia-role="dm-live-disclosure"><summary><span class="ia-gate-summary"><span class="ia-state-dot"></span><strong data-ia-role="dm-live-title">Live Unsend locked</strong></span><span class="ia-badge" data-ia-role="dm-live-badge">locked</span></summary><div class="ia-disclosure-body"><p class="ia-gate-detail" data-ia-role="dm-live-detail">A twice-confirmed exact sent-message intent is required.</p><p class="ia-gate-detail" data-ia-role="dm-live-countdown" hidden></p><div class="ia-toolbar"><button class="ia-button ia-button--danger" type="button" data-ia-action="arm-dm-live" disabled>Arm exact message</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="cancel-dm-live" hidden>Cancel intent</button></div><p class="ia-note">Arming does not open a menu or remove a message.</p></div></details>
@@ -358,9 +438,16 @@
                 <details class="ia-disclosure"><summary>Privacy and pairing guidance</summary><div class="ia-disclosure-body"><p class="ia-note" data-ia-role="workspace-guidance">Create a code in PWA Settings, then pair the exact PWA tab from the extension setup popup.</p></div></details>
               </section>
             </div>
+            <div class="ia-batch-panel" data-ia-role="batch-panel" hidden>
+              <div class="ia-state-row" data-ia-role="batch-state" data-tone="neutral"><span class="ia-state-dot"></span><div><strong data-ia-role="batch-title">Batch idle</strong><span data-ia-role="batch-detail"></span></div><button class="ia-button ia-button--danger" type="button" data-ia-action="batch-stop" hidden>Stop</button></div>
+              <div class="ia-progress" role="progressbar" aria-valuemin="0" aria-valuenow="0" aria-valuemax="0" data-ia-role="batch-meter"><span class="ia-progress-bar" data-ia-role="batch-bar"></span></div>
+              <p class="ia-note" data-ia-role="batch-next" hidden></p>
+              <ul class="ia-list ia-list--compact" data-ia-role="batch-results"></ul>
+            </div>
             <footer class="ia-footer" role="status" aria-live="polite" data-ia-role="status"><span class="ia-footer-message"><strong data-ia-role="status-lead">Ready.</strong> <span data-ia-role="status-text">Live actions remain locked.</span></span><span class="ia-footer-lock">Local only</span></footer>
           </div>
         </div>
+        <button class="ia-resize-handle" type="button" data-ia-role="resize-handle" aria-label="Resize sidecar; use arrow keys for precise sizing" title="Drag to resize · Arrow keys resize"></button>
       </aside>
       <div class="ia-collision-strip" role="status" aria-live="polite" data-ia-role="collision-strip" hidden>
         <span class="ia-state-dot"></span><div class="ia-collision-copy"><strong data-ia-role="collision-target">Exact target</strong><span data-ia-role="collision-state">Native action surface is visible</span></div><button class="ia-button ia-button--quiet" type="button" data-ia-action="cancel-current-live" hidden>Cancel</button>

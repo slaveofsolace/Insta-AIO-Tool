@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, session } from 'electron';
 
 import { createAppServer } from './serve.mjs';
+import { instagramScriptOrder } from './instagram-script-order.mjs';
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(moduleDirectory, '..');
@@ -16,28 +17,11 @@ const userDataRoot = path.resolve(
   process.env.INSTA_AIO_EXTENSION_ACCEPTANCE_USER_DATA
     || path.join(resultsRoot, 'user-data', String(process.pid)),
 );
-const overlayScriptFiles = [
-  'action-labels.js',
-  'content-instagram.js',
-  'overlay/shared.js',
-  'overlay/preferences.js',
-  'overlay/route-observer.js',
-  'overlay/theme.js',
-  'overlay/bridge.js',
-  'overlay/downloads.js',
-  'overlay/accessibility.js',
-  'overlay/collision.js',
-  'overlay/icons.js',
-  'overlay/shell.js',
-  'overlay/views/now.js',
-  'overlay/views/capture.js',
-  'overlay/views/queue.js',
-  'overlay/views/messages.js',
-  'overlay/views/workspace.js',
-  'instagram-overlay.js',
-];
+const overlayScriptFiles = instagramScriptOrder;
 const fixtureAssets = new Map([
   ['/fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'overlay-preview.html')],
+  ['/userscript-fixture.html', path.join(repositoryRoot, 'tests', 'fixtures', 'userscript-preview.html')],
+  ['/userscripts/insta-aio-companion.user.js', path.join(repositoryRoot, 'userscripts', 'insta-aio-companion.user.js')],
   ...overlayScriptFiles.map((file) => [
     `/extension/${file}`,
     path.join(repositoryRoot, 'extension', ...file.split('/')),
@@ -287,7 +271,9 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
   })()`, true);
   assert.deepEqual(initial, { launcherVisible: true, panelHidden: true });
   await webContents.executeJavaScript(`(() => {
-    document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('.ia-launcher').click();
+    const launcher = document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('.ia-launcher');
+    launcher.focus();
+    launcher.click();
   })()`, true);
   await waitForPageValue(
     webContents,
@@ -304,15 +290,46 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
       panelLabel: shadow.querySelector('.ia-panel')?.getAttribute('aria-label'),
       statusLive: shadow.querySelector('[data-ia-role="status"]')?.getAttribute('aria-live'),
       closeLabel: shadow.querySelector('[data-ia-action="close"]')?.getAttribute('aria-label'),
+      moveLabel: shadow.querySelector('[data-ia-role="move-handle"]')?.getAttribute('aria-label'),
+      resizeLabel: shadow.querySelector('[data-ia-role="resize-handle"]')?.getAttribute('aria-label'),
+      opacity: shadow.querySelector('[data-ia-preference="opacity"]')?.value,
+      panelBackground: getComputedStyle(shadow.querySelector('.ia-panel')).backgroundColor,
     };
   })()`, true);
   assert.deepEqual(metrics.nav.map(({ label }) => label), [
-    'Now', 'Capture', 'Queue', 'Messages', 'Workspace',
+    'Toolbox', 'Follower checker', 'Follow / Unfollow', 'DM Unsend', 'Workspace',
   ]);
   assert.equal(metrics.nav[0].selected, 'true');
   assert.equal(metrics.panelLabel, 'Insta AIO Instagram sidecar');
   assert.equal(metrics.statusLive, 'polite');
   assert.equal(metrics.closeLabel, 'Collapse Insta AIO sidecar');
+  assert.match(metrics.moveLabel, /Move sidecar/);
+  assert.match(metrics.resizeLabel, /Resize sidecar/);
+  assert.equal(metrics.opacity, '88');
+  assert.match(metrics.panelBackground, /(rgba\(|color\()/);
+
+  await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+    const move = shadow.querySelector('[data-ia-role="move-handle"]');
+    const resize = shadow.querySelector('[data-ia-role="resize-handle"]');
+    const opacity = shadow.querySelector('[data-ia-preference="opacity"]');
+    move.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    resize.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    opacity.value = '76';
+    opacity.dispatchEvent(new Event('input', { bubbles: true }));
+    opacity.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`, true);
+  const savedLayout = await waitForPageValue(
+    webContents,
+    `(() => {
+      const value = globalThis.fixtureStorage.instaAioOverlayPreferencesV3;
+      return value?.position && value?.panelWidth && value?.opacity === 0.76 ? value : null;
+    })()`,
+    'movable translucent V3 preferences',
+  );
+  assert.equal(savedLayout.schemaVersion, 3);
+  assert.ok(savedLayout.position.x >= 0);
+  assert.ok(savedLayout.panelWidth >= 320);
 
   await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
@@ -347,11 +364,13 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
     for (const expected of [
       'Insta AIO Instagram sidecar',
       'Collapse Insta AIO sidecar',
-      'Now',
-      'Capture',
-      'Queue',
-      'Messages',
+      'Toolbox',
+      'Follower checker',
+      'Follow / Unfollow',
+      'DM Unsend',
       'Workspace',
+      'Move sidecar; use arrow keys for precise movement',
+      'Resize sidecar; use arrow keys for precise sizing',
     ]) {
       assert.equal(names.has(expected), true, `accessibility tree is missing ${expected}`);
     }
@@ -359,6 +378,100 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
     if (webContents.debugger.isAttached()) webContents.debugger.detach();
   }
   console.log('Accepted overlay keyboard focus and Chromium accessibility-tree contract.');
+}
+
+async function acceptUserscriptToolbox(webContents, baseUrl) {
+  await withTimeout(
+    webContents.loadURL(`${baseUrl}/userscript-fixture.html`),
+    'userscript fixture load',
+  );
+  await waitForPageValue(
+    webContents,
+    `Boolean(document.querySelector('#insta-aio-userscript-root')?.shadowRoot)`,
+    'Tampermonkey toolbox injection',
+  );
+  const initial = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    return {
+      labels: [...shadow.querySelectorAll('[data-go-view] strong')].map((element) => element.textContent),
+      move: shadow.querySelector('[data-role="move"]')?.getAttribute('aria-label'),
+      open: !shadow.querySelector('.panel').hidden,
+      opacity: shadow.querySelector('[data-preference="opacity"]')?.value,
+      resize: shadow.querySelector('[data-role="resize"]')?.getAttribute('aria-label'),
+      mode: shadow.querySelector('.mode')?.textContent,
+    };
+  })()`, true);
+  assert.deepEqual(initial.labels, ['Follower checker', 'Follow / Unfollow', 'DM Unsend']);
+  assert.equal(initial.open, true);
+  assert.equal(initial.opacity, '88');
+  assert.match(initial.move, /Move toolbox/);
+  assert.match(initial.resize, /Resize toolbox/);
+  assert.match(initial.mode, /no live clicks/);
+
+  await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    shadow.querySelector('[data-role="move"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
+    shadow.querySelector('[data-role="resize"]').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    const opacity = shadow.querySelector('[data-preference="opacity"]');
+    opacity.value = '74';
+    opacity.dispatchEvent(new Event('input', { bubbles: true }));
+    opacity.dispatchEvent(new Event('change', { bubbles: true }));
+    shadow.querySelector('[data-view="checker"]').click();
+    shadow.querySelector('[data-action="capture"]').click();
+    globalThis.fixtureSetList('followers');
+    const listType = shadow.querySelector('[data-role="list-type"]');
+    listType.value = 'followers';
+    listType.dispatchEvent(new Event('change', { bubbles: true }));
+    shadow.querySelector('[data-action="capture"]').click();
+  })()`, true);
+  const checker = await waitForPageValue(
+    webContents,
+    `(() => {
+      const shadow = document.querySelector('#insta-aio-userscript-root')?.shadowRoot;
+      const saved = globalThis.fixtureGmStore.instaAioUserscriptPreferencesV1;
+      const text = shadow?.querySelector('[data-role="comparison"]')?.textContent || '';
+      return saved?.position && saved?.width > 390 && saved?.opacity === 0.74
+        && text.includes('1 mutual') && text.includes('1 not following me back')
+        ? { saved, text } : null;
+    })()`,
+    'userscript layout and follower comparison',
+  );
+  assert.ok(checker.saved.position.x >= 0);
+
+  await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    shadow.querySelector('[data-view="account"]').click();
+    shadow.querySelector('[data-action="account-dry-run"]').click();
+  })()`, true);
+  const account = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    return {
+      clicks: globalThis.fixtureProfileClickCount,
+      result: shadow.querySelector('[data-role="account-result"]')?.textContent,
+    };
+  })()`, true);
+  assert.equal(account.clicks, 0);
+  assert.match(account.result, /Exact no-click check passed/);
+
+  await webContents.executeJavaScript(`(() => {
+    globalThis.fixtureSetMessages();
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    shadow.querySelector('[data-view="messages"]').click();
+    shadow.querySelector('[data-action="read-messages"]').click();
+    shadow.querySelector('[data-action="dm-dry-run"]').click();
+  })()`, true);
+  const messages = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    return {
+      result: shadow.querySelector('[data-role="dm-result"]')?.textContent,
+      rows: shadow.querySelectorAll('[data-role="message-list"] li').length,
+      stored: globalThis.fixtureGmStore.instaAioUserscriptStateV2.dmCheck,
+    };
+  })()`, true);
+  assert.match(messages.result, /Exact sent message resolved/);
+  assert.ok(messages.rows >= 1);
+  assert.equal(messages.stored.exact, true);
+  console.log('Accepted the movable Tampermonkey toolbox, local follower comparison, and account/DM no-click checks.');
 }
 
 async function acceptPwaInstallability(webContents, baseUrl) {
@@ -444,6 +557,7 @@ async function run() {
     });
     await acceptDmUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptOverlayAccessibility(overlay.window.webContents, overlayBaseUrl);
+    await acceptUserscriptToolbox(overlay.window.webContents, overlayBaseUrl);
     await acceptPwaInstallability(pwa.window.webContents, pwaBaseUrl);
     assert.deepEqual(overlay.problems, [], 'extension fixture browser problems');
     assert.deepEqual(pwa.problems, [], 'PWA installability browser problems');

@@ -25,16 +25,18 @@
 
   const STORAGE_KEYS = Object.freeze({
     capture: 'instaAioOverlayCaptureDraftV1',
+    captureV2: 'instaAioOverlayCaptureWorkspaceV2',
     manualQueue: 'instaAioOverlayManualQueueV1',
     preferencesV1: 'instaAioOverlayPreferencesV1',
     preferencesV2: 'instaAioOverlayPreferencesV2',
+    preferencesV3: 'instaAioOverlayPreferencesV3',
   });
   const SECTIONS = Object.freeze(['now', 'capture', 'queue', 'messages', 'workspace']);
   const SECTION_COPY = Object.freeze({
-    now: Object.freeze(['Review target', 'Current Instagram context and one safe next step.']),
-    capture: Object.freeze(['Visible capture', 'Add the rendered account rows to one local draft.']),
-    queue: Object.freeze(['Review queue', 'Work one reviewed account at a time.']),
-    messages: Object.freeze(['Message evidence', 'Read the open thread or resolve one exact reviewed message.']),
+    now: Object.freeze(['Instagram tools', 'The follower checker, account review, and DM Unsend entry points.']),
+    capture: Object.freeze(['Follower checker', 'Capture Followers and Following, then compare the rendered rows locally.']),
+    queue: Object.freeze(['Follow / Unfollow', 'Review one exact account with a true no-click check first.']),
+    messages: Object.freeze(['DM Unsend', 'Inspect visible evidence or resolve one exact reviewed sent message.']),
     workspace: Object.freeze(['Workspace', 'Pairing, permissions, and the durable PWA ledger.']),
   });
   const ACTIONABLE_QUEUE_STATUSES = new Set(['pending', 'ready', 'failed', 'paused']);
@@ -125,6 +127,106 @@
     };
   }
 
+  function captureWorkspaceDefaults() {
+    return {
+      schemaVersion: 2,
+      kind: 'insta-aio-visible-checker-workspace',
+      followers: [],
+      following: [],
+      capturedAt: {
+        followers: null,
+        following: null,
+      },
+      complete: {
+        followers: false,
+        following: false,
+      },
+    };
+  }
+
+  function normalizeCaptureAccounts(value, normalizeUsername) {
+    const accounts = new Map();
+    for (const candidate of (Array.isArray(value) ? value : []).slice(0, MAX_CAPTURE_ACCOUNTS)) {
+      const username = normalizeUsername(candidate?.username || candidate?.profileUrl || candidate);
+      if (!username) continue;
+      accounts.set(username, {
+        username,
+        profileUrl: `https://www.instagram.com/${username}/`,
+        displayName: safeText(candidate?.displayName),
+        source: 'extension-visible-dom',
+      });
+    }
+    return [...accounts.values()].sort((left, right) => left.username.localeCompare(right.username));
+  }
+
+  function normalizeCaptureWorkspace(value, normalizeUsername) {
+    const source = value && typeof value === 'object' ? value : {};
+    const capturedAt = source.capturedAt && typeof source.capturedAt === 'object'
+      ? source.capturedAt
+      : {};
+    return {
+      schemaVersion: 2,
+      kind: 'insta-aio-visible-checker-workspace',
+      followers: normalizeCaptureAccounts(source.followers, normalizeUsername),
+      following: normalizeCaptureAccounts(source.following, normalizeUsername),
+      capturedAt: {
+        followers: safeText(capturedAt.followers) || null,
+        following: safeText(capturedAt.following) || null,
+      },
+      complete: {
+        followers: source.complete?.followers === true,
+        following: source.complete?.following === true,
+      },
+    };
+  }
+
+  function migrateCaptureWorkspace({ v1, v2 }, normalizeUsername) {
+    if (v2 && typeof v2 === 'object') {
+      const workspace = normalizeCaptureWorkspace(v2, normalizeUsername);
+      return {
+        source: 'v2',
+        workspace,
+        shouldPersist: JSON.stringify(workspace) !== JSON.stringify(v2),
+      };
+    }
+    if (v1 && typeof v1 === 'object') {
+      const listType = v1.listType === 'followers' ? 'followers' : 'following';
+      const workspace = normalizeCaptureWorkspace({
+        [listType]: v1[listType],
+        capturedAt: { [listType]: v1.capturedAt },
+      }, normalizeUsername);
+      return { source: 'v1', workspace, shouldPersist: true };
+    }
+    return { source: 'fresh', workspace: captureWorkspaceDefaults(), shouldPersist: true };
+  }
+
+  function captureRecord(workspace, listType, now = () => new Date().toISOString()) {
+    const normalizedType = listType === 'followers' ? 'followers' : 'following';
+    const source = workspace && typeof workspace === 'object'
+      ? workspace
+      : captureWorkspaceDefaults();
+    return {
+      schemaVersion: 1,
+      kind: 'insta-aio-visible-list',
+      listType: normalizedType,
+      capturedAt: safeText(source.capturedAt?.[normalizedType]) || now(),
+      [normalizedType]: Array.isArray(source[normalizedType]) ? source[normalizedType] : [],
+      note: 'Only rows rendered in Instagram were captured. Scroll the list manually and capture again to merge more rows.',
+    };
+  }
+
+  function compareCaptureWorkspace(workspace) {
+    const followers = Array.isArray(workspace?.followers) ? workspace.followers : [];
+    const following = Array.isArray(workspace?.following) ? workspace.following : [];
+    const followerNames = new Set(followers.map((account) => account.username));
+    const followingNames = new Set(following.map((account) => account.username));
+    return {
+      mutuals: following.filter((account) => followerNames.has(account.username)),
+      iDoNotFollowBack: followers.filter((account) => !followingNames.has(account.username)),
+      notFollowingMeBack: following.filter((account) => !followerNames.has(account.username)),
+    };
+  }
+
   function createModel(extensionVersion) {
     return {
       bridge: {
@@ -140,7 +242,7 @@
         recentRuns: [],
       },
       armNotice: null,
-      capture: null,
+      capture: captureWorkspaceDefaults(),
       collision: { active: false, kind: null, rectangles: [] },
       context: null,
       executionGuard: null,
@@ -195,11 +297,16 @@
     SECTIONS,
     STORAGE_KEYS,
     armRemainingMs,
+    captureRecord,
+    captureWorkspaceDefaults,
+    compareCaptureWorkspace,
     countdownLabel,
     createModel,
     currentQueueItem,
     install,
+    migrateCaptureWorkspace,
     normalizeCapture,
+    normalizeCaptureWorkspace,
     normalizeManualQueue,
     normalizeQueueItem,
     queueRemaining,

@@ -10,57 +10,17 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+import {
+  instagramScriptOrder,
+  supportingExtensionFiles,
+} from './instagram-script-order.mjs';
+
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRoot = path.join(repositoryRoot, 'extension');
 const outputRoot = path.join(repositoryRoot, 'dist', 'extension');
 const checkOnly = process.argv.includes('--check');
 
-const sourceFiles = [
-  'action-labels.js',
-  'background.js',
-  'content-instagram.js',
-  'content-pwa.js',
-  'overlay/shared.js',
-  'overlay/preferences.js',
-  'overlay/route-observer.js',
-  'overlay/theme.js',
-  'overlay/bridge.js',
-  'overlay/downloads.js',
-  'overlay/accessibility.js',
-  'overlay/collision.js',
-  'overlay/icons.js',
-  'overlay/shell.js',
-  'overlay/views/now.js',
-  'overlay/views/capture.js',
-  'overlay/views/queue.js',
-  'overlay/views/messages.js',
-  'overlay/views/workspace.js',
-  'instagram-overlay.js',
-  'manifest.json',
-  'popup.css',
-  'popup.html',
-  'popup.js',
-];
-const instagramScriptOrder = [
-  'action-labels.js',
-  'content-instagram.js',
-  'overlay/shared.js',
-  'overlay/preferences.js',
-  'overlay/route-observer.js',
-  'overlay/theme.js',
-  'overlay/bridge.js',
-  'overlay/downloads.js',
-  'overlay/accessibility.js',
-  'overlay/collision.js',
-  'overlay/icons.js',
-  'overlay/shell.js',
-  'overlay/views/now.js',
-  'overlay/views/capture.js',
-  'overlay/views/queue.js',
-  'overlay/views/messages.js',
-  'overlay/views/workspace.js',
-  'instagram-overlay.js',
-];
+const sourceFiles = [...instagramScriptOrder, ...supportingExtensionFiles];
 const libraryFiles = [
   'bridge-protocol.js',
   'controlled-account-action.js',
@@ -201,7 +161,7 @@ async function validateSources() {
   }
   if (
     !overlaySource.includes('data-ia-section="${section}"')
-    || !overlaySource.includes("tab('queue', 'Queue'")
+    || !overlaySource.includes("tab('queue', 'Follow / Unfollow'")
     || !overlaySource.includes('data-ia-view="queue"')
   ) {
     throw new Error('Instagram overlay is missing the in-page queue workspace.');

@@ -292,8 +292,55 @@
     runtime.status('Canceled the pending live intent. No Instagram action was performed.', 'good');
   }
 
+  function botTargets(runtime, source) {
+    if (source === 'queue') {
+      return (runtime.model.manualQueue?.items || [])
+        .filter((entry) => entry.status === 'pending')
+        .map((entry) => entry.account?.username)
+        .filter(Boolean);
+    }
+    const workspace = runtime.model.capture || shared.captureWorkspaceDefaults();
+    const comparison = shared.compareCaptureWorkspace(workspace);
+    const list = source === 'i-do-not-follow-back'
+      ? comparison.iDoNotFollowBack
+      : comparison.notFollowingMeBack;
+    return list.map((account) => account.username || account).filter(Boolean);
+  }
+
+  async function botStart(runtime) {
+    const { query, status } = runtime;
+    const source = query('[data-ia-role="bot-source"]')?.value || 'not-following-me-back';
+    const action = query('[data-ia-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
+    const requested = Number(query('[data-ia-role="bot-count"]')?.value) || 20;
+
+    const usernames = botTargets(runtime, source);
+    if (!usernames.length) {
+      status(
+        source === 'queue'
+          ? 'The manual queue has no pending accounts.'
+          : 'Capture both Followers and Following in the checker first.',
+        'error',
+      );
+      return;
+    }
+    const selected = usernames.slice(0, requested);
+    const items = selected.map((username, index) => ({
+      id: `bot-${action}-${username}-${index}`,
+      username,
+    }));
+
+    await modules.batch.start(runtime, {
+      kind: 'account',
+      action,
+      items,
+      description: `This opens and ${action}s ${items.length} account${items.length === 1 ? '' : 's'}, one at a time, with randomised pacing. Each profile is verified before the action runs. This tab will navigate between profiles.`,
+    });
+  }
+
   shared.install('queueView', {
     arm,
+    botStart,
+    botTargets,
     cancel,
     importQueue,
     liveContextMatches,

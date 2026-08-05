@@ -928,6 +928,218 @@
     return [...accounts.values()].sort((left, right) => left.username.localeCompare(right.username));
   }
 
+  function scrollableWithin(root) {
+    if (!root) return null;
+    const candidates = [root, ...root.querySelectorAll('div, ul, section')];
+    let best = null;
+    for (const element of candidates) {
+      const overflowY = getComputedStyle(element).overflowY;
+      if (overflowY !== 'auto' && overflowY !== 'scroll') continue;
+      const slack = element.scrollHeight - element.clientHeight;
+      if (slack <= 8) continue;
+      if (!best || slack > best.slack) best = { element, slack };
+    }
+    return best?.element || null;
+  }
+
+  function accountListRoot() {
+    const dialogs = visibleDialogs();
+    for (const dialog of dialogs) {
+      if (scrollableWithin(dialog)) return dialog;
+    }
+    return dialogs[0] || document.querySelector('main');
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => { setTimeout(resolve, ms); });
+  }
+
+  // Scrolls the open followers/following dialog to enumerate the full list.
+  // Read-only: it only scrolls an already-open list and reads rendered rows.
+  async function collectAccountList({ maxScrolls = 400, settleMs = 350 } = {}) {
+    const session = inspectSession();
+    if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
+      return { ...session, accounts: [], complete: false, reason: 'session-stop' };
+    }
+    const root = accountListRoot();
+    const scroller = scrollableWithin(root);
+    if (!root) {
+      return { ...session, accounts: [], complete: false, reason: 'open-a-followers-or-following-list' };
+    }
+
+    const accounts = new Map();
+    const harvest = () => {
+      for (const anchor of root.querySelectorAll('a[href^="/"]')) {
+        const username = normalizeUsername(anchor.getAttribute('href'));
+        if (!username || accounts.has(username)) continue;
+        const label = visibleText(anchor);
+        accounts.set(username, {
+          username,
+          profileUrl: `https://www.instagram.com/${username}/`,
+          displayName: label === username ? '' : label,
+          source: 'extension-scrolled-dom',
+        });
+      }
+    };
+
+    harvest();
+    let complete = !scroller;
+    let stagnantRounds = 0;
+    for (let round = 0; scroller && round < maxScrolls; round += 1) {
+      const beforeCount = accounts.size;
+      const beforeHeight = scroller.scrollHeight;
+      // Virtualised lists only fetch more rows in response to a real scroll
+      // event. When we are already pinned at the end, assigning the same
+      // scrollTop fires nothing, so nudge upward first to guarantee movement.
+      if (scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 8) {
+        scroller.scrollTop = Math.max(
+          0,
+          scroller.scrollTop - Math.max(80, Math.floor(scroller.clientHeight / 2)),
+        );
+        await sleep(60);
+      }
+      scroller.scrollTop = scroller.scrollHeight;
+      await sleep(settleMs);
+      harvest();
+
+      const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8;
+      const grew = accounts.size > beforeCount || scroller.scrollHeight > beforeHeight;
+      stagnantRounds = grew ? 0 : stagnantRounds + 1;
+      // Instagram lazy-loads; only conclude the list ended after repeated no-growth rounds.
+      if (atBottom && stagnantRounds >= 3) {
+        complete = true;
+        break;
+      }
+      const check = inspectSession();
+      if (check.sessionExpired || check.challenge || check.actionBlocked || check.rateLimited) {
+        return {
+          ...check,
+          accounts: [...accounts.values()],
+          complete: false,
+          reason: 'session-stop',
+        };
+      }
+    }
+
+    return {
+      ...session,
+      accounts: [...accounts.values()]
+        .sort((left, right) => left.username.localeCompare(right.username)),
+      complete,
+      capturedAt: new Date().toISOString(),
+      reason: complete ? 'list-complete' : 'list-truncated',
+    };
+  }
+
+  // Enumerates messages the signed-in account sent in the open conversation.
+  // Read-only: no controls are activated here.
+  async function enumerateSentDms({ maxScrolls = 300, settleMs = 300, limit = 500 } = {}) {
+    const session = inspectSession();
+    if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
+      return { ...session, messages: [], complete: false, reason: 'session-stop' };
+    }
+    if (pageKind() !== 'messages') {
+      return {
+        ...session,
+        messages: [],
+        complete: false,
+        reason: 'open-an-instagram-conversation',
+      };
+    }
+    const conversationId = directThreadId(location.pathname);
+    if (!conversationId) {
+      return { ...session, messages: [], complete: false, reason: 'conversation-id-unresolved' };
+    }
+
+    const scope = document.querySelector('[data-pagelet="IGDMessagesList"]')
+      || document.querySelector('main');
+    const scroller = scrollableWithin(scope);
+    const identitySelector = DM_MESSAGE_ID_ATTRIBUTES
+      .map((attribute) => `[${attribute}]`)
+      .join(', ');
+    const found = new Map();
+
+    const harvest = () => {
+      const identityNodes = [...(scope?.querySelectorAll?.(identitySelector) || [])]
+        .filter((element) => visibleText(element));
+      for (const identityNode of identityNodes) {
+        const row = identityNode.closest?.('[role="row"], [role="listitem"]') || identityNode;
+        const identity = dmMessageId(identityNode) || dmMessageId(row);
+        if (!identity?.value) continue;
+        const ownership = dmOwnership(row, identityNode);
+        if (ownership.sentByMe !== true) continue;
+        const timestamp = dmMessageTimestamp(identityNode, row);
+        if (timestamp?.timestamp == null) continue;
+        const contents = dmContentCandidates(row);
+        // Only exactly-identifiable single-content rows are eligible for unsend.
+        if (contents.length !== 1) continue;
+        const key = identity.value;
+        if (found.has(key)) continue;
+        found.set(key, {
+          conversationId,
+          messageId: identity.value,
+          identityBasis: identity.attribute,
+          timestamp: timestamp.timestamp,
+          timestampBasis: timestamp.basis,
+          contentDigest: dmContentDigest(contents[0]),
+          preview: contents[0].slice(0, 120),
+          ownershipBasis: ownership.basis,
+          sentByMe: true,
+        });
+      }
+    };
+
+    harvest();
+    let complete = !scroller;
+    let stagnantRounds = 0;
+    for (let round = 0; scroller && round < maxScrolls && found.size < limit; round += 1) {
+      const beforeCount = found.size;
+      const beforeHeight = scroller.scrollHeight;
+      // Conversations page upward: older messages load as we scroll to the top.
+      // Nudge down first so the jump to the top is a real scroll change even
+      // when we are already pinned at the start.
+      if (scroller.scrollTop <= 8) {
+        scroller.scrollTop = Math.max(80, Math.floor(scroller.clientHeight / 2));
+        await sleep(60);
+      }
+      scroller.scrollTop = 0;
+      await sleep(settleMs);
+      harvest();
+
+      const atTop = scroller.scrollTop <= 8;
+      const grew = found.size > beforeCount || scroller.scrollHeight > beforeHeight;
+      stagnantRounds = grew ? 0 : stagnantRounds + 1;
+      if (atTop && stagnantRounds >= 3) {
+        complete = true;
+        break;
+      }
+      const check = inspectSession();
+      if (check.sessionExpired || check.challenge || check.actionBlocked || check.rateLimited) {
+        return {
+          ...check,
+          messages: [...found.values()],
+          complete: false,
+          reason: 'session-stop',
+        };
+      }
+    }
+
+    const messages = [...found.values()]
+      .sort((left, right) => right.timestamp - left.timestamp)
+      .slice(0, limit);
+    return {
+      ...session,
+      conversationId,
+      messages,
+      complete,
+      exactIdentityAvailable: messages.length > 0,
+      capturedAt: new Date().toISOString(),
+      reason: messages.length
+        ? (complete ? 'thread-complete' : 'thread-truncated')
+        : 'exact-message-identity-unavailable',
+    };
+  }
+
   function pageKind() {
     const path = location.pathname.toLowerCase();
     if (path.startsWith('/accounts/login')) return 'login';
@@ -997,6 +1209,8 @@
 
   globalThis.InstaAioInstagramInspector = Object.freeze({
     captureVisibleAccounts,
+    collectAccountList,
+    enumerateSentDms,
     inspectPageContext,
     inspectProfile,
     inspectReviewedDmItem,
@@ -1021,6 +1235,18 @@
         accounts: captureVisibleAccounts(),
       });
       return;
+    }
+    if (request?.kind === 'insta-aio-collect-account-list') {
+      collectAccountList(request.options || {})
+        .then(sendResponse)
+        .catch(() => sendResponse({ unexpectedUi: true, reason: 'account-list-collection-failed' }));
+      return true;
+    }
+    if (request?.kind === 'insta-aio-enumerate-sent-dms') {
+      enumerateSentDms(request.options || {})
+        .then(sendResponse)
+        .catch(() => sendResponse({ unexpectedUi: true, reason: 'sent-dm-enumeration-failed' }));
+      return true;
     }
     if (request?.kind === 'insta-aio-inspect-visible-messages') {
       sendResponse(inspectVisibleMessages());
