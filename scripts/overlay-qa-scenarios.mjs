@@ -24,9 +24,14 @@ function scenario(id, options = {}) {
     density: 'comfortable',
     dock: 'right',
     forcedColors: false,
+    layout: 'docked',
     mode: 'qa-profile-following-queue',
+    opacity: null,
     open: true,
     pairing: 'action',
+    panelHeight: null,
+    panelWidth: null,
+    position: null,
     presentation: 'panel',
     queue: 'loaded',
     section: 'now',
@@ -42,6 +47,28 @@ function scenario(id, options = {}) {
 }
 
 const requiredStates = [
+  scenario('toolbox-floating-translucent', {
+    layout: 'floating',
+    opacity: 0.76,
+    panelHeight: 700,
+    panelWidth: 440,
+    position: { x: 470, y: 72 },
+    semantics: [
+      semantic('[data-ia-role="now-content"] .ia-tool-grid', {
+        includes: ['Follower checker', 'Follow / Unfollow', 'DM Unsend', 'live locked'],
+      }),
+      semantic('[data-ia-role="move-handle"]', {
+        attributes: { 'aria-label': 'Move sidecar; use arrow keys for precise movement', type: 'button' },
+      }),
+      semantic('[data-ia-role="resize-handle"]', {
+        attributes: { 'aria-label': 'Resize sidecar; use arrow keys for precise sizing', type: 'button' },
+      }),
+      semantic('[data-ia-preference="opacity"]', {
+        attributes: { max: '100', min: '70', type: 'range' },
+      }),
+    ],
+    targetSelector: null,
+  }),
   scenario('profile-not-following-no-match', {
     mode: 'qa-profile-not-following',
     semantics: [
@@ -73,7 +100,7 @@ const requiredStates = [
     semantics: [
       semantic('[data-ia-role="capture-count"]', { numberEquals: 3 }),
       semantic('[data-ia-role="capture-detail"]', { includes: ['followers · updated'] }),
-      semantic('[data-ia-role="capture-state-title"]', { equals: '3 unique accounts in this draft' }),
+      semantic('[data-ia-role="capture-state-title"]', { equals: '3 unique followers accounts captured' }),
       semantic('[data-ia-role="capture-state-detail"]', {
         includes: ['3 rendered', '3 added', '0 duplicates ignored'],
       }),
@@ -88,7 +115,7 @@ const requiredStates = [
     semantics: [
       semantic('[data-ia-role="capture-count"]', { numberEquals: 4 }),
       semantic('[data-ia-role="capture-detail"]', { includes: ['following · updated'] }),
-      semantic('[data-ia-role="capture-state-title"]', { equals: '4 unique accounts in this draft' }),
+      semantic('[data-ia-role="capture-state-title"]', { equals: '4 unique following accounts captured' }),
       semantic('[data-ia-role="capture-state-detail"]', {
         includes: ['3 rendered', '2 added', '1 duplicate ignored'],
       }),

@@ -353,7 +353,7 @@ async function run() {
     );
     await waitFor(async () => evaluate(
       pwa,
-      `document.body.innerText.includes('Extension 0.4.0 connected; live account actions are locked by default.')`,
+      `document.body.innerText.includes('Extension 0.5.0 connected; live account actions are locked by default.')`,
     ), 'paired extension ping');
     const storedPairings = await evaluate(
       popup,

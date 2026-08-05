@@ -116,7 +116,42 @@
       'ia-note',
       `Observed ${shared.shortDate(context.capturedAt || Date.now())}. Inspection is no-click.`,
     );
-    content.append(state, card, next, observed);
+
+    const toolHeading = make(document, 'h2', 'ia-tool-heading', 'Installed Instagram tools');
+    const toolGrid = make(document, 'div', 'ia-tool-grid');
+    const tools = [
+      {
+        section: 'capture',
+        title: 'Follower checker',
+        detail: 'Capture Followers and Following separately, then compare the rendered rows locally.',
+        state: 'read only',
+      },
+      {
+        section: 'queue',
+        title: 'Follow / Unfollow',
+        detail: 'Import a reviewed queue and inspect one exact profile without clicking first.',
+        state: model.bridge.pendingLiveIntent ? 'intent ready' : 'live locked',
+      },
+      {
+        section: 'messages',
+        title: 'DM Unsend',
+        detail: 'Read visible evidence or resolve one exact reviewed sent message without opening its menu.',
+        state: model.bridge.pendingDmIntent ? 'intent ready' : 'live locked',
+      },
+    ];
+    for (const tool of tools) {
+      const button = make(document, 'button', 'ia-tool-card');
+      button.type = 'button';
+      button.dataset.iaGoSection = tool.section;
+      const copyElement = document.createElement('span');
+      copyElement.append(
+        make(document, 'strong', '', tool.title),
+        make(document, 'span', '', tool.detail),
+      );
+      button.append(copyElement, make(document, 'em', '', tool.state));
+      toolGrid.append(button);
+    }
+    content.append(state, card, next, observed, toolHeading, toolGrid);
   }
 
   shared.install('nowView', { render });

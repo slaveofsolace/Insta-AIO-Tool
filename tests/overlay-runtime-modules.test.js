@@ -5,6 +5,8 @@ import vm from 'node:vm';
 
 const moduleNames = [
   'shared',
+  'preferences',
+  'layout',
   'route-observer',
   'theme',
   'bridge',
@@ -196,4 +198,69 @@ test('countdown derives from immutable expiry and the model starts without an ar
   assert.equal(shared.countdownLabel(arm, 10_001), 'Expired');
   assert.equal(JSON.stringify(arm), before);
   assert.equal(shared.createModel('fixture').armNotice, null);
+});
+
+test('floating layout clamps drag position, resize bounds, and opacity preferences', () => {
+  const { layout, preferences } = loadModules();
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(layout.constrainSize(
+      { width: 2_000, height: 10 },
+      { width: 1_000, height: 700 },
+    ))),
+    { width: 560, height: 280 },
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(layout.constrainPosition(
+      { x: 900, y: -20 },
+      { width: 380, height: 500 },
+      { width: 1_000, height: 700 },
+    ))),
+    { x: 612, y: 8 },
+  );
+  const normalized = preferences.normalize({
+    opacity: 0.4,
+    panelHeight: 5_000,
+    panelWidth: 100,
+    position: { x: -10, y: 50_000 },
+  });
+  assert.equal(normalized.opacity, 0.7);
+  assert.equal(normalized.panelWidth, 320);
+  assert.equal(normalized.panelHeight, 1_200);
+  assert.deepEqual(JSON.parse(JSON.stringify(normalized.position)), { x: 0, y: 10_000 });
+});
+
+test('follower checker migrates the legacy draft and compares both rendered lists locally', () => {
+  const { shared } = loadModules();
+  const normalizeUsername = (value) => String(value || '')
+    .replace(/^@/, '')
+    .replace(/^\/+/, '')
+    .split('/')[0]
+    .toLowerCase();
+  const migrated = shared.migrateCaptureWorkspace({
+    v1: {
+      listType: 'following',
+      capturedAt: '2026-08-01T00:00:00.000Z',
+      following: [{ username: 'Mutual' }, { username: 'not_back' }],
+    },
+  }, normalizeUsername);
+  assert.equal(migrated.source, 'v1');
+  assert.equal(migrated.shouldPersist, true);
+  const workspace = shared.normalizeCaptureWorkspace({
+    ...migrated.workspace,
+    followers: [{ username: 'mutual' }, { username: 'follower_only' }],
+  }, normalizeUsername);
+  const comparison = shared.compareCaptureWorkspace(workspace);
+  assert.deepEqual(JSON.parse(JSON.stringify(
+    comparison.mutuals.map((item) => item.username),
+  )), ['mutual']);
+  assert.deepEqual(JSON.parse(JSON.stringify(
+    comparison.notFollowingMeBack.map((item) => item.username),
+  )), ['not_back']);
+  assert.deepEqual(JSON.parse(JSON.stringify(
+    comparison.iDoNotFollowBack.map((item) => item.username),
+  )), ['follower_only']);
+  const exported = shared.captureRecord(workspace, 'followers', () => 'fallback');
+  assert.equal(exported.kind, 'insta-aio-visible-list');
+  assert.equal(exported.followers.length, 2);
+  assert.equal('following' in exported, false);
 });

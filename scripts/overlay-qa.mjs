@@ -12,10 +12,10 @@ import { app, BrowserWindow, nativeImage, session } from 'electron';
 import { overlayQaScenarios, viewports } from './overlay-qa-scenarios.mjs';
 
 const viewTitles = Object.freeze({
-  capture: 'Visible capture',
-  messages: 'Message evidence',
-  now: 'Review target',
-  queue: 'Review queue',
+  capture: 'Follower checker',
+  messages: 'DM Unsend',
+  now: 'Instagram tools',
+  queue: 'Follow / Unfollow',
   workspace: 'Workspace',
 });
 
@@ -245,6 +245,14 @@ function scenarioUrl(baseUrl, scenario) {
     theme: scenario.theme,
     width: scenario.width,
   });
+  if (scenario.layout === 'floating') {
+    parameters.set('layout', 'floating');
+    parameters.set('opacity', String(scenario.opacity));
+    parameters.set('panelHeight', String(scenario.panelHeight));
+    parameters.set('panelWidth', String(scenario.panelWidth));
+    parameters.set('positionX', String(scenario.position.x));
+    parameters.set('positionY', String(scenario.position.y));
+  }
   return `${baseUrl}/fixture.html?${parameters}`;
 }
 
@@ -363,7 +371,18 @@ async function inspectScenario(webContents, scenario) {
       header: rect(header),
       innerHeight,
       innerWidth,
+      layout: host.dataset.layout,
       launcher: rect(launcher),
+      opacity: host.style.getPropertyValue('--ia-panel-alpha'),
+      overflowing: [...panel.querySelectorAll('*')]
+        .filter((element) => element.scrollWidth - element.clientWidth > 1)
+        .slice(0, 10)
+        .map((element) => ({
+          className: element.className || null,
+          overflow: element.scrollWidth - element.clientWidth,
+          role: element.dataset?.iaRole || null,
+          tagName: element.tagName,
+        })),
       panel: rect(panel),
       panelAreaShare: presentationRect
         ? (presentationRect.width * presentationRect.height) / (innerWidth * innerHeight)
@@ -398,7 +417,10 @@ function assertScenario(metrics, scenario) {
     metrics.bodyWidth <= metrics.innerWidth + 1,
     `${scenario.id}: body overflows ${metrics.bodyWidth}px into ${metrics.innerWidth}px`,
   );
-  assert.ok(metrics.panelHorizontalOverflow <= 1, `${scenario.id}: panel has horizontal overflow`);
+    assert.ok(
+      metrics.panelHorizontalOverflow <= 1,
+      `${scenario.id}: panel has horizontal overflow; ${JSON.stringify(metrics.overflowing)}`,
+    );
   assert.ok(metrics.scrollerHorizontalOverflow <= 1, `${scenario.id}: scroller has horizontal overflow`);
   assert.ok(metrics.selectedHorizontalOverflow <= 1, `${scenario.id}: selected view has horizontal overflow`);
   assert.equal(
@@ -422,6 +444,14 @@ function assertScenario(metrics, scenario) {
       assert.ok(target.height >= 43, `${scenario.id}: short touch target ${target.label} (${target.height}px)`);
       assert.ok(target.width >= 43, `${scenario.id}: narrow touch target ${target.label} (${target.width}px)`);
     }
+  }
+  if (scenario.layout === 'floating') {
+    assert.equal(metrics.layout, 'floating', `${scenario.id}: floating layout was not applied`);
+    assert.equal(metrics.opacity, `${Math.round(scenario.opacity * 100)}%`, `${scenario.id}: opacity mismatch`);
+    assert.ok(Math.abs(metrics.panel.left - scenario.position.x) <= 1, `${scenario.id}: panel x position mismatch`);
+    assert.ok(Math.abs(metrics.panel.top - scenario.position.y) <= 1, `${scenario.id}: panel y position mismatch`);
+    assert.ok(Math.abs(metrics.panel.width - scenario.panelWidth) <= 1, `${scenario.id}: panel width mismatch`);
+    assert.ok(Math.abs(metrics.panel.height - scenario.panelHeight) <= 1, `${scenario.id}: panel height mismatch`);
   }
   if (scenario.presentation === 'strip') {
     assert.equal(metrics.collision, 'active', `${scenario.id}: collision mode is not active`);
@@ -501,7 +531,14 @@ async function accessibilitySmoke(webContents, scenario) {
     5_000,
   );
   const names = new Set((tree.nodes || []).map((node) => node.name?.value).filter(Boolean));
-  for (const expected of ['Insta AIO Instagram sidecar', 'Now', 'Capture', 'Queue', 'Messages', 'Workspace']) {
+  for (const expected of [
+    'Insta AIO Instagram sidecar',
+    'Toolbox',
+    'Follower checker',
+    'Follow / Unfollow',
+    'DM Unsend',
+    'Workspace',
+  ]) {
     assert.equal(names.has(expected), true, `${scenario.id}: accessibility tree is missing ${expected}`);
   }
 }

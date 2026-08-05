@@ -70,7 +70,7 @@ test('Instagram content script isolates its only page-control call behind the re
   assert.match(instagramContent, /extension-stable-visible-message-identity/);
   assert.doesNotMatch(instagramContent, /cookies?|authorization/i);
   assert.doesNotMatch(instagramOverlay, /\.click\s*\(/);
-  assert.match(instagramOverlay, /tab\('queue', 'Queue'/);
+  assert.match(instagramOverlay, /tab\('queue', 'Follow \/ Unfollow'/);
   assert.match(instagramOverlay, /data-ia-view="queue"/);
 });
 
