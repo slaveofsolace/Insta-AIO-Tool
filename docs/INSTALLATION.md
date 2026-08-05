@@ -2,17 +2,20 @@
 
 Pick one:
 
-- [Userscript](#option-1--userscript-one-click) — fastest, no build step, read-only.
-- [Browser extension](#option-2--browser-extension-full-features) — adds live Follow, Unfollow, and Unsend.
+- [Userscript](#option-1--userscript-one-click) — fastest, no build step, full tools.
+- [Browser extension](#option-2--browser-extension) — same tools, plus pairing with the app.
 - [Web / desktop app](#option-3--web-or-desktop-app) — the full workspace for imported Instagram exports.
+
+The userscript is **built from the extension's own Instagram engine**, so both
+run identical code for scanning, following, unfollowing, and unsending. The
+extension additionally pairs with the app for signed, recorded jobs.
 
 ---
 
 ## Option 1 — Userscript (one click)
 
-This gives you the follower checker, the follow/unfollow review, and sent-message
-tools in a movable panel on Instagram. It inspects and compares only; it never
-clicks Instagram for you. For live actions, use the extension instead.
+This gives you all three tools in a movable panel on Instagram, including live
+Follow, Unfollow, and Unsend with paced batch runs.
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser.
 2. Open the install link:
@@ -23,6 +26,24 @@ clicks Instagram for you. For live actions, use the extension instead.
 3. Select **Install**.
 4. Open or reload `https://www.instagram.com/`.
 5. Use the panel, or press **Alt + Shift + I** to show and hide it.
+
+### Using it
+
+**Follower checker** — open your Followers or Following list, then **Scan full
+list**. It scrolls the open list and reads every row. Scan both to get mutuals
+and not-following-back.
+
+**Follow / Unfollow** — pick targets, action, and how many, then **Start run**.
+Each profile must be open when its turn comes.
+
+**DM Unsend** — open a conversation, **Scan my sent messages**, choose a scope,
+then **Unsend selected**. Only your own messages are eligible, each is
+re-verified immediately before removal, and this cannot be undone.
+
+Pacing lives under the gear icon: per-day caps and the delay range. Runs pause
+longer every 20 items, stop on any rate limit or security check, skip targets
+that changed, and end immediately on **Stop**. A run never resumes after a page
+reload.
 
 Updates are automatic. Tampermonkey re-checks the same address and offers new
 versions as they are published.

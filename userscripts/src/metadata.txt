@@ -1,0 +1,17 @@
+// ==UserScript==
+// @name         Insta AIO Instagram Toolbox
+// @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
+// @version      0.5.0
+// @description  Follower checker, follow/unfollow review, and sent-message tools that appear in a movable panel directly on Instagram.
+// @author       slaveofsolace
+// @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
+// @supportURL   https://github.com/slaveofsolace/Insta-AIO-Tool/issues
+// @downloadURL  https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js
+// @updateURL    https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js
+// @icon         data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Ctext x='32' y='43' font-family='system-ui,sans-serif' font-size='28' font-weight='700' text-anchor='middle' fill='%23fff'%3EAIO%3C/text%3E%3C/svg%3E
+// @license      MIT
+// @match        https://www.instagram.com/*
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @run-at       document-idle
+// ==/UserScript==

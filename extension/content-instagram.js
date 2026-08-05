@@ -1217,8 +1217,18 @@
     inspectSession,
     inspectVisibleMessages,
     normalizeUsername,
+    // The executors are exported so the userscript build runs this same audited
+    // engine instead of carrying a second copy of the DOM logic. Both callers
+    // still have to supply a resolution token minted by the matching inspect
+    // call, so exporting them does not widen what an action can do.
+    performReviewedDmUnsend,
+    performReviewedProfileAction,
     reviewedTargetElement,
   });
+
+  // Only the extension build has a runtime to talk to. Under Tampermonkey this
+  // file provides the engine and the message router is simply not installed.
+  if (!globalThis.chrome?.runtime?.onMessage?.addListener) return;
 
   chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
     if (request?.kind === 'insta-aio-inspect-profile') {

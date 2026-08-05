@@ -14,13 +14,15 @@ storage until you choose to export a file.
 
 | | What you get | Best for |
 |---|---|---|
-| **Userscript** (Tampermonkey) | The three tools in a movable panel on Instagram. Read-only: it inspects and compares, but never clicks Instagram for you. | Fastest start — one click, no build step. |
-| **Browser extension** | Everything above **plus** live Follow, Unfollow, and Unsend, including batch runs with pacing and safety stops. | Actually changing your account. |
+| **Userscript** (Tampermonkey) | All three tools, including live Follow, Unfollow, and Unsend with paced batch runs. | Fastest start — one click, no build step. |
+| **Browser extension** | The same tools, plus pairing with the app for signed, recorded jobs. | Anyone who also uses the app workspace. |
 | **Desktop / web app** | The full workspace: import Instagram ZIP exports, snapshots, message search, queue history. | Working with exported data in bulk. |
 
-Most people want the **extension**. Start with [Installation](./docs/INSTALLATION.md).
+The userscript and the extension run the **same engine** — the userscript is
+built from the extension's own Instagram code, so both behave identically. Pick
+whichever is easier to install.
 
-### Quickest start — userscript
+### Quickest start
 
 Install [Tampermonkey](https://www.tampermonkey.net/), then open this link and
 select **Install**:
@@ -28,8 +30,8 @@ select **Install**:
 **[Install Insta AIO Toolbox](https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js)**
 
 Reload Instagram and press **Alt + Shift + I**. Updates arrive automatically.
-The userscript inspects and compares only — for live Follow, Unfollow, and
-Unsend, install the extension.
+
+Full steps and the other options are in [Installation](./docs/INSTALLATION.md).
 
 <details>
 <summary>Full feature list</summary>

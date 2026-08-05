@@ -399,6 +399,13 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       opacity: shadow.querySelector('[data-preference="opacity"]')?.value,
       resize: shadow.querySelector('[data-role="resize"]')?.getAttribute('aria-label'),
       mode: shadow.querySelector('.mode')?.textContent,
+      liveControls: [
+        'run-accounts', 'run-unsend', 'scan-list', 'scan-sent', 'stop-run',
+      ].map((action) => Boolean(shadow.querySelector('[data-action="' + action + '"]'))),
+      engineExecutors: [
+        typeof globalThis.InstaAioInstagramInspector?.performReviewedProfileAction,
+        typeof globalThis.InstaAioInstagramInspector?.performReviewedDmUnsend,
+      ],
     };
   })()`, true);
   assert.deepEqual(initial.labels, ['Follower checker', 'Follow / Unfollow', 'DM Unsend']);
@@ -406,7 +413,11 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.equal(initial.opacity, '88');
   assert.match(initial.move, /Move toolbox/);
   assert.match(initial.resize, /Resize toolbox/);
-  assert.match(initial.mode, /no live clicks/);
+  assert.match(initial.mode, /live actions enabled/);
+  // The userscript exposes the same live tools as the extension, driven by the
+  // shared engine rather than a private copy of the DOM logic.
+  assert.deepEqual(initial.liveControls, [true, true, true, true, true]);
+  assert.deepEqual(initial.engineExecutors, ['function', 'function']);
 
   await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
