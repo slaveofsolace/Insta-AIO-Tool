@@ -1,8 +1,10 @@
-// Builds the Tampermonkey entry point.
+// Assembles the Tampermonkey userscript from the same engine the extension ships.
 //
-// The userscript loads the same reviewed Instagram engine and UI source files
-// that live in this repository. Keeping the entry point small means extension
-// and Tampermonkey behavior cannot drift while the update URL remains stable.
+// Tampermonkey installs exactly one file, so the userscript has to be flat. It
+// is built rather than hand-maintained so the live Follow, Unfollow, and Unsend
+// paths cannot drift from the extension's audited copy: both surfaces run the
+// identical `extension/content-instagram.js` engine, and only the shell around
+// it differs.
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -10,44 +12,56 @@ import { fileURLToPath } from 'node:url';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const checkOnly = process.argv.includes('--check');
-const metadataPath = path.join(repositoryRoot, 'userscripts', 'src', 'metadata.txt');
 const output = path.join(repositoryRoot, 'userscripts', 'insta-aio-companion.user.js');
-const requiredSources = [
-  'extension/action-labels.js',
-  'extension/content-instagram.js',
-  'userscripts/src/toolbox-shell.js',
+
+const parts = [
+  path.join(repositoryRoot, 'userscripts', 'src', 'metadata.txt'),
+  path.join(repositoryRoot, 'extension', 'action-labels.js'),
+  path.join(repositoryRoot, 'extension', 'content-instagram.js'),
+  path.join(repositoryRoot, 'userscripts', 'src', 'toolbox-shell.js'),
 ];
 
-const metadata = await readFile(metadataPath, 'utf8');
-for (const source of requiredSources) {
-  await readFile(path.join(repositoryRoot, ...source.split('/')), 'utf8');
-  const expected = `// @require      https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/${source}`;
-  if (!metadata.includes(expected)) {
-    throw new Error(`Userscript metadata is missing ${source}.`);
-  }
+const banner = `
+// ---------------------------------------------------------------------------
+// Generated file. Do not edit.
+//
+// Built by scripts/build-userscript.mjs from:
+//   extension/action-labels.js           <- labels and thread-wide DM runner
+//   extension/content-instagram.js       <- shared exact-target engine
+//   userscripts/src/toolbox-shell.js     <- userscript UI and batch runner
+//
+// Edit those sources and run: pnpm run build:userscript
+// ---------------------------------------------------------------------------
+`.trimStart();
+
+const [metadata, ...sources] = await Promise.all(parts.map((file) => readFile(file, 'utf8')));
+
+const engine = sources.join('\n');
+if (!engine.includes('performReviewedProfileAction')
+  || !engine.includes('performReviewedDmUnsend')
+  || !engine.includes('InstaAioDmThreadUnsender')) {
+  throw new Error('The shared engine no longer exports the required action paths.');
+}
+if (!engine.includes("if (!globalThis.chrome?.runtime?.onMessage?.addListener) return;")) {
+  throw new Error('The shared engine must tolerate running without an extension runtime.');
 }
 if (!metadata.includes('// @version      0.8.0')) {
   throw new Error('Userscript metadata version must be 0.8.0.');
 }
+if (/@require|@resource/.test(metadata)) {
+  throw new Error('The Tampermonkey bundle must remain self-contained.');
+}
 
-const body = `
-(() => {
-  'use strict';
-  if (!globalThis.InstaAioInstagramInspector || !globalThis.InstaAioDmThreadUnsender) {
-    console.error('Insta AIO could not start. Reinstall or update the userscript.');
-  }
-})();
-`;
-const assembled = `${metadata.trimEnd()}\n${body.trimStart()}`;
+const assembled = `${metadata}${banner}${engine}`;
 
 if (checkOnly) {
   const current = await readFile(output, 'utf8').catch(() => '');
   if (current !== assembled) {
     throw new Error('userscripts/insta-aio-companion.user.js is stale; run pnpm run build:userscript.');
   }
-  console.log('Userscript entry point matches its repository sources.');
+  console.log('Userscript bundle matches its sources.');
   process.exit(0);
 }
 
 await writeFile(output, assembled);
-console.log(`Built ${path.relative(repositoryRoot, output)}.`);
+console.log(`Built ${path.relative(repositoryRoot, output)} from ${parts.length} sources.`);
