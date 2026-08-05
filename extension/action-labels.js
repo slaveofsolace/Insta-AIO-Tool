@@ -1,4 +1,6 @@
 (() => {
+  'use strict';
+
   const namespace = '__instaAioActionLabels';
   if (globalThis[namespace]) return;
 
@@ -16,6 +18,16 @@
     'unsend',
     'zurücknehmen',
   ]);
+  const dmActionSelectors = Object.freeze([
+    "[aria-label^='See more options for message']",
+    "[aria-label*='more options']",
+    "[aria-label*='More']",
+    "[aria-label*='Altre opzioni']",
+    "[aria-label*='opzioni']",
+    "[aria-label*='opciones']",
+    "[aria-label*='options']",
+    "[role='button'][aria-haspopup='menu']",
+  ]);
   const relationshipByLabel = new Map(relationshipEntries);
   const dmUnsendLabelSet = new Set(dmUnsendLabels);
 
@@ -28,6 +40,7 @@
   }
 
   const api = Object.freeze({
+    dmActionSelectors,
     dmUnsendLabels,
     relationshipLabels: Object.freeze(relationshipEntries.map(([label]) => label)),
     isDmUnsendLabel(value) {
@@ -45,4 +58,874 @@
     value: api,
     writable: false,
   });
+})();
+
+(() => {
+  'use strict';
+
+  if (globalThis.InstaAioDmThreadUnsender) return;
+  const actionLabels = globalThis.__instaAioActionLabels;
+  if (!actionLabels) return;
+
+  const ACTIVE_ATTRIBUTE = 'data-insta-aio-unsend-active';
+  const DONE_ATTRIBUTE = 'data-insta-aio-unsent';
+  const DEFAULT_MIN_DELAY_MS = 1_000;
+  const DEFAULT_MAX_DELAY_MS = 2_000;
+  const DEFAULT_MAX_FAILURES = 5;
+  const MAX_HOVER_DEPTH = 8;
+  const MAX_SCAN_PASSES = 3;
+  const listeners = new Set();
+
+  let activeController = null;
+  let currentState = Object.freeze({
+    status: 'idle',
+    processed: 0,
+    failed: 0,
+    consecutiveFailures: 0,
+    current: null,
+    message: 'Ready',
+    startedAt: null,
+    finishedAt: null,
+    canStop: false,
+  });
+
+  function snapshot() {
+    return { ...currentState };
+  }
+
+  function publish(patch) {
+    currentState = Object.freeze({ ...currentState, ...patch });
+    for (const listener of listeners) {
+      try {
+        listener(snapshot());
+      } catch {
+        // A view listener must not be able to interrupt the thread workflow.
+      }
+    }
+    return snapshot();
+  }
+
+  function subscribe(listener) {
+    if (typeof listener !== 'function') return () => {};
+    listeners.add(listener);
+    listener(snapshot());
+    return () => listeners.delete(listener);
+  }
+
+  function delay(ms, signal) {
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(new DOMException('The operation was stopped.', 'AbortError'));
+        return;
+      }
+      const timer = setTimeout(resolve, Math.max(0, ms));
+      signal?.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new DOMException('The operation was stopped.', 'AbortError'));
+      }, { once: true });
+    });
+  }
+
+  function randomDelay(minimum, maximum) {
+    const min = Math.max(1_000, Number(minimum) || DEFAULT_MIN_DELAY_MS);
+    const max = Math.max(min, Number(maximum) || DEFAULT_MAX_DELAY_MS);
+    return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  function visibleText(element) {
+    if (!element || element.getAttribute?.('aria-hidden') === 'true') return '';
+    const style = element.ownerDocument?.defaultView?.getComputedStyle?.(element);
+    if (style?.display === 'none' || style?.visibility === 'hidden' || style?.opacity === '0') return '';
+    const rectangle = element.getBoundingClientRect?.();
+    if (rectangle && rectangle.width === 0 && rectangle.height === 0) return '';
+    return String(element.textContent || element.getAttribute?.('aria-label') || '').trim();
+  }
+
+  function isVisible(element) {
+    if (!element?.isConnected) return false;
+    if (typeof element.checkVisibility === 'function') {
+      try {
+        if (!element.checkVisibility({
+          visibilityProperty: true,
+          contentVisibilityAuto: true,
+          opacityProperty: true,
+        })) return false;
+      } catch {
+        // Older Chromium versions may not accept the options object.
+      }
+    }
+    const rectangle = element.getBoundingClientRect?.();
+    return Boolean(rectangle && rectangle.height > 0 && rectangle.width > 0
+      && rectangle.bottom >= 0 && rectangle.top <= innerHeight);
+  }
+
+  function sessionStop() {
+    const observation = globalThis.InstaAioInstagramInspector?.inspectSession?.() || {};
+    if (observation.sessionExpired) return 'Instagram signed you out';
+    if (observation.challenge) return 'Instagram opened a security check';
+    if (observation.actionBlocked) return 'Instagram blocked the action';
+    if (observation.rateLimited) return 'Instagram asked you to slow down';
+    if (!location.pathname.toLowerCase().startsWith('/direct/t/')) return 'The conversation is no longer open';
+    return null;
+  }
+
+  function findScrollableChild(parent, view = globalThis) {
+    if (!parent) return null;
+    let best = null;
+    const queue = [{ element: parent, depth: 0 }];
+    while (queue.length) {
+      const { element, depth } = queue.shift();
+      if (depth > 10) continue;
+      const style = view.getComputedStyle?.(element);
+      const slack = Number(element.scrollHeight) - Number(element.clientHeight);
+      if ((style?.overflowY === 'auto' || style?.overflowY === 'scroll') && slack > 8) {
+        if (!best || slack > best.slack) best = { element, slack };
+      }
+      for (const child of element.children || []) queue.push({ element: child, depth: depth + 1 });
+    }
+    return best?.element || null;
+  }
+
+  function threadContext() {
+    if (!location.pathname.toLowerCase().startsWith('/direct/t/')) {
+      return { ok: false, reason: 'Open an Instagram conversation first.' };
+    }
+    const root = document.querySelector("[data-pagelet='IGDMessagesList']");
+    if (!root) {
+      return { ok: false, reason: 'The message list is still loading. Keep the conversation open and try again.' };
+    }
+    const scroller = findScrollableChild(root, root.ownerDocument.defaultView);
+    if (!scroller) {
+      // Short conversations can fit without producing a scrollable descendant.
+      return { ok: true, root, scroller: root };
+    }
+    return { ok: true, root, scroller };
+  }
+
+  function deepestMessageContainer(scroller) {
+    let best = scroller;
+    let bestCount = scroller?.children?.length || 0;
+    const queue = [{ element: scroller, depth: 0 }];
+    while (queue.length) {
+      const { element, depth } = queue.shift();
+      if (depth > 4) continue;
+      const count = element?.children?.length || 0;
+      if (count > bestCount) {
+        best = element;
+        bestCount = count;
+      }
+      for (const child of element?.children || []) queue.push({ element: child, depth: depth + 1 });
+    }
+    return best;
+  }
+
+  function hasMessageContent(row) {
+    return Boolean(
+      row?.querySelector?.('[role="none"], [role="presentation"], [dir="auto"], img, video, audio'),
+    );
+  }
+
+  function sentByCurrentUser(row, view = globalThis) {
+    const explicit = String(row?.getAttribute?.('data-sent-by-me') || '').toLowerCase();
+    if (explicit === 'true') return true;
+    if (explicit === 'false') return false;
+    const queue = [{ element: row, depth: 0 }];
+    while (queue.length) {
+      const { element, depth } = queue.shift();
+      if (view.getComputedStyle?.(element)?.justifyContent === 'flex-end') return true;
+      if (depth < MAX_HOVER_DEPTH) {
+        for (const child of element.children || []) queue.push({ element: child, depth: depth + 1 });
+      }
+    }
+    return false;
+  }
+
+  function candidateRows(scroller) {
+    const container = deepestMessageContainer(scroller);
+    let rows = [...(container?.children || [])];
+    if (!rows.length) {
+      rows = [...(scroller?.querySelectorAll?.('[role="row"], [role="listitem"]') || [])];
+    }
+    return rows
+      .filter((row) => !row.hasAttribute?.(DONE_ATTRIBUTE))
+      .filter((row) => !row.hasAttribute?.(ACTIVE_ATTRIBUTE))
+      .filter(hasMessageContent)
+      .filter((row) => sentByCurrentUser(row, row.ownerDocument.defaultView));
+  }
+
+  function firstVisibleCandidate(scroller) {
+    const rows = candidateRows(scroller).reverse();
+    return rows.find(isVisible) || null;
+  }
+
+  async function waitForElement(target, getter, signal, timeoutMs = 3_000) {
+    const immediate = getter();
+    if (immediate) return immediate;
+    return new Promise((resolve, reject) => {
+      let timer;
+      const observer = new MutationObserver(() => {
+        const value = getter();
+        if (!value) return;
+        cleanup();
+        resolve(value);
+      });
+      const onAbort = () => {
+        cleanup();
+        reject(new DOMException('The operation was stopped.', 'AbortError'));
+      };
+      const cleanup = () => {
+        observer.disconnect();
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
+      };
+      observer.observe(target, { childList: true, subtree: true, attributes: true });
+      timer = setTimeout(() => {
+        cleanup();
+        resolve(null);
+      }, timeoutMs);
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
+  function dispatch(target, event) {
+    EventTarget.prototype.dispatchEvent.call(target, event);
+  }
+
+  function hoverOptions(target) {
+    const rectangle = target.getBoundingClientRect?.() || { x: 0, y: 0, width: 0, height: 0 };
+    return {
+      bubbles: true,
+      cancelable: true,
+      clientX: rectangle.x + (rectangle.width / 2),
+      clientY: rectangle.y + (rectangle.height / 2),
+      pointerId: 1,
+      pointerType: 'mouse',
+    };
+  }
+
+  function hoverIn(target) {
+    const options = hoverOptions(target);
+    if (typeof PointerEvent === 'function') {
+      dispatch(target, new PointerEvent('pointerenter', { ...options, bubbles: false }));
+      dispatch(target, new PointerEvent('pointerover', options));
+      dispatch(target, new PointerEvent('pointermove', options));
+    }
+    dispatch(target, new MouseEvent('mouseenter', { ...options, bubbles: false }));
+    dispatch(target, new MouseEvent('mouseover', options));
+    dispatch(target, new MouseEvent('mousemove', options));
+  }
+
+  function hoverOut(target) {
+    const options = hoverOptions(target);
+    if (typeof PointerEvent === 'function') {
+      dispatch(target, new PointerEvent('pointerout', options));
+      dispatch(target, new PointerEvent('pointerleave', { ...options, bubbles: false }));
+    }
+    dispatch(target, new MouseEvent('mouseout', options));
+    dispatch(target, new MouseEvent('mouseleave', { ...options, bubbles: false }));
+  }
+
+  function hoverTargets(row) {
+    const targets = [];
+    const queue = [{ element: row, depth: 0 }];
+    while (queue.length) {
+      const { element, depth } = queue.shift();
+      targets.push(element);
+      if (depth < MAX_HOVER_DEPTH) {
+        for (const child of element.children || []) queue.push({ element: child, depth: depth + 1 });
+      }
+    }
+    return targets;
+  }
+
+  function clickable(element, scope = document) {
+    const control = element?.closest?.('button, [role="button"], [role="menuitem"]');
+    return control && scope.contains(control) ? control : null;
+  }
+
+  function actionButton(row) {
+    const matches = [];
+    for (const selector of actionLabels.dmActionSelectors) {
+      for (const element of row.querySelectorAll?.(selector) || []) {
+        const control = clickable(element, row) || (element.matches?.('button, [role="button"]') ? element : null);
+        if (control) matches.push(control);
+      }
+    }
+    return [...new Set(matches)].find(isVisible) || null;
+  }
+
+  function activateControl(control) {
+    HTMLElement.prototype.click.call(control);
+  }
+
+  function visibleSurfaces(selector) {
+    return [...document.querySelectorAll(selector)].filter((element) => visibleText(element));
+  }
+
+  function unsendControl(scope) {
+    const controls = [];
+    for (const element of scope?.querySelectorAll?.('button, [role="button"], [role="menuitem"], span, div') || []) {
+      if (!actionLabels.isDmUnsendLabel(visibleText(element))) continue;
+      const control = clickable(element, scope) || (element.matches?.('button, [role="button"], [role="menuitem"]') ? element : null);
+      if (control) controls.push(control);
+    }
+    return [...new Set(controls)].length === 1 ? [...new Set(controls)][0] : null;
+  }
+
+  async function dismissStaleSurfaces(signal) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (!visibleSurfaces('[role="dialog"], [role="menu"], [role="listbox"]').length) return;
+      dispatch(document.body, new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await delay(160, signal);
+    }
+  }
+
+  async function revealActionButton(row, signal) {
+    await dismissStaleSurfaces(signal);
+    const targets = hoverTargets(row);
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (const target of targets) hoverIn(target);
+      await delay(110, signal);
+      const control = actionButton(row);
+      if (control) return control;
+      for (const target of targets) hoverOut(target);
+      await delay(60, signal);
+    }
+    for (const target of targets) hoverIn(target);
+    return waitForElement(row, () => actionButton(row), signal, 3_000);
+  }
+
+  async function openUnsendMenu(control, signal) {
+    const existing = new Set(visibleSurfaces('[role="menu"], [role="listbox"]'));
+    const pending = waitForElement(document.body, () => {
+      const surfaces = visibleSurfaces('[role="menu"], [role="listbox"]')
+        .filter((surface) => !existing.has(surface));
+      for (const surface of surfaces) {
+        const candidate = unsendControl(surface);
+        if (candidate) return { surface, control: candidate };
+      }
+      return null;
+    }, signal, 3_000);
+    activateControl(control);
+    return pending;
+  }
+
+  async function confirmUnsend(menuControl, row, signal) {
+    const existing = new Set(visibleSurfaces('[role="dialog"]'));
+    const pending = waitForElement(document.body, () => {
+      if (!row.isConnected) return { immediate: true };
+      const dialogs = visibleSurfaces('[role="dialog"]').filter((dialog) => !existing.has(dialog));
+      for (const dialog of dialogs) {
+        const control = unsendControl(dialog);
+        if (control) return { dialog, control };
+      }
+      return null;
+    }, signal, 3_000);
+    activateControl(menuControl);
+    const result = await pending;
+    if (result?.immediate) return true;
+    if (!result?.control) return false;
+    activateControl(result.control);
+    const removed = await waitForElement(document.body, () => !row.isConnected, signal, 4_000);
+    return removed === true;
+  }
+
+  async function unsendRow(row, signal) {
+    row.setAttribute(ACTIVE_ATTRIBUTE, '');
+    let success = false;
+    try {
+      const control = await revealActionButton(row, signal);
+      if (!control) throw new Error('The message menu did not appear.');
+      const menu = await openUnsendMenu(control, signal);
+      if (!menu?.control) throw new Error('Instagram did not show an Unsend option.');
+      success = await confirmUnsend(menu.control, row, signal);
+      if (!success) throw new Error('The message was not confirmed as removed.');
+      row.setAttribute(DONE_ATTRIBUTE, '');
+      return true;
+    } finally {
+      row.removeAttribute(ACTIVE_ATTRIBUTE);
+      if (!success) await dismissStaleSurfaces(signal).catch(() => {});
+    }
+  }
+
+  function reversedLayout(scroller) {
+    return scroller?.ownerDocument?.defaultView?.getComputedStyle?.(scroller)?.flexDirection === 'column-reverse'
+      || Number(scroller?.scrollTop) < 0;
+  }
+
+  function oldestOffset(scroller, reversed) {
+    return reversed ? -(scroller.scrollHeight - scroller.clientHeight) : 0;
+  }
+
+  function newestOffset(scroller, reversed) {
+    return reversed ? 0 : Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+  }
+
+  function visibleLoader(root) {
+    return [...root.querySelectorAll?.('[role="progressbar"], svg[aria-label*="Loading" i]') || []]
+      .find(isVisible) || null;
+  }
+
+  async function waitForLoader(root, signal) {
+    if (!visibleLoader(root)) return;
+    await Promise.race([
+      waitForElement(root, () => visibleLoader(root) === null, signal, 5_000),
+      delay(5_000, signal),
+    ]).catch(() => {});
+  }
+
+  async function loadAllHistory(context, signal) {
+    const { root, scroller } = context;
+    if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
+    const reversed = reversedLayout(scroller);
+    let quietRounds = 0;
+    for (let page = 0; page < 120 && quietRounds < 3; page += 1) {
+      const stop = sessionStop();
+      if (stop) throw new Error(stop);
+      const beforeHeight = scroller.scrollHeight;
+      const beforeRows = candidateRows(scroller).length;
+      const target = oldestOffset(scroller, reversed);
+      if (Math.abs(scroller.scrollTop - target) <= 5) {
+        scroller.scrollTop = target + (reversed ? 1 : -1) * Math.max(80, Math.floor(scroller.clientHeight / 2));
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
+        await delay(80, signal);
+      }
+      scroller.scrollTop = target;
+      dispatch(scroller, new Event('scroll', { bubbles: true }));
+      await delay(500, signal);
+      await waitForLoader(root, signal);
+      const grew = scroller.scrollHeight > beforeHeight || candidateRows(scroller).length > beforeRows;
+      quietRounds = grew ? 0 : quietRounds + 1;
+      publish({
+        status: 'preparing',
+        message: grew ? 'Loading older messages…' : 'Checking for older messages…',
+        canStop: true,
+      });
+    }
+    scroller.scrollTop = newestOffset(scroller, reversed);
+    dispatch(scroller, new Event('scroll', { bubbles: true }));
+    await delay(100, signal);
+  }
+
+  async function nextSentRow(context, signal) {
+    const { scroller } = context;
+    const current = firstVisibleCandidate(scroller);
+    if (current) return current;
+    const reversed = reversedLayout(scroller);
+    for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
+      const start = newestOffset(scroller, reversed);
+      const end = oldestOffset(scroller, reversed);
+      const range = Math.abs(end - start);
+      const step = range < 500 ? 30 : 150;
+      if (reversed) {
+        for (let position = start; position >= end; position -= step) {
+          if (signal.aborted) return null;
+          scroller.scrollTop = position;
+          dispatch(scroller, new Event('scroll', { bubbles: true }));
+          await delay(8, signal);
+          const row = firstVisibleCandidate(scroller);
+          if (row) return row;
+        }
+      } else {
+        for (let position = start; position >= end; position -= step) {
+          if (signal.aborted) return null;
+          scroller.scrollTop = position;
+          dispatch(scroller, new Event('scroll', { bubbles: true }));
+          await delay(8, signal);
+          const row = firstVisibleCandidate(scroller);
+          if (row) return row;
+        }
+      }
+      await delay(100, signal);
+    }
+    return null;
+  }
+
+  function preview(row) {
+    const text = [...row.querySelectorAll?.('[dir="auto"]') || []]
+      .filter((element) => !element.querySelector?.('[dir="auto"]'))
+      .map(visibleText)
+      .find(Boolean);
+    return (text || 'Sent message').slice(0, 90);
+  }
+
+  async function start(options = {}) {
+    if (activeController && !activeController.signal.aborted) return snapshot();
+    const context = threadContext();
+    if (!context.ok) {
+      publish({ status: 'error', message: context.reason, canStop: false, finishedAt: new Date().toISOString() });
+      return snapshot();
+    }
+
+    const controller = new AbortController();
+    activeController = controller;
+    const signal = controller.signal;
+    const maxFailures = Math.max(1, Math.min(10, Number(options.maxConsecutiveFailures) || DEFAULT_MAX_FAILURES));
+    const maxMessages = Number.isFinite(Number(options.maxMessages))
+      ? Math.max(1, Number(options.maxMessages))
+      : Number.POSITIVE_INFINITY;
+    let processed = 0;
+    let failed = 0;
+    let consecutiveFailures = 0;
+    let lastUnsendAt = 0;
+
+    publish({
+      status: 'preparing',
+      processed: 0,
+      failed: 0,
+      consecutiveFailures: 0,
+      current: null,
+      message: 'Loading the conversation…',
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      canStop: true,
+    });
+
+    try {
+      await loadAllHistory(context, signal);
+      while (!signal.aborted && processed < maxMessages && consecutiveFailures < maxFailures) {
+        const stop = sessionStop();
+        if (stop) throw new Error(stop);
+        const row = await nextSentRow(context, signal);
+        if (!row) break;
+        const label = preview(row);
+        const elapsed = Date.now() - lastUnsendAt;
+        const wait = lastUnsendAt
+          ? Math.max(0, randomDelay(options.minDelayMs, options.maxDelayMs) - elapsed)
+          : 0;
+        if (wait) {
+          publish({
+            status: 'waiting',
+            current: label,
+            message: `Waiting ${(wait / 1_000).toFixed(1)}s before the next message…`,
+          });
+          await delay(wait, signal);
+        }
+
+        publish({ status: 'running', current: label, message: `Unsending message ${processed + 1}…` });
+        try {
+          await unsendRow(row, signal);
+          await delay(800, signal);
+          if (row.isConnected) throw new Error('Instagram kept the message in the thread.');
+          processed += 1;
+          consecutiveFailures = 0;
+          lastUnsendAt = Date.now();
+          publish({
+            status: 'running',
+            processed,
+            failed,
+            consecutiveFailures,
+            current: null,
+            message: `${processed} message${processed === 1 ? '' : 's'} unsent`,
+          });
+        } catch (error) {
+          if (signal.aborted) throw error;
+          failed += 1;
+          consecutiveFailures += 1;
+          const backoff = Math.min(60_000, 3_000 * (2 ** (consecutiveFailures - 1)));
+          publish({
+            status: 'waiting',
+            failed,
+            consecutiveFailures,
+            current: label,
+            message: `Message could not be removed. Retrying after ${Math.round(backoff / 1_000)}s (${consecutiveFailures}/${maxFailures})…`,
+          });
+          await delay(backoff, signal);
+        }
+      }
+
+      if (signal.aborted) {
+        publish({
+          status: 'stopped',
+          message: `Stopped. ${processed} message${processed === 1 ? '' : 's'} unsent.`,
+          processed,
+          failed,
+          current: null,
+          canStop: false,
+          finishedAt: new Date().toISOString(),
+        });
+      } else if (consecutiveFailures >= maxFailures) {
+        publish({
+          status: 'error',
+          message: `Stopped after ${consecutiveFailures} consecutive failures. ${processed} message${processed === 1 ? '' : 's'} unsent.`,
+          processed,
+          failed,
+          current: null,
+          canStop: false,
+          finishedAt: new Date().toISOString(),
+        });
+      } else {
+        publish({
+          status: 'completed',
+          message: `Done. ${processed} message${processed === 1 ? '' : 's'} unsent.`,
+          processed,
+          failed,
+          current: null,
+          canStop: false,
+          finishedAt: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError' || signal.aborted) {
+        publish({
+          status: 'stopped',
+          message: `Stopped. ${processed} message${processed === 1 ? '' : 's'} unsent.`,
+          processed,
+          failed,
+          current: null,
+          canStop: false,
+          finishedAt: new Date().toISOString(),
+        });
+      } else {
+        publish({
+          status: 'error',
+          message: `${error.message || 'The conversation changed unexpectedly.'} ${processed} message${processed === 1 ? '' : 's'} unsent.`,
+          processed,
+          failed,
+          current: null,
+          canStop: false,
+          finishedAt: new Date().toISOString(),
+        });
+      }
+    } finally {
+      if (activeController === controller) activeController = null;
+      for (const row of document.querySelectorAll(`[${ACTIVE_ATTRIBUTE}]`)) row.removeAttribute(ACTIVE_ATTRIBUTE);
+    }
+    return snapshot();
+  }
+
+  function stop() {
+    if (!activeController || activeController.signal.aborted) return false;
+    publish({ status: 'stopping', message: 'Stopping after the current step…', canStop: false });
+    activeController.abort('Stopped by user');
+    return true;
+  }
+
+  function inspect() {
+    const context = threadContext();
+    if (!context.ok) return { ready: false, reason: context.reason, visibleSent: 0 };
+    return {
+      ready: true,
+      reason: 'Conversation ready',
+      visibleSent: candidateRows(context.scroller).filter(isVisible).length,
+      scrollable: context.scroller.scrollHeight > context.scroller.clientHeight + 50,
+    };
+  }
+
+  const publicApi = { inspect, snapshot, start, stop, subscribe };
+  if (globalThis.__instaAioTestHooks === true) {
+    publicApi.__test = Object.freeze({
+      deepestMessageContainer,
+      hasMessageContent,
+      reversedLayout,
+      sentByCurrentUser,
+    });
+  }
+  Object.defineProperty(globalThis, 'InstaAioDmThreadUnsender', {
+    configurable: false,
+    enumerable: false,
+    value: Object.freeze(publicApi),
+    writable: false,
+  });
+})();
+
+(() => {
+  'use strict';
+
+  // The generated userscript uses the existing toolbox shell. This small layer
+  // swaps its DM controls to the shared thread runner and applies Instagram's
+  // own design tokens without duplicating the toolbox implementation.
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+  const ROOT_ID = 'insta-aio-userscript-root';
+  let installed = false;
+
+  function applyUserscriptEnhancement(host) {
+    if (installed || !host?.shadowRoot || !globalThis.InstaAioDmThreadUnsender) return;
+    installed = true;
+    const shadow = host.shadowRoot;
+    const runner = globalThis.InstaAioDmThreadUnsender;
+    const query = (selector) => shadow.querySelector(selector);
+    const setText = (role, value) => {
+      const element = query(`[data-role="${role}"]`);
+      if (element) element.textContent = String(value ?? '');
+    };
+
+    const style = document.createElement('style');
+    style.id = 'insta-aio-instagram-design-v2';
+    style.textContent = `
+      :host {
+        --aio-instagram-bg: rgb(var(--ig-primary-background, 255, 255, 255));
+        --aio-instagram-elevated: rgb(var(--ig-elevated-background, 255, 255, 255));
+        --aio-instagram-secondary: rgb(var(--ig-secondary-background, 250, 250, 250));
+        --aio-instagram-text: rgb(var(--ig-primary-text, 38, 38, 38));
+        --aio-instagram-muted: rgb(var(--ig-secondary-text, 115, 115, 115));
+        --aio-instagram-line: rgb(var(--ig-separator, 219, 219, 219));
+        --aio-instagram-blue: rgb(var(--ig-primary-button, 0, 149, 246));
+        color-scheme: light dark;
+        font-family: var(--font-family-system, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+      }
+      .panel {
+        border-color: var(--aio-instagram-line) !important;
+        border-radius: 16px !important;
+        background: color-mix(in srgb, var(--aio-instagram-bg) var(--aio-alpha), transparent) !important;
+        color: var(--aio-instagram-text) !important;
+        box-shadow: 0 12px 38px rgba(0,0,0,.18) !important;
+        font-family: inherit !important;
+        animation: aio-instagram-enter 160ms cubic-bezier(.2,.8,.2,1);
+      }
+      .header, .footer, .tabs, .run-panel {
+        border-color: var(--aio-instagram-line) !important;
+        background: color-mix(in srgb, var(--aio-instagram-bg) var(--aio-alpha-strong), transparent) !important;
+      }
+      .header p, .lead, .card p, .metric span, .field label, .footer, .list small, .tool span {
+        color: var(--aio-instagram-muted) !important;
+      }
+      .tab { color: var(--aio-instagram-muted) !important; transition: color 140ms ease, background 140ms ease; }
+      .tab[aria-selected="true"] {
+        border-bottom-color: var(--aio-instagram-text) !important;
+        background: transparent !important;
+        color: var(--aio-instagram-text) !important;
+      }
+      .card, .tool, .metric, select, input {
+        border-color: var(--aio-instagram-line) !important;
+        background: color-mix(in srgb, var(--aio-instagram-elevated) var(--aio-alpha-strong), transparent) !important;
+        color: var(--aio-instagram-text) !important;
+      }
+      .tool, .card, .metric { border-radius: 12px !important; }
+      .tool { transition: transform 140ms ease, background 140ms ease; }
+      .tool:hover { transform: translateY(-1px); background: var(--aio-instagram-secondary) !important; }
+      .button, .file {
+        min-height: 44px !important;
+        border-color: var(--aio-instagram-line) !important;
+        border-radius: 8px !important;
+        background: var(--aio-instagram-secondary) !important;
+        color: var(--aio-instagram-text) !important;
+        font-size: var(--system-14-font-size, 14px) !important;
+        font-weight: 600 !important;
+        transition: filter 140ms ease, transform 140ms ease, opacity 140ms ease !important;
+      }
+      .button:hover, .file:hover { filter: brightness(.97); }
+      .button.primary, .button.danger {
+        border-color: var(--aio-instagram-blue) !important;
+        background: var(--aio-instagram-blue) !important;
+        color: #fff !important;
+      }
+      .launcher {
+        border-color: var(--aio-instagram-line) !important;
+        border-radius: 50% !important;
+        background: var(--aio-instagram-bg) !important;
+        color: var(--aio-instagram-text) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,.16) !important;
+        transition: transform 140ms ease, box-shadow 140ms ease !important;
+      }
+      .launcher:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.2) !important; }
+      .mode { border-color: var(--aio-instagram-line) !important; color: var(--aio-instagram-muted) !important; }
+      .notice { border-left: 0 !important; border: 1px solid var(--aio-instagram-line) !important; border-radius: 10px; background: var(--aio-instagram-secondary) !important; color: var(--aio-instagram-text) !important; }
+      .run-bar { background: var(--aio-instagram-line) !important; }
+      .run-bar span { background: var(--aio-instagram-blue) !important; }
+      @keyframes aio-instagram-enter { from { opacity: 0; transform: translateY(6px) scale(.99); } to { opacity: 1; transform: none; } }
+      @media (prefers-color-scheme: dark) {
+        :host { color-scheme: dark; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .panel, .tool, .button, .file, .launcher { animation: none !important; transition: none !important; }
+      }
+    `;
+    shadow.append(style);
+
+    const headerTitle = query('.header h1');
+    if (headerTitle) headerTitle.textContent = 'Instagram Toolbox';
+    const headerSubtitle = query('.header p');
+    if (headerSubtitle) headerSubtitle.textContent = 'Follower, account, and message tools';
+    setText('mode-label', 'Live actions enabled in this tab');
+    const nowLead = query('[data-panel="now"] .lead');
+    if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
+    const messageLead = query('[data-panel="messages"] .lead');
+    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Remove messages you sent in the open conversation, newest to oldest.';
+
+    const scanButton = query('[data-action="scan-sent"]');
+    if (scanButton) scanButton.textContent = 'Check conversation';
+    const primary = query('[data-action="unsend-all"]');
+    if (primary) primary.textContent = 'Unsend all DMs';
+    const legacyRun = query('[data-action="run-unsend"]')?.closest('.toolbar');
+    if (legacyRun) legacyRun.hidden = true;
+    for (const role of ['unsend-scope', 'unsend-count']) {
+      const field = query(`[data-role="${role}"]`)?.closest('.field');
+      if (field) field.hidden = true;
+    }
+    const messageNotice = query('[data-panel="messages"] .notice');
+    if (messageNotice) {
+      messageNotice.textContent = 'Only messages sent by this account are processed. You can stop at any time. Unsending is permanent.';
+    }
+
+    function renderRun(next) {
+      const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
+      const panel = query('[data-role="run-panel"]');
+      if (panel) panel.hidden = !running && !['completed', 'error', 'stopped'].includes(next.status);
+      setText('run-title', running ? 'DM Unsend in progress' : 'DM Unsend');
+      setText('run-detail', next.message);
+      const fill = query('[data-role="run-fill"]');
+      if (fill) fill.style.width = running ? `${Math.min(94, 12 + (next.processed * 4))}%` : '100%';
+      const results = query('[data-role="run-results"]');
+      if (results) {
+        results.replaceChildren();
+        const item = document.createElement('li');
+        item.textContent = `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
+        results.append(item);
+      }
+      if (primary) {
+        primary.textContent = running ? 'Stop unsending' : 'Unsend all DMs';
+        primary.classList.toggle('danger', running);
+      }
+      setText('status', next.message);
+    }
+
+    runner.subscribe(renderRun);
+
+    shadow.addEventListener('click', async (event) => {
+      const target = event.target.closest?.('[data-action]');
+      if (!target) return;
+      const action = target.dataset.action;
+      if (!['unsend-all', 'scan-sent', 'run-unsend', 'stop-run'].includes(action)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if (action === 'stop-run' || (action === 'unsend-all' && runner.snapshot().canStop)) {
+        runner.stop();
+        return;
+      }
+      if (action === 'scan-sent' || action === 'run-unsend') {
+        const result = runner.inspect();
+        setText('status', result.ready
+          ? `${result.visibleSent} sent message${result.visibleSent === 1 ? '' : 's'} visible now. Unsend all will load the full conversation first.`
+          : result.reason);
+        return;
+      }
+      const result = runner.inspect();
+      if (!result.ready) {
+        setText('status', result.reason);
+        return;
+      }
+      // eslint-disable-next-line no-alert
+      const confirmed = globalThis.confirm(
+        'Unsend every message you sent in this conversation?\n\n'
+        + 'The conversation will be loaded from newest to oldest. This is permanent and cannot be undone.',
+      );
+      if (!confirmed) {
+        setText('status', 'Cancelled. Nothing was changed.');
+        return;
+      }
+      await runner.start({ minDelayMs: 1_000, maxDelayMs: 2_000 });
+    }, true);
+  }
+
+  function findRoot() {
+    const host = document.getElementById(ROOT_ID);
+    if (host) applyUserscriptEnhancement(host);
+  }
+
+  const observer = new MutationObserver(findRoot);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  queueMicrotask(findRoot);
 })();

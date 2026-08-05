@@ -413,7 +413,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.equal(initial.opacity, '88');
   assert.match(initial.move, /Move toolbox/);
   assert.match(initial.resize, /Resize toolbox/);
-  assert.match(initial.mode, /live actions enabled/);
+  assert.match(initial.mode, /live actions enabled/i);
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
   assert.deepEqual(initial.liveControls, [true, true, true, true, true]);

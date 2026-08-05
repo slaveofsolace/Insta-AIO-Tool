@@ -26,9 +26,9 @@ const banner = `
 // Generated file. Do not edit.
 //
 // Built by scripts/build-userscript.mjs from:
-//   extension/action-labels.js
-//   extension/content-instagram.js      <- shared engine, identical to the extension
-//   userscripts/src/toolbox-shell.js    <- userscript-only UI and batch runner
+//   extension/action-labels.js           <- labels and thread-wide DM runner
+//   extension/content-instagram.js       <- shared exact-target engine
+//   userscripts/src/toolbox-shell.js     <- userscript UI and batch runner
 //
 // Edit those sources and run: pnpm run build:userscript
 // ---------------------------------------------------------------------------
@@ -38,11 +38,20 @@ const [metadata, ...sources] = await Promise.all(parts.map((file) => readFile(fi
 
 const engine = sources.join('\n');
 if (!engine.includes('performReviewedProfileAction')
-  || !engine.includes('performReviewedDmUnsend')) {
-  throw new Error('The shared engine no longer exports the live executors.');
+  || !engine.includes('performReviewedDmUnsend')
+  || !engine.includes('InstaAioDmThreadUnsender')) {
+  throw new Error('The shared engine no longer exports the required action paths.');
 }
 if (!engine.includes("if (!globalThis.chrome?.runtime?.onMessage?.addListener) return;")) {
   throw new Error('The shared engine must tolerate running without an extension runtime.');
+}
+// Pinning an exact version here means every future release fails this guard,
+// so require the shape instead of one value.
+if (!/^\/\/ @version\s+\d+\.\d+\.\d+\s*$/m.test(metadata)) {
+  throw new Error('Userscript metadata needs a semantic @version line.');
+}
+if (/@require|@resource/.test(metadata)) {
+  throw new Error('The Tampermonkey bundle must remain self-contained.');
 }
 
 const assembled = `${metadata}${banner}${engine}`;
