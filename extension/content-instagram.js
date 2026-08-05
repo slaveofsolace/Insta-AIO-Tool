@@ -956,7 +956,7 @@
 
   // Scrolls the open followers/following dialog to enumerate the full list.
   // Read-only: it only scrolls an already-open list and reads rendered rows.
-  async function collectAccountList({ maxScrolls = 400, settleMs = 350 } = {}) {
+  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500 } = {}) {
     const session = inspectSession();
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, accounts: [], complete: false, reason: 'session-stop' };
@@ -1000,13 +1000,21 @@
       }
       scroller.scrollTop = scroller.scrollHeight;
       await sleep(settleMs);
+      // A long Followers list keeps a spinner up well past the settle delay.
+      // Waiting for it to clear is what stops a big list being declared
+      // complete while thousands of rows are still unfetched.
+      for (let wait = 0; wait < 24; wait += 1) {
+        if (!root.querySelector('[role="progressbar"], svg[aria-label*="Loading" i]')) break;
+        await sleep(250);
+      }
       harvest();
 
       const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8;
       const grew = accounts.size > beforeCount || scroller.scrollHeight > beforeHeight;
       stagnantRounds = grew ? 0 : stagnantRounds + 1;
-      // Instagram lazy-loads; only conclude the list ended after repeated no-growth rounds.
-      if (atBottom && stagnantRounds >= 3) {
+      // Instagram lazy-loads in bursts and can pause between pages, so a couple
+      // of quiet rounds does not mean the end. Be patient before concluding.
+      if (atBottom && stagnantRounds >= 10) {
         complete = true;
         break;
       }
@@ -1092,21 +1100,38 @@
     harvest();
     let complete = !scroller;
     let stagnantRounds = 0;
+    // Instagram renders the thread with `flex-direction: column-reverse`, so
+    // scrollTop 0 is the NEWEST message and older ones live at NEGATIVE
+    // scrollTop. Scrolling to 0 to "go up" would sit on the newest message
+    // forever and never page in history.
+    const reversed = getComputedStyle(scroller || scope).flexDirection === 'column-reverse'
+      || scroller?.scrollTop < 0;
+    const oldestOffset = () => (reversed
+      ? -(scroller.scrollHeight - scroller.clientHeight)
+      : 0);
+
     for (let round = 0; scroller && round < maxScrolls && found.size < limit; round += 1) {
       const beforeCount = found.size;
       const beforeHeight = scroller.scrollHeight;
-      // Conversations page upward: older messages load as we scroll to the top.
-      // Nudge down first so the jump to the top is a real scroll change even
-      // when we are already pinned at the start.
-      if (scroller.scrollTop <= 8) {
-        scroller.scrollTop = Math.max(80, Math.floor(scroller.clientHeight / 2));
+      const target = oldestOffset();
+      // Nudge off the edge first so the jump is a real scroll change even when
+      // we are already pinned at the oldest end.
+      if (Math.abs(scroller.scrollTop - target) <= 8) {
+        scroller.scrollTop = target + (reversed ? 1 : -1)
+          * Math.max(80, Math.floor(scroller.clientHeight / 2));
         await sleep(60);
       }
-      scroller.scrollTop = 0;
+      scroller.scrollTop = target;
       await sleep(settleMs);
+      // Instagram shows a spinner while a page loads; wait it out rather than
+      // guessing with a fixed delay.
+      for (let wait = 0; wait < 20; wait += 1) {
+        if (!scope?.querySelector?.('[role="progressbar"], svg[aria-label*="Loading" i]')) break;
+        await sleep(250);
+      }
       harvest();
 
-      const atTop = scroller.scrollTop <= 8;
+      const atTop = Math.abs(scroller.scrollTop - oldestOffset()) <= 8;
       const grew = found.size > beforeCount || scroller.scrollHeight > beforeHeight;
       stagnantRounds = grew ? 0 : stagnantRounds + 1;
       if (atTop && stagnantRounds >= 3) {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.6.0
+// @version      0.7.0
 // @description  Follower checker, follow/unfollow review, and sent-message tools that appear in a movable panel directly on Instagram.
 // @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
@@ -1032,7 +1032,7 @@
 
   // Scrolls the open followers/following dialog to enumerate the full list.
   // Read-only: it only scrolls an already-open list and reads rendered rows.
-  async function collectAccountList({ maxScrolls = 400, settleMs = 350 } = {}) {
+  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500 } = {}) {
     const session = inspectSession();
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, accounts: [], complete: false, reason: 'session-stop' };
@@ -1076,13 +1076,21 @@
       }
       scroller.scrollTop = scroller.scrollHeight;
       await sleep(settleMs);
+      // A long Followers list keeps a spinner up well past the settle delay.
+      // Waiting for it to clear is what stops a big list being declared
+      // complete while thousands of rows are still unfetched.
+      for (let wait = 0; wait < 24; wait += 1) {
+        if (!root.querySelector('[role="progressbar"], svg[aria-label*="Loading" i]')) break;
+        await sleep(250);
+      }
       harvest();
 
       const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8;
       const grew = accounts.size > beforeCount || scroller.scrollHeight > beforeHeight;
       stagnantRounds = grew ? 0 : stagnantRounds + 1;
-      // Instagram lazy-loads; only conclude the list ended after repeated no-growth rounds.
-      if (atBottom && stagnantRounds >= 3) {
+      // Instagram lazy-loads in bursts and can pause between pages, so a couple
+      // of quiet rounds does not mean the end. Be patient before concluding.
+      if (atBottom && stagnantRounds >= 10) {
         complete = true;
         break;
       }
@@ -1168,21 +1176,38 @@
     harvest();
     let complete = !scroller;
     let stagnantRounds = 0;
+    // Instagram renders the thread with `flex-direction: column-reverse`, so
+    // scrollTop 0 is the NEWEST message and older ones live at NEGATIVE
+    // scrollTop. Scrolling to 0 to "go up" would sit on the newest message
+    // forever and never page in history.
+    const reversed = getComputedStyle(scroller || scope).flexDirection === 'column-reverse'
+      || scroller?.scrollTop < 0;
+    const oldestOffset = () => (reversed
+      ? -(scroller.scrollHeight - scroller.clientHeight)
+      : 0);
+
     for (let round = 0; scroller && round < maxScrolls && found.size < limit; round += 1) {
       const beforeCount = found.size;
       const beforeHeight = scroller.scrollHeight;
-      // Conversations page upward: older messages load as we scroll to the top.
-      // Nudge down first so the jump to the top is a real scroll change even
-      // when we are already pinned at the start.
-      if (scroller.scrollTop <= 8) {
-        scroller.scrollTop = Math.max(80, Math.floor(scroller.clientHeight / 2));
+      const target = oldestOffset();
+      // Nudge off the edge first so the jump is a real scroll change even when
+      // we are already pinned at the oldest end.
+      if (Math.abs(scroller.scrollTop - target) <= 8) {
+        scroller.scrollTop = target + (reversed ? 1 : -1)
+          * Math.max(80, Math.floor(scroller.clientHeight / 2));
         await sleep(60);
       }
-      scroller.scrollTop = 0;
+      scroller.scrollTop = target;
       await sleep(settleMs);
+      // Instagram shows a spinner while a page loads; wait it out rather than
+      // guessing with a fixed delay.
+      for (let wait = 0; wait < 20; wait += 1) {
+        if (!scope?.querySelector?.('[role="progressbar"], svg[aria-label*="Loading" i]')) break;
+        await sleep(250);
+      }
       harvest();
 
-      const atTop = scroller.scrollTop <= 8;
+      const atTop = Math.abs(scroller.scrollTop - oldestOffset()) <= 8;
       const grew = found.size > beforeCount || scroller.scrollHeight > beforeHeight;
       stagnantRounds = grew ? 0 : stagnantRounds + 1;
       if (atTop && stagnantRounds >= 3) {
@@ -1734,7 +1759,13 @@
       :host([data-floating="true"]) .panel { top: var(--aio-top); right: auto; left: var(--aio-left); }
       .header { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; min-height: 66px; padding: 10px; border-bottom: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); }
       .handle, .icon { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: inherit; }
-      .handle { cursor: grab; touch-action: none; font-size: 18px; }
+      .handle { cursor: grab; touch-action: none; font-size: 20px; min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+      .handle:hover { background: rgba(0,0,0,.06); }
+      .handle:active { cursor: grabbing; background: rgba(0,0,0,.1); }
+      /* The whole header bar drags, so the grip is a hint rather than the only target. */
+      .header { cursor: grab; }
+      .header:active { cursor: grabbing; }
+      .header button, .header select, .header summary, .header input { cursor: default; }
       .header h1 { margin: 0; font-size: 17px; line-height: 1.15; }
       .header p { margin: 2px 0 0; color: #667067; font-size: 11px; }
       .mode { display: inline-flex; margin-top: 4px; border: 1px solid #8b6a20; border-radius: 999px; padding: 2px 7px; color: #72520d; font-size: 10px; font-weight: 750; }
@@ -1776,7 +1807,7 @@
       .settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; width: 250px; padding: 12px; border: 1px solid #cfd5cc; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 16px 46px rgba(0,0,0,.2); }
       .range-row { display:grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items:center; }
       .footer { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); color: #687068; font-size: 11px; }
-      .resize { position: absolute; right: 2px; bottom: 2px; width: 34px; height: 34px; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
+      .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
       .resize::before { content:""; position:absolute; right:8px; bottom:8px; width:12px; height:12px; border-right:2px solid #687068; border-bottom:2px solid #687068; }
       button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .file:focus-within { outline: 3px solid #168cff; outline-offset: 2px; }
       @media (max-width: 600px) { .panel { top:auto; right:0; bottom:0; left:0; width:100%; height:min(78dvh,720px); border-radius:14px 14px 0 0; } .handle,.resize { display:none; } .header { grid-template-columns:minmax(0,1fr) auto; } }
@@ -1787,7 +1818,10 @@
       .run-bar { overflow: hidden; height: 5px; margin: 8px 0 6px; border-radius: 999px; background: #d8ddd4; }
       .run-bar span { display: block; width: 0%; height: 100%; border-radius: 999px; background: #1c6b3c; transition: width 220ms ease; }
       .run-panel .list { max-height: 118px; overflow-y: auto; }
-      .button.danger { background: #8c1d1d; color: #fff; }
+      .button.danger { background: rgb(var(--ig-primary-button, 0 149 246)); color: #fff; }
+      .button.primary { background: rgb(var(--ig-primary-button, 0 149 246)); color: #fff; border: 0; font-weight: 600; }
+      .button.primary:hover { filter: brightness(1.08); }
+      .button.big { width: 100%; padding: 10px 12px; font-size: var(--system-14-font-size, 14px); line-height: var(--system-14-line-height, 18px); border-radius: 8px; }
       @media (prefers-reduced-motion: reduce) { .run-bar span { transition: none; } }
       @media (forced-colors: active) { .panel,.card,.tool,.metric,.header,.footer,.run-panel { background:Canvas; } .panel,.card,.tool,.metric { border:2px solid CanvasText; } }
     </style>
@@ -1813,7 +1847,7 @@
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts">Start run</button></div>
           <p class="notice">Each profile must be open when its turn comes. The run stops itself on any rate limit, security check, or block.</p></section>
-        <section class="view" role="tabpanel" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button" type="button" data-action="scan-sent">Scan my sent messages</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
+        <section class="view" role="tabpanel" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all">Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
           <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
           <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-unsend">Unsend selected</button></div>
@@ -2525,6 +2559,42 @@
       )) return;
       await startAccountRun({ action, usernames: items.map((item) => item.username) });
     },
+    // One button: find everything you sent in this thread, then remove it.
+    'unsend-all': async () => {
+      if (state.run?.status === 'running') {
+        status('A run is already going. Stop it first.');
+        return;
+      }
+      status('Reading the whole conversation. This can take a while on a long thread.');
+      const outcome = await engine.enumerateSentDms({ limit: 5_000 });
+      const stop = sessionStop(outcome);
+      if (stop) {
+        status(`Stopped: ${stop}.`);
+        return;
+      }
+      const messages = outcome?.messages || [];
+      state.sentDms = messages;
+      state.sentDmsComplete = outcome?.complete === true;
+      saveState();
+      renderAll();
+      if (!messages.length) {
+        status(
+          outcome?.reason === 'open-an-instagram-conversation'
+            ? 'Open a conversation first.'
+            : 'No messages of yours could be identified exactly in this thread, so nothing was touched.',
+        );
+        return;
+      }
+      if (!confirmRun(
+        `Unsend all ${messages.length} message${messages.length === 1 ? '' : 's'} you sent in this conversation?\n\n`
+        + (outcome.complete ? '' : 'Note: the thread did not fully load, so there may be more.\n\n')
+        + 'This is permanent and cannot be undone.',
+      )) {
+        status('Cancelled. Nothing was unsent.');
+        return;
+      }
+      await runBatch({ kind: 'dm', items: messages });
+    },
     'run-unsend': async () => {
       const found = state.sentDms || [];
       if (!found.length) {
@@ -2734,6 +2804,12 @@
   }
 
   moveHandle.addEventListener('pointerdown', (event) => beginInteraction(event, 'move'));
+  // Dragging anywhere on the header is far easier to hit than the grip alone,
+  // as long as the real controls in it still behave like controls.
+  query('.header')?.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('button, select, summary, input, a, label, [data-view], [data-action]')) return;
+    beginInteraction(event, 'move');
+  });
   resizeHandle.addEventListener('pointerdown', (event) => beginInteraction(event, 'resize'));
   moveHandle.addEventListener('keydown', (event) => keyboardLayout(event, 'move'));
   resizeHandle.addEventListener('keydown', (event) => keyboardLayout(event, 'resize'));
