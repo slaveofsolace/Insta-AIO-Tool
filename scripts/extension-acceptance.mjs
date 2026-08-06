@@ -472,8 +472,12 @@ async function acceptThreadUnsend(webContents, baseUrl) {
 async function acceptToolboxLayout(webContents, baseUrl) {
   await withTimeout(webContents.loadURL(baseUrl + "/userscript-fixture.html"), "audit load");
   await waitForPageValue(webContents, "Boolean(document.querySelector(\"#insta-aio-userscript-root\")?.shadowRoot)", "audit shell");
-  const layoutAuditProbe = await readFile(path.join(repositoryRoot, "tests", "probes", "layout-audit.js"), "utf8");
+  const layoutAuditProbe = await readFile(path.join(repositoryRoot, "scripts", "probes", "layout-audit.js"), "utf8");
   const report = await webContents.executeJavaScript(layoutAuditProbe, true);
+  const hitProbe = await readFile(path.join(repositoryRoot, "scripts", "probes", "hit-probe.js"), "utf8");
+  const hits = await webContents.executeJavaScript(hitProbe, true);
+  assert.deepEqual(hits.blocked, [], "controls must not be covered by another element");
+  assert.deepEqual(hits.invisibleText, [], "control text must not match its own background");
   assert.deepEqual(report.overlaps, [], 'panel sections must not overlap');
   assert.deepEqual(report.escapes, [], 'no section may render outside the panel');
   assert.deepEqual(report.duplicateIds, [], 'duplicate ids break label and aria references');
@@ -566,7 +570,10 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     { id: 'aio-panel-account', labelledBy: 'aio-tab-account' },
     { id: 'aio-panel-messages', labelledBy: 'aio-tab-messages' },
   ]);
-  assert.deepEqual(initial.resizeCorners, [true, true], 'both resize corners exist');
+  // Resizing lives on the conventional bottom-right corner only. A top-left
+  // grip contended with the header for the same pixels, so one of the two was
+  // always dead.
+  assert.deepEqual(initial.resizeCorners, [true, false], 'resize is bottom-right only');
   assert.equal(initial.open, true);
   assert.equal(initial.opacity, '94');
   assert.equal(initial.opacityMin, '55');

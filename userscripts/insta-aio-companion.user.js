@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.10.1
+// @version      0.10.2
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
 // @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
@@ -789,7 +789,11 @@
     if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
     const reversed = reversedLayout(scroller);
     let quietRounds = 0;
-    for (let page = 0; page < 120 && quietRounds < 3; page += 1) {
+    // Instagram pauses between pages on a long thread, so a few quiet rounds
+    // does not mean the history ended. Giving up after three left most of a
+    // long conversation unloaded, which is the same impatience the follower
+    // scan had.
+    for (let page = 0; page < 600 && quietRounds < 10; page += 1) {
       const stop = sessionStop(context.threadId);
       if (stop) throw new Error(stop);
       const beforeHeight = scroller.scrollHeight;
@@ -812,7 +816,11 @@
         canStop: true,
       });
     }
-    scroller.scrollTop = newestOffset(scroller, reversed);
+    // Stay at the oldest end. Jumping back to the newest message made the run
+    // start from the bottom and work upward, which is slower and re-renders
+    // the thread constantly. Loading to the top and then working down from
+    // there is both faster and easier to watch.
+    scroller.scrollTop = oldestOffset(scroller, reversed);
     dispatch(scroller, new Event('scroll', { bubbles: true }));
     await delay(100, signal);
   }
@@ -3125,7 +3133,9 @@
       .live-toggle input { width: 18px; height: 18px; flex: 0 0 auto; margin: 0; accent-color: #347844; }
       .live-status { margin: 0; color: #687068; font-size: 11px; }
       select, input[type="range"] { width: 100%; }
-      select { min-height: 44px; border: 1px solid #cfd5cc; border-radius: 8px; padding: 8px; background: rgba(255,255,255,.86); color: inherit; }
+      select { min-height: 44px; border: 1px solid var(--aio-line, #cfd5cc); border-radius: 8px; padding: 8px; background: var(--aio-bg, #fff); color: var(--aio-text, #1b211c); }
+      select option { background: var(--aio-bg, #fff); color: var(--aio-text, #1b211c); }
+      input, textarea { background: var(--aio-bg, #fff); color: var(--aio-text, #1b211c); border: 1px solid var(--aio-line, #cfd5cc); border-radius: 8px; padding: 8px; }
       .toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
       .button, .file { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #243027; border-radius: 8px; padding: 8px 11px; background: #26362a; color: #fff; font-weight: 720; text-decoration: none; }
       .button.quiet, .file.quiet { border-color: #cfd5cc; background: rgba(255,255,255,.72); color: #1b211c; }
@@ -3140,9 +3150,8 @@
       details.settings > summary::-webkit-details-marker { display:none; }
       .settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; width: 250px; padding: 12px; border: 1px solid #cfd5cc; border-radius: 10px; background: rgba(255,255,255,.97); box-shadow: 0 16px 46px rgba(0,0,0,.2); }
       .range-row { display:grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items:center; }
-      .footer { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); color: #687068; font-size: 11px; }
-      .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; z-index: 6; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
-      .resize-tl { right: auto; bottom: auto; left: 0; top: 0; cursor: nwse-resize; }
+      .footer { padding-right: 46px; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); color: #687068; font-size: 11px; }
+      .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; z-index: 5; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
       .resize::before { content:""; position:absolute; right:8px; bottom:8px; width:12px; height:12px; border-right:2px solid #687068; border-bottom:2px solid #687068; }
       button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .file:focus-within { outline: 3px solid #168cff; outline-offset: 2px; }
       @media (max-width: 600px) { .panel { top:auto; right:0; bottom:0; left:0; width:100%; height:min(78dvh,720px); border-radius:14px 14px 0 0; } .handle,.resize { display:none; } .header { grid-template-columns:minmax(0,1fr) auto; } }
@@ -3171,7 +3180,8 @@
       .settings-inline { margin-top: 10px; border-top: 1px solid var(--aio-line, #d8ddd4); }
       .settings-inline > summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; cursor: pointer; }
       .header, .context, .intro, .tabs, .run-panel, .footer { flex: 0 0 auto; }
-      .field input:not([type="range"]), .field select, .field textarea { min-height: 44px; box-sizing: border-box; }
+      .header, .footer { position: relative; z-index: 1; }
+      input:not([type="range"]):not([type="checkbox"]), select, textarea { min-height: 44px; box-sizing: border-box; }
       .field input[type="range"] { min-height: 24px; }
       .field input[type="checkbox"] { min-width: 20px; min-height: 20px; }
       /* The checkbox itself stays small; its label carries the 44px target. */
@@ -3282,7 +3292,6 @@
       </div>
       <div class="run-panel" data-role="run-panel" hidden><div class="run-head"><strong data-role="run-title"></strong><button class="button danger" type="button" data-action="stop-run" data-role="stop-run">Stop</button></div><div class="run-bar"><span data-role="run-fill"></span></div><p class="lead" data-role="run-detail"></p><ul class="list" data-role="run-results"></ul></div>
       <footer class="footer" role="status" aria-live="polite"><span data-role="status">Ready. No Instagram control has been used.</span><strong>Local only</strong></footer>
-      <button class="resize resize-tl" type="button" data-role="resize-tl" aria-label="Resize toolbox from the top left; use arrow keys for precise sizing" title="Drag to resize"></button>
       <button class="resize" type="button" data-role="resize" aria-label="Resize toolbox; use arrow keys for precise sizing" title="Drag to resize"></button>
     </aside>`;
 
@@ -4682,7 +4691,6 @@
   const panel = query('.panel');
   const moveHandle = query('[data-role="move"]');
   const resizeHandle = query('[data-role="resize"]');
-  const resizeTopLeftHandle = query('[data-role="resize-tl"]');
 
   function beginInteraction(event, kind) {
     if (event.button !== 0 || innerWidth <= 600) return;
@@ -4700,20 +4708,6 @@
     }
     const maxWidth = Math.min(WIDTH_MAX, innerWidth - (INSET * 2));
     const maxHeight = Math.min(HEIGHT_MAX, innerHeight - (INSET * 2));
-    if (interaction.kind === 'resize-tl') {
-      // Dragging the top-left grip grows the panel toward the top left, so the
-      // opposite corner has to stay put while the origin moves with it.
-      const width = Math.round(clamp(interaction.rectangle.width - deltaX, WIDTH_MIN, maxWidth));
-      const height = Math.round(clamp(interaction.rectangle.height - deltaY, HEIGHT_MIN, maxHeight));
-      return {
-        width,
-        height,
-        position: constrainedPosition({
-          x: interaction.rectangle.right - width,
-          y: interaction.rectangle.bottom - height,
-        }),
-      };
-    }
     return {
       width: Math.round(clamp(interaction.rectangle.width + deltaX, WIDTH_MIN, maxWidth)),
       height: Math.round(clamp(interaction.rectangle.height + deltaY, HEIGHT_MIN, maxHeight)),
@@ -4760,8 +4754,6 @@
     beginInteraction(event, 'move');
   });
   resizeHandle.addEventListener('pointerdown', (event) => beginInteraction(event, 'resize'));
-  resizeTopLeftHandle?.addEventListener('pointerdown', (event) => beginInteraction(event, 'resize-tl'));
-  resizeTopLeftHandle?.addEventListener('keydown', (event) => keyboardLayout(event, 'resize'));
   moveHandle.addEventListener('keydown', (event) => keyboardLayout(event, 'move'));
   resizeHandle.addEventListener('keydown', (event) => keyboardLayout(event, 'resize'));
   window.addEventListener('pointermove', moveInteraction, { passive: false });

@@ -613,7 +613,11 @@
     if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
     const reversed = reversedLayout(scroller);
     let quietRounds = 0;
-    for (let page = 0; page < 120 && quietRounds < 3; page += 1) {
+    // Instagram pauses between pages on a long thread, so a few quiet rounds
+    // does not mean the history ended. Giving up after three left most of a
+    // long conversation unloaded, which is the same impatience the follower
+    // scan had.
+    for (let page = 0; page < 600 && quietRounds < 10; page += 1) {
       const stop = sessionStop(context.threadId);
       if (stop) throw new Error(stop);
       const beforeHeight = scroller.scrollHeight;
@@ -636,7 +640,11 @@
         canStop: true,
       });
     }
-    scroller.scrollTop = newestOffset(scroller, reversed);
+    // Stay at the oldest end. Jumping back to the newest message made the run
+    // start from the bottom and work upward, which is slower and re-renders
+    // the thread constantly. Loading to the top and then working down from
+    // there is both faster and easier to watch.
+    scroller.scrollTop = oldestOffset(scroller, reversed);
     dispatch(scroller, new Event('scroll', { bubbles: true }));
     await delay(100, signal);
   }

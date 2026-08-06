@@ -213,3 +213,19 @@ test('Tampermonkey entry point auto-updates from main and embeds the shared sour
   assert.match(generated, /InstaAioDmThreadUnsender/);
   assert.doesNotMatch(generated, /\bAI\b/i);
 });
+
+test('history is loaded to the top and the run then works down from there', () => {
+  // The run used to load all history and then jump back to the newest message,
+  // so removals started at the bottom and worked upward. Reaching the top and
+  // staying there is both faster and easier to follow.
+  const body = labelsSource.slice(
+    labelsSource.indexOf('async function loadAllHistory'),
+    labelsSource.indexOf('async function nextSentRow'),
+  );
+  assert.match(body, /scroller\.scrollTop = oldestOffset\(scroller, reversed\);/);
+  assert.doesNotMatch(body, /scroller\.scrollTop = newestOffset\(scroller, reversed\);/);
+  // Instagram pauses between pages, so a handful of quiet rounds must not be
+  // read as the end of the conversation.
+  assert.match(body, /quietRounds < 10/);
+  assert.match(body, /page < 600/);
+});
