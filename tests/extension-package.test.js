@@ -14,6 +14,10 @@ const userscriptMetadata = await readFile(
   new URL('../userscripts/src/metadata.txt', import.meta.url),
   'utf8',
 );
+const ciWorkflow = await readFile(
+  new URL('../.github/workflows/ci.yml', import.meta.url),
+  'utf8',
+);
 const background = await readFile(
   new URL('../extension/background.js', import.meta.url),
   'utf8',
@@ -50,6 +54,14 @@ test('desktop, extension, and userscript release versions stay aligned', () => {
   const userscriptVersion = userscriptMetadata.match(/@version\s+(\d+\.\d+\.\d+)/)?.[1];
   assert.equal(packageMetadata.version, manifest.version);
   assert.equal(userscriptVersion, manifest.version);
+});
+
+test('package scripts always disable electron-builder publishing in CI and local builds', () => {
+  assert.match(packageMetadata.scripts['dist:win'], /electron-builder --win nsis --publish never$/);
+  assert.match(packageMetadata.scripts['dist:mac'], /electron-builder --mac dmg zip --publish never$/);
+  assert.match(ciWorkflow, /run: pnpm run dist:win\n/);
+  assert.match(ciWorkflow, /run: pnpm run dist:mac\n/);
+  assert.doesNotMatch(ciWorkflow, /dist:(?:win|mac) -- --publish never/);
 });
 
 test('extension uses Manifest V3 without cookie or request interception permissions', () => {
