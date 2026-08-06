@@ -17,6 +17,8 @@ function loadRunner() {
     console,
     Date,
     DOMException,
+    Event,
+    EventTarget,
     innerHeight: 800,
     innerWidth: 1_280,
     Map,
@@ -121,6 +123,48 @@ test('column-reverse detection matches Instagram thread paging', () => {
   assert.equal(runner.__test.reversedLayout(normal), false);
   normal.scrollTop = -10;
   assert.equal(runner.__test.reversedLayout(normal), true);
+});
+
+test('the next visible message row is centered before its hover control is requested', async () => {
+  const runner = loadRunner();
+  const documentElement = { parentElement: null };
+  const view = {
+    getComputedStyle: (element) => element.style || {},
+    innerHeight: 800,
+    innerWidth: 1_280,
+  };
+  const ownerDocument = { defaultView: view, documentElement };
+  let scrollCalls = 0;
+  const scroller = Object.assign(new EventTarget(), {
+    children: [],
+    getBoundingClientRect: () => ({ bottom: 300, height: 200, left: 0, right: 600, top: 100, width: 600 }),
+    ownerDocument,
+    parentElement: documentElement,
+    style: { overflowX: 'hidden', overflowY: 'auto' },
+  });
+  const row = {
+    children: [],
+    getAttribute: (name) => (name === 'data-sent-by-me' ? 'true' : ''),
+    getBoundingClientRect: () => ({ bottom: 190, height: 40, left: 20, right: 300, top: 150, width: 280 }),
+    hasAttribute: () => false,
+    isConnected: true,
+    ownerDocument,
+    parentElement: scroller,
+    querySelector: () => ({}),
+    scrollIntoView: (options) => {
+      assert.equal(options.block, 'center');
+      assert.equal(options.inline, 'nearest');
+      scrollCalls += 1;
+    },
+  };
+  scroller.children.push(row);
+
+  const selected = await runner.__test.nextSentRow(
+    { scroller },
+    { aborted: false, addEventListener: () => {} },
+  );
+  assert.equal(selected, row);
+  assert.equal(scrollCalls, 1);
 });
 
 test('thread-wide Unsend refuses to start without a live authorization expiry', async () => {

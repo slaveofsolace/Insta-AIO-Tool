@@ -625,17 +625,22 @@
 
   async function nextSentRow(context, signal) {
     const { scroller } = context;
-    // Prefer a row already on screen, but never require one. Sweeping scroll
-    // offsets and hoping a candidate lands in the viewport left the last row of
-    // a thread unprocessed; bringing the row to the viewport is deterministic.
+    // Always center the selected row before hover. A row can have enough pixels
+    // inside a clipping ancestor to count as visible while its menu affordance
+    // remains outside that exposed portion on another platform or font stack.
     const visible = firstVisibleCandidate(scroller);
-    if (visible) return visible;
+    if (visible) {
+      visible.scrollIntoView({ block: 'center', inline: 'nearest' });
+      dispatch(scroller, new Event('scroll', { bubbles: true }));
+      await delay(60, signal);
+      if (isVisible(visible)) return visible;
+    }
 
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
       if (signal.aborted) return null;
       const [row] = candidateRows(scroller).reverse();
       if (row) {
-        row.scrollIntoView({ block: 'center' });
+        row.scrollIntoView({ block: 'center', inline: 'nearest' });
         dispatch(scroller, new Event('scroll', { bubbles: true }));
         await delay(60, signal);
         if (isVisible(row)) return row;
@@ -858,6 +863,7 @@
       deepestMessageContainer,
       hasMessageContent,
       isVisible,
+      nextSentRow,
       reversedLayout,
       sentByCurrentUser,
     });
