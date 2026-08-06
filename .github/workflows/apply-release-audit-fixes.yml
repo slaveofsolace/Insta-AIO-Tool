@@ -27,6 +27,8 @@ jobs:
           node scripts/apply-release-audit-fixes.mjs
           node scripts/build-userscript.mjs
       - name: Verify source and focused browser acceptance
+        env:
+          INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"
         run: |
           pnpm run assemble
           find desktop extension scripts src tests userscripts -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
@@ -37,7 +39,7 @@ jobs:
           rm scripts/apply-release-audit-fixes.mjs
           rm .github/workflows/apply-release-audit-fixes.yml
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+slaveofsolace@users.noreply.github.com"
           git add -A
           git commit -m "fix: harden the 0.9.2 release"
           git push origin HEAD:codex/overlay-ui-controls-20260805
