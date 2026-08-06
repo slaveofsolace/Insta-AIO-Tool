@@ -101,6 +101,14 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /attachShadow\(\{ mode: openShadow \? 'open' : 'closed' \}\)/);
 });
 
+test('visible DM evidence and its download stay bound to the open conversation', () => {
+  assert.match(overlay, /function activeConversationId\(\)/);
+  assert.match(overlay, /String\(result\?\.conversationId \|\| ''\) === conversationId/);
+  assert.match(overlay, /const fragments = evidenceMatches \? \(result\.fragments \|\| \[\]\) : \[\]/);
+  assert.match(overlay, /if \(evidenceMatches\) \{\s+downloads\.update\('messages'/);
+  assert.match(overlay, /downloads\.clear\('messages', download\)/);
+});
+
 test('sidecar captures focus before hiding its launcher and restores a usable target', () => {
   const setOpenBody = overlay.slice(
     overlay.indexOf('function setOpen'),

@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-08-02
+Last reviewed: 2026-08-05
 
 ## Application boundaries
 
@@ -74,6 +74,14 @@ other stable identity evidence remains available. Wrong-thread, identity-loss,
 unbound-surface, noninteractive-text, and descendant-toolbar ownership fixtures
 all fail closed.
 
+Visible DM evidence is scoped to one exact /direct/t/<id> route. The inbox,
+feed, profiles, and a different direct thread hide previously captured
+fragments immediately and clear the extension's evidence download exposure.
+The Tampermonkey shell also filters every saved sent-message batch against the
+currently open exact thread before it can show a destructive confirmation.
+Client-side Instagram route changes trigger a state rerender; they never inherit
+the prior thread's visible evidence or Unsend candidates.
+
 Restored daily limits are finite and bounded. Capability replay, stale
 confirmation, changed controls, wrong profiles or messages, duplicate attempts,
 and ambiguous UI fail closed for both controlled paths.
@@ -115,7 +123,7 @@ current patch closes all three layers and adds pre-dispatch, post-reservation,
 post-dispatch, non-resurrection, and legitimate-control regressions. The complete
 patch also centralizes exact localized action labels as valid UTF-8 and refuses
 to issue a profile or message capability when Web Crypto cannot supply entropy.
-The repository suite now passes 186 of 186 tests; extension packaging
+The repository suite now passes 191 of 191 tests; extension packaging
 independently runs the executable controlled-live safety subset before creating
 artifacts.
 

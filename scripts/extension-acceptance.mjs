@@ -602,6 +602,19 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
 
   await webContents.executeJavaScript(`(() => {
     globalThis.fixtureSetMessages();
+  })()`, true);
+  await waitForPageValue(
+    webContents,
+    `(() => {
+      const stored = globalThis.fixtureGmStore.instaAioUserscriptStateV2;
+      return location.pathname === '/direct/t/123/'
+        && stored.messageEvidence === null
+        && stored.dmCheck === null
+        && stored.sentDms.length === 0;
+    })()`,
+    'userscript conversation route reset',
+  );
+  await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
     shadow.querySelector('[data-view="messages"]').click();
     shadow.querySelector('[data-action="read-messages"]').click();
@@ -618,6 +631,48 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.match(messages.result, /Exact sent message resolved/);
   assert.ok(messages.rows >= 1);
   assert.equal(messages.stored.exact, true);
+
+  await webContents.executeJavaScript(`(() => {
+    history.replaceState({}, '', '/direct/inbox/');
+    const routeMarker = document.createElement('span');
+    routeMarker.hidden = true;
+    document.body.append(routeMarker);
+    routeMarker.remove();
+  })()`, true);
+  const routedAway = await waitForPageValue(
+    webContents,
+    `(() => {
+      const shadow = document.querySelector('#insta-aio-userscript-root')?.shadowRoot;
+      const result = shadow?.querySelector('[data-role="dm-result"]')?.textContent || '';
+      const listText = shadow?.querySelector('[data-role="message-list"]')?.textContent || '';
+      const stored = globalThis.fixtureGmStore.instaAioUserscriptStateV2;
+      return result.includes('Open an Instagram conversation first.')
+        && listText.includes('No visible thread evidence captured.')
+        ? {
+          cleared: stored.messageEvidence === null
+            && stored.dmCheck === null
+            && stored.sentDms.length === 0
+            && stored.sentDmsComplete === false,
+          result,
+          rows: shadow.querySelectorAll('[data-role="message-list"] li').length,
+          leaked: listText.includes('Yes — reviewing it now.'),
+        }
+        : null;
+    })()`,
+    'userscript DM evidence route binding',
+  );
+  assert.equal(routedAway.cleared, true);
+  assert.equal(routedAway.rows, 1);
+  assert.equal(routedAway.leaked, false);
+
+  const inboxEvidence = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    shadow.querySelector('[data-action="read-messages"]').click();
+    return globalThis.fixtureGmStore.instaAioUserscriptStateV2.messageEvidence;
+  })()`, true);
+  assert.equal(inboxEvidence.threadId, '');
+  assert.equal(inboxEvidence.fragments.length, 0);
+  assert.match(inboxEvidence.reason, /Open an Instagram conversation first/);
   console.log('Accepted the movable Tampermonkey toolbox, default live lock, local follower comparison, and account/DM no-click checks.');
 }
 

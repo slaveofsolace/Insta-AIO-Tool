@@ -142,6 +142,21 @@ test('a DM run is dropped on reload while an account run is kept', () => {
   assert.match(shell, /the thread it was working in is gone/);
 });
 
+test('DM evidence and saved Unsend candidates stay bound to the active conversation', () => {
+  assert.match(engine, /function currentDirectThreadId\(\)/);
+  assert.match(engine, /conversationId: ''/);
+  assert.match(shell, /function sentMessagesForThread\(messages, threadId = currentDirectThreadId\(\)\)/);
+  assert.match(shell, /state\.messageEvidence\?\.threadId === activeThreadId/);
+  assert.match(shell, /state\.dmCheck\?\.threadId === activeThreadId/);
+  assert.match(shell, /directThreadId\(outcome\?\.conversationId\) === activeThreadId/);
+  assert.match(shell, /state\.sentDmsComplete = scanMatchesThread && outcome\?\.complete === true/);
+  assert.match(shell, /const found = sentMessagesForThread\(state\.sentDms, activeThreadId\)/);
+  assert.match(shell, /if \(currentHref !== lastLocationHref\)/);
+  assert.match(shell, /lastLocationHref = currentHref;\s+state\.messageEvidence = null;/);
+  assert.match(shell, /state\.dmCheck = null;\s+state\.sentDms = \[\];/);
+  assert.match(shell, /state\.sentDmsComplete = false;\s+saveState\(\);\s+renderAll\(\);/);
+});
+
 test('the follower checker remembers whether a scan actually finished', () => {
   // A partial scan that forgets it was partial would silently under-report.
   assert.match(shell, /complete: \{ followers: false, following: false \}/);

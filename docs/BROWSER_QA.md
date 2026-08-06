@@ -63,7 +63,7 @@ the authenticated Instagram session.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 186 of 186 tests.
+complete repository suite passes 191 of 191 tests.
 
 ## Representative screenshots
 

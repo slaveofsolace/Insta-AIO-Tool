@@ -347,8 +347,14 @@
   }
 
   function inspectVisibleMessages() {
-    if (!location.pathname.toLowerCase().startsWith('/direct/')) {
-      return { capturedAt: nowIso(), fragments: [], reason: 'Open an Instagram conversation first.' };
+    const threadId = currentDirectThreadId();
+    if (!threadId) {
+      return {
+        capturedAt: nowIso(),
+        threadId: '',
+        fragments: [],
+        reason: 'Open an Instagram conversation first.',
+      };
     }
     const main = document.querySelector('main');
     const nodes = [...(main?.querySelectorAll?.('[role="row"] [dir="auto"]') || [])];
@@ -359,6 +365,7 @@
       .filter(Boolean);
     return {
       capturedAt: nowIso(),
+      threadId,
       fragments: [...new Set(candidates)].slice(-30).map((text, index) => ({ index, text })),
       reason: candidates.length ? 'Visible text evidence only; sender ownership is unknown.' : 'No visible message text was resolved.',
     };
@@ -383,13 +390,37 @@
     return exportMatch?.[1] || (/^[0-9]+$/.test(finalSegment) ? finalSegment : null);
   }
 
+  function currentDirectThreadId() {
+    const pathname = String(location.pathname || '').replaceAll('\\', '/');
+    if (!/^\/direct\/t\/[^/?#]+\/?$/i.test(pathname)) return null;
+    return directThreadId(pathname);
+  }
+
+  function sentMessagesForThread(messages, threadId = currentDirectThreadId()) {
+    if (!threadId) return [];
+    return (Array.isArray(messages) ? messages : [])
+      .filter((message) => directThreadId(message?.conversationId) === threadId);
+  }
+
   function inspectExactDmTarget() {
+    const threadId = currentDirectThreadId();
     const item = state.dmTarget;
-    if (!item) return { exact: false, reason: 'Import one reviewed DM job first.', noClick: true };
+    if (!item) {
+      return {
+        exact: false,
+        reason: 'Import one reviewed DM job first.',
+        noClick: true,
+        threadId: threadId || '',
+      };
+    }
     const expectedThread = directThreadId(item.conversationId);
-    const observedThread = directThreadId(location.pathname);
-    if (!expectedThread || expectedThread !== observedThread) {
-      return { exact: false, reason: 'Wrong or unresolved conversation.', noClick: true };
+    if (!threadId || !expectedThread || expectedThread !== threadId) {
+      return {
+        exact: false,
+        reason: 'Wrong or unresolved conversation.',
+        noClick: true,
+        threadId: threadId || '',
+      };
     }
     const scope = document.querySelector('[data-pagelet="IGDMessagesList"]') || document.querySelector('main');
     const candidates = [...(scope?.querySelectorAll?.('[data-message-id], [data-item-id]') || [])]
@@ -411,8 +442,20 @@
         && candidate.sentByMe
       ));
     return candidates.length === 1
-      ? { exact: true, reason: 'One exact sent-message identity resolved without opening a menu.', noClick: true, checkedAt: nowIso() }
-      : { exact: false, reason: candidates.length ? 'Exact message identity is ambiguous.' : 'Exact sent-message identity is unavailable.', noClick: true, checkedAt: nowIso() };
+      ? {
+        exact: true,
+        reason: 'One exact sent-message identity resolved without opening a menu.',
+        noClick: true,
+        checkedAt: nowIso(),
+        threadId,
+      }
+      : {
+        exact: false,
+        reason: candidates.length ? 'Exact message identity is ambiguous.' : 'Exact sent-message identity is unavailable.',
+        noClick: true,
+        checkedAt: nowIso(),
+        threadId,
+      };
   }
 
   function downloadJson(filename, payload) {
@@ -776,22 +819,37 @@
   }
 
   function renderMessages() {
+    const activeThreadId = currentDirectThreadId();
+    const target = activeThreadId
+      && directThreadId(state.dmTarget?.conversationId) === activeThreadId
+      ? state.dmTarget
+      : null;
+    const check = activeThreadId && state.dmCheck?.threadId === activeThreadId
+      ? state.dmCheck
+      : null;
+    const evidence = activeThreadId && state.messageEvidence?.threadId === activeThreadId
+      ? state.messageEvidence
+      : null;
     const result = query('[data-role="dm-result"]');
     result.replaceChildren();
     const title = document.createElement('h2');
-    title.textContent = state.dmCheck?.exact
+    title.textContent = check?.exact
       ? 'Exact sent message resolved'
-      : state.dmTarget
-        ? `Reviewed message ${state.dmTarget.messageId}`
-        : 'No reviewed DM target loaded';
+      : target
+        ? 'Reviewed message ' + target.messageId
+        : activeThreadId
+          ? 'No reviewed DM target for this conversation'
+          : 'Open an Instagram conversation';
     const detail = document.createElement('p');
-    detail.textContent = state.dmCheck?.reason
-      || state.messageEvidence?.reason
-      || 'Read visible evidence or import one reviewed DM job.';
+    detail.textContent = check?.reason
+      || evidence?.reason
+      || (activeThreadId
+        ? 'Read visible evidence or import one reviewed DM job for this conversation.'
+        : 'Open an Instagram conversation first.');
     result.append(title, detail);
     const list = query('[data-role="message-list"]');
     list.replaceChildren();
-    for (const fragment of (state.messageEvidence?.fragments || [])) {
+    for (const fragment of (evidence?.fragments || [])) {
       const row = document.createElement('li');
       row.textContent = fragment.text;
       const meta = document.createElement('small');
@@ -799,7 +857,7 @@
       row.append(meta);
       list.append(row);
     }
-    if (!(state.messageEvidence?.fragments || []).length) {
+    if (!(evidence?.fragments || []).length) {
       const row = document.createElement('li');
       row.textContent = 'No visible thread evidence captured.';
       list.append(row);
@@ -1429,14 +1487,25 @@
         status(`Stopped: ${sessionStop(outcome)}.`);
         return;
       }
-      state.sentDms = outcome?.messages || [];
-      state.sentDmsComplete = outcome?.complete === true;
+      const activeThreadId = currentDirectThreadId();
+      const scanMatchesThread = Boolean(
+        activeThreadId
+        && directThreadId(outcome?.conversationId) === activeThreadId,
+      );
+      state.sentDms = scanMatchesThread
+        ? sentMessagesForThread(outcome?.messages, activeThreadId)
+        : [];
+      state.sentDmsComplete = scanMatchesThread && outcome?.complete === true;
       saveState();
       renderAll();
       status(
-        state.sentDms.length
-          ? `Found ${state.sentDms.length} of your sent messages.${outcome.complete ? '' : ' Older ones may still be unloaded.'}`
-          : 'No exactly identifiable sent messages were found in this thread.',
+        !activeThreadId
+          ? 'Open an Instagram conversation first.'
+          : !scanMatchesThread
+            ? 'The conversation changed during the scan. Scan this conversation again.'
+            : state.sentDms.length
+              ? `Found ${state.sentDms.length} of your sent messages.${outcome.complete ? '' : ' Older ones may still be unloaded.'}`
+              : 'No exactly identifiable sent messages were found in this thread.',
       );
     },
     'run-accounts': async () => {
@@ -1497,16 +1566,25 @@
         status(`Stopped: ${stop}.`);
         return;
       }
-      const messages = outcome?.messages || [];
+      const activeThreadId = currentDirectThreadId();
+      const scanMatchesThread = Boolean(
+        activeThreadId
+        && directThreadId(outcome?.conversationId) === activeThreadId,
+      );
+      const messages = scanMatchesThread
+        ? sentMessagesForThread(outcome?.messages, activeThreadId)
+        : [];
       state.sentDms = messages;
-      state.sentDmsComplete = outcome?.complete === true;
+      state.sentDmsComplete = scanMatchesThread && outcome?.complete === true;
       saveState();
       renderAll();
       if (!messages.length) {
         status(
-          outcome?.reason === 'open-an-instagram-conversation'
+          !activeThreadId || outcome?.reason === 'open-an-instagram-conversation'
             ? 'Open a conversation first.'
-            : 'No messages of yours could be identified exactly in this thread, so nothing was touched.',
+            : !scanMatchesThread
+              ? 'The conversation changed during the scan. Scan this conversation again.'
+              : 'No messages of yours could be identified exactly in this thread, so nothing was touched.',
         );
         return;
       }
@@ -1522,9 +1600,14 @@
     },
     'run-unsend': async () => {
       if (!requireNewRunAuthorization()) return;
-      const found = state.sentDms || [];
+      const activeThreadId = currentDirectThreadId();
+      if (!activeThreadId) {
+        status('Open an Instagram conversation first.');
+        return;
+      }
+      const found = sentMessagesForThread(state.sentDms, activeThreadId);
       if (!found.length) {
-        status('Scan your sent messages first.');
+        status('Scan your sent messages in this conversation first.');
         return;
       }
       const scope = query('[data-role="unsend-scope"]')?.value || 'all';
@@ -1777,7 +1860,18 @@
   }
   window.addEventListener('keydown', toggleToolboxShortcut, true);
 
+  let lastLocationHref = location.href;
   const duplicateObserver = new MutationObserver(() => {
+    const currentHref = location.href;
+    if (currentHref !== lastLocationHref) {
+      lastLocationHref = currentHref;
+      state.messageEvidence = null;
+      state.dmCheck = null;
+      state.sentDms = [];
+      state.sentDmsComplete = false;
+      saveState();
+      renderAll();
+    }
     if (!document.getElementById(EXTENSION_ROOT_ID)) return;
     duplicateObserver.disconnect();
     window.removeEventListener('keydown', toggleToolboxShortcut, true);

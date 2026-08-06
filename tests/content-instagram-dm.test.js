@@ -112,6 +112,9 @@ function createHarness(rows, { pathname = '/direct/t/123/', secureCrypto = webcr
   const scope = {
     querySelectorAll(selector) {
       if (selector === '[data-message-id], [data-item-id]') return rows;
+      if (selector === '[role="row"] [dir="auto"]' || selector === 'div[dir="auto"]') {
+        return rows.flatMap((row) => row.querySelectorAll('[dir="auto"]'));
+      }
       return [];
     },
   };
@@ -191,6 +194,29 @@ test('resolves one stable sent-message identity without opening a menu', async (
   assert.equal(observed.evidence.timestampBasis, 'data-timestamp-ms');
 });
 
+test('visible message evidence is bound to one exact direct thread', async () => {
+  const thread = createHarness([messageRow()]);
+  const captured = await thread.send({ kind: 'insta-aio-inspect-visible-messages' });
+  assert.equal(captured.conversationId, '123');
+  assert.equal(captured.reason, 'visible-fragments-only');
+  assert.deepEqual(
+    Array.from(captured.fragments, (fragment) => fragment.text),
+    ['Yes — reviewing it now.'],
+  );
+
+  const inbox = createHarness([messageRow()], { pathname: '/direct/inbox/' });
+  const rejected = await inbox.send({ kind: 'insta-aio-inspect-visible-messages' });
+  assert.equal(rejected.pageKind, 'messages');
+  assert.equal(rejected.conversationId, '');
+  assert.equal(rejected.reason, 'open-an-instagram-conversation');
+  assert.equal(rejected.fragments.length, 0);
+
+  const nestedRoute = createHarness([messageRow()], { pathname: '/direct/t/123/details/' });
+  const nestedRejected = await nestedRoute.send({ kind: 'insta-aio-inspect-visible-messages' });
+  assert.equal(nestedRejected.reason, 'open-an-instagram-conversation');
+  assert.equal(nestedRejected.fragments.length, 0);
+});
+
 test('missing stable identity and wrong conversations fail closed', async () => {
   const missing = createHarness([]);
   const missingResult = await missing.send({
@@ -207,6 +233,14 @@ test('missing stable identity and wrong conversations fail closed', async () => 
   });
   assert.equal(wrongResult.reason, 'wrong-conversation');
   assert.equal(wrongResult.resolutionToken, undefined);
+
+  const inbox = createHarness([messageRow()], { pathname: '/direct/inbox/' });
+  const inboxResult = await inbox.send({
+    kind: 'insta-aio-inspect-reviewed-dm-item',
+    item: reviewedItem(),
+  });
+  assert.equal(inboxResult.reason, 'open-an-instagram-conversation');
+  assert.equal(inboxResult.resolutionToken, undefined);
 });
 
 test('duplicate identities, changed content, and received ownership fail closed', async () => {

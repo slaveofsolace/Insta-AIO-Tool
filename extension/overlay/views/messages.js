@@ -12,6 +12,11 @@
   const MASS_UNSEND_ARM_TTL_MS = 15 * 60 * 1_000;
   const MASS_UNSEND_ARM_PHRASE = 'UNSEND ALL DMS';
 
+  function activeConversationId() {
+    const match = String(location.pathname || '').match(/^\/direct\/t\/([^/?#]+)\/?$/i);
+    return match?.[1] || '';
+  }
+
   function massUnsendArm(runtime) {
     const arm = massUnsendArms.get(runtime.model);
     if (Number(arm?.expiresAt) > Date.now() && String(arm?.threadId || '')) return arm;
@@ -327,16 +332,22 @@
     if (!list) return;
     list.replaceChildren();
     const result = model.messages;
-    const fragments = result?.fragments || [];
+    const conversationId = activeConversationId();
+    const conversationReady = Boolean(conversationId);
+    const evidenceMatches = conversationReady
+      && String(result?.conversationId || '') === conversationId;
+    const fragments = evidenceMatches ? (result.fragments || []) : [];
     setText('message-count', String(fragments.length));
-    setText('message-detail', result
-      ? `${shared.safeText(result.conversationLabel, 'Open conversation')} · ${shared.safeText(result.reason, 'read only')}`
+    setText('message-detail', evidenceMatches
+      ? shared.safeText(result.conversationLabel, 'Open conversation')
+        + ' · '
+        + shared.safeText(result.reason, 'read only')
       : 'No evidence yet');
 
     const state = query('[data-ia-role="message-state"]');
-    if (state) state.dataset.tone = location.pathname.toLowerCase().startsWith('/direct/t/') ? 'good' : 'neutral';
-    setText('message-state-title', location.pathname.toLowerCase().startsWith('/direct/t/') ? 'Conversation ready' : 'Open a conversation');
-    setText('message-state-detail', location.pathname.toLowerCase().startsWith('/direct/t/')
+    if (state) state.dataset.tone = conversationReady ? 'good' : 'neutral';
+    setText('message-state-title', conversationReady ? 'Conversation ready' : 'Open a conversation');
+    setText('message-state-detail', conversationReady
       ? 'You can read visible evidence or start Unsend all DMs.'
       : 'Choose a conversation before using message tools.');
 
@@ -355,14 +366,14 @@
     if (!fragments.length) {
       const empty = document.createElement('li');
       empty.className = 'ia-empty';
-      empty.textContent = result?.pageKind === 'messages'
+      empty.textContent = conversationReady
         ? 'No visible text has been read yet.'
         : 'Open an Instagram conversation, then use the message tools.';
       list.append(empty);
     }
 
     const download = query('[data-ia-role="message-download"]');
-    if (result) {
+    if (evidenceMatches) {
       downloads.update('messages', download, {
         filename: `insta-aio-visible-message-evidence-${Date.now()}.json`,
         payload: {

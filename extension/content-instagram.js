@@ -94,6 +94,12 @@
     return exportMatch?.[1] || (/^[0-9]+$/.test(finalSegment) ? finalSegment : null);
   }
 
+  function currentDirectThreadId() {
+    const pathname = String(location.pathname || '').replaceAll('\\', '/');
+    if (!/^\/direct\/t\/[^/?#]+\/?$/i.test(pathname)) return null;
+    return directThreadId(pathname);
+  }
+
   function normalizedDmTimestamp(value) {
     if (value == null || value === '') return null;
     const numeric = Number(value);
@@ -164,7 +170,8 @@
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { observation: session, candidate: null };
     }
-    if (pageKind() !== 'messages') {
+    const observedThreadId = currentDirectThreadId();
+    if (!observedThreadId) {
       return {
         observation: { ...session, unexpectedUi: true, reason: 'open-an-instagram-conversation' },
         candidate: null,
@@ -172,8 +179,7 @@
     }
 
     const expectedThreadId = directThreadId(item?.conversationId);
-    const observedThreadId = directThreadId(location.pathname);
-    if (!expectedThreadId || !observedThreadId) {
+    if (!expectedThreadId) {
       return {
         observation: { ...session, ambiguous: true, reason: 'conversation-id-unresolved' },
         candidate: null,
@@ -1046,17 +1052,14 @@
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, messages: [], complete: false, reason: 'session-stop' };
     }
-    if (pageKind() !== 'messages') {
+    const conversationId = currentDirectThreadId();
+    if (!conversationId) {
       return {
         ...session,
         messages: [],
         complete: false,
         reason: 'open-an-instagram-conversation',
       };
-    }
-    const conversationId = directThreadId(location.pathname);
-    if (!conversationId) {
-      return { ...session, messages: [], complete: false, reason: 'conversation-id-unresolved' };
     }
 
     const scope = document.querySelector('[data-pagelet="IGDMessagesList"]')
@@ -1179,15 +1182,18 @@
   function inspectVisibleMessages() {
     const session = inspectSession();
     const kind = pageKind();
-    if (kind !== 'messages') {
+    const conversationId = currentDirectThreadId();
+    if (!conversationId) {
       return {
         ...session,
         pageKind: kind,
+        conversationId: '',
         conversationLabel: '',
         exactIdentityAvailable: false,
         ownershipAvailable: false,
         fragments: [],
         reason: 'open-an-instagram-conversation',
+        capturedAt: new Date().toISOString(),
       };
     }
 
@@ -1211,6 +1217,7 @@
     return {
       ...session,
       pageKind: kind,
+      conversationId,
       conversationLabel: heading,
       exactIdentityAvailable: false,
       ownershipAvailable: false,
