@@ -119,7 +119,9 @@ function acceptableRasterDifference(difference) {
   // semantics, geometry, accessibility, collision, and performance remain
   // exact and are evaluated before this pixel-only allowance.
   if (process.platform === 'win32') {
-    return difference.changedPixels <= 1_200
+    // GitHub's Windows Server 2025 image produced 1,327 anti-aliased
+    // text/scrollbar pixels on an otherwise identical reviewed capture.
+    return difference.changedPixels <= 1_500
       && difference.changedPixelRatio <= 0.004;
   }
   return difference.changedPixels <= 4 && difference.maxChannelDifference <= 1;

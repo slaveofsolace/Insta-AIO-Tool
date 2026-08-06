@@ -169,9 +169,10 @@ The manifest records the platform, built extension version, scenario data,
 geometry metrics, and SHA-256 for every capture. Hashes are platform-specific;
 a Windows manifest is not evidence for Linux or macOS. Non-Windows local checks
 permit only four one-channel raster-rounding pixels. Windows checks permit at
-most 1,200 changed pixels and 0.4% of the capture to account for measured native
+most 1,500 changed pixels and 0.4% of the capture to account for measured native
 text and scrollbar rasterization differences between otherwise identical
-hidden runner sessions. Both Windows caps must pass. All state semantics,
+hidden runner sessions, including 1,327 pixels observed on GitHub's Windows
+Server 2025 image. Both Windows caps must pass. All state semantics,
 geometry, collision, accessibility-tree, and performance assertions still run
 without tolerance, CI never updates the
 baseline, and a failed CI comparison uploads all actual captures and the runner
