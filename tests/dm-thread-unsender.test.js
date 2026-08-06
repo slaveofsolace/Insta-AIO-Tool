@@ -9,6 +9,9 @@ const shellSource = await readFile(new URL('../userscripts/src/toolbox-shell.js'
 const messagesSource = await readFile(new URL('../extension/overlay/views/messages.js', import.meta.url), 'utf8');
 const metadata = await readFile(new URL('../userscripts/src/metadata.txt', import.meta.url), 'utf8');
 const generated = await readFile(new URL('../userscripts/insta-aio-companion.user.js', import.meta.url), 'utf8');
+const extensionManifest = JSON.parse(
+  await readFile(new URL('../extension/manifest.json', import.meta.url), 'utf8'),
+);
 
 function loadRunner() {
   const context = vm.createContext({
@@ -193,7 +196,8 @@ test('extension message view uses the shared runner and Instagram design tokens'
 
 test('Tampermonkey entry point auto-updates from main and embeds the shared sources', () => {
   // Assert the shape, not one release, so a version bump does not fail here.
-  assert.match(metadata, /@version\s+\d+\.\d+\.\d+/);
+  const userscriptVersion = metadata.match(/@version\s+(\d+\.\d+\.\d+)/)?.[1];
+  assert.equal(userscriptVersion, extensionManifest.version);
   assert.match(metadata, /@sandbox\s+DOM/);
   assert.match(metadata, /@grant\s+GM_getTab/);
   assert.match(metadata, /@grant\s+GM_saveTab/);

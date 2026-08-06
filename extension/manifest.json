@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Insta AIO Companion",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Movable local-first Instagram toolbox for follower checks, no-click account review, and exact-message evidence.",
   "permissions": [
     "storage",

@@ -149,7 +149,7 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.9.0 preserves the stricter signed live paths for one reviewed PWA
+Extension 0.9.1 preserves the stricter signed live paths for one reviewed PWA
 item. The PWA sends a signed intent; the Instagram overlay requires the matching
 profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW
 @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds.

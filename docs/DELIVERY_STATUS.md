@@ -32,7 +32,7 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-Extension 0.9.0 preserves the production-controlled one-item account boundary:
+Extension 0.9.1 preserves the production-controlled one-item account boundary:
 
 - Fresh signed live intent with action permission
 - Exactly one reviewed account item
@@ -67,7 +67,7 @@ content digest, and sent ownership all match uniquely. The background rechecks
 the returned identity before recording success. Missing stable DOM identity
 still stops with `exact-message-identity-unavailable`.
 
-Extension 0.9.0 preserves a separate controlled live boundary for exactly one
+Extension 0.9.1 preserves a separate controlled live boundary for exactly one
 twice-confirmed sent message:
 
 - A fresh signed intent whose reviewed preview is unchanged
