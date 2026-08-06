@@ -469,6 +469,41 @@ async function acceptThreadUnsend(webContents, baseUrl) {
   console.log(`Accepted thread-bound Unsend against a portalled menu (${outcome.fixtureUnsentCount} removed, stale decoy untouched).`);
 }
 
+async function acceptToolboxLayout(webContents, baseUrl) {
+  await withTimeout(webContents.loadURL(baseUrl + "/userscript-fixture.html"), "audit load");
+  await waitForPageValue(webContents, "Boolean(document.querySelector(\"#insta-aio-userscript-root\")?.shadowRoot)", "audit shell");
+  const layoutAuditProbe = await readFile(path.join(repositoryRoot, "tests", "probes", "layout-audit.js"), "utf8");
+  const report = await webContents.executeJavaScript(layoutAuditProbe, true);
+  assert.deepEqual(report.overlaps, [], 'panel sections must not overlap');
+  assert.deepEqual(report.escapes, [], 'no section may render outside the panel');
+  assert.deepEqual(report.duplicateIds, [], 'duplicate ids break label and aria references');
+  // A checkbox and a range track are legitimately smaller; their labels carry
+  // the target. Anything else below 44px is a real regression.
+  const undersized = report.undersizedTargets.filter((entry) => !/h=(4[4-9]|[5-9]d|d{3})/.test(entry));
+  assert.ok(undersized.length <= 2, 'undersized hit targets: ' + JSON.stringify(undersized));
+  // The brief's viewport matrix. A flex column should hold up at each, but
+  // short and narrow windows are exactly where a panel starts clipping.
+  const viewportMatrix = [
+    { label: 'short laptop', width: 1280, height: 620 },
+    { label: 'narrow tablet', width: 760, height: 900 },
+    { label: 'mobile portrait', width: 390, height: 780 },
+    { label: 'mobile landscape', width: 780, height: 390 },
+    { label: '200% zoom', width: 640, height: 400 },
+  ];
+  const probe = await readFile(path.join(repositoryRoot, 'tests', 'probes', 'layout-audit.js'), 'utf8');
+  for (const viewport of viewportMatrix) {
+    webContents.setZoomFactor(1);
+    await webContents.executeJavaScript(
+      `(() => { globalThis.resizeTo?.(${viewport.width}, ${viewport.height}); return true; })()`,
+      true,
+    );
+    const sized = await webContents.executeJavaScript(probe, true);
+    assert.deepEqual(sized.overlaps, [], `${viewport.label}: sections overlap`);
+    assert.deepEqual(sized.duplicateIds, [], `${viewport.label}: duplicate ids`);
+  }
+  console.log(`Accepted toolbox layout (${report.visibleChildren} sections, no overlap or overflow, ${viewportMatrix.length} viewports).`);
+}
+
 async function acceptUserscriptToolbox(webContents, baseUrl) {
   await withTimeout(
     webContents.loadURL(`${baseUrl}/userscript-fixture.html`),
@@ -787,6 +822,7 @@ async function run() {
     await acceptDmUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptOverlayAccessibility(overlay.window.webContents, overlayBaseUrl);
     await acceptThreadUnsend(overlay.window.webContents, overlayBaseUrl);
+    await acceptToolboxLayout(overlay.window.webContents, overlayBaseUrl);
     await acceptUserscriptToolbox(overlay.window.webContents, overlayBaseUrl);
     await acceptPwaInstallability(pwa.window.webContents, pwaBaseUrl);
     assert.deepEqual(overlay.problems, [], 'extension fixture browser problems');

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.10.0
+// @version      0.10.1
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
 // @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
@@ -3086,7 +3086,7 @@
       button, label, summary { cursor: pointer; }
       [hidden] { display: none !important; }
       .launcher { position: fixed; z-index: 2147482900; right: 16px; bottom: 16px; width: 46px; height: 46px; border: 1px solid #cfd5cc; border-radius: 14px; background: rgba(255,255,255,.9); color: #172018; box-shadow: 0 10px 32px rgba(0,0,0,.2); font-weight: 850; }
-      .panel { animation: aio-in var(--aio-ease) both; position: fixed; z-index: 2147482900; top: 62px; right: 16px; width: min(var(--aio-width), calc(100vw - 24px)); height: min(var(--aio-height), calc(100dvh - 74px)); display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; overflow: hidden; border: 1px solid #cfd5cc; border-radius: 14px; background: color-mix(in srgb, #f7f8f5 var(--aio-alpha), transparent); color: #1b211c; box-shadow: 0 20px 60px rgba(0,0,0,.24); backdrop-filter: blur(10px) saturate(.95); -webkit-backdrop-filter: blur(10px) saturate(.95); font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
+      .panel { animation: aio-in var(--aio-ease) both; position: fixed; z-index: 2147482900; top: 62px; right: 16px; width: min(var(--aio-width), calc(100vw - 24px)); height: min(var(--aio-height), calc(100dvh - 74px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #cfd5cc; border-radius: 14px; background: color-mix(in srgb, #f7f8f5 var(--aio-alpha), transparent); color: #1b211c; box-shadow: 0 20px 60px rgba(0,0,0,.24); backdrop-filter: blur(10px) saturate(.95); -webkit-backdrop-filter: blur(10px) saturate(.95); font: 14px/1.45 "Segoe UI Variable", "Segoe UI", system-ui, sans-serif; }
       :host([data-floating="true"]) .panel { top: var(--aio-top); right: auto; left: var(--aio-left); }
       .header { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; min-height: 66px; padding: 10px; border-bottom: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); }
       .handle, .icon { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: inherit; }
@@ -3103,7 +3103,7 @@
       .tabs { display: grid; grid-template-columns: repeat(3,minmax(44px,1fr)); border-bottom: 1px solid #d8ddd4; background: color-mix(in srgb, #eef1ec var(--aio-alpha-strong), transparent); }
       .tab { transition: background var(--aio-ease), color var(--aio-ease); min-height: 48px; border: 0; border-bottom: 3px solid transparent; padding: 6px 3px; background: transparent; color: #616a61; font-size: 11px; font-weight: 700; }
       .tab[aria-selected="true"] { border-bottom-color: #347844; color: #172018; background: color-mix(in srgb, #fff 72%, transparent); }
-      .scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+      .scroll { flex: 1 1 auto; min-height: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
       .view { padding: 14px; }
       .lead { margin: 0 0 12px; color: #606960; font-size: 12px; }
       .tool-grid { display: grid; gap: 8px; }
@@ -3170,6 +3170,12 @@
       .scan-progress { margin-bottom: 12px; }
       .settings-inline { margin-top: 10px; border-top: 1px solid var(--aio-line, #d8ddd4); }
       .settings-inline > summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; cursor: pointer; }
+      .header, .context, .intro, .tabs, .run-panel, .footer { flex: 0 0 auto; }
+      .field input:not([type="range"]), .field select, .field textarea { min-height: 44px; box-sizing: border-box; }
+      .field input[type="range"] { min-height: 24px; }
+      .field input[type="checkbox"] { min-width: 20px; min-height: 20px; }
+      /* The checkbox itself stays small; its label carries the 44px target. */
+      .field label { display: inline-flex; align-items: center; min-height: 44px; }
       .context { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--aio-line, #d8ddd4); background: var(--aio-bg-sunken, #eef1ec); }
       .context-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aio-text-muted, #687068); }
       .context[data-tone="ready"] .context-dot { background: var(--aio-success, #0a7d3f); }
@@ -4824,3 +4830,4 @@
     });
   }
 })();
+
