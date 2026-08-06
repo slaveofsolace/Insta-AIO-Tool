@@ -92,8 +92,15 @@ test('visibility excludes message rows clipped by the thread scroller', () => {
     parentElement: scroller,
   };
 
+  // A row entirely below the scroller is not actionable.
+  assert.equal(runner.__test.isVisible(row), false);
+  // Nor is a two-pixel sliver whose hidden action button cannot be revealed.
+  row.getBoundingClientRect = () => ({ bottom: 102, height: 40, left: 20, right: 300, top: 62, width: 280 });
   assert.equal(runner.__test.isVisible(row), false);
   row.getBoundingClientRect = () => ({ bottom: 240, height: 40, left: 20, right: 300, top: 200, width: 280 });
+  assert.equal(runner.__test.isVisible(row), true);
+  // A message taller than the scroller remains eligible when a usable portion is visible.
+  row.getBoundingClientRect = () => ({ bottom: 560, height: 500, left: 20, right: 300, top: 60, width: 280 });
   assert.equal(runner.__test.isVisible(row), true);
   scroller.style = { overflowX: 'visible', overflowY: 'visible' };
   row.getBoundingClientRect = () => ({ bottom: 560, height: 40, left: 20, right: 300, top: 520, width: 280 });

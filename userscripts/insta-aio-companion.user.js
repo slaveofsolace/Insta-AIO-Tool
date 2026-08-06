@@ -102,6 +102,7 @@
   const DEFAULT_MIN_DELAY_MS = 1_000;
   const DEFAULT_MAX_DELAY_MS = 2_000;
   const DEFAULT_MAX_FAILURES = 5;
+  const MIN_USABLE_VISIBLE_PX = 24;
   const MAX_HOVER_DEPTH = 8;
   const MAX_SCAN_PASSES = 3;
   const listeners = new Set();
@@ -175,6 +176,15 @@
     return /^(auto|scroll|hidden|clip)$/i.test(String(value || '').trim());
   }
 
+  function hasUsableIntersection(start, end, clipStart, clipEnd) {
+    const size = Math.max(0, Number(end) - Number(start));
+    const visible = Math.max(
+      0,
+      Math.min(Number(end), Number(clipEnd)) - Math.max(Number(start), Number(clipStart)),
+    );
+    return visible >= Math.min(MIN_USABLE_VISIBLE_PX, size);
+  }
+
   function clippedByAncestor(element, rectangle) {
     const documentElement = element.ownerDocument?.documentElement;
     const view = element.ownerDocument?.defaultView;
@@ -192,8 +202,10 @@
 
       const bounds = ancestor.getBoundingClientRect?.();
       if (!bounds) continue;
-      if (clipsX && (rectangle.right <= bounds.left || rectangle.left >= bounds.right)) return true;
-      if (clipsY && (rectangle.bottom <= bounds.top || rectangle.top >= bounds.bottom)) return true;
+      if (clipsX
+        && !hasUsableIntersection(rectangle.left, rectangle.right, bounds.left, bounds.right)) return true;
+      if (clipsY
+        && !hasUsableIntersection(rectangle.top, rectangle.bottom, bounds.top, bounds.bottom)) return true;
     }
 
     return false;
@@ -216,8 +228,10 @@
     const viewportHeight = Number(element.ownerDocument?.defaultView?.innerHeight || globalThis.innerHeight || 0);
     const viewportWidth = Number(element.ownerDocument?.defaultView?.innerWidth || globalThis.innerWidth || 0);
     if (!rectangle || rectangle.height <= 0 || rectangle.width <= 0) return false;
-    if (viewportHeight > 0 && (rectangle.bottom <= 0 || rectangle.top >= viewportHeight)) return false;
-    if (viewportWidth > 0 && (rectangle.right <= 0 || rectangle.left >= viewportWidth)) return false;
+    if (viewportHeight > 0
+      && !hasUsableIntersection(rectangle.top, rectangle.bottom, 0, viewportHeight)) return false;
+    if (viewportWidth > 0
+      && !hasUsableIntersection(rectangle.left, rectangle.right, 0, viewportWidth)) return false;
     return !clippedByAncestor(element, rectangle);
   }
 
