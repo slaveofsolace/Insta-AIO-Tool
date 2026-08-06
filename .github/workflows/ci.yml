@@ -94,7 +94,7 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Build Windows NSIS installer
-        run: pnpm run dist:win -- --publish never
+        run: pnpm run dist:win
       - name: Verify Windows installer artifact
         shell: pwsh
         run: |
@@ -127,7 +127,7 @@ jobs:
       - name: Run production extension browser acceptance
         run: pnpm run qa:extension
       - name: Build macOS DMG and ZIP
-        run: pnpm run dist:mac -- --publish never
+        run: pnpm run dist:mac
       - name: Verify macOS package lifecycle
         run: pnpm run qa:mac-package
       - name: Upload verified macOS packages
