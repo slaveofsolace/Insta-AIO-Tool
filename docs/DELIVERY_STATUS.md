@@ -32,7 +32,7 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-Extension 0.9.1 preserves the production-controlled one-item account boundary:
+Extension 0.9.2 preserves the production-controlled one-item account boundary:
 
 - Fresh signed live intent with action permission
 - Exactly one reviewed account item
@@ -67,7 +67,7 @@ content digest, and sent ownership all match uniquely. The background rechecks
 the returned identity before recording success. Missing stable DOM identity
 still stops with `exact-message-identity-unavailable`.
 
-Extension 0.9.1 preserves a separate controlled live boundary for exactly one
+Extension 0.9.2 preserves a separate controlled live boundary for exactly one
 twice-confirmed sent message:
 
 - A fresh signed intent whose reviewed preview is unchanged
@@ -192,7 +192,7 @@ The dated walkthrough matrix and screenshots are in
 The separate post-redesign overlay matrix and its evidence boundary are
 in [`docs/OVERLAY_QA.md`](./OVERLAY_QA.md).
 
-On 2026-08-05 deterministic assembly, the 191-test repository suite, production
+On 2026-08-05 deterministic assembly, the 193-test repository suite, production
 extension fixture acceptance, real Chrome-for-Testing pairing, the nine-state
 PWA baseline check, the 39-state overlay check, and extension ZIP packaging
 passed in the isolated worktree. CI run 46 reproduced the repository, Windows
@@ -201,7 +201,7 @@ Instagram mutation was part of that matrix.
 
 Pending acceptance:
 
-- Install or update userscript/extension 0.9.1 in the operator's intended
+- Install or update userscript/extension 0.9.2 in the operator's intended
   persistent Chrome profile and confirm that live actions start locked
 - Authenticated Instagram walkthrough with the installed companion loaded,
   without arming an action
@@ -223,7 +223,7 @@ The controlled-action reviews reproduced bounded defects in target ownership,
 dialog freshness, durable reservation, restored limits, exact-message live
 control, packaging, discard-time cancellation, and secure capability issuance.
 All are remediated with focused regressions; `docs/SECURITY_REVIEW.md` records no
-surviving reportable finding in the reviewed patch. The current 191-test suite,
+surviving reportable finding in the reviewed patch. The current 193-test suite,
 companion source validation, unpacked/ZIP extension build, nine-image Windows
 PWA baseline check, and 39-image Windows overlay check pass. The overlay recovery
 work is committed and included in green CI run 46. Authenticated profile DOM was

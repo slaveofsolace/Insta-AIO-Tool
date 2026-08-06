@@ -33,6 +33,7 @@
     const thread = document.getElementById('thread');
     const portal = document.getElementById('portal');
     globalThis.fixtureUnsentCount = 0;
+    globalThis.fixtureCancelClicks = 0;
     globalThis.fixtureDecoyUnsendClicks = 0;
     document.getElementById('stale-unsend-decoy').addEventListener('click', () => {
       globalThis.fixtureDecoyUnsendClicks += 1;
@@ -88,6 +89,12 @@
       const dialog = document.createElement('div');
       dialog.setAttribute('role', 'dialog');
       dialog.id = 'confirm-dialog';
+      const cancel = document.createElement('button');
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => {
+        globalThis.fixtureCancelClicks += 1;
+        dialog.remove();
+      });
       const confirm = document.createElement('button');
       confirm.textContent = 'Unsend';
       confirm.addEventListener('click', () => {
@@ -101,7 +108,7 @@
         row.classList.remove('mine');
         globalThis.fixtureUnsentCount += 1;
       });
-      dialog.append(confirm);
+      dialog.append(cancel, confirm);
       document.body.append(dialog);
     }
   </script>

@@ -67,7 +67,7 @@ accepts only the newly surfaced menu and confirmation controls for each item.
 Updates are automatic. Tampermonkey re-checks the same address and offers new
 versions as they are published.
 
-For this handoff, confirm the Tampermonkey dashboard shows **0.9.1 or later**
+For this handoff, confirm the Tampermonkey dashboard shows **0.9.2 or later**
 after updating. A panel that says **Live actions enabled in this tab** is the
 legacy 0.9.0 build; reload only after Tampermonkey shows the newer version. The
 current build starts with **Userscript mode · live actions locked**.
@@ -126,7 +126,7 @@ shared code into `dist/extension/lib/`, and the extension will not start without
 
 After rebuilding, reload the extension in the extension manager **and** reload
 any open Instagram tabs, or you will keep running the previous version.
-For this handoff, the extension manager should show **0.9.1 or later**.
+For this handoff, the extension manager should show **0.9.2 or later**.
 
 On a fresh install Instagram shows only a small launcher; opening it reveals the
 tools. On desktop, drag the header to move the panel and either marked corner to

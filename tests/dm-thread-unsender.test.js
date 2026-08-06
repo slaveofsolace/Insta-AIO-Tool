@@ -54,6 +54,8 @@ test('thread runner carries the proven 0.7.2 interaction model', () => {
   assert.match(labelsSource, /function revealActionButton\(row, signal\)/);
   assert.match(labelsSource, /function openUnsendMenu\(control, signal, expectedThreadId, authorizationExpiresAt\)/);
   assert.match(labelsSource, /function confirmUnsend\(menuControl, row, signal, expectedThreadId, authorizationExpiresAt\)/);
+  assert.match(labelsSource, /function dialogUnsendCandidates\(existing = new Set\(\)\)/);
+  assert.match(labelsSource, /filter\(dialogControlHasUnsendLabel\)/);
   assert.match(labelsSource, /function loadAllHistory\(context, signal\)/);
   assert.match(labelsSource, /function nextSentRow\(context, signal\)/);
   assert.doesNotMatch(labelsSource, /graphql|private[_ -]?api|cookie|password/i);

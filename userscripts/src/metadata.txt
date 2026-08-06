@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.9.1
+// @version      0.9.2
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
 // @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.9.1
+// @version      0.9.2
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
 // @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
@@ -518,18 +518,36 @@
     return result;
   }
 
+  function dialogControlHasUnsendLabel(control) {
+    if (actionLabels.isDmUnsendLabel(visibleText(control))) return true;
+    return [...control.querySelectorAll?.('span, div') || []].some((element) => (
+      element.firstChild?.nodeType === 3
+      && actionLabels.isDmUnsendLabel(visibleText(element))
+    ));
+  }
+
+  function dialogUnsendCandidates(existing = new Set()) {
+    return [...document.querySelectorAll(
+      '[role="dialog"] button, [role="dialog"] [role="button"]',
+    )]
+      .filter(isVisible)
+      .filter((candidate) => !existing.has(candidate))
+      .filter(dialogControlHasUnsendLabel);
+  }
+
   async function confirmUnsend(menuControl, row, signal, expectedThreadId, authorizationExpiresAt) {
-    // Selecting Unsend must raise one new confirmation control. Pre-existing
-    // dialogs and stale portalled buttons can never satisfy this step.
+    // A normal confirmation dialog may contain both Cancel and Unsend. Accept
+    // exactly one newly surfaced, localized Unsend control while ignoring
+    // unrelated dialog buttons and every control that pre-dated this step.
     const existing = new Set(
-      [...document.querySelectorAll('[role="dialog"] button')].filter(isVisible),
+      [...document.querySelectorAll(
+        '[role="dialog"] button, [role="dialog"] [role="button"]',
+      )].filter(isVisible),
     );
     const pending = waitForElement(
       document.body,
       () => {
-        const candidates = [...document.querySelectorAll('[role="dialog"] button')]
-          .filter(isVisible)
-          .filter((candidate) => !existing.has(candidate));
+        const candidates = dialogUnsendCandidates(existing);
         if (candidates.length > 1) return { ambiguous: true };
         return candidates.length === 1 ? { control: candidates[0] } : null;
       },
@@ -3025,19 +3043,19 @@
         </div>
       </header>
       <nav class="tabs" role="tablist" aria-label="Insta AIO userscript tools">
-        <button class="tab" type="button" role="tab" data-view="checker" aria-selected="true" aria-selected="false" tabindex="-1">Checker</button>
-        <button class="tab" type="button" role="tab" data-view="account" aria-selected="false" tabindex="-1">Follow</button>
-        <button class="tab" type="button" role="tab" data-view="messages" aria-selected="false" tabindex="-1">Unsend</button>
+        <button id="aio-tab-checker" class="tab" type="button" role="tab" data-view="checker" aria-controls="aio-panel-checker" aria-selected="true" tabindex="0">Checker</button>
+        <button id="aio-tab-account" class="tab" type="button" role="tab" data-view="account" aria-controls="aio-panel-account" aria-selected="false" tabindex="-1">Follow</button>
+        <button id="aio-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="aio-panel-messages" aria-selected="false" tabindex="-1">Unsend</button>
       </nav>
       <div class="scroll">
-        <section class="view" role="tabpanel" data-panel="checker" hidden><p class="lead"><strong>Follower checker.</strong> Open Followers or Following, scroll manually, and capture each rendered batch. Both drafts are compared locally.</p><div class="metrics"><div class="metric"><span>Followers</span><strong data-role="followers-count">0</strong></div><div class="metric"><span>Following</span><strong data-role="following-count">0</strong></div></div><div class="field"><label for="aio-list-type">List being captured</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div><div class="toolbar"><button class="button" type="button" data-action="scan-list">Scan full list</button><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download selected list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
-        <section class="view" role="tabpanel" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div><div class="card" data-role="queue-current"></div><div class="toolbar"><button class="button" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="card" data-role="account-result"></div>
+        <section id="aio-panel-checker" class="view" role="tabpanel" aria-labelledby="aio-tab-checker" data-panel="checker" hidden><p class="lead"><strong>Follower checker.</strong> Open Followers or Following, scroll manually, and capture each rendered batch. Both drafts are compared locally.</p><div class="metrics"><div class="metric"><span>Followers</span><strong data-role="followers-count">0</strong></div><div class="metric"><span>Following</span><strong data-role="following-count">0</strong></div></div><div class="field"><label for="aio-list-type">List being captured</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div><div class="toolbar"><button class="button" type="button" data-action="scan-list">Scan full list</button><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download selected list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
+        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div><div class="card" data-role="queue-current"></div><div class="toolbar"><button class="button" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="card" data-role="account-result"></div>
           <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts" data-live-action>Start run</button></div>
           <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
-        <section class="view" role="tabpanel" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action>Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
+        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action>Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
           <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
           <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-live-action>Unsend selected</button></div>

@@ -448,6 +448,7 @@ async function acceptThreadUnsend(webContents, baseUrl) {
     return {
       result,
       rejected,
+      fixtureCancelClicks: globalThis.fixtureCancelClicks,
       fixtureDecoyUnsendClicks: globalThis.fixtureDecoyUnsendClicks,
       fixtureUnsentCount: globalThis.fixtureUnsentCount,
       remainingSent: rows.filter((row) => row.classList.contains('mine')).length,
@@ -458,6 +459,7 @@ async function acceptThreadUnsend(webContents, baseUrl) {
 
   // Six of the twelve fixture rows are sent by this account.
   assert.match(outcome.rejected?.message || '', /Thread-specific live authorization is required/);
+  assert.equal(outcome.fixtureCancelClicks, 0, 'the unrelated Cancel control is never activated');
   assert.equal(outcome.fixtureDecoyUnsendClicks, 0, 'a stale document-global Unsend decoy is never activated');
   assert.equal(outcome.fixtureUnsentCount, 6, 'every sent message was actually unsent');
   assert.equal(outcome.remainingSent, 0, 'no sent message was left behind');
@@ -481,6 +483,15 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
     return {
       labels: [...shadow.querySelectorAll('[data-view]')].map((element) => element.textContent.trim()),
+      tabs: [...shadow.querySelectorAll('[role="tab"]')].map((element) => ({
+        controls: element.getAttribute('aria-controls'),
+        selected: element.getAttribute('aria-selected'),
+        tabIndex: element.tabIndex,
+      })),
+      panels: [...shadow.querySelectorAll('[role="tabpanel"]')].map((element) => ({
+        id: element.id,
+        labelledBy: element.getAttribute('aria-labelledby'),
+      })),
       resizeCorners: [
         Boolean(shadow.querySelector('[data-role="resize"]')),
         Boolean(shadow.querySelector('[data-role="resize-tl"]')),
@@ -508,6 +519,16 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   })()`, true);
   // Exactly the three tools, with no landing tab in front of them.
   assert.deepEqual(initial.labels, ['Checker', 'Follow', 'Unsend']);
+  assert.deepEqual(initial.tabs, [
+    { controls: 'aio-panel-checker', selected: 'true', tabIndex: 0 },
+    { controls: 'aio-panel-account', selected: 'false', tabIndex: -1 },
+    { controls: 'aio-panel-messages', selected: 'false', tabIndex: -1 },
+  ]);
+  assert.deepEqual(initial.panels, [
+    { id: 'aio-panel-checker', labelledBy: 'aio-tab-checker' },
+    { id: 'aio-panel-account', labelledBy: 'aio-tab-account' },
+    { id: 'aio-panel-messages', labelledBy: 'aio-tab-messages' },
+  ]);
   assert.deepEqual(initial.resizeCorners, [true, true], 'both resize corners exist');
   assert.equal(initial.open, true);
   assert.equal(initial.opacity, '94');

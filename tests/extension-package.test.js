@@ -6,6 +6,14 @@ const manifest = JSON.parse(await readFile(
   new URL('../extension/manifest.json', import.meta.url),
   'utf8',
 ));
+const packageMetadata = JSON.parse(await readFile(
+  new URL('../package.json', import.meta.url),
+  'utf8',
+));
+const userscriptMetadata = await readFile(
+  new URL('../userscripts/src/metadata.txt', import.meta.url),
+  'utf8',
+);
 const background = await readFile(
   new URL('../extension/background.js', import.meta.url),
   'utf8',
@@ -37,6 +45,12 @@ const controlledDmPolicy = await readFile(
   new URL('../src/core/controlled-dm-unsend.js', import.meta.url),
   'utf8',
 );
+
+test('desktop, extension, and userscript release versions stay aligned', () => {
+  const userscriptVersion = userscriptMetadata.match(/@version\s+(\d+\.\d+\.\d+)/)?.[1];
+  assert.equal(packageMetadata.version, manifest.version);
+  assert.equal(userscriptVersion, manifest.version);
+});
 
 test('extension uses Manifest V3 without cookie or request interception permissions', () => {
   assert.equal(manifest.manifest_version, 3);

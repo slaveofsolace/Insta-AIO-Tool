@@ -177,6 +177,16 @@ test('the toolbox still yields when the extension panel is installed', () => {
   assert.match(shell, /host\.remove\(\)/);
 });
 
+test('the userscript tablist exposes one selected tab and explicit panel relationships', () => {
+  assert.doesNotMatch(shell, /aria-selected="true"\s+aria-selected="false"/);
+  assert.match(shell, /id="aio-tab-checker"[^>]*aria-controls="aio-panel-checker"[^>]*aria-selected="true"[^>]*tabindex="0"/);
+  assert.match(shell, /id="aio-tab-account"[^>]*aria-controls="aio-panel-account"[^>]*aria-selected="false"[^>]*tabindex="-1"/);
+  assert.match(shell, /id="aio-tab-messages"[^>]*aria-controls="aio-panel-messages"[^>]*aria-selected="false"[^>]*tabindex="-1"/);
+  assert.match(shell, /id="aio-panel-checker"[^>]*aria-labelledby="aio-tab-checker"/);
+  assert.match(shell, /id="aio-panel-account"[^>]*aria-labelledby="aio-tab-account"/);
+  assert.match(shell, /id="aio-panel-messages"[^>]*aria-labelledby="aio-tab-messages"/);
+});
+
 test('the movable panel and local follower comparison are preserved', () => {
   assert.match(source, /Insta AIO Instagram Toolbox/);
   assert.match(source, /Follower checker/);

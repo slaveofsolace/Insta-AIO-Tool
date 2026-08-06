@@ -488,18 +488,36 @@
     return result;
   }
 
+  function dialogControlHasUnsendLabel(control) {
+    if (actionLabels.isDmUnsendLabel(visibleText(control))) return true;
+    return [...control.querySelectorAll?.('span, div') || []].some((element) => (
+      element.firstChild?.nodeType === 3
+      && actionLabels.isDmUnsendLabel(visibleText(element))
+    ));
+  }
+
+  function dialogUnsendCandidates(existing = new Set()) {
+    return [...document.querySelectorAll(
+      '[role="dialog"] button, [role="dialog"] [role="button"]',
+    )]
+      .filter(isVisible)
+      .filter((candidate) => !existing.has(candidate))
+      .filter(dialogControlHasUnsendLabel);
+  }
+
   async function confirmUnsend(menuControl, row, signal, expectedThreadId, authorizationExpiresAt) {
-    // Selecting Unsend must raise one new confirmation control. Pre-existing
-    // dialogs and stale portalled buttons can never satisfy this step.
+    // A normal confirmation dialog may contain both Cancel and Unsend. Accept
+    // exactly one newly surfaced, localized Unsend control while ignoring
+    // unrelated dialog buttons and every control that pre-dated this step.
     const existing = new Set(
-      [...document.querySelectorAll('[role="dialog"] button')].filter(isVisible),
+      [...document.querySelectorAll(
+        '[role="dialog"] button, [role="dialog"] [role="button"]',
+      )].filter(isVisible),
     );
     const pending = waitForElement(
       document.body,
       () => {
-        const candidates = [...document.querySelectorAll('[role="dialog"] button')]
-          .filter(isVisible)
-          .filter((candidate) => !existing.has(candidate));
+        const candidates = dialogUnsendCandidates(existing);
         if (candidates.length > 1) return { ambiguous: true };
         return candidates.length === 1 ? { control: candidates[0] } : null;
       },
