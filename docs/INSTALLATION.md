@@ -14,8 +14,9 @@ extension additionally pairs with the app for signed, recorded jobs.
 
 ## Option 1 — Userscript (one click)
 
-This gives you all three tools in a movable panel on Instagram, including live
-Follow, Unfollow, and Unsend with paced batch runs.
+This gives you all three tools in a movable, resizable, translucent panel on
+Instagram. Live Follow, Unfollow, and Unsend are included but locked on every
+page load until you explicitly authorize a short window.
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) for your browser.
 2. Open the install link:
@@ -27,6 +28,12 @@ Follow, Unfollow, and Unsend with paced batch runs.
 4. Open or reload `https://www.instagram.com/`.
 5. Use the panel, or press **Alt + Shift + I** to show and hide it.
 
+Tampermonkey is the supported manager for paced account runs. The script asks
+for an isolated DOM sandbox and `GM_getTab`/`GM_saveTab` so a confirmed
+batch remains owned by one Instagram tab. A different userscript manager may
+still provide scanning, local comparison, and no-click checks, but the account
+batch controls deliberately stay disabled unless those tab APIs are available.
+
 ### Using it
 
 **Follower checker** — open your Followers or Following list, then **Scan full
@@ -34,19 +41,53 @@ list**. It scrolls the open list and reads every row. Scan both to get mutuals
 and not-following-back.
 
 **Follow / Unfollow** — pick targets, action, and how many, then **Start run**.
-Each profile must be open when its turn comes.
+The script opens each profile when its turn comes and resolves the exact
+relationship control again before acting.
 
-**DM Unsend** — open a conversation, **Scan my sent messages**, choose a scope,
-then **Unsend selected**. Only your own messages are eligible, each is
-re-verified immediately before removal, and this cannot be undone.
+**DM Unsend** — open a conversation and use **Check conversation** or **Scan
+first**. **Unsend all DMs** loads the thread and processes only rows proven sent
+by the current account, newest to oldest. Each action uses the source-audited
+menu and confirmation sequence. This cannot be undone.
+
+**Unlocking live controls** — open the gear menu, select **Enable live actions
+for 15 minutes**, and type `ENABLE LIVE ACTIONS`. This only enables the buttons;
+it does not click Instagram. Starting a run still requires a separate
+confirmation. The authorization is checked before every later item and expiry
+stops the run. Scanning, comparison, evidence reading, and no-click checks work
+without unlocking.
 
 Pacing lives under the gear icon: per-day caps and the delay range. Runs pause
 longer every 20 items, stop on any rate limit or security check, skip targets
-that changed, and end immediately on **Stop**. A run never resumes after a page
-reload.
+that changed, and end immediately on **Stop**. A DM run is discarded on reload.
+An already-confirmed account run may continue across the profile navigations it
+causes in the same manager tab, but only while its original 15-minute
+authorization remains valid. Thread-wide Unsend is bound to the open thread and
+accepts only the newly surfaced menu and confirmation controls for each item.
 
 Updates are automatic. Tampermonkey re-checks the same address and offers new
 versions as they are published.
+
+For this handoff, confirm the Tampermonkey dashboard shows **0.9.2 or later**
+after updating. A panel that says **Live actions enabled in this tab** is the
+legacy 0.9.0 build; reload only after Tampermonkey shows the newer version. The
+current build starts with **Userscript mode · live actions locked**.
+
+### Using the exact CI-tested review bundle
+
+Every pull-request CI run publishes a seven-day artifact named
+`insta-aio-browser-companions-<head-commit>` after the real unpacked extension
+has loaded and paired read-only in disposable Chrome for Testing. Push-triggered
+runs use the pushed commit. Download that artifact from the workflow run when
+reviewing an unmerged commit. It contains:
+
+- `insta-aio-companion-<version>.zip` for **Load unpacked** after extraction
+- `insta-aio-companion.user.js` for Tampermonkey
+
+Use the artifact whose commit matches the reviewed pull-request head. After
+installation, reload Instagram and verify **Userscript mode · live actions
+locked** or the extension's equivalent live-off state before any read-only
+walkthrough. The artifact proves which bytes passed CI; it does not replace the
+persistent-profile, authenticated, or human acceptance checks.
 
 ### Installing from the repository page instead
 
@@ -85,10 +126,14 @@ shared code into `dist/extension/lib/`, and the extension will not start without
 
 After rebuilding, reload the extension in the extension manager **and** reload
 any open Instagram tabs, or you will keep running the previous version.
+For this handoff, the extension manager should show **0.9.2 or later**.
 
 On a fresh install Instagram shows only a small launcher; opening it reveals the
-tools. Dock side, width, theme, and density live under the panel's preferences
-and stay on your machine.
+tools. On desktop, drag the header to move the panel and either marked corner to
+resize it. Surface opacity ranges from 55% to 100%, with a readable 88% default;
+the Instagram page remains visible underneath at lower values. Dock side, width,
+theme, density, position, size, and opacity stay on your machine. Narrow screens
+use a fitted bottom sheet instead of an off-screen floating panel.
 
 ### Using the three tools
 
@@ -104,10 +149,12 @@ Scan both lists to get the mutual and not-following-back numbers.
 or an imported queue), the action, and how many to run this time. Each account is
 opened, re-checked, and acted on individually.
 
-**Mass DM unsend.** Open a conversation and choose **Scan my sent messages**.
-Only messages you sent that can be identified exactly are listed. Pick a scope,
-then unsend. Each message is re-verified immediately before it is removed.
-**Unsending cannot be undone.**
+**Mass DM unsend.** Open a conversation and choose **Check conversation**.
+Expand **Unsend all DMs**; its badge is `live locked` by default. Choose
+**Unlock Unsend all DMs**, type `UNSEND ALL DMS`, then choose **Unsend all DMs**
+again and accept the permanent-action confirmation. The 15-minute authorization
+is checked before each message, and only rows proven sent by the current account
+are eligible. **Unsending cannot be undone.**
 
 ### Batch runs, pacing, and stopping
 

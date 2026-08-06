@@ -53,6 +53,14 @@ if (!/^\/\/ @version\s+\d+\.\d+\.\d+\s*$/m.test(metadata)) {
 if (/@require|@resource/.test(metadata)) {
   throw new Error('The Tampermonkey bundle must remain self-contained.');
 }
+if (!/^\/\/ @sandbox\s+DOM\s*$/m.test(metadata)) {
+  throw new Error('The Tampermonkey bundle must explicitly require an isolated DOM sandbox.');
+}
+for (const grant of ['GM_getTab', 'GM_getValue', 'GM_saveTab', 'GM_setValue']) {
+  if (!new RegExp(`^// @grant\\s+${grant}\\s*$`, 'm').test(metadata)) {
+    throw new Error(`Userscript metadata is missing the required ${grant} grant.`);
+  }
+}
 
 // .gitattributes stores this file with LF. Comparing raw text would report a
 // fresh bundle as stale on Windows purely because of line endings, so both

@@ -43,6 +43,15 @@ jobs:
           # Ubuntu hosted runners disable the user-namespace sandbox through AppArmor.
           INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"
         run: xvfb-run --auto-servernum pnpm run qa:chrome
+      - name: Upload tested browser companions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: insta-aio-browser-companions-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            dist/insta-aio-companion-*.zip
+            userscripts/insta-aio-companion.user.js
+          if-no-files-found: error
+          retention-days: 7
 
   overlay-windows:
     runs-on: windows-latest
@@ -70,6 +79,37 @@ jobs:
             test-results/overlay-qa/runner.log
           if-no-files-found: warn
           retention-days: 3
+
+  package-windows:
+    runs-on: windows-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Enable pnpm
+        run: corepack enable
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build Windows NSIS installer
+        run: pnpm run dist:win -- --publish never
+      - name: Verify Windows installer artifact
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -Path dist/desktop -Filter *.exe -File)
+          if ($installers.Count -lt 1) {
+            throw "No Windows installer was produced."
+          }
+          $installers | ForEach-Object { Write-Host $_.FullName }
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: insta-aio-windows-${{ github.sha }}
+          path: dist/desktop/*.exe
+          if-no-files-found: error
+          retention-days: 7
 
   package-macos:
     runs-on: macos-14

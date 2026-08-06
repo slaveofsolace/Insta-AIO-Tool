@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-08-02
+Last reviewed: 2026-08-05
 
 ## Application boundaries
 
@@ -15,6 +15,23 @@ no-click dry runs by default, exact confirmation material, transactional
 reservations, durable checkpoints, and safe stops for ambiguous state.
 Execution adapters revalidate the confirmed preview, current enable setting,
 and current batch limit before entering a live path.
+
+The injected toolbox surfaces follow the same default-off rule. Tampermonkey
+does not persist a general live preference: `ENABLE LIVE ACTIONS` opens a
+15-minute tab window, each run still requires confirmation, and an account run
+persists only its original expiry across the profile navigations it causes.
+That resumable run is stored through `GM_getTab`/`GM_saveTab`, not the shared GM
+record; a manager without tab storage leaves account batches disabled. The
+metadata explicitly selects the DOM sandbox so page code does not share
+the toolbox's API globals. DM runs are dropped on reload. The shared thread-wide
+Unsend runner independently rejects a missing or expired
+`authorizationExpiresAt`, requires the armed thread ID to match the current
+thread, and checks both before every page control. It snapshots existing menu
+and dialog candidates and accepts exactly one newly surfaced control. The
+extension's thread tool first requires
+`UNSEND ALL DMS`, performs no action while arming, then requires a second
+permanent-action confirmation. No new host permission, remote dependency,
+credential field, private endpoint, or network request was added.
 
 Each running PWA account or DM execution owns a matching `AbortController` and
 an immutable reviewed-job identity. Discard aborts only that matching execution.
@@ -57,6 +74,14 @@ other stable identity evidence remains available. Wrong-thread, identity-loss,
 unbound-surface, noninteractive-text, and descendant-toolbar ownership fixtures
 all fail closed.
 
+Visible DM evidence is scoped to one exact /direct/t/<id> route. The inbox,
+feed, profiles, and a different direct thread hide previously captured
+fragments immediately and clear the extension's evidence download exposure.
+The Tampermonkey shell also filters every saved sent-message batch against the
+currently open exact thread before it can show a destructive confirmation.
+Client-side Instagram route changes trigger a state rerender; they never inherit
+the prior thread's visible evidence or Unsend candidates.
+
 Restored daily limits are finite and bounded. Capability replay, stale
 confirmation, changed controls, wrong profiles or messages, duplicate attempts,
 and ambiguous UI fail closed for both controlled paths.
@@ -98,7 +123,7 @@ current patch closes all three layers and adds pre-dispatch, post-reservation,
 post-dispatch, non-resurrection, and legitimate-control regressions. The complete
 patch also centralizes exact localized action labels as valid UTF-8 and refuses
 to issue a profile or message capability when Web Crypto cannot supply entropy.
-The repository suite now passes 138 of 138 tests; extension packaging
+The repository suite now passes 191 of 191 tests; extension packaging
 independently runs the executable controlled-live safety subset before creating
 artifacts.
 

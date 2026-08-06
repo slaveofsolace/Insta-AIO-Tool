@@ -7,8 +7,9 @@ Instagram is the place where the operator sees the current account, list, or
 conversation, while the separate PWA remains the durable workspace for imports,
 comparisons, protections, reviewed jobs, ledgers, and backups.
 
-The sidecar is intentionally not a copy of the PWA. It is a narrow field layer
-for context and the next manual step.
+The sidecar is intentionally not a copy of the PWA. It is the in-page toolbox
+for follower comparison, reviewed account work, and DM Unsend, while the PWA
+keeps durable imports, history, signed jobs, and ledgers.
 
 ## Tool surfaces
 
@@ -20,9 +21,12 @@ matches the next actionable manual-queue item.
 
 ### Capture
 
-Reads only account anchors currently rendered in an Instagram dialog or the
-main page. Each user-selected capture merges by normalized username into the
-current follower or following draft. It never scrolls the page.
+**Capture visible rows** reads only the account anchors already rendered in an
+Instagram dialog or the main page. **Scan full list** is a separate deliberate
+operation that scrolls only the currently open Followers/Following dialog until
+it reaches the end or a bounded safe stop. Both paths merge normalized usernames
+into the selected local draft and report partial completion instead of silently
+under-counting.
 
 The downloaded record remains import-compatible:
 
@@ -95,6 +99,15 @@ the Messages gate only after the PWA's two confirmations. The sidecar enables
 arming only when the open thread resolves the exact sent-message identity; the
 background repeats that check before creating the 90-second arm.
 
+The visible **Unsend all DMs** disclosure is an independent local thread tool.
+It starts `live locked`. The first selection requests the exact `UNSEND ALL DMS`
+phrase and creates a 15-minute tab arm without opening a menu. A second selection
+shows the permanent-action confirmation. The source-audited runner then accepts
+only rows proven sent by the current account, follows the rendered menu/dialog
+sequence, paces attempts, and checks the authorization expiry before every next
+message. Expiry, Stop, session loss, challenge, block, rate limit, or repeated
+failure ends the run.
+
 ### Workspace
 
 Shows sanitized pairing status and links to the exact paired PWA origin. The
@@ -105,14 +118,17 @@ Instagram cookies, or credentials.
 
 ## Interaction and accessibility
 
-- A fresh V2 install starts collapsed as a 44-pixel launcher. Migration from V1
-  preserves a valid prior open/section choice.
+- A fresh V3 install starts collapsed as a 44-pixel launcher. Migration from
+  V1/V2 preserves valid prior choices and adds bounded layout defaults.
 - **Alt + Shift + I** toggles it.
 - Escape collapses it while focus is inside.
 - Arrow keys plus Home and End move through the semantic five-tool tab rail.
 - Focus indicators are visible and status changes use an `aria-live` region.
-- Dock side, 336/380/480-pixel width, auto/light/dark theme, and comfortable or
-  compact density are stored in the V2 preference record.
+- On desktop the header is draggable, two corner grips resize the panel, and
+  keyboard arrows work on both move and resize handles.
+- Dock side, 336/380/480-pixel presets, custom bounded size/position, 55–100%
+  surface opacity, auto/light/dark theme, and comfortable/compact density are
+  stored in the V3 preference record.
 - The layout becomes a bounded bottom sheet at 600 pixels and narrower, with a
   separate short-height rule.
 - Motion is removed when `prefers-reduced-motion` is enabled.
@@ -126,23 +142,29 @@ hidden. Instagram controls are never moved, hidden, or restyled.
 
 ## Extension and userscript availability
 
-The Manifest V3 companion is the full implementation of Now, Capture, Queue,
-Messages, Workspace, signed dry-run summaries, and exact one-item arm gates.
-The preserved Tampermonkey companion remains a limited read-only fallback for
-visible-list capture and a manual local queue. It has no signed PWA bridge and
-does not expose Follow, Unfollow, or Unsend execution.
+The Manifest V3 companion implements Now, Capture, Queue, Messages, Workspace,
+signed dry-run summaries, exact one-item arm gates, and locally phrase-gated
+batch tools. The Tampermonkey companion injects the same three user-facing tools
+through the same Instagram engine, including paced Follow/Unfollow and DM
+Unsend. It starts live-locked and has no signed PWA bridge or durable workspace
+ledger.
 
 ## Safety invariants
 
 - Dry-run routing never calls the page-control activator.
-- `instagram-overlay.js` contains no page-control or synthetic-event path.
+- `instagram-overlay.js` contains no Instagram selector or synthetic-event
+  implementation; it delegates authorized work to the isolated shared drivers.
 - `content-instagram.js` contains one isolated control activator, reachable only
   after the signed intent, exact phrase, live arm, PWA authorization check,
   ledger reservation, and short-lived DOM token all match.
 - All Instagram reading is limited to the visible DOM.
-- The sidecar does not auto-scroll.
-- Live settings remain off by default; the extension accepts at most one
-  reviewed account or DM item and consumes its arm before mutation.
+- Only the explicit full-list scanner scrolls, and only inside the open account
+  list dialog; normal inspection and visible capture do not scroll Instagram.
+- Live settings remain off by default. Signed PWA execution still accepts at
+  most one reviewed account or DM item and consumes its arm before mutation.
+  Local batches require an exact typed arm; thread-wide Unsend additionally
+  requires a 15-minute authorization checked inside the runner before every
+  message.
 - Discarding the matching PWA reviewed job aborts its in-flight pre-driver work.
   Any completed reservation is finalized `canceled`, missing-job checkpoints
   reject, and no new page driver is dispatched. A mutation already dispatched
@@ -177,7 +199,7 @@ ledger evidence; issue #4 requires one exact sent-message removal plus both
 durable ledger records, each from a user-selected authenticated run.
 
 See [Overlay UI implementation](./OVERLAY_UI_IMPLEMENTATION.md) for the ordered
-module graph, V1-to-V2 preference migration, current lightweight verification,
+module graph, V1/V2-to-V3 preference migration, current verification,
 and explicit post-implementation runtime nonclaims. See
 [Overlay QA](./OVERLAY_QA.md) for the production-script screenshot/state matrix,
 baseline acceptance procedure, measured Windows performance, reviewed

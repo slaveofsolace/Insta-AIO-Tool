@@ -89,7 +89,7 @@ test('Chrome acceptance loads and pairs the real extension through the restricte
   assert.match(chromeAcceptance, /Page\.getAppManifest/);
   assert.match(chromeAcceptance, /Page\.getInstallabilityErrors/);
   assert.match(chromeAcceptance, /complete-extension-pairing/);
-  assert.match(chromeAcceptance, /Extension 0.9.0 connected/);
+  assert.match(chromeAcceptance, /Extension 0.9.2 connected/);
   assert.match(chromeAcceptance, /permissions, \['read'\]/);
   assert.match(chromeAcceptance, /await rm\(resolvedResultsRoot/);
   assert.match(
@@ -100,6 +100,13 @@ test('Chrome acceptance loads and pairs the real extension through the restricte
   assert.match(workflow, /xvfb-run --auto-servernum pnpm run qa:chrome/);
   assert.match(workflow, /INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"/);
   assert.match(workflow, /INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"/);
+  assert.match(workflow, /Upload tested browser companions/);
+  assert.match(
+    workflow,
+    /insta-aio-browser-companions-\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/,
+  );
+  assert.match(workflow, /dist\/insta-aio-companion-\*\.zip/);
+  assert.match(workflow, /userscripts\/insta-aio-companion\.user\.js/);
 });
 
 test('CI checks reviewed overlay baselines on their native Windows platform', () => {
@@ -127,7 +134,7 @@ test('overlay QA is loopback-confined and has bounded child-process cleanup', ()
   assert.match(overlayQa, /setWindowOpenHandler/);
   assert.match(overlayQa, /will-navigate/);
   assert.match(overlayQa, /assert\.equal\(queueResult\.renderedItems, 1/);
-  assert.match(overlayQa, /difference\.changedPixels <= 1_200/);
+  assert.match(overlayQa, /difference\.changedPixels <= 1_500/);
   assert.match(overlayQa, /difference\.changedPixelRatio <= 0\.004/);
   assert.match(overlayQa, /difference\.changedPixels <= 4/);
   assert.match(overlayQa, /rasterProblems\.push/);

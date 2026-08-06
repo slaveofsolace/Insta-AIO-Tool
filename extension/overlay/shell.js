@@ -134,6 +134,7 @@
     .ia-icon-button:hover, .ia-settings summary:hover, .ia-settings[open] summary { background: var(--ia-surface); }
     .ia-settings { position: relative; }
     .ia-settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; display: grid; width: 260px; max-height: min(520px, calc(100dvh - 92px)); overflow: auto; gap: 12px; padding: 14px; border: 1px solid var(--ia-line); border-radius: 10px; background: color-mix(in srgb, var(--ia-surface-raised) 96%, transparent); box-shadow: var(--ia-shadow); }
+    .ia-settings:not([open]) .ia-settings-panel { display: none; }
     .ia-settings-panel strong { font-size: 13px; }
     .ia-field { display: grid; gap: 5px; }
     .ia-field label { color: var(--ia-muted); font-size: 12px; }
@@ -295,6 +296,7 @@
       }
       .ia-move-handle, .ia-resize-handle { display: none; }
       .ia-shell { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+      .ia-header { grid-template-columns: minmax(0, 1fr) auto; }
       .ia-rail { grid-row: 2; display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); padding: 4px max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); border-top: 1px solid var(--ia-line); border-right: 0; }
       .ia-brand-mark { display: none; }
       .ia-tab { width: 100%; }
@@ -374,7 +376,7 @@
                     <div class="ia-field"><label for="ia-pref-width">Panel width</label><select class="ia-select" id="ia-pref-width" data-ia-preference="width"><option value="compact">Compact</option><option value="standard">Standard</option><option value="wide">Wide</option></select></div>
                     <div class="ia-field"><label for="ia-pref-theme">Theme</label><select class="ia-select" id="ia-pref-theme" data-ia-preference="theme"><option value="auto">Match Instagram</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
                     <div class="ia-field"><label for="ia-pref-density">Density</label><select class="ia-select" id="ia-pref-density" data-ia-preference="density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></div>
-                    <div class="ia-field"><label for="ia-pref-opacity">Surface transparency</label><div class="ia-range-row"><input class="ia-range" id="ia-pref-opacity" type="range" min="70" max="100" step="1" value="88" data-ia-preference="opacity"><output class="ia-range-output" for="ia-pref-opacity" data-ia-role="opacity-output">88%</output></div></div>
+                    <div class="ia-field"><label for="ia-pref-opacity">Surface transparency</label><div class="ia-range-row"><input class="ia-range" id="ia-pref-opacity" type="range" min="55" max="100" step="1" value="88" data-ia-preference="opacity"><output class="ia-range-output" for="ia-pref-opacity" data-ia-role="opacity-output">88%</output></div></div>
                     <button class="ia-button ia-button--quiet" type="button" data-ia-action="reset-layout">Reset position and size</button>
                     <strong>Batch pacing</strong>
                     <div class="ia-field"><label for="ia-limit-actions">Follow/unfollow per day</label><input class="ia-text-input" id="ia-limit-actions" type="number" min="1" max="400" data-ia-role="limit-actions"></div>

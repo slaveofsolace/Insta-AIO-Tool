@@ -72,6 +72,7 @@
   const DEFAULT_MIN_DELAY_MS = 1_000;
   const DEFAULT_MAX_DELAY_MS = 2_000;
   const DEFAULT_MAX_FAILURES = 5;
+  const MIN_USABLE_VISIBLE_PX = 24;
   const MAX_HOVER_DEPTH = 8;
   const MAX_SCAN_PASSES = 3;
   const listeners = new Set();
@@ -141,6 +142,45 @@
     return String(element.textContent || element.getAttribute?.('aria-label') || '').trim();
   }
 
+  function overflowClips(value) {
+    return /^(auto|scroll|hidden|clip)$/i.test(String(value || '').trim());
+  }
+
+  function hasUsableIntersection(start, end, clipStart, clipEnd) {
+    const size = Math.max(0, Number(end) - Number(start));
+    const visible = Math.max(
+      0,
+      Math.min(Number(end), Number(clipEnd)) - Math.max(Number(start), Number(clipStart)),
+    );
+    return visible >= Math.min(MIN_USABLE_VISIBLE_PX, size);
+  }
+
+  function clippedByAncestor(element, rectangle) {
+    const documentElement = element.ownerDocument?.documentElement;
+    const view = element.ownerDocument?.defaultView;
+
+    for (let ancestor = element.parentElement;
+      ancestor && ancestor !== documentElement;
+      ancestor = ancestor.parentElement) {
+      const style = view?.getComputedStyle?.(ancestor);
+      const shorthand = String(style?.overflow || '').trim().split(/\s+/).filter(Boolean);
+      const overflowX = style?.overflowX || shorthand[0] || '';
+      const overflowY = style?.overflowY || shorthand[1] || shorthand[0] || '';
+      const clipsX = overflowClips(overflowX);
+      const clipsY = overflowClips(overflowY);
+      if (!clipsX && !clipsY) continue;
+
+      const bounds = ancestor.getBoundingClientRect?.();
+      if (!bounds) continue;
+      if (clipsX
+        && !hasUsableIntersection(rectangle.left, rectangle.right, bounds.left, bounds.right)) return true;
+      if (clipsY
+        && !hasUsableIntersection(rectangle.top, rectangle.bottom, bounds.top, bounds.bottom)) return true;
+    }
+
+    return false;
+  }
+
   function isVisible(element) {
     if (!element?.isConnected) return false;
     if (typeof element.checkVisibility === 'function') {
@@ -155,17 +195,35 @@
       }
     }
     const rectangle = element.getBoundingClientRect?.();
-    return Boolean(rectangle && rectangle.height > 0 && rectangle.width > 0
-      && rectangle.bottom >= 0 && rectangle.top <= innerHeight);
+    const viewportHeight = Number(element.ownerDocument?.defaultView?.innerHeight || globalThis.innerHeight || 0);
+    const viewportWidth = Number(element.ownerDocument?.defaultView?.innerWidth || globalThis.innerWidth || 0);
+    if (!rectangle || rectangle.height <= 0 || rectangle.width <= 0) return false;
+    if (viewportHeight > 0
+      && !hasUsableIntersection(rectangle.top, rectangle.bottom, 0, viewportHeight)) return false;
+    if (viewportWidth > 0
+      && !hasUsableIntersection(rectangle.left, rectangle.right, 0, viewportWidth)) return false;
+    return !clippedByAncestor(element, rectangle);
   }
 
-  function sessionStop() {
+  function currentThreadId() {
+    const match = String(location.pathname || '').match(/^\/direct\/t\/([^/?#]+)/i);
+    if (!match) return '';
+    try {
+      return decodeURIComponent(match[1]);
+    } catch {
+      return '';
+    }
+  }
+
+  function sessionStop(expectedThreadId = '') {
     const observation = globalThis.InstaAioInstagramInspector?.inspectSession?.() || {};
     if (observation.sessionExpired) return 'Instagram signed you out';
     if (observation.challenge) return 'Instagram opened a security check';
     if (observation.actionBlocked) return 'Instagram blocked the action';
     if (observation.rateLimited) return 'Instagram asked you to slow down';
-    if (!location.pathname.toLowerCase().startsWith('/direct/t/')) return 'The conversation is no longer open';
+    const threadId = currentThreadId();
+    if (!threadId) return 'The conversation is no longer open';
+    if (expectedThreadId && threadId !== expectedThreadId) return 'The armed conversation changed';
     return null;
   }
 
@@ -187,7 +245,8 @@
   }
 
   function threadContext() {
-    if (!location.pathname.toLowerCase().startsWith('/direct/t/')) {
+    const threadId = currentThreadId();
+    if (!threadId) {
       return { ok: false, reason: 'Open an Instagram conversation first.' };
     }
     const root = document.querySelector("[data-pagelet='IGDMessagesList']");
@@ -197,9 +256,9 @@
     const scroller = findScrollableChild(root, root.ownerDocument.defaultView);
     if (!scroller) {
       // Short conversations can fit without producing a scrollable descendant.
-      return { ok: true, root, scroller: root };
+      return { ok: true, root, scroller: root, threadId };
     }
-    return { ok: true, root, scroller };
+    return { ok: true, root, scroller, threadId };
   }
 
   function deepestMessageContainer(scroller) {
@@ -381,10 +440,6 @@
     return [...new Set(found)];
   }
 
-  function unsendControl(scope = document) {
-    return unsendCandidates(scope)[0] || null;
-  }
-
   async function dismissStaleSurfaces(signal) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       if (!visibleSurfaces('[role="dialog"], [role="menu"], [role="listbox"]').length) return;
@@ -408,33 +463,82 @@
     return waitForElement(row, () => actionButton(row), signal, 3_000);
   }
 
-  async function openUnsendMenu(control, signal) {
-    const pending = waitForElement(document.body, () => {
-      const candidate = unsendControl(document);
-      return candidate ? { control: candidate } : null;
-    }, signal, 3_000);
-    activateControl(control);
-    return pending;
+  function authorizationFailure(expectedThreadId, authorizationExpiresAt) {
+    if (!(Number(authorizationExpiresAt) > Date.now())) return 'Live authorization expired before the next Instagram control.';
+    return sessionStop(expectedThreadId);
   }
 
-  async function confirmUnsend(menuControl, row, signal) {
-    // Selecting Unsend raises a confirmation dialog with a single button.
+  function requireAuthorization(expectedThreadId, authorizationExpiresAt) {
+    const reason = authorizationFailure(expectedThreadId, authorizationExpiresAt);
+    if (reason) throw new Error(reason);
+  }
+
+  async function openUnsendMenu(control, signal, expectedThreadId, authorizationExpiresAt) {
+    const existing = new Set(unsendCandidates(document));
+    const pending = waitForElement(document.body, () => {
+      const candidates = unsendCandidates(document).filter((candidate) => !existing.has(candidate));
+      if (candidates.length > 1) return { ambiguous: true };
+      return candidates.length === 1 ? { control: candidates[0] } : null;
+    }, signal, 3_000);
+    requireAuthorization(expectedThreadId, authorizationExpiresAt);
+    activateControl(control);
+    const result = await pending;
+    requireAuthorization(expectedThreadId, authorizationExpiresAt);
+    if (result?.ambiguous) throw new Error('Instagram showed more than one new Unsend option.');
+    return result;
+  }
+
+  function dialogControlHasUnsendLabel(control) {
+    if (actionLabels.isDmUnsendLabel(visibleText(control))) return true;
+    return [...control.querySelectorAll?.('span, div') || []].some((element) => (
+      element.firstChild?.nodeType === 3
+      && actionLabels.isDmUnsendLabel(visibleText(element))
+    ));
+  }
+
+  function dialogUnsendCandidates(existing = new Set()) {
+    return [...document.querySelectorAll(
+      '[role="dialog"] button, [role="dialog"] [role="button"]',
+    )]
+      .filter(isVisible)
+      .filter((candidate) => !existing.has(candidate))
+      .filter(dialogControlHasUnsendLabel);
+  }
+
+  async function confirmUnsend(menuControl, row, signal, expectedThreadId, authorizationExpiresAt) {
+    // A normal confirmation dialog may contain both Cancel and Unsend. Accept
+    // exactly one newly surfaced, localized Unsend control while ignoring
+    // unrelated dialog buttons and every control that pre-dated this step.
+    const existing = new Set(
+      [...document.querySelectorAll(
+        '[role="dialog"] button, [role="dialog"] [role="button"]',
+      )].filter(isVisible),
+    );
     const pending = waitForElement(
       document.body,
-      () => document.querySelector('[role="dialog"] button'),
+      () => {
+        const candidates = dialogUnsendCandidates(existing);
+        if (candidates.length > 1) return { ambiguous: true };
+        return candidates.length === 1 ? { control: candidates[0] } : null;
+      },
       signal,
       3_000,
     );
+    requireAuthorization(expectedThreadId, authorizationExpiresAt);
     activateControl(menuControl);
-    const dialogButton = await pending;
+    const result = await pending;
+    requireAuthorization(expectedThreadId, authorizationExpiresAt);
+    if (result?.ambiguous) throw new Error('Instagram showed more than one new Unsend confirmation.');
+    const dialogButton = result?.control;
     if (!dialogButton) return false;
 
     const closed = waitForElement(
       document.body,
-      () => document.querySelector('[role="dialog"] button') === null,
+      () => (!dialogButton.isConnected || !isVisible(dialogButton) ? true : null),
       signal,
       5_000,
     );
+    requireAuthorization(expectedThreadId, authorizationExpiresAt);
     activateControl(dialogButton);
     // Parenthesised deliberately: `await closed !== true` binds as
     // `await (closed !== true)`, which is always true for a promise and made
@@ -449,15 +553,26 @@
     return !row.isConnected || !hasMessageContent(row) || actionButton(row) === null;
   }
 
-  async function unsendRow(row, signal) {
+  async function unsendRow(row, signal, expectedThreadId, authorizationExpiresAt) {
     row.setAttribute(ACTIVE_ATTRIBUTE, '');
     let success = false;
     try {
       const control = await revealActionButton(row, signal);
       if (!control) throw new Error('The message menu did not appear.');
-      const menu = await openUnsendMenu(control, signal);
+      const menu = await openUnsendMenu(
+        control,
+        signal,
+        expectedThreadId,
+        authorizationExpiresAt,
+      );
       if (!menu?.control) throw new Error('Instagram did not show an Unsend option.');
-      success = await confirmUnsend(menu.control, row, signal);
+      success = await confirmUnsend(
+        menu.control,
+        row,
+        signal,
+        expectedThreadId,
+        authorizationExpiresAt,
+      );
       if (!success) throw new Error('The message was not confirmed as removed.');
       row.setAttribute(DONE_ATTRIBUTE, '');
       return true;
@@ -499,7 +614,7 @@
     const reversed = reversedLayout(scroller);
     let quietRounds = 0;
     for (let page = 0; page < 120 && quietRounds < 3; page += 1) {
-      const stop = sessionStop();
+      const stop = sessionStop(context.threadId);
       if (stop) throw new Error(stop);
       const beforeHeight = scroller.scrollHeight;
       const beforeRows = candidateRows(scroller).length;
@@ -528,17 +643,22 @@
 
   async function nextSentRow(context, signal) {
     const { scroller } = context;
-    // Prefer a row already on screen, but never require one. Sweeping scroll
-    // offsets and hoping a candidate lands in the viewport left the last row of
-    // a thread unprocessed; bringing the row to the viewport is deterministic.
+    // Always center the selected row before hover. A row can have enough pixels
+    // inside a clipping ancestor to count as visible while its menu affordance
+    // remains outside that exposed portion on another platform or font stack.
     const visible = firstVisibleCandidate(scroller);
-    if (visible) return visible;
+    if (visible) {
+      visible.scrollIntoView({ block: 'center', inline: 'nearest' });
+      dispatch(scroller, new Event('scroll', { bubbles: true }));
+      await delay(60, signal);
+      if (isVisible(visible)) return visible;
+    }
 
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
       if (signal.aborted) return null;
       const [row] = candidateRows(scroller).reverse();
       if (row) {
-        row.scrollIntoView({ block: 'center' });
+        row.scrollIntoView({ block: 'center', inline: 'nearest' });
         dispatch(scroller, new Event('scroll', { bubbles: true }));
         await delay(60, signal);
         if (isVisible(row)) return row;
@@ -565,9 +685,29 @@
 
   async function start(options = {}) {
     if (activeController && !activeController.signal.aborted) return snapshot();
+    const authorizationExpiresAt = Number(options.authorizationExpiresAt);
+    if (!(authorizationExpiresAt > Date.now())) {
+      publish({
+        status: 'error',
+        message: 'Live authorization is required before thread-wide Unsend can start.',
+        canStop: false,
+        finishedAt: new Date().toISOString(),
+      });
+      return snapshot();
+    }
     const context = threadContext();
     if (!context.ok) {
       publish({ status: 'error', message: context.reason, canStop: false, finishedAt: new Date().toISOString() });
+      return snapshot();
+    }
+    const expectedThreadId = String(options.expectedThreadId || '').trim();
+    if (!expectedThreadId || context.threadId !== expectedThreadId) {
+      publish({
+        status: 'error',
+        message: 'Thread-specific live authorization is required before Unsend can start.',
+        canStop: false,
+        finishedAt: new Date().toISOString(),
+      });
       return snapshot();
     }
 
@@ -598,7 +738,10 @@
     try {
       await loadAllHistory(context, signal);
       while (!signal.aborted && processed < maxMessages && consecutiveFailures < maxFailures) {
-        const stop = sessionStop();
+        if (authorizationExpiresAt <= Date.now()) {
+          throw new Error('Live authorization expired before the next message.');
+        }
+        const stop = sessionStop(expectedThreadId);
         if (stop) throw new Error(stop);
         const row = await nextSentRow(context, signal);
         if (!row) break;
@@ -615,6 +758,9 @@
           });
           await delay(wait, signal);
         }
+        if (authorizationExpiresAt <= Date.now()) {
+          throw new Error('Live authorization expired before the next message.');
+        }
 
         publish({ status: 'running', current: label, message: `Unsending message ${processed + 1}…` });
         try {
@@ -622,7 +768,7 @@
           // closed and the row either went away or lost its content and menu.
           // Re-checking isConnected here rejected every success, because
           // Instagram leaves an "unsent" placeholder row in the thread.
-          await unsendRow(row, signal);
+          await unsendRow(row, signal, expectedThreadId, authorizationExpiresAt);
           processed += 1;
           consecutiveFailures = 0;
           lastUnsendAt = Date.now();
@@ -723,6 +869,7 @@
     return {
       ready: true,
       reason: 'Conversation ready',
+      threadId: context.threadId,
       visibleSent: candidateRows(context.scroller).filter(isVisible).length,
       scrollable: context.scroller.scrollHeight > context.scroller.clientHeight + 50,
     };
@@ -733,6 +880,8 @@
     publicApi.__test = Object.freeze({
       deepestMessageContainer,
       hasMessageContent,
+      isVisible,
+      nextSentRow,
       reversedLayout,
       sentByCurrentUser,
     });
@@ -760,6 +909,7 @@
     installed = true;
     const shadow = host.shadowRoot;
     const runner = globalThis.InstaAioDmThreadUnsender;
+    const liveAuthority = globalThis.InstaAioUserscriptLiveAuthority;
     const query = (selector) => shadow.querySelector(selector);
     const setText = (role, value) => {
       const element = query(`[data-role="${role}"]`);
@@ -853,7 +1003,6 @@
     if (headerTitle) headerTitle.textContent = 'Instagram Toolbox';
     const headerSubtitle = query('.header p');
     if (headerSubtitle) headerSubtitle.textContent = 'Follower, account, and message tools';
-    setText('mode-label', 'Live actions enabled in this tab');
     const nowLead = query('[data-panel="now"] .lead');
     if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
     const messageLead = query('[data-panel="messages"] .lead');
@@ -892,11 +1041,16 @@
       if (primary) {
         primary.textContent = running ? 'Stop unsending' : 'Unsend all DMs';
         primary.classList.toggle('danger', running);
+        if (running) primary.disabled = false;
       }
       setText('status', next.message);
     }
 
-    runner.subscribe(renderRun);
+    runner.subscribe((next) => {
+      const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
+      liveAuthority?.setExternalRunActive?.(running);
+      renderRun(next);
+    });
 
     shadow.addEventListener('click', async (event) => {
       const target = event.target.closest?.('[data-action]');
@@ -918,6 +1072,10 @@
           : result.reason);
         return;
       }
+      if (!liveAuthority?.canStart?.()) {
+        setText('status', 'Live actions are locked. Open toolbox preferences and enable the 15-minute live window first.');
+        return;
+      }
       const result = runner.inspect();
       if (!result.ready) {
         setText('status', result.reason);
@@ -932,7 +1090,12 @@
         setText('status', 'Cancelled. Nothing was changed.');
         return;
       }
-      await runner.start({ minDelayMs: 1_000, maxDelayMs: 2_000 });
+      await runner.start({
+        authorizationExpiresAt: liveAuthority.expiresAt(),
+        expectedThreadId: result.threadId,
+        minDelayMs: 1_000,
+        maxDelayMs: 2_000,
+      });
     }, true);
   }
 

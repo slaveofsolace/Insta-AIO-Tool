@@ -18,9 +18,10 @@ storage until you choose to export a file.
 | **Browser extension** | The same tools, plus pairing with the app for signed, recorded jobs. | Anyone who also uses the app workspace. |
 | **Desktop / web app** | The full workspace: import Instagram ZIP exports, snapshots, message search, queue history. | Working with exported data in bulk. |
 
-The userscript and the extension run the **same engine** — the userscript is
-built from the extension's own Instagram code, so both behave identically. Pick
-whichever is easier to install.
+The userscript and the extension run the **same inspected Instagram engine** —
+the userscript is built from the extension's own target-resolution code. Their
+delivery and pairing features differ, but their account/message checks share the
+same safe-stop rules.
 
 ### Quickest start
 
@@ -43,14 +44,40 @@ Full steps and the other options are in [Installation](./docs/INSTALLATION.md).
 - Migrations for Instagram Helper, SimpleInstaBot, and saved follower-checker results
 - A visible Instagram panel for capture, queue work, and message evidence
 - A signed, origin-paired Manifest V3 extension bridge
-- A read-only Tampermonkey userscript
+- A self-contained Tampermonkey userscript that injects all three tools on Instagram
 - Windows and macOS desktop packaging
 
 </details>
 
 ## Safety model
 
-Live account changes and DM removal are disabled by default. The PWA requires exact previews and confirmation phrases. Dry runs never invoke the extension's page-control path. A live Follow or Unfollow requires a fresh signed batch of exactly one item, action permission, an exact phrase entered on the matching Instagram profile, a 90-second one-use arm, PWA and extension-side durable reservations, a relationship control inside a verified profile header, a newly created target-named Unfollow dialog when needed, and post-action relationship verification. A live Unsend additionally requires two fresh confirmations for exactly one sent message, exact thread/message/timestamp/content-digest/ownership binding, an `ARM UNSEND <code>` phrase in the matching Instagram conversation, independent PWA and extension reservations, a one-use rendered-message token, structurally bound interactive menu/dialog controls, and exact-message removal proof while stable identity coverage remains available. DOM resolution tokens are issued only by Web Crypto; if neither `randomUUID` nor `getRandomValues` produces entropy, inspection returns `secure-random-unavailable` and no capability is stored.
+Live account changes and DM removal are disabled by default. Scans, comparisons,
+visible evidence, and exact-target dry runs remain available while locked. The
+extension batch controls require an exact typed arm phrase. Thread-wide Unsend
+requires a separate `UNSEND ALL DMS` arm followed by a second confirmation; its
+15-minute authorization is bound to the exact open thread and checked before
+every message and page control. The runner accepts only the one newly surfaced
+menu and confirmation control for the message it just opened. The
+userscript likewise starts with every destructive control disabled and requires
+`ENABLE LIVE ACTIONS` for a tab-scoped 15-minute window before any run can be
+confirmed. Account batches carry only that expiry across the profile navigation
+they cause, using the userscript manager's tab-local storage; an expired window
+stops before another action.
+
+The signed PWA path adds stricter one-item controls. A live Follow or Unfollow
+requires a fresh signed batch of exactly one item, action permission, an exact
+phrase entered on the matching Instagram profile, a 90-second one-use arm, PWA
+and extension-side durable reservations, a relationship control inside a
+verified profile header, a newly created target-named Unfollow dialog when
+needed, and post-action relationship verification. A live Unsend additionally
+requires two fresh confirmations for exactly one sent message, exact
+thread/message/timestamp/content-digest/ownership binding, an `ARM UNSEND
+<code>` phrase in the matching Instagram conversation, independent PWA and
+extension reservations, a one-use rendered-message token, structurally bound
+interactive menu/dialog controls, and exact-message removal proof while stable
+identity coverage remains available. DOM resolution tokens are issued only by
+Web Crypto; if neither `randomUUID` nor `getRandomValues` produces entropy,
+inspection returns `secure-random-unavailable` and no capability is stored.
 
 The project does not implement proxy rotation, fingerprint spoofing, challenge bypass, CAPTCHA solving, private endpoint reverse engineering, or unreviewed destructive actions.
 
@@ -122,7 +149,15 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.4.0 exposes controlled live paths only for one reviewed item. The PWA sends a signed intent; the Instagram Field Desk requires the matching profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds. Immediately before page control, the background persists its own reservation and consumes the arm, then finalizes that mirror as succeeded or uncertain. The PWA independently checkpoints its transactional ledger. These implemented paths still require authenticated selector acceptance before issues #3 and #4 can be closed.
+Extension 0.9.2 preserves the stricter signed live paths for one reviewed PWA
+item. The PWA sends a signed intent; the Instagram overlay requires the matching
+profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW
+@username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds.
+Immediately before page control, the background persists its own reservation
+and consumes the arm, then finalizes that mirror as succeeded or uncertain. The
+PWA independently checkpoints its transactional ledger. These implemented paths
+still require authenticated selector acceptance before issues #3 and #4 can be
+closed.
 
 ## Reviewed DM jobs
 
@@ -149,9 +184,12 @@ pnpm run build:extension
 
 Load `dist/extension` as an unpacked extension, or install the generated ZIP through the appropriate browser-managed workflow.
 
-Open Instagram after loading the extension. A compact **Insta AIO Field Desk**
-launcher appears on the right by default; the full sidecar opens only when the
-operator requests it. It provides:
+Open Instagram after loading the extension. A compact **AIO** launcher appears
+on the right by default; the full overlay opens only when the operator requests
+it. On desktop, drag its header to move it, drag either corner to resize it, and
+use **Settings → Surface transparency** to choose 55–100% opacity. Reset restores
+the bounded default. On narrow screens it becomes a fitted bottom sheet. It
+provides:
 
 - Current-page session, profile, relationship, and queue-match inspection
 - Repeated visible-row capture that merges follower or following usernames
@@ -178,10 +216,12 @@ and I-don't-follow-back counts, computed locally.
 (either checker result, or the manual queue), an action, and how many to run.
 Each target is opened, re-verified, and acted on one at a time.
 
-**Mass DM unsend.** Open a conversation and press **Scan my sent messages**. Only
-messages you sent that are exactly identifiable are listed. Choose a scope, then
-unsend. Every message is re-verified by id, timestamp, and content digest
-immediately before removal. Unsending is permanent.
+**Mass DM unsend.** Open a conversation and press **Check conversation**. The
+visible **Unsend all DMs** disclosure starts `live locked`. Choose **Unlock
+Unsend all DMs**, type `UNSEND ALL DMS`, then select **Unsend all DMs** again and
+accept the permanent-action confirmation. The authorization expires after 15
+minutes, the runner re-checks it before every message, and only rows proven sent
+by the current account are eligible. Unsending is permanent.
 
 ### Batch pacing and safety
 
@@ -223,11 +263,29 @@ The handshake rotates the one-time code into a derived session secret. Messages 
 
 Install `userscripts/insta-aio-companion.user.js` in Tampermonkey.
 
-It can capture usernames already rendered in a follower/following dialog, import a manual queue, open the next profile, record manual completion or skip decisions, and export its local state. It does not auto-scroll or click Follow, Unfollow, or Unsend.
+The generated script injects a movable, two-corner-resizable, translucent
+three-tab toolbox directly on `instagram.com`. It includes the full-list follower
+scanner and local comparison, queue and checker target sources for paced Follow
+or Unfollow runs, and the source-audited thread-wide DM Unsend runner. It uses the
+same exact-target Instagram engine as the extension and remains self-contained:
+no remote `@require`, network connector, credential access, or cloud storage.
+It explicitly requests the userscript manager's isolated DOM sandbox.
+Resumable account runs use `GM_getTab`/`GM_saveTab`, so another Instagram tab
+cannot inherit a running batch. Tampermonkey is the supported manager; on a
+manager without those tab APIs, follower scanning, comparison, and no-click
+checks remain available but account batch execution stays disabled.
 
-The userscript is the preserved limited fallback. The complete five-tool
-overlay, signed PWA bridge, exact one-item arm gates, theme/dock preferences,
-and collision-safe execution strip are provided by the Manifest V3 extension.
+Live controls are visible but disabled on every page load. Open the gear menu,
+select **Enable live actions for 15 minutes**, and type `ENABLE LIVE ACTIONS` to
+unlock them. Each destructive run then asks for a separate confirmation. The
+authorization expires during a run and is checked before every later item;
+account navigation retains only the already-confirmed run and its expiry in the
+same manager tab. Thread-wide Unsend separately binds its arm to the current
+thread and rejects navigation, expired authority, pre-existing menu decoys, and
+ambiguous newly opened controls. The
+follower scanner, exported comparisons, visible-message scan, and exact no-click
+checks work while live controls are locked. The userscript does not include the
+extension's signed PWA bridge or its durable workspace ledgers.
 
 ## Desktop builds
 
@@ -274,8 +332,10 @@ ignored `test-results`.
 The overlay-specific commands rebuild the production extension before loading
 its manifest-ordered content scripts in the deterministic Instagram fixture.
 Use `pnpm run qa:overlay:update` only for an intentional, manually reviewed
-baseline replacement. The 38-state Windows baseline has been agent-reviewed and
-reproduced by `qa:overlay:check`; CI runs the non-updating check on Windows.
+baseline replacement. The 39-state Windows baseline includes a centered,
+resized 62%-opacity proof plus desktop, tablet, mobile, zoom, forced-colors,
+collision, and locked-action states. It has been reproduced by
+`qa:overlay:check`; CI runs the non-updating check on Windows.
 Human screen-reader review, persistent-profile installation, and authenticated
 Instagram selector acceptance remain separate operator/release gates.
 

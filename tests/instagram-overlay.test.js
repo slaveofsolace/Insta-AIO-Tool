@@ -66,7 +66,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.9.0');
+  assert.equal(manifest.version, '0.9.2');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -99,6 +99,14 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /DM Unsend/);
   assert.match(overlay, /openShadow: globalThis\.__instaAioOverlayTestOpenShadow === true/);
   assert.match(overlay, /attachShadow\(\{ mode: openShadow \? 'open' : 'closed' \}\)/);
+});
+
+test('visible DM evidence and its download stay bound to the open conversation', () => {
+  assert.match(overlay, /function activeConversationId\(\)/);
+  assert.match(overlay, /String\(result\?\.conversationId \|\| ''\) === conversationId/);
+  assert.match(overlay, /const fragments = evidenceMatches \? \(result\.fragments \|\| \[\]\) : \[\]/);
+  assert.match(overlay, /if \(evidenceMatches\) \{\s+downloads\.update\('messages'/);
+  assert.match(overlay, /downloads\.clear\('messages', download\)/);
 });
 
 test('sidecar captures focus before hiding its launcher and restores a usable target', () => {

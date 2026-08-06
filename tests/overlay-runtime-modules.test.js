@@ -223,7 +223,7 @@ test('floating layout clamps drag position, resize bounds, and opacity preferenc
     panelWidth: 100,
     position: { x: -10, y: 50_000 },
   });
-  assert.equal(normalized.opacity, 0.7);
+  assert.equal(normalized.opacity, 0.55);
   assert.equal(normalized.panelWidth, 320);
   assert.equal(normalized.panelHeight, 1_200);
   assert.deepEqual(JSON.parse(JSON.stringify(normalized.position)), { x: 0, y: 10_000 });
