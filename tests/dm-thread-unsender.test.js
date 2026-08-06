@@ -17,6 +17,8 @@ function loadRunner() {
     console,
     Date,
     DOMException,
+    innerHeight: 800,
+    innerWidth: 1_280,
     Map,
     Math,
     Object,
@@ -66,6 +68,36 @@ test('sent-message ownership requires the message row or its descendants to alig
   assert.equal(runner.__test.sentByCurrentUser({ ...row, children: [left] }, view), false);
   assert.equal(runner.__test.sentByCurrentUser({ ...row, getAttribute: () => 'false' }, view), false);
   assert.equal(runner.__test.sentByCurrentUser({ ...row, getAttribute: () => 'true' }, view), true);
+});
+
+test('visibility excludes message rows clipped by the thread scroller', () => {
+  const runner = loadRunner();
+  const documentElement = { parentElement: null };
+  const view = {
+    getComputedStyle: (element) => element.style || {},
+    innerHeight: 800,
+    innerWidth: 1_280,
+  };
+  const ownerDocument = { defaultView: view, documentElement };
+  const scroller = {
+    getBoundingClientRect: () => ({ bottom: 500, height: 400, left: 0, right: 600, top: 100, width: 600 }),
+    ownerDocument,
+    parentElement: documentElement,
+    style: { overflowX: 'hidden', overflowY: 'auto' },
+  };
+  const row = {
+    getBoundingClientRect: () => ({ bottom: 560, height: 40, left: 20, right: 300, top: 520, width: 280 }),
+    isConnected: true,
+    ownerDocument,
+    parentElement: scroller,
+  };
+
+  assert.equal(runner.__test.isVisible(row), false);
+  row.getBoundingClientRect = () => ({ bottom: 240, height: 40, left: 20, right: 300, top: 200, width: 280 });
+  assert.equal(runner.__test.isVisible(row), true);
+  scroller.style = { overflowX: 'visible', overflowY: 'visible' };
+  row.getBoundingClientRect = () => ({ bottom: 560, height: 40, left: 20, right: 300, top: 520, width: 280 });
+  assert.equal(runner.__test.isVisible(row), true);
 });
 
 test('column-reverse detection matches Instagram thread paging', () => {

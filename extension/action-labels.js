@@ -141,6 +141,34 @@
     return String(element.textContent || element.getAttribute?.('aria-label') || '').trim();
   }
 
+  function overflowClips(value) {
+    return /^(auto|scroll|hidden|clip)$/i.test(String(value || '').trim());
+  }
+
+  function clippedByAncestor(element, rectangle) {
+    const documentElement = element.ownerDocument?.documentElement;
+    const view = element.ownerDocument?.defaultView;
+
+    for (let ancestor = element.parentElement;
+      ancestor && ancestor !== documentElement;
+      ancestor = ancestor.parentElement) {
+      const style = view?.getComputedStyle?.(ancestor);
+      const shorthand = String(style?.overflow || '').trim().split(/\s+/).filter(Boolean);
+      const overflowX = style?.overflowX || shorthand[0] || '';
+      const overflowY = style?.overflowY || shorthand[1] || shorthand[0] || '';
+      const clipsX = overflowClips(overflowX);
+      const clipsY = overflowClips(overflowY);
+      if (!clipsX && !clipsY) continue;
+
+      const bounds = ancestor.getBoundingClientRect?.();
+      if (!bounds) continue;
+      if (clipsX && (rectangle.right <= bounds.left || rectangle.left >= bounds.right)) return true;
+      if (clipsY && (rectangle.bottom <= bounds.top || rectangle.top >= bounds.bottom)) return true;
+    }
+
+    return false;
+  }
+
   function isVisible(element) {
     if (!element?.isConnected) return false;
     if (typeof element.checkVisibility === 'function') {
@@ -155,8 +183,12 @@
       }
     }
     const rectangle = element.getBoundingClientRect?.();
-    return Boolean(rectangle && rectangle.height > 0 && rectangle.width > 0
-      && rectangle.bottom >= 0 && rectangle.top <= innerHeight);
+    const viewportHeight = Number(element.ownerDocument?.defaultView?.innerHeight || globalThis.innerHeight || 0);
+    const viewportWidth = Number(element.ownerDocument?.defaultView?.innerWidth || globalThis.innerWidth || 0);
+    if (!rectangle || rectangle.height <= 0 || rectangle.width <= 0) return false;
+    if (viewportHeight > 0 && (rectangle.bottom <= 0 || rectangle.top >= viewportHeight)) return false;
+    if (viewportWidth > 0 && (rectangle.right <= 0 || rectangle.left >= viewportWidth)) return false;
+    return !clippedByAncestor(element, rectangle);
   }
 
   function currentThreadId() {
@@ -811,6 +843,7 @@
     publicApi.__test = Object.freeze({
       deepestMessageContainer,
       hasMessageContent,
+      isVisible,
       reversedLayout,
       sentByCurrentUser,
     });
