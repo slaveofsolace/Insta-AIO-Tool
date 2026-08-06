@@ -46,7 +46,7 @@ jobs:
       - name: Upload tested browser companions
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: insta-aio-browser-companions-${{ github.sha }}
+          name: insta-aio-browser-companions-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             dist/insta-aio-companion-*.zip
             userscripts/insta-aio-companion.user.js

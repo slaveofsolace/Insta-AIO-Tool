@@ -75,9 +75,10 @@ current build starts with **Userscript mode · live actions locked**.
 ### Using the exact CI-tested review bundle
 
 Every pull-request CI run publishes a seven-day artifact named
-`insta-aio-browser-companions-<commit>` after the real unpacked extension has
-loaded and paired read-only in disposable Chrome for Testing. Download that
-artifact from the workflow run when reviewing an unmerged commit. It contains:
+`insta-aio-browser-companions-<head-commit>` after the real unpacked extension
+has loaded and paired read-only in disposable Chrome for Testing. Push-triggered
+runs use the pushed commit. Download that artifact from the workflow run when
+reviewing an unmerged commit. It contains:
 
 - `insta-aio-companion-<version>.zip` for **Load unpacked** after extraction
 - `insta-aio-companion.user.js` for Tampermonkey
