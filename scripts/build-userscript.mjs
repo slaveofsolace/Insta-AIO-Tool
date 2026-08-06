@@ -16,6 +16,7 @@ const output = path.join(repositoryRoot, 'userscripts', 'insta-aio-companion.use
 
 const parts = [
   path.join(repositoryRoot, 'userscripts', 'src', 'metadata.txt'),
+  path.join(repositoryRoot, 'extension', 'overlay', 'tokens.js'),
   path.join(repositoryRoot, 'extension', 'action-labels.js'),
   path.join(repositoryRoot, 'extension', 'content-instagram.js'),
   path.join(repositoryRoot, 'userscripts', 'src', 'toolbox-shell.js'),

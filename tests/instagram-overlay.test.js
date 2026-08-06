@@ -47,6 +47,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
   assert.deepEqual(instagramEntry.js, [
     'action-labels.js',
     'content-instagram.js',
+    'overlay/tokens.js',
     'overlay/shared.js',
     'overlay/preferences.js',
     'overlay/route-observer.js',
