@@ -92,6 +92,10 @@ pre-existing-dialog stop.
 Authenticated rendered-message inspection and one-message mutation have not been run,
 so issue #4 remains open and live settings remain disabled by default.
 
+Visible message evidence is confined to an exact `/direct/t/<id>` route. Inbox,
+nested direct routes, feed/profile pages, and a changed SPA route reject the
+scan; leaving the thread also clears thread-derived evidence and dry-run state.
+
 The visible thread-wide Unsend tool is a separate local workflow, not a way
 around that one-message acceptance gate. It starts locked, requires the exact
 `UNSEND ALL DMS` phrase to create a 15-minute tab arm, requires a second
@@ -186,17 +190,23 @@ The dated walkthrough matrix and screenshots are in
 The separate post-redesign overlay matrix and its evidence boundary are
 in [`docs/OVERLAY_QA.md`](./OVERLAY_QA.md).
 
-On 2026-08-05 assembly, the 186-test repository suite, production extension
-fixture acceptance, real Chrome pairing, the nine-state PWA baseline check, the
-39-state overlay update/check, and the ZIP benchmark passed in the guarded
-recovery worktree. No authenticated Instagram mutation was part of that matrix.
+On 2026-08-05 deterministic assembly, the 191-test repository suite, production
+extension fixture acceptance, real Chrome-for-Testing pairing, the nine-state
+PWA baseline check, the 39-state overlay check, and extension ZIP packaging
+passed in the isolated worktree. CI run 46 reproduced the repository, Windows
+overlay, and macOS packaging gates at commit `53f6449`. No authenticated
+Instagram mutation was part of that matrix.
 
 Pending acceptance:
 
-- Authenticated Instagram walkthrough with the unpacked extension loaded
+- Install or update userscript/extension 0.9.1 in the operator's intended
+  persistent Chrome profile and confirm that live actions start locked
+- Authenticated Instagram walkthrough with the installed companion loaded,
+  without arming an action
 - Human screen-reader walkthrough
 - PWA installation/pairing confirmation in the operator's persistent Chrome profile
 - Native screenshot baselines for any additional release platform where they will be gated
+- Apple Developer ID signing and notarization for a distributable macOS release
 
 These pending checks prevent a claim of complete target-environment visual,
 accessibility, or authenticated-selector acceptance.
@@ -207,18 +217,12 @@ The production dependency audit is clean. The development dependency review,
 including the documented Electron Builder advisory exception and its
 repeatable verification gate, is in `docs/SECURITY_REVIEW.md`.
 
-The controlled-action local-patch scan found four low-severity defects and all
-four are remediated with focused regressions. The follow-up exact-message DM
-local-patch scan reproduced three bounded live-path defects plus one packaging
-hardening gap; all were remediated and no reportable finding survived.
-The follow-up recovery patch also closes discard-time execution races, fails
-closed when secure capability entropy is unavailable, and covers the reviewed
-localized labels as valid UTF-8. Deterministic assembly, the full 138-test
-suite, companion source validation,
-the unpacked/ZIP extension build, and the nine-image Windows browser baseline
-check pass. Authenticated account-profile DOM structure has been inspected
-read-only; no authenticated account or DM mutation has been run.
-
-Those recorded green results predate the uncommitted overlay recovery QA work.
-They remain valid historical evidence for their original revision, but do not
-verify the redesigned overlay or its new screenshot matrix.
+The controlled-action reviews reproduced bounded defects in target ownership,
+dialog freshness, durable reservation, restored limits, exact-message live
+control, packaging, discard-time cancellation, and secure capability issuance.
+All are remediated with focused regressions; `docs/SECURITY_REVIEW.md` records no
+surviving reportable finding in the reviewed patch. The current 191-test suite,
+companion source validation, unpacked/ZIP extension build, nine-image Windows
+PWA baseline check, and 39-image Windows overlay check pass. The overlay recovery
+work is committed and included in green CI run 46. Authenticated profile DOM was
+inspected read-only; no authenticated account or DM mutation has been run.
