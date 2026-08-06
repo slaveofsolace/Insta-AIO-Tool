@@ -94,6 +94,7 @@
       history: [],
       sentDms: [],
       sentDmsComplete: false,
+      sentDmsChecked: false,
       limits: {
         dailyActions: 100,
         dailyUnsends: 50,
@@ -102,6 +103,7 @@
       },
       ledger: { day: null, actions: 0, unsends: 0 },
       run: null,
+      introDone: false,
     };
   }
 
@@ -197,6 +199,8 @@
       history: Array.isArray(value.history) ? value.history.slice(0, 20) : [],
       sentDms: Array.isArray(value.sentDms) ? value.sentDms.slice(0, 500) : [],
       sentDmsComplete: value.sentDmsComplete === true,
+      sentDmsChecked: value.sentDmsChecked === true,
+      introDone: value.introDone === true,
       limits: { ...defaults.limits, ...(value.limits && typeof value.limits === 'object' ? value.limits : {}) },
       ledger: value.ledger && typeof value.ledger === 'object' ? value.ledger : defaults.ledger,
       // Only an account run survives a reload, because navigating between
@@ -541,6 +545,42 @@
       button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .file:focus-within { outline: 3px solid #168cff; outline-offset: 2px; }
       @media (max-width: 600px) { .panel { top:auto; right:0; bottom:0; left:0; width:100%; height:min(78dvh,720px); border-radius:14px 14px 0 0; } .handle,.resize { display:none; } .header { grid-template-columns:minmax(0,1fr) auto; } }
       @media (prefers-reduced-motion: reduce) { * { scroll-behavior:auto !important; } }
+      .step, .context, .review, .card { transition: border-color var(--aio-motion-base, 180ms) var(--aio-ease, ease); }
+      .intro { animation: aio-in var(--aio-motion-slow, 240ms) var(--aio-ease, ease) both; }
+      .scan-progress .run-bar span { transition: width var(--aio-motion-base, 180ms) var(--aio-ease, ease); }
+      /* A finished run should register without stealing attention. */
+      .run-panel[data-finished="true"] .run-bar span { transition: width var(--aio-motion-slow, 240ms) var(--aio-ease, ease); }
+      @media (prefers-reduced-motion: reduce) {
+        .step, .context, .review, .card, .scan-progress .run-bar span, .run-panel[data-finished="true"] .run-bar span { transition: none; }
+        .intro { animation: none; }
+      }
+      .review { margin-bottom: 12px; padding: 10px; border: 1px solid var(--aio-line, #d8ddd4); border-radius: 10px; }
+      .review strong { display: block; margin-bottom: 6px; font-size: 13px; }
+      .list--compact { max-height: 132px; overflow-y: auto; }
+      .steps { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+      .step { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--aio-line, #d8ddd4); border-radius: 10px; }
+      .step[data-state="done"] { border-color: var(--aio-success, #0a7d3f); }
+      .step[data-state="partial"] { border-color: var(--aio-warning, #b26a00); }
+      .step-num { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; border-radius: 50%; background: var(--aio-bg-sunken, #eef1ec); font-size: 12px; font-weight: 600; }
+      .step[data-state="done"] .step-num { background: var(--aio-success, #0a7d3f); color: #fff; }
+      .step-body strong { display: block; font-size: 13px; }
+      .step-body span { display: block; color: var(--aio-text-muted, #687068); font-size: 12px; }
+      .scan-progress { margin-bottom: 12px; }
+      .settings-inline { margin-top: 10px; border-top: 1px solid var(--aio-line, #d8ddd4); }
+      .settings-inline > summary { min-height: 44px; display: flex; align-items: center; font-size: 13px; cursor: pointer; }
+      .context { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--aio-line, #d8ddd4); background: var(--aio-bg-sunken, #eef1ec); }
+      .context-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aio-text-muted, #687068); }
+      .context[data-tone="ready"] .context-dot { background: var(--aio-success, #0a7d3f); }
+      .context[data-tone="warning"] .context-dot { background: var(--aio-warning, #b26a00); }
+      .context[data-tone="blocked"] .context-dot { background: var(--aio-danger, #8c1d1d); }
+      .context-copy { min-width: 0; }
+      .context-copy strong { display: block; font-size: 13px; }
+      .context-copy span { display: block; color: var(--aio-text-muted, #687068); font-size: 12px; overflow-wrap: anywhere; }
+      .context-cta { white-space: nowrap; }
+      .intro { padding: 14px; border-bottom: 1px solid var(--aio-line, #d8ddd4); }
+      .intro h2 { margin: 0 0 8px; font-size: 15px; }
+      .intro-list { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; }
+      .intro-note { margin: 0 0 8px; color: var(--aio-text-muted, #687068); font-size: 12px; }
       .run-panel { padding: 10px 12px; border-top: 1px solid #d8ddd4; background: color-mix(in srgb, #fff var(--aio-alpha-strong), transparent); }
       .run-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
       .run-head strong { font-size: 12px; overflow-wrap: anywhere; }
@@ -586,20 +626,47 @@
           <button class="icon" type="button" data-action="close" aria-label="Collapse Insta AIO toolbox">×</button>
         </div>
       </header>
+      <div class="context" data-role="context" role="status" aria-live="polite">
+        <span class="context-dot" data-role="context-dot"></span>
+        <div class="context-copy"><strong data-role="context-title">Checking this page…</strong><span data-role="context-detail"></span></div>
+        <button class="button quiet context-cta" type="button" data-action="context-cta" data-role="context-cta" hidden></button>
+      </div>
+      <section class="intro" data-role="intro" aria-labelledby="aio-intro-title" hidden>
+        <h2 id="aio-intro-title">Three tools, all local</h2>
+        <ol class="intro-list">
+          <li><strong>Follower checker</strong> — scan your Following and Followers, then compare. Reading only.</li>
+          <li><strong>Follow / Unfollow</strong> — work a list one account at a time, paced.</li>
+          <li><strong>DM Unsend</strong> — remove messages you sent in one conversation.</li>
+        </ol>
+        <p class="intro-note">Everything stays in this browser. Nothing is uploaded, and there is no account to sign in to.</p>
+        <p class="intro-note"><strong>Checks are read-only.</strong> Anything that changes your account stays locked until you unlock it for one run, and stops on the first rate limit or security check.</p>
+        <div class="toolbar"><button class="button primary" type="button" data-action="intro-done">Start with the checker</button></div>
+      </section>
       <nav class="tabs" role="tablist" aria-label="Insta AIO userscript tools">
         <button id="aio-tab-checker" class="tab" type="button" role="tab" data-view="checker" aria-controls="aio-panel-checker" aria-selected="true" tabindex="0">Checker</button>
         <button id="aio-tab-account" class="tab" type="button" role="tab" data-view="account" aria-controls="aio-panel-account" aria-selected="false" tabindex="-1">Follow</button>
         <button id="aio-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="aio-panel-messages" aria-selected="false" tabindex="-1">Unsend</button>
       </nav>
       <div class="scroll">
-        <section id="aio-panel-checker" class="view" role="tabpanel" aria-labelledby="aio-tab-checker" data-panel="checker" hidden><p class="lead"><strong>Follower checker.</strong> Open Followers or Following, scroll manually, and capture each rendered batch. Both drafts are compared locally.</p><div class="metrics"><div class="metric"><span>Followers</span><strong data-role="followers-count">0</strong></div><div class="metric"><span>Following</span><strong data-role="following-count">0</strong></div></div><div class="field"><label for="aio-list-type">List being captured</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div><div class="toolbar"><button class="button" type="button" data-action="scan-list">Scan full list</button><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download selected list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
-        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div><div class="card" data-role="queue-current"></div><div class="toolbar"><button class="button" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="card" data-role="account-result"></div>
+        <section id="aio-panel-checker" class="view" role="tabpanel" aria-labelledby="aio-tab-checker" data-panel="checker" hidden><ol class="steps" data-role="checker-steps">
+            <li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan Following</strong><span data-role="step-following">Not scanned yet</span></div><button class="button" type="button" data-action="scan-following">Scan</button></li>
+            <li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan Followers</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button" type="button" data-action="scan-followers">Scan</button></li>
+            <li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li>
+          </ol>
+          <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar"><span data-role="scan-fill"></span></div><p class="lead" data-role="scan-detail"></p></div>
+          <div class="field"><label for="aio-filter">Filter results</label><input id="aio-filter" type="search" placeholder="Search a username" data-role="result-filter"></div>
+          <details class="settings-inline"><summary>More</summary><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows only</button><button class="button quiet" type="button" data-action="download-list">Download a raw list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="aio-list-type">Raw list to use</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
+        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="card" data-role="queue-current"></div><div class="review" data-role="run-review" hidden><strong data-role="review-title"></strong><ul class="list list--compact" data-role="review-list"></ul><p class="lead" data-role="review-skips"></p></div>
+          <details class="settings-inline"><summary>Single account tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
           <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts" data-live-action>Start run</button></div>
           <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
-        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action>Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
+        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button big" type="button" data-action="scan-sent">Check conversation</button></div>
+          <div class="card" data-role="dm-summary" hidden><strong data-role="dm-summary-title"></strong><span data-role="dm-summary-detail"></span></div>
+          <div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action data-role="unsend-primary" hidden>Unsend all DMs</button></div>
+          <details class="settings-inline"><summary>Other message tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div></details><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
           <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
           <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-live-action>Unsend selected</button></div>
@@ -870,6 +937,11 @@
     renderChecker();
     renderAccount();
     renderMessages();
+    syncTabs(preferences.view);
+    renderCheckerSteps();
+    renderDmSummary();
+    renderContext();
+    renderIntro();
     renderRun();
     renderLimits();
   }
@@ -1444,7 +1516,243 @@
     return globalThis.confirm(message);
   }
 
+
+  // --- Section 2: current Instagram context -------------------------------
+  //
+  // A first-time user cannot tell why a button is inert. Reading the route and
+  // session on every render, and naming exactly one useful next action, removes
+  // the guesswork. This only describes state; it never unlocks anything.
+
+  function currentContext() {
+    const session = engine.inspectSession?.() || {};
+    if (session.sessionExpired) {
+      return { tone: 'blocked', title: 'Signed out', detail: 'Sign in to Instagram again, then reopen this panel.' };
+    }
+    if (session.challenge) {
+      return { tone: 'blocked', title: 'Instagram wants a security check', detail: 'Finish the check on the page. Runs stay stopped until it clears.' };
+    }
+    if (session.actionBlocked) {
+      return { tone: 'blocked', title: 'Action blocked', detail: 'Instagram is refusing actions on this account right now. Wait before trying again.' };
+    }
+    if (session.rateLimited) {
+      return { tone: 'blocked', title: 'Rate limited', detail: 'Instagram is throttling this account. Runs stop until it passes.' };
+    }
+
+    const path = location.pathname.toLowerCase();
+    if (path.startsWith('/direct/t/')) {
+      const found = (state.sentDms || []).length;
+      return {
+        tone: 'ready',
+        title: 'Conversation open',
+        detail: found ? `${found} of your sent messages found here.` : 'Check it to see how many of your messages can be removed.',
+        cta: found ? null : { label: 'Check conversation', action: 'scan-sent' },
+        view: 'messages',
+      };
+    }
+    if (path.startsWith('/direct')) {
+      return { tone: 'warning', title: 'Inbox open', detail: 'Open a single conversation to use Unsend.' };
+    }
+    const dialog = [...document.querySelectorAll('[role="dialog"]')]
+      .find((node) => /follower|following/i.test(node.textContent || ''));
+    if (dialog) {
+      return {
+        tone: 'ready',
+        title: 'Follower list open',
+        detail: 'Scan it to read every row, not just what is on screen.',
+        cta: { label: 'Scan full list', action: 'scan-list' },
+        view: 'checker',
+      };
+    }
+    const username = engine.normalizeUsername?.(location.pathname) || '';
+    if (username) {
+      return {
+        tone: 'ready',
+        title: `Profile: @${username}`,
+        detail: 'Open this account’s Followers or Following to scan them.',
+        view: 'checker',
+      };
+    }
+    return {
+      tone: 'warning',
+      title: 'Nothing to work on here',
+      detail: 'Open your profile, a follower list, or a conversation.',
+    };
+  }
+
+  function renderContext() {
+    const context = currentContext();
+    const strip = query('[data-role="context"]');
+    if (!strip) return;
+    strip.dataset.tone = context.tone;
+    setText('context-title', context.title);
+    setText('context-detail', context.detail);
+    const cta = query('[data-role="context-cta"]');
+    if (cta) {
+      const show = Boolean(context.cta) && state.run?.status !== 'running';
+      cta.hidden = !show;
+      if (show) {
+        cta.textContent = context.cta.label;
+        cta.dataset.ctaAction = context.cta.action;
+      }
+    }
+  }
+
+  function renderIntro() {
+    const intro = query('[data-role="intro"]');
+    if (intro) intro.hidden = state.introDone === true;
+  }
+
+
+  // --- Section 3: guided scan sequence ------------------------------------
+
+  function scanState(listType) {
+    const count = state.capture[listType].length;
+    if (!count) return 'todo';
+    return state.capture.complete?.[listType] === true ? 'done' : 'partial';
+  }
+
+  function renderCheckerSteps() {
+    const comparison = compareCapture();
+    for (const listType of ['following', 'followers']) {
+      const step = query(`.step[data-step="${listType}"]`);
+      const status = scanState(listType);
+      if (step) step.dataset.state = status;
+      const count = state.capture[listType].length;
+      setText(`step-${listType}`,
+        status === 'todo' ? 'Not scanned yet'
+          : status === 'done' ? `${count} found — complete`
+            : `${count} found — did not reach the end`);
+      const button = query(`[data-action="scan-${listType}"]`);
+      if (button) button.textContent = status === 'todo' ? 'Scan' : 'Rescan';
+    }
+    const compareStep = query('.step[data-step="compare"]');
+    const both = state.capture.following.length && state.capture.followers.length;
+    const complete = scanState('following') === 'done' && scanState('followers') === 'done';
+    if (compareStep) compareStep.dataset.state = both ? (complete ? 'done' : 'partial') : 'todo';
+    setText('step-compare', both
+      ? `${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following back${complete ? '' : ' (partial)'}`
+      : 'Scan both lists first');
+  }
+
+  function showScanProgress(listType, found, complete) {
+    const panel = query('[data-role="scan-progress"]');
+    if (!panel) return;
+    panel.hidden = false;
+    const fill = query('[data-role="scan-fill"]');
+    // Total is unknown mid-scan, so the bar reports motion, not completion.
+    if (fill) fill.style.width = complete ? '100%' : `${Math.min(95, 5 + (found % 95))}%`;
+    setText('scan-detail', complete
+      ? `Scanned ${found} ${listType} — complete.`
+      : `Scanning ${listType}… ${found} found so far.`);
+  }
+
+  async function scanInto(listType) {
+    const select = query('[data-role="list-type"]');
+    if (select) select.value = listType;
+    showScanProgress(listType, 0, false);
+    await actions['scan-list']();
+    const found = state.capture[listType].length;
+    showScanProgress(listType, found, state.capture.complete?.[listType] === true);
+    renderAll();
+  }
+
+
+  // --- Sections 4 and 5: show the targets before anything runs ------------
+
+  function renderRunReview(items, skipped) {
+    const panel = query('[data-role="run-review"]');
+    if (!panel) return;
+    panel.hidden = !items.length;
+    if (!items.length) return;
+    setText('review-title', `${items.length} account${items.length === 1 ? '' : 's'} queued`);
+    const list = query('[data-role="review-list"]');
+    if (list) {
+      list.replaceChildren();
+      for (const item of items.slice(0, 8)) {
+        const row = document.createElement('li');
+        row.textContent = `@${item.username}`;
+        list.append(row);
+      }
+      if (items.length > 8) {
+        const more = document.createElement('li');
+        more.textContent = `+ ${items.length - 8} more`;
+        list.append(more);
+      }
+    }
+    // Naming why targets were dropped is the difference between a trustworthy
+    // count and a surprising one.
+    setText('review-skips', skipped
+      ? `${skipped} skipped: already followed, or not in the scanned list.`
+      : 'No accounts were skipped.');
+  }
+
+  function renderDmSummary() {
+    const summary = query('[data-role="dm-summary"]');
+    const primary = query('[data-role="unsend-primary"]');
+    const found = (state.sentDms || []).length;
+    const checked = state.sentDmsChecked === true;
+    if (summary) {
+      summary.hidden = !checked;
+      setText('dm-summary-title', found
+        ? `${found} of your messages can be removed`
+        : 'No removable messages found');
+      setText('dm-summary-detail', !found
+        ? 'Nothing here could be identified as yours, so nothing will be touched.'
+        : state.sentDmsComplete
+          ? 'The whole conversation was read.'
+          : 'The conversation did not fully load, so there may be more further back.');
+    }
+    // The destructive action only appears once a read-only check has produced
+    // a real count, so it can never be the first thing a new user presses.
+    if (primary) primary.hidden = !(checked && found);
+  }
+
+
+  // --- Section 7: keyboard and screen-reader behaviour --------------------
+
+  function syncTabs(active) {
+    const tabs = [...queryAll('[data-view]')];
+    for (const tab of tabs) {
+      const selected = tab.dataset.view === active;
+      tab.setAttribute('aria-selected', String(selected));
+      // Roving tabindex: exactly one tab is reachable by Tab, and the arrow
+      // keys move between them, which is what a tablist is expected to do.
+      tab.tabIndex = selected ? 0 : -1;
+    }
+    for (const panel of queryAll('[data-panel]')) {
+      panel.hidden = panel.dataset.panel !== active;
+    }
+  }
+
+  function onTabKeydown(event) {
+    const tabs = [...queryAll('[data-view]')];
+    const index = tabs.indexOf(event.target.closest('[data-view]'));
+    if (index < 0) return;
+    const keys = { ArrowRight: 1, ArrowLeft: -1, Home: 'first', End: 'last' };
+    const move = keys[event.key];
+    if (move === undefined) return;
+    event.preventDefault();
+    const next = move === 'first' ? tabs[0]
+      : move === 'last' ? tabs[tabs.length - 1]
+        : tabs[(index + move + tabs.length) % tabs.length];
+    savePreferences({ view: next.dataset.view });
+    syncTabs(next.dataset.view);
+    next.focus();
+  }
+
   const actions = {
+    'scan-following': () => scanInto('following'),
+    'scan-followers': () => scanInto('followers'),
+    'intro-done': () => {
+      state.introDone = true;
+      saveState();
+      renderAll();
+      query('[data-view="checker"]')?.focus();
+    },
+    'context-cta': () => {
+      const target = query('[data-role="context-cta"]')?.dataset.ctaAction;
+      if (target && actions[target]) actions[target]();
+    },
     open: () => savePreferences({ open: true }),
     close: () => savePreferences({ open: false }),
     'stop-run': () => {
@@ -1496,6 +1804,7 @@
         ? sentMessagesForThread(outcome?.messages, activeThreadId)
         : [];
       state.sentDmsComplete = scanMatchesThread && outcome?.complete === true;
+      state.sentDmsChecked = true;
       saveState();
       renderAll();
       status(
@@ -1576,6 +1885,7 @@
         : [];
       state.sentDms = messages;
       state.sentDmsComplete = scanMatchesThread && outcome?.complete === true;
+      state.sentDmsChecked = true;
       saveState();
       renderAll();
       if (!messages.length) {
@@ -1743,6 +2053,7 @@
     setText('opacity-output', `${percent}%`);
   });
 
+  shadow.addEventListener('keydown', onTabKeydown);
   shadow.addEventListener('keydown', (event) => {
     const tab = event.target.closest?.('[data-view]');
     if (tab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
@@ -1869,6 +2180,7 @@
       state.dmCheck = null;
       state.sentDms = [];
       state.sentDmsComplete = false;
+      state.sentDmsChecked = false;
       saveState();
       renderAll();
     }

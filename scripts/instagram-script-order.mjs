@@ -7,6 +7,7 @@
 export const instagramScriptOrder = Object.freeze([
   'action-labels.js',
   'content-instagram.js',
+  'overlay/tokens.js',
   'overlay/shared.js',
   'overlay/preferences.js',
   'overlay/route-observer.js',
