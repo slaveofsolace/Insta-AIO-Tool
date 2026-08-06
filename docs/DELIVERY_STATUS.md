@@ -136,6 +136,8 @@ Complete:
   DOM sandbox, tab-owned resumable account runs, default live lock,
   thread-bound 15-minute phrase authorization, and no-click fixture acceptance
 - Disposable Chrome-for-Testing installation and signed read-only pairing gate in CI
+- Seven-day, commit-named CI review artifact containing the exact tested
+  extension ZIP and Tampermonkey file
 
 ## Desktop
 

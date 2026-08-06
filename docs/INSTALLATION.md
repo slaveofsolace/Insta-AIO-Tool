@@ -72,6 +72,22 @@ after updating. A panel that says **Live actions enabled in this tab** is the
 legacy 0.9.0 build; reload only after Tampermonkey shows the newer version. The
 current build starts with **Userscript mode · live actions locked**.
 
+### Using the exact CI-tested review bundle
+
+Every pull-request CI run publishes a seven-day artifact named
+`insta-aio-browser-companions-<commit>` after the real unpacked extension has
+loaded and paired read-only in disposable Chrome for Testing. Download that
+artifact from the workflow run when reviewing an unmerged commit. It contains:
+
+- `insta-aio-companion-<version>.zip` for **Load unpacked** after extraction
+- `insta-aio-companion.user.js` for Tampermonkey
+
+Use the artifact whose commit matches the reviewed pull-request head. After
+installation, reload Instagram and verify **Userscript mode · live actions
+locked** or the extension's equivalent live-off state before any read-only
+walkthrough. The artifact proves which bytes passed CI; it does not replace the
+persistent-profile, authenticated, or human acceptance checks.
+
 ### Installing from the repository page instead
 
 Tampermonkey can also install straight from GitHub's file view:

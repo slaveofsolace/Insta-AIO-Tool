@@ -100,6 +100,10 @@ test('Chrome acceptance loads and pairs the real extension through the restricte
   assert.match(workflow, /xvfb-run --auto-servernum pnpm run qa:chrome/);
   assert.match(workflow, /INSTA_AIO_ACCEPTANCE_NO_SANDBOX: "1"/);
   assert.match(workflow, /INSTA_AIO_CHROME_ACCEPTANCE_NO_SANDBOX: "1"/);
+  assert.match(workflow, /Upload tested browser companions/);
+  assert.match(workflow, /insta-aio-browser-companions-\$\{\{ github\.sha \}\}/);
+  assert.match(workflow, /dist\/insta-aio-companion-\*\.zip/);
+  assert.match(workflow, /userscripts\/insta-aio-companion\.user\.js/);
 });
 
 test('CI checks reviewed overlay baselines on their native Windows platform', () => {
