@@ -63,12 +63,18 @@ test('a run shows its targets and skip reasons before it starts', () => {
   assert.match(shell, /already followed, or not in the scanned list/);
 });
 
-test('the destructive unsend appears only after a read-only check', () => {
-  // The primary action is hidden until a check produced a real count, so it
-  // cannot be the first control a new user presses.
-  assert.match(shell, /if \(primary\) primary\.hidden = !\(checked && found\)/);
+test('the unsend action is always reachable and confirms before removing', () => {
+  // Hiding the primary action behind a separate check removed the one-click
+  // path without adding any safety: the action reads the conversation itself
+  // and asks for confirmation before anything is removed.
+  assert.match(shell, /if \(primary\) primary\.hidden = false;/);
+  // Match the button tag itself. A looser pattern runs past the markup into
+  // unrelated script and reports a false positive.
+  const unsendButton = generated.match(/<button[^>]*data-role="unsend-primary"[^>]*>/);
+  assert.ok(unsendButton, 'the unsend button must exist in the shipped bundle');
+  assert.doesNotMatch(unsendButton[0], /\shidden(?![-\w])/);
   assert.match(shell, /state\.sentDmsChecked = true/);
-  assert.match(generated, /data-action="scan-sent">Check conversation/);
+  assert.match(generated, /data-action="scan-sent"/);
   // An empty result says nothing was touched rather than implying success.
   assert.match(shell, /so nothing will be touched/);
   // A partial read is never reported as full coverage.

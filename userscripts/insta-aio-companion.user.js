@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.10.2
+// @version      0.10.3
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
 // @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
@@ -3281,9 +3281,9 @@
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts" data-live-action>Start run</button></div>
           <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
-        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button big" type="button" data-action="scan-sent">Check conversation</button></div>
+        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action data-role="unsend-primary">Unsend all DMs</button></div>
+          <div class="toolbar"><button class="button quiet" type="button" data-action="scan-sent">Check first, without removing anything</button></div>
           <div class="card" data-role="dm-summary" hidden><strong data-role="dm-summary-title"></strong><span data-role="dm-summary-detail"></span></div>
-          <div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action data-role="unsend-primary" hidden>Unsend all DMs</button></div>
           <details class="settings-inline"><summary>Other message tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div></details><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
           <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
           <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
@@ -4321,7 +4321,9 @@
     }
     // The destructive action only appears once a read-only check has produced
     // a real count, so it can never be the first thing a new user presses.
-    if (primary) primary.hidden = !(checked && found);
+    // Never hidden. Progressive disclosure applies to secondary controls, not
+    // to the action the tool exists for.
+    if (primary) primary.hidden = false;
   }
 
 

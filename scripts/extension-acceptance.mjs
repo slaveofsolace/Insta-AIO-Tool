@@ -494,7 +494,7 @@ async function acceptToolboxLayout(webContents, baseUrl) {
     { label: 'mobile landscape', width: 780, height: 390 },
     { label: '200% zoom', width: 640, height: 400 },
   ];
-  const probe = await readFile(path.join(repositoryRoot, 'tests', 'probes', 'layout-audit.js'), 'utf8');
+  const probe = await readFile(path.join(repositoryRoot, 'scripts', 'probes', 'layout-audit.js'), 'utf8');
   for (const viewport of viewportMatrix) {
     webContents.setZoomFactor(1);
     await webContents.executeJavaScript(
@@ -551,7 +551,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
         .map((control) => control.disabled),
       hasContextStrip: Boolean(shadow.querySelector('[data-role="context"]')),
-      unsendPrimaryHiddenBeforeCheck: shadow.querySelector('[data-role="unsend-primary"]')?.hidden === true,
+      unsendPrimaryVisible: shadow.querySelector('[data-role="unsend-primary"]')?.hidden === false,
       engineExecutors: [
         typeof globalThis.InstaAioInstagramInspector?.performReviewedProfileAction,
         typeof globalThis.InstaAioInstagramInspector?.performReviewedDmUnsend,
@@ -585,10 +585,11 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
   assert.deepEqual(initial.liveControls, [true, true, true, true, true, true]);
-  // Section 2 and 5: the panel names the current Instagram context, and the
-  // destructive action only appears after a read-only check has run.
   assert.equal(initial.hasContextStrip, true);
-  assert.equal(initial.unsendPrimaryHiddenBeforeCheck, true);
+  // The unsend action is always reachable. It performs its own read of the
+  // conversation and confirms before removing anything, so gating its
+  // visibility behind a separate step removed the one-click path for no gain.
+  assert.equal(initial.unsendPrimaryVisible, true);
   assert.deepEqual(initial.engineExecutors, ['function', 'function']);
 
   const unlocked = await webContents.executeJavaScript(`(() => {

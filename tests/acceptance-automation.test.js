@@ -89,7 +89,7 @@ test('Chrome acceptance loads and pairs the real extension through the restricte
   assert.match(chromeAcceptance, /Page\.getAppManifest/);
   assert.match(chromeAcceptance, /Page\.getInstallabilityErrors/);
   assert.match(chromeAcceptance, /complete-extension-pairing/);
-  assert.match(chromeAcceptance, /Extension 0.10.2 connected/);
+  assert.match(chromeAcceptance, /Extension 0.10.3 connected/);
   assert.match(chromeAcceptance, /permissions, \['read'\]/);
   assert.match(chromeAcceptance, /await rm\(resolvedResultsRoot/);
   assert.match(

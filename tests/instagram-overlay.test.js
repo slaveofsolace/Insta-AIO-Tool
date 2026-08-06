@@ -67,7 +67,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.10.2');
+  assert.equal(manifest.version, '0.10.3');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {

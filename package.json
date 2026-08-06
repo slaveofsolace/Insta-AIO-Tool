@@ -1,6 +1,6 @@
 {
   "name": "insta-aio-tool",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "private": true,
   "type": "module",
   "main": "desktop/main.mjs",
