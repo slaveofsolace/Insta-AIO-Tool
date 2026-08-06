@@ -50,7 +50,11 @@ test('live Follow, Unfollow, and Unsend are available and go through the engine'
   assert.match(shell, /engine\.enumerateSentDms\(/);
   assert.match(source, /data-action="run-accounts"/);
   assert.match(source, /data-action="run-unsend"/);
-  assert.match(source, /data-action="scan-list"/);
+  // Scanning is now a guided two-step sequence; the underlying handler is
+  // still what both steps and the context prompt call.
+  assert.match(source, /data-action="scan-following"/);
+  assert.match(source, /data-action="scan-followers"/);
+  assert.match(shell, /'scan-list':/);
   assert.match(source, /data-action="scan-sent"/);
   // The old read-only refusals must be gone.
   assert.doesNotMatch(source, /intentionally unavailable in userscript mode/);
@@ -154,7 +158,10 @@ test('DM evidence and saved Unsend candidates stay bound to the active conversat
   assert.match(shell, /if \(currentHref !== lastLocationHref\)/);
   assert.match(shell, /lastLocationHref = currentHref;\s+state\.messageEvidence = null;/);
   assert.match(shell, /state\.dmCheck = null;\s+state\.sentDms = \[\];/);
-  assert.match(shell, /state\.sentDmsComplete = false;\s+saveState\(\);\s+renderAll\(\);/);
+  // Clearing must persist and re-render. Additional fields may be reset in the
+  // same block, so match the intent rather than an exact three-line sequence.
+  assert.match(shell, /state\.sentDmsComplete = false;[\s\S]{0,160}?saveState\(\);\s+renderAll\(\);/);
+  assert.match(shell, /state\.sentDmsChecked = false;/);
 });
 
 test('the follower checker remembers whether a scan actually finished', () => {

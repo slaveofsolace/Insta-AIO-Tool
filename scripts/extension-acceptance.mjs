@@ -507,10 +507,12 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
         disabled: shadow.querySelector('[data-role="live-actions"]')?.disabled,
       },
       liveControls: [
-        'run-accounts', 'run-unsend', 'scan-list', 'scan-sent', 'stop-run',
+        'run-accounts', 'run-unsend', 'scan-following', 'scan-followers', 'scan-sent', 'stop-run',
       ].map((action) => Boolean(shadow.querySelector('[data-action="' + action + '"]'))),
       destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
         .map((control) => control.disabled),
+      hasContextStrip: Boolean(shadow.querySelector('[data-role="context"]')),
+      unsendPrimaryHiddenBeforeCheck: shadow.querySelector('[data-role="unsend-primary"]')?.hidden === true,
       engineExecutors: [
         typeof globalThis.InstaAioInstagramInspector?.performReviewedProfileAction,
         typeof globalThis.InstaAioInstagramInspector?.performReviewedDmUnsend,
@@ -540,7 +542,11 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.deepEqual(initial.destructiveDisabled, [true, true, true]);
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
-  assert.deepEqual(initial.liveControls, [true, true, true, true, true]);
+  assert.deepEqual(initial.liveControls, [true, true, true, true, true, true]);
+  // Section 2 and 5: the panel names the current Instagram context, and the
+  // destructive action only appears after a read-only check has run.
+  assert.equal(initial.hasContextStrip, true);
+  assert.equal(initial.unsendPrimaryHiddenBeforeCheck, true);
   assert.deepEqual(initial.engineExecutors, ['function', 'function']);
 
   const unlocked = await webContents.executeJavaScript(`(() => {
