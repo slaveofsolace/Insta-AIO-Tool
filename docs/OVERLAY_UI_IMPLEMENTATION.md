@@ -2,21 +2,20 @@
 
 ## Current checkpoint
 
-The selected quiet-operator design is implemented on
-the overlay work branch in these local commits:
+The current implementation is based on main commit `8f853d4` and the bounded
+2026-08-05 overlay usability update. It preserves the modular production graph,
+PWA, migrations, existing exchange contracts, and signed one-item bridge while
+adding the operator-facing behavior requested from the installed Chrome build:
 
-- `6da61d8` — modular production overlay, ordered packaging, V1-to-V2
-  preferences, fixture wiring, and focused contracts
-- `6f8bc7b` — lifecycle-owned persistence plus package checks for polling,
-  remote UI assets, and unsafe dynamic markup
-- `75de3b2` — documented modular overlay checkpoint and acceptance boundary
-- `b88f926` — preserved expired/canceled/executing arm outcomes in the overlay
+- draggable header and two resize corners on desktop;
+- fitted mobile/bottom-sheet geometry with no horizontal overflow;
+- persisted 55–100% surface opacity with an 88% default;
+- an explicit three-tool landing surface;
+- the same three-tool engine in the generated Tampermonkey script; and
+- default-locked local batches plus an expiry-enforcing thread Unsend runner.
 
-The working tree also contains the uncommitted overlay QA harness described in
-[`OVERLAY_QA.md`](./OVERLAY_QA.md). It is intentionally not listed as a commit
-or as runtime-accepted evidence.
-
-This is an implementation checkpoint, not visual or release acceptance.
+This is runtime-tested synthetic-fixture evidence, not authenticated Instagram
+mutation or human accessibility acceptance.
 
 ## Runtime surfaces
 
@@ -26,15 +25,17 @@ full Instagram overlay and owns these in-page surfaces:
 | Surface | In-page responsibility | Durable authority |
 | --- | --- | --- |
 | Now | Route, session, exact profile relationship, queue match, next safe step | None |
-| Capture | Merge only rendered follower/following rows into a local draft | PWA after explicit import |
-| Queue | Navigate one local item, complete/skip local state, show signed summaries | PWA reviewed job and ledgers |
-| Messages | Capture visible read-only fragments; show an exact signed DM gate only when available | PWA reviewed DM job and ledgers |
+| Capture | Merge rendered rows or deliberately scan the open Followers/Following dialog to completion | PWA after explicit import |
+| Queue | Navigate local items, compare follower drafts, run phrase-gated paced account batches, and show signed summaries | PWA reviewed jobs/ledgers for signed runs; extension-local state for toolbox batches |
+| Messages | Capture visible fragments, expose a phrase-gated thread Unsend runner, and show the exact signed DM gate when available | PWA reviewed job/ledgers for signed one-message work; tab-scoped authorization for thread runs |
 | Workspace | Show sanitized pairing facts and link to the exact paired origin | PWA |
 
-The Tampermonkey userscript remains the preserved read-only fallback for visible
-list capture and manual queue navigation. It does not receive the signed
-extension bridge, exact one-item arms, or the complete modular overlay. Operators
-who need all five in-page tools must use the browser extension.
+The generated Tampermonkey script embeds the same exact-label and Instagram
+engine sources behind a userscript-specific three-tab shell. It supports full
+list scanning/comparison, no-click review, paced Follow/Unfollow, and thread DM
+Unsend. Destructive controls start disabled and need a typed, non-persistent
+15-minute authorization plus a separate run confirmation. It does not receive
+the signed extension bridge, PWA one-item arms, or durable workspace ledgers.
 
 ## Module graph
 
@@ -70,10 +71,10 @@ Chrome storage.
 
 ## Preference migration
 
-The stored record moves from `instaAioOverlayPreferencesV1` to
-`instaAioOverlayPreferencesV2`.
+The stored record is now `instaAioOverlayPreferencesV3`. V1 and V2 records are
+migrated additively.
 
-| Field | Fresh V2 default | V1 migration |
+| Field | Fresh V3 default | Prior-record migration |
 | --- | --- | --- |
 | `open` | `false` | Preserve a valid V1 boolean |
 | `section` | `now` | Preserve a valid V1 section |
@@ -82,6 +83,10 @@ The stored record moves from `instaAioOverlayPreferencesV1` to
 | `theme` | `auto` | Add default |
 | `density` | `comfortable` | Add default |
 | `firstRunComplete` | `false` | Set `true` for a migrated V1 operator |
+| `position` | `null` | Add bounded default |
+| `panelWidth` | `null` | Add bounded 320–560 px custom size |
+| `panelHeight` | `null` | Add bounded 280–1200 px custom size |
+| `opacity` | `0.88` | Add/clamp to 0.55–1.00 |
 
 Invalid fields are repaired independently. Storage failures keep the in-memory
 safe defaults and surface an error instead of pretending a preference was
@@ -91,12 +96,14 @@ saved. Capture and queue contracts remain V1 and import-compatible.
 
 - Fresh installs start as a 44-pixel launcher; the panel does not take over the
   Instagram page on first load.
-- Standard width is 380 pixels, with 336- and 480-pixel presets and left/right
-  docking.
+- Standard width is 380 pixels, with 336- and 480-pixel presets, left/right
+  docking, bounded custom size, persisted desktop position, and reset control.
 - The five tools remain visible in a 48-pixel semantic rail; Arrow keys plus
   Home and End move between tabs.
 - Auto theme follows rendered Instagram light/dark state without reloading.
 - At 600 pixels or narrower the panel becomes a bounded bottom sheet.
+- Surface opacity is adjustable from 55% to 100%; backdrop blur and stronger
+  inner surfaces preserve legibility while Instagram remains visible below.
 - Short-height, reduced-motion, forced-color, focus-restoration, and closed
   shadow-root rules are part of the production shell.
 - Route changes use Navigation API, `popstate`, and debounced URL comparison;
@@ -104,10 +111,12 @@ saved. Capture and queue contracts remain V1 and import-compatible.
 
 ## Execution boundary
 
-The overlay contains no Instagram activator, `.click()` call, synthetic event,
-or auto-execution route. It can request or cancel one exact 90-second arm through
-the existing signed bridge. Execution remains in the background/content driver
-after independent PWA and extension reservations.
+Overlay views do not own Instagram selectors or synthetic event sequences. They
+can request or cancel one exact 90-second signed arm, request an exact phrase for
+a local account batch, or create a separate `UNSEND ALL DMS` tab arm. Execution
+remains in the audited background/content drivers. The thread runner itself
+requires a future authorization expiry and rechecks it before every message;
+the first unlock never opens a menu or removes anything.
 
 While an arm is active, or for a bounded ten-second transition after the bridge
 consumes one, the full panel is suspended. A measured status strip is placed on
@@ -132,17 +141,17 @@ Lightweight checks completed after the implementation:
   passed and package validation passed
 - Overlay source scan: no `.click()`, `dispatchEvent()`, or `setInterval()`
 
-The QA sources cover 38 unique scenarios, state-specific assertions on all 20
+The QA sources cover 39 unique scenarios, state-specific assertions on all 20
 required states, selector contracts, child-process watchdog escalation, and
 rejection of a deliberately wrong semantic state. On Windows, all scenarios
 rendered through the production content-script graph and passed semantics,
-geometry, collision, accessibility-tree, and screenshot checks. The full image
-set was inspected in an agent visual review and reproduced by the non-updating
-baseline check.
+geometry, collision, accessibility-tree, and screenshot checks. The changed key
+states were inspected at full resolution, and the complete matrix was reproduced
+by the non-updating baseline check.
 
-The 2026-08-03 guarded matrix also passed frozen installation, assembly, all 153
-repository tests, production extension fixture acceptance, real Chrome pairing,
-nine PWA screenshot baselines, the 38-state overlay update/check, the ZIP
+The 2026-08-05 guarded matrix also passed assembly, all 186 repository tests,
+production extension fixture acceptance, real Chrome pairing,
+nine PWA screenshot baselines, the 39-state overlay update/check, the ZIP
 benchmark, and whitespace validation. The measured overlay probe rendered one
 bounded current item after a 2,000-item queue update in 25.9 ms with 234 overlay
 nodes; route transition was 97.8 ms. The review procedure and platform boundary

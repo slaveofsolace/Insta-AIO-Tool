@@ -89,7 +89,7 @@ test('V3 normalization repairs invalid visual fields independently', () => {
     position: { x: 0, y: 10_000 },
     panelWidth: 560,
     panelHeight: 280,
-    opacity: 0.7,
+    opacity: 0.55,
   });
 });
 

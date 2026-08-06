@@ -4,8 +4,8 @@
 
 Insta AIO Tool is a local-first PWA with three optional delivery surfaces:
 
-1. A read-only Tampermonkey companion for visible-list capture and manual queue navigation
-2. A Manifest V3 extension with an Instagram sidecar, signed inspection requests, and a controlled one-item account-action boundary
+1. A self-contained Tampermonkey toolbox with follower comparison, no-click review, and explicitly unlocked paced actions
+2. A Manifest V3 extension with a movable Instagram overlay, local toolbox runs, signed inspection requests, and controlled one-item PWA boundaries
 3. A hardened Electron shell for Windows and macOS packaging
 
 The stable data model remains independent of Instagram page markup. Imports, migrations, reviews, protections, checkpoints, and ledgers are implemented as browser-neutral modules.
@@ -103,8 +103,9 @@ The sidecar owns only browser-local field state:
 - Sanitized pairing and recent dry-run summaries returned by the background worker
 - A sanitized pending one-item account intent and 90-second one-use arm
 - A sanitized pending exact-message intent and 90-second one-use DM arm
-- A versioned V2 visual preference record; fresh state is collapsed and V1
-  open/section choices migrate without changing capture or queue contracts
+- A versioned V3 visual preference record; fresh state is collapsed, V1/V2
+  choices migrate, and bounded position, size, and opacity fields do not change
+  capture or queue contracts
 
 The PWA remains the system of record for imports, snapshots, comparisons,
 protections, reviewed jobs, ledgers, and backups. The background worker never
@@ -139,15 +140,41 @@ Profile and message resolution capabilities require a valid Web Crypto
 non-producing secure random source returns `secure-random-unavailable`, stores
 no token, and therefore cannot reach either controlled page driver.
 
-The overlay itself has no page-control activator. Package validation scans the
-complete ordered graph for direct clicks, synthetic dispatch, recurring polling,
-remote UI assets, and more than the one audited static shell-markup assignment.
-An active/just-consumed arm forces collision-safe presentation so the full panel
-does not compete with an exact native control, menu, or confirmation dialog.
+The overlay view modules do not implement Instagram selectors or page-control
+events. They can request an exact signed one-item arm, a phrase-gated local
+account batch, or a separately phrase-gated thread-wide Unsend. Execution stays
+inside the shared inspected drivers. The thread runner refuses to start without
+a future authorization expiry and the exact current thread ID. It rechecks both
+before every page control, snapshots pre-existing menu/dialog candidates, and
+accepts exactly one newly surfaced control for the item it just opened.
+Package validation scans the complete ordered graph for unauthorized direct
+clicks, synthetic dispatch, recurring polling, remote UI assets, and more than
+the audited static shell-markup assignment. An active/just-consumed signed arm
+forces collision-safe presentation so the full panel does not compete with an
+exact native control, menu, or confirmation dialog.
 
 ### Tampermonkey companion
 
-The userscript reads only currently rendered anchors and manages a separate manual queue in userscript storage. It performs profile navigation only after the user selects the control and never invokes Instagram action buttons.
+`scripts/build-userscript.mjs` produces one installable `.user.js` file from the
+extension's exact-label module, shared Instagram inspector/action engine, and a
+userscript-specific shell. It has no remote `@require`, `@resource`, `@connect`,
+or network request path. The shell stores follower/following drafts, queue state,
+pacing limits, and layout preferences in userscript-local storage. The metadata
+explicitly selects the userscript manager's isolated DOM sandbox.
+
+The injected toolbox exposes the follower scanner and comparison, no-click
+profile/message checks, paced Follow/Unfollow, and thread-wide DM Unsend. Live
+controls start disabled. A typed `ENABLE LIVE ACTIONS` phrase opens a
+non-persistent 15-minute window; a separate confirmation is still required for
+each run. The expiry is stored only on an already-confirmed account run so the
+run can cross its own profile navigations. Resumable account state is held in
+manager-provided tab storage (`GM_getTab`/`GM_saveTab`), never in the shared GM
+value record; without those APIs, account batches fail closed. DM runs are
+dropped on reload, the thread runner rechecks expiry and exact thread identity
+before every control, and either surface stops on
+expiry, challenge, rate limit, block, session loss, or unresolved identity. The
+userscript has no signed PWA pairing or durable workspace ledger; those remain
+extension/PWA responsibilities.
 
 ### Desktop shell
 

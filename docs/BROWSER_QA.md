@@ -1,6 +1,6 @@
 # Browser QA
 
-Last reviewed: 2026-08-03
+Last reviewed: 2026-08-05
 
 ## Scope and safety boundary
 
@@ -63,7 +63,7 @@ the authenticated Instagram session.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 153 of 153 tests.
+complete repository suite passes 186 of 186 tests.
 
 ## Representative screenshots
 
@@ -98,15 +98,16 @@ not alter production extension permissions.
 
 ## Overlay-specific QA checkpoint
 
-The redesigned Instagram overlay now has a separate 38-scenario harness that
+The redesigned Instagram overlay now has a separate 39-scenario harness that
 loads the production-built content-script graph and checks state semantics,
 geometry, target intersection, responsive presentations, accessibility-tree
 names, and bounded performance before comparing screenshots. Its commands are
 `pnpm run qa:overlay:update` and `pnpm run qa:overlay:check`.
 
-All 38 Windows scenarios passed their semantic, geometry, collision,
-accessibility-tree, and performance checks. Every generated image was inspected
-in an agent visual review, the reviewed baseline reproduced through
+All 39 Windows scenarios passed their semantic, geometry, collision,
+accessibility-tree, and performance checks. The prior matrix received a full
+agent review and the new translucent/layout and live-lock states were inspected
+at full resolution; the reviewed baseline reproduced through
 `qa:overlay:check`, and the non-updating Windows check is wired into CI. That is
 runtime evidence for the synthetic fixture—not human screen-reader acceptance,
 cross-platform visual proof, persistent-profile acceptance, or authenticated

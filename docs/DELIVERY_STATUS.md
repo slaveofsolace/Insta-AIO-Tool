@@ -32,7 +32,7 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-Extension 0.4.0 implements the production-controlled one-item account boundary:
+Extension 0.9.0 preserves the production-controlled one-item account boundary:
 
 - Fresh signed live intent with action permission
 - Exactly one reviewed account item
@@ -67,7 +67,7 @@ content digest, and sent ownership all match uniquely. The background rechecks
 the returned identity before recording success. Missing stable DOM identity
 still stops with `exact-message-identity-unavailable`.
 
-Extension 0.4.0 adds a separate controlled live boundary for exactly one
+Extension 0.9.0 preserves a separate controlled live boundary for exactly one
 twice-confirmed sent message:
 
 - A fresh signed intent whose reviewed preview is unchanged
@@ -92,6 +92,17 @@ pre-existing-dialog stop.
 Authenticated rendered-message inspection and one-message mutation have not been run,
 so issue #4 remains open and live settings remain disabled by default.
 
+The visible thread-wide Unsend tool is a separate local workflow, not a way
+around that one-message acceptance gate. It starts locked, requires the exact
+`UNSEND ALL DMS` phrase to create a 15-minute tab arm, requires a second
+permanent-action confirmation, and passes the expiry into the source-audited
+runner. The arm also records the exact thread ID. The runner refuses a missing,
+expired, or wrong-thread authorization, checks again before every control, and
+accepts only one newly surfaced menu and confirmation candidate. Its successful
+local fixture proves a stale visible Unsend decoy receives zero clicks and uses
+only synthetic rows; no
+authenticated message was removed.
+
 ## Extension
 
 Complete:
@@ -105,6 +116,9 @@ Complete:
 - Session-material payload rejection
 - Read-only Instagram inspection
 - Visible Instagram sidecar with isolated styling and keyboard toggle
+- Draggable/two-corner-resizable desktop panel, fitted mobile sheet, reset, and
+  persisted 55–100% translucency
+- Explicit Follower checker, Follow / Unfollow, and DM Unsend surfaces
 - Visible follower/following capture with deduplication and import-compatible JSON
 - Imported manual queue navigation and extension-local Complete/Skip state
 - Sanitized signed dry-run history
@@ -114,6 +128,9 @@ Complete:
 - JSON exchange fallback
 - Unpacked and ZIP build artifacts
 - Executable production-script Follow, Unfollow, and one-message DOM acceptance
+- Self-contained Tampermonkey build with the same Instagram engine, explicit
+  DOM sandbox, tab-owned resumable account runs, default live lock,
+  thread-bound 15-minute phrase authorization, and no-click fixture acceptance
 - Disposable Chrome-for-Testing installation and signed read-only pairing gate in CI
 
 ## Desktop
@@ -160,8 +177,8 @@ Implemented:
 - Truthful empty-message copy and assembled-markup regression coverage
 - Production sidecar keyboard/accessibility-tree acceptance in isolated Chromium
 - Real unpacked-extension read-only pairing in disposable Chrome for Testing
-- Modular quiet-operator overlay source, V1-to-V2 preferences, bounded SPA
-  observation, target-aware collision handling, and a reviewed 38-scenario
+- Modular quiet-operator overlay source, V1/V2-to-V3 preferences, bounded SPA
+  observation, target-aware collision handling, and a reviewed 39-scenario
   Windows overlay baseline with a non-updating CI gate
 
 The dated walkthrough matrix and screenshots are in
@@ -169,11 +186,10 @@ The dated walkthrough matrix and screenshots are in
 The separate post-redesign overlay matrix and its evidence boundary are
 in [`docs/OVERLAY_QA.md`](./OVERLAY_QA.md).
 
-On 2026-08-03 the frozen install, assemble, 153-test repository suite,
-production extension fixture acceptance, real Chrome pairing, nine-state PWA
-baseline check, 38-state overlay update/check, ZIP benchmark, and whitespace
-validation all passed in one guarded recovery-worktree run. No authenticated
-Instagram mutation was part of that matrix.
+On 2026-08-05 assembly, the 186-test repository suite, production extension
+fixture acceptance, real Chrome pairing, the nine-state PWA baseline check, the
+39-state overlay update/check, and the ZIP benchmark passed in the guarded
+recovery worktree. No authenticated Instagram mutation was part of that matrix.
 
 Pending acceptance:
 

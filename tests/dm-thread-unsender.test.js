@@ -45,8 +45,8 @@ test('thread runner carries the proven 0.7.2 interaction model', () => {
     "'zurücknehmen'",
   ]) assert.match(labelsSource, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(labelsSource, /function revealActionButton\(row, signal\)/);
-  assert.match(labelsSource, /function openUnsendMenu\(control, signal\)/);
-  assert.match(labelsSource, /function confirmUnsend\(menuControl, row, signal\)/);
+  assert.match(labelsSource, /function openUnsendMenu\(control, signal, expectedThreadId, authorizationExpiresAt\)/);
+  assert.match(labelsSource, /function confirmUnsend\(menuControl, row, signal, expectedThreadId, authorizationExpiresAt\)/);
   assert.match(labelsSource, /function loadAllHistory\(context, signal\)/);
   assert.match(labelsSource, /function nextSentRow\(context, signal\)/);
   assert.doesNotMatch(labelsSource, /graphql|private[_ -]?api|cookie|password/i);
@@ -84,20 +84,36 @@ test('column-reverse detection matches Instagram thread paging', () => {
   assert.equal(runner.__test.reversedLayout(normal), true);
 });
 
+test('thread-wide Unsend refuses to start without a live authorization expiry', async () => {
+  const runner = loadRunner();
+  const result = await runner.start();
+  assert.equal(result.status, 'error');
+  assert.match(result.message, /Live authorization is required/);
+});
+
 test('extension message view uses the shared runner and Instagram design tokens', () => {
   assert.match(messagesSource, /globalThis\.InstaAioDmThreadUnsender/);
-  assert.match(messagesSource, /runner\.start\(\{ minDelayMs: 1_000, maxDelayMs: 2_000 \}\)/);
+  assert.match(messagesSource, /MASS_UNSEND_ARM_PHRASE = 'UNSEND ALL DMS'/);
+  assert.match(messagesSource, /threadId: inspection\.threadId/);
+  assert.match(messagesSource, /expectedThreadId: massArm\.threadId/);
   assert.match(messagesSource, /Unsend all DMs/);
   assert.match(messagesSource, /--ig-primary-background/);
   assert.match(messagesSource, /--ig-primary-button/);
   assert.match(messagesSource, /prefers-reduced-motion/);
   assert.match(messagesSource, /Exact message ID, timestamp, digest, conversation, and sent-by-me ownership must all match/);
+  assert.match(labelsSource, /authorizationExpiresAt <= Date\.now\(\)/);
+  assert.match(labelsSource, /context\.threadId !== expectedThreadId/);
+  assert.match(labelsSource, /unsendCandidates\(document\)\.filter\(\(candidate\) => !existing\.has\(candidate\)\)/);
+  assert.match(labelsSource, /Instagram showed more than one new Unsend option/);
   assert.doesNotMatch(messagesSource, /\bAI\b/i);
 });
 
 test('Tampermonkey entry point auto-updates from main and embeds the shared sources', () => {
   // Assert the shape, not one release, so a version bump does not fail here.
   assert.match(metadata, /@version\s+\d+\.\d+\.\d+/);
+  assert.match(metadata, /@sandbox\s+DOM/);
+  assert.match(metadata, /@grant\s+GM_getTab/);
+  assert.match(metadata, /@grant\s+GM_saveTab/);
   assert.match(metadata, /@downloadURL\s+https:\/\/raw\.githubusercontent\.com\/slaveofsolace\/Insta-AIO-Tool\/main\/userscripts\/insta-aio-companion\.user\.js/);
   assert.doesNotMatch(metadata, /@require|@resource/);
   assert.equal(generated.startsWith(metadata), true);

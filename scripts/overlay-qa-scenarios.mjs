@@ -49,7 +49,7 @@ function scenario(id, options = {}) {
 const requiredStates = [
   scenario('toolbox-floating-translucent', {
     layout: 'floating',
-    opacity: 0.76,
+    opacity: 0.62,
     panelHeight: 700,
     panelWidth: 440,
     position: { x: 470, y: 72 },
@@ -64,7 +64,7 @@ const requiredStates = [
         attributes: { 'aria-label': 'Resize sidecar; use arrow keys for precise sizing', type: 'button' },
       }),
       semantic('[data-ia-preference="opacity"]', {
-        attributes: { max: '100', min: '70', type: 'range' },
+        attributes: { max: '100', min: '55', type: 'range' },
       }),
     ],
     targetSelector: null,
@@ -179,11 +179,11 @@ const requiredStates = [
     section: 'messages',
     semantics: [
       semantic('[data-ia-role="message-count"]', { numberEquals: 3 }),
-      semantic('[data-ia-role="message-state-title"]', { equals: 'Visible evidence captured' }),
+      semantic('[data-ia-role="message-state-title"]', { equals: 'Conversation ready' }),
       semantic('[data-ia-role="message-state-detail"]', {
-        includes: ['local evidence only', 'sender ownership remain unresolved'],
+        includes: ['read visible evidence', 'Unsend all DMs'],
       }),
-      semantic('[data-ia-role="dm-live-badge"]', { equals: 'locked', tone: 'warning' }),
+      semantic('[data-ia-role="dm-live-badge"]', { equals: 'locked', tone: 'neutral' }),
     ],
     targetSelector: '.fixture-thread [role="row"]',
   }),
@@ -194,7 +194,7 @@ const requiredStates = [
       semantic('[data-ia-role="dm-live-title"]', { equals: 'Message sent-1' }),
       semantic('[data-ia-role="dm-live-badge"]', { equals: 'ready', tone: 'warning' }),
       semantic('[data-ia-role="dm-live-detail"]', {
-        includes: ['Exactly one rendered sent-message identity matches', 'does not open a menu'],
+        includes: ['Exactly one rendered sent-message identity matches', 'Arming does not open its menu'],
       }),
       semantic('[data-ia-action="arm-dm-live"]', { disabled: false }),
     ],

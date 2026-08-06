@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   'use strict';
 
   const EXTENSION_ROOT_ID = 'insta-aio-sidecar-root';
@@ -6,6 +6,7 @@
   const STATE_KEY = 'instaAioUserscriptStateV2';
   const PREFERENCES_KEY = 'instaAioUserscriptPreferencesV1';
   const LEGACY_QUEUE_KEY = 'instaAioManualQueueV1';
+  const TAB_RUN_FIELD = 'instaAioAccountRunV1';
   const ACTIONABLE_STATUSES = new Set(['pending', 'ready', 'failed', 'paused']);
   const RESERVED = new Set([
     'accounts', 'about', 'api', 'developer', 'direct', 'emails', 'explore',
@@ -17,6 +18,8 @@
   const HEIGHT_MIN = 320;
   const HEIGHT_MAX = 1_100;
   const INSET = 8;
+  const LIVE_AUTHORIZATION_MS = 15 * 60 * 1_000;
+  const LIVE_AUTHORIZATION_PHRASE = 'ENABLE LIVE ACTIONS';
 
   if (document.getElementById(EXTENSION_ROOT_ID) || document.getElementById(ROOT_ID)) return;
 
@@ -114,7 +117,60 @@
     };
   }
 
-  function loadState() {
+  function normalizeResumableAccountRun(value) {
+    if (!value || value.kind !== 'account' || value.status !== 'running') return null;
+    const authorizationExpiresAt = Math.min(
+      Number(value.authorizationExpiresAt) || 0,
+      Date.now() + LIVE_AUTHORIZATION_MS,
+    );
+    const queue = [...new Set((Array.isArray(value.queue) ? value.queue : [])
+      .map(normalizeUsername)
+      .filter(Boolean))].slice(0, 250);
+    if (!queue.length || authorizationExpiresAt <= Date.now()) return null;
+    const action = value.action === 'follow' ? 'follow' : value.action === 'unfollow' ? 'unfollow' : '';
+    if (!action) return null;
+    const boundedCount = (candidate) => Math.max(0, Math.min(250, Math.round(Number(candidate) || 0)));
+    return {
+      status: 'running',
+      kind: 'account',
+      action,
+      queue,
+      total: Math.max(queue.length, boundedCount(value.total)),
+      completed: boundedCount(value.completed),
+      skipped: boundedCount(value.skipped),
+      failed: boundedCount(value.failed),
+      current: safeText(value.current),
+      stopReason: null,
+      authorizationExpiresAt,
+      nextAt: Number(value.nextAt) > Date.now() ? Number(value.nextAt) : null,
+      results: (Array.isArray(value.results) ? value.results : []).slice(0, 40).map((item) => ({
+        label: safeText(item?.label),
+        status: safeText(item?.status),
+        reason: safeText(item?.reason),
+      })),
+    };
+  }
+
+  function readManagerTab() {
+    if (typeof GM_getTab !== 'function' || typeof GM_saveTab !== 'function') return Promise.resolve(null);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        resolve(value && typeof value === 'object' ? value : null);
+      };
+      try {
+        const pending = GM_getTab(finish);
+        if (pending && typeof pending.then === 'function') pending.then(finish, () => finish(null));
+      } catch {
+        finish(null);
+      }
+      setTimeout(() => finish(null), 1_000);
+    });
+  }
+
+  function loadState(tabState) {
     const source = GM_getValue(STATE_KEY, null);
     const defaults = stateDefaults();
     const legacyQueue = GM_getValue(LEGACY_QUEUE_KEY, null);
@@ -147,10 +203,7 @@
       // profiles is how it advances and every target is re-resolved on arrival.
       // A DM run is dropped: it drives one open conversation, so after a reload
       // the thread it was working in is gone.
-      run: (value.run && value.run.kind === 'account' && value.run.status === 'running'
-        && Array.isArray(value.run.queue) && value.run.queue.length)
-        ? value.run
-        : null,
+      run: normalizeResumableAccountRun(tabState?.[TAB_RUN_FIELD]),
     };
   }
 
@@ -167,15 +220,28 @@
       position,
       width: Math.round(clamp(source.width || 390, WIDTH_MIN, WIDTH_MAX)),
       height: Math.round(clamp(source.height || 620, HEIGHT_MIN, HEIGHT_MAX)),
-      opacity: Math.round(clamp(source.opacity || 0.94, 0.75, 1) * 100) / 100,
+      opacity: Math.round(clamp(source.opacity || 0.94, 0.55, 1) * 100) / 100,
     };
   }
 
-  let state = loadState();
+  let managerTab = await readManagerTab();
+  const managerTabStorageAvailable = managerTab !== null;
+  let state = loadState(managerTab);
   let preferences = normalizePreferences(GM_getValue(PREFERENCES_KEY, preferencesDefaults()));
 
   function saveState() {
-    GM_setValue(STATE_KEY, state);
+    GM_setValue(STATE_KEY, { ...state, run: null });
+    if (!managerTabStorageAvailable) return;
+    const resumable = normalizeResumableAccountRun(state.run);
+    managerTab = { ...managerTab };
+    if (resumable) managerTab[TAB_RUN_FIELD] = resumable;
+    else delete managerTab[TAB_RUN_FIELD];
+    try {
+      GM_saveTab(managerTab);
+    } catch {
+      // If the manager cannot persist tab state, the run will stop safely on
+      // navigation instead of leaking authority into userscript-wide storage.
+    }
   }
 
   function savePreferences(patch) {
@@ -406,6 +472,9 @@
       .metric strong { margin-top: 2px; font-size: 21px; }
       .field { display: grid; gap: 5px; margin: 10px 0; }
       .field label { color: #687068; font-size: 12px; }
+      .live-toggle { display: flex; align-items: flex-start; gap: 8px; color: #1b211c !important; font-weight: 700; }
+      .live-toggle input { width: 18px; height: 18px; flex: 0 0 auto; margin: 0; accent-color: #347844; }
+      .live-status { margin: 0; color: #687068; font-size: 11px; }
       select, input[type="range"] { width: 100%; }
       select { min-height: 44px; border: 1px solid #cfd5cc; border-radius: 8px; padding: 8px; background: rgba(255,255,255,.86); color: inherit; }
       .toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; }
@@ -439,6 +508,8 @@
       .button.primary { background: rgb(var(--ig-primary-button, 0 149 246)); color: #fff; border: 0; font-weight: 600; }
       .button.primary:hover { filter: brightness(1.08); }
       .button.big { width: 100%; padding: 10px 12px; font-size: var(--system-14-font-size, 14px); line-height: var(--system-14-line-height, 18px); border-radius: 8px; }
+      .button:disabled { cursor: not-allowed; filter: none; opacity: .48; }
+      .mode[data-live="unlocked"] { border-color: #347844; color: #275d34; }
       @keyframes aio-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) { .run-bar span, .tab, .button { transition: none; } .panel { animation: none; } }
       @media (forced-colors: active) { .panel,.card,.tool,.metric,.header,.footer,.run-panel { background:Canvas; } .panel,.card,.tool,.metric { border:2px solid CanvasText; } }
@@ -447,8 +518,30 @@
     <aside class="panel" aria-label="Insta AIO Tampermonkey Instagram toolbox" hidden>
       <header class="header">
         <button class="handle" type="button" data-role="move" aria-label="Move toolbox; use arrow keys for precise movement" title="Drag to move">✥</button>
-        <div><h1>Insta AIO Toolbox</h1><p>Tools injected directly on Instagram</p><span class="mode" data-role="mode-label">Userscript mode · live actions enabled</span></div>
-        <div style="display:flex"><details class="settings"><summary aria-label="Toolbox preferences">⚙</summary><div class="settings-panel"><strong>Layout</strong><div class="field"><label for="aio-opacity">Surface transparency</label><div class="range-row"><input id="aio-opacity" type="range" min="75" max="100" value="94" data-preference="opacity"><output data-role="opacity-output">88%</output></div></div><button class="button quiet" type="button" data-action="reset-layout">Reset position and size</button><strong>Pacing</strong><div class="field"><label for="aio-limit-actions">Follow/unfollow per day</label><input id="aio-limit-actions" type="number" min="1" max="400" data-role="limit-actions"></div><div class="field"><label for="aio-limit-unsends">Unsends per day</label><input id="aio-limit-unsends" type="number" min="1" max="300" data-role="limit-unsends"></div><div class="field"><label for="aio-limit-min">Min delay (seconds)</label><input id="aio-limit-min" type="number" min="2" max="600" data-role="limit-min"></div><div class="field"><label for="aio-limit-max">Max delay (seconds)</label><input id="aio-limit-max" type="number" min="2" max="900" data-role="limit-max"></div><button class="button quiet" type="button" data-action="save-limits">Save pacing</button><p class="lead">Drag the header handle or lower corner. Arrow keys work on both.</p></div></details><button class="icon" type="button" data-action="close" aria-label="Collapse Insta AIO toolbox">×</button></div>
+        <div><h1>Insta AIO Toolbox</h1><p>Tools injected directly on Instagram</p><span class="mode" data-role="mode-label" data-live="locked">Userscript mode · live actions locked</span></div>
+        <div style="display:flex">
+          <details class="settings">
+            <summary aria-label="Toolbox preferences">⚙</summary>
+            <div class="settings-panel">
+              <strong>Live controls</strong>
+              <div class="field">
+                <label class="live-toggle" for="aio-live-actions"><input id="aio-live-actions" type="checkbox" data-role="live-actions"> Enable live actions for 15 minutes</label>
+                <p class="live-status" data-role="live-status">Locked by default. Scans and no-click checks still work.</p>
+              </div>
+              <strong>Layout</strong>
+              <div class="field"><label for="aio-opacity">Surface transparency</label><div class="range-row"><input id="aio-opacity" type="range" min="55" max="100" value="94" data-preference="opacity"><output data-role="opacity-output">94%</output></div></div>
+              <button class="button quiet" type="button" data-action="reset-layout">Reset position and size</button>
+              <strong>Pacing</strong>
+              <div class="field"><label for="aio-limit-actions">Follow/unfollow per day</label><input id="aio-limit-actions" type="number" min="1" max="400" data-role="limit-actions"></div>
+              <div class="field"><label for="aio-limit-unsends">Unsends per day</label><input id="aio-limit-unsends" type="number" min="1" max="300" data-role="limit-unsends"></div>
+              <div class="field"><label for="aio-limit-min">Min delay (seconds)</label><input id="aio-limit-min" type="number" min="2" max="600" data-role="limit-min"></div>
+              <div class="field"><label for="aio-limit-max">Max delay (seconds)</label><input id="aio-limit-max" type="number" min="2" max="900" data-role="limit-max"></div>
+              <button class="button quiet" type="button" data-action="save-limits">Save pacing</button>
+              <p class="lead">Drag the header handle or lower corner. Arrow keys work on both.</p>
+            </div>
+          </details>
+          <button class="icon" type="button" data-action="close" aria-label="Collapse Insta AIO toolbox">×</button>
+        </div>
       </header>
       <nav class="tabs" role="tablist" aria-label="Insta AIO userscript tools">
         <button class="tab" type="button" role="tab" data-view="checker" aria-selected="true" aria-selected="false" tabindex="-1">Checker</button>
@@ -461,12 +554,12 @@
           <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
-          <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts">Start run</button></div>
+          <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts" data-live-action>Start run</button></div>
           <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
-        <section class="view" role="tabpanel" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all">Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
+        <section class="view" role="tabpanel" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action>Unsend all DMs</button><button class="button quiet" type="button" data-action="scan-sent">Scan first</button><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
           <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
           <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
-          <div class="toolbar"><button class="button danger" type="button" data-action="run-unsend">Unsend selected</button></div>
+          <div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-live-action>Unsend selected</button></div>
           <p class="notice">Only messages you sent are eligible. Each is re-checked by id, time, and content immediately before removal. Unsending cannot be undone.</p></section>
       </div>
       <div class="run-panel" data-role="run-panel" hidden><div class="run-head"><strong data-role="run-title"></strong><button class="button danger" type="button" data-action="stop-run" data-role="stop-run">Stop</button></div><div class="run-bar"><span data-role="run-fill"></span></div><p class="lead" data-role="run-detail"></p><ul class="list" data-role="run-results"></ul></div>
@@ -522,6 +615,9 @@
   function renderShellState() {
     const panel = query('.panel');
     const launcher = query('.launcher');
+    const newRunUnlocked = newLiveRunAuthorized();
+    const activeRunAuthorized = runAuthorizationValid(state.run);
+    const liveAvailable = newRunUnlocked || activeRunAuthorized;
     panel.hidden = !preferences.open;
     launcher.hidden = preferences.open;
     launcher.setAttribute('aria-expanded', String(preferences.open));
@@ -531,6 +627,37 @@
       tab.tabIndex = selected ? 0 : -1;
     }
     for (const view of queryAll('[data-panel]')) view.hidden = view.dataset.panel !== preferences.view;
+
+    const modeLabel = query('[data-role="mode-label"]');
+    if (modeLabel) {
+      modeLabel.dataset.live = liveAvailable ? 'unlocked' : 'locked';
+      modeLabel.textContent = externalLiveRunActive
+        ? `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
+        : activeRunAuthorized
+        ? `Userscript mode · active run authorized ${authorizationRemainingMinutes(state.run.authorizationExpiresAt)}m`
+        : newRunUnlocked
+          ? `Userscript mode · live actions unlocked ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
+          : 'Userscript mode · live actions locked';
+    }
+
+    const liveToggle = query('[data-role="live-actions"]');
+    if (liveToggle) {
+      liveToggle.checked = newRunUnlocked;
+      liveToggle.disabled = state.run?.status === 'running' || externalLiveRunActive;
+    }
+    setText(
+      'live-status',
+      externalLiveRunActive
+        ? 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
+        : activeRunAuthorized
+        ? 'A reviewed batch is active. Use Stop to revoke its remaining authorization.'
+        : newRunUnlocked
+          ? 'Unlocked temporarily. Every destructive run still needs a separate confirmation.'
+          : 'Locked by default. Scans and no-click checks still work.',
+    );
+    for (const control of queryAll('[data-live-action]')) {
+      control.disabled = !newRunUnlocked || state.run?.status === 'running' || externalLiveRunActive;
+    }
   }
 
   function renderNow() {
@@ -538,10 +665,11 @@
     grid.replaceChildren();
     const comparison = compareCapture();
     const item = currentQueueItem();
+    const liveBadge = liveAuthorized() ? 'live unlocked' : 'live locked';
     const tools = [
       ['checker', 'Follower checker', `${state.capture.followers.length} followers · ${state.capture.following.length} following · ${comparison.notFollowingMeBack.length} not following back`, 'read only'],
-      ['account', 'Follow / Unfollow', item ? `${item.action} @${item.account.username} is next` : 'Import a reviewed manual queue', 'no-click first'],
-      ['messages', 'DM Unsend', state.dmTarget ? `Reviewed message ${state.dmTarget.messageId} loaded` : 'Visible evidence and exact-message review', 'live locked'],
+      ['account', 'Follow / Unfollow', item ? `${item.action} @${item.account.username} is next` : 'Import a reviewed manual queue', liveBadge],
+      ['messages', 'DM Unsend', state.dmTarget ? `Reviewed message ${state.dmTarget.messageId} loaded` : 'Visible evidence and exact-message review', liveBadge],
     ];
     for (const [view, title, detail, badge] of tools) {
       const button = document.createElement('button');
@@ -817,6 +945,111 @@
   const REST_MS = 90_000;
 
   let batchAbort = false;
+  let liveActionsUnlockedUntil = 0;
+  let liveAuthorizationTimer = null;
+  let externalLiveRunActive = false;
+
+  function authorizationRemainingMinutes(expiresAt) {
+    return Math.max(1, Math.ceil((Number(expiresAt) - Date.now()) / 60_000));
+  }
+
+  function newLiveRunAuthorized() {
+    return liveActionsUnlockedUntil > Date.now();
+  }
+
+  function runAuthorizationValid(run = state.run) {
+    return run?.status === 'running' && Number(run.authorizationExpiresAt) > Date.now();
+  }
+
+  function liveAuthorized() {
+    return newLiveRunAuthorized() || runAuthorizationValid();
+  }
+
+  function requireNewRunAuthorization() {
+    if (newLiveRunAuthorized() && !externalLiveRunActive) return true;
+    if (externalLiveRunActive) {
+      status('Thread-wide Unsend is already running. Stop it before starting another live action.');
+      renderAll();
+      return false;
+    }
+    status('Live actions are locked. Open preferences and enable the 15-minute live window first.');
+    renderAll();
+    return false;
+  }
+
+  function stopForExpiredAuthorization() {
+    batchAbort = true;
+    const accountPatch = state.run?.kind === 'account' ? { queue: [] } : {};
+    setRun({
+      ...accountPatch,
+      status: 'stopped',
+      stopReason: 'live authorization expired',
+      current: '',
+      nextAt: null,
+    });
+    status('Live authorization expired. The run stopped before another Instagram action.');
+  }
+
+  function scheduleLiveAuthorizationExpiry() {
+    if (liveAuthorizationTimer) clearTimeout(liveAuthorizationTimer);
+    if (!newLiveRunAuthorized()) return;
+    liveAuthorizationTimer = setTimeout(() => {
+      liveActionsUnlockedUntil = 0;
+      liveAuthorizationTimer = null;
+      if (externalLiveRunActive) {
+        globalThis.InstaAioDmThreadUnsender?.stop?.();
+        renderAll();
+        status('Live authorization expired. Thread-wide Unsend is stopping before another message.');
+        return;
+      }
+      if (state.run?.status === 'running' && !runAuthorizationValid()) {
+        stopForExpiredAuthorization();
+        return;
+      }
+      renderAll();
+      status('The 15-minute live window expired. Scans and no-click checks remain available.');
+    }, Math.max(0, liveActionsUnlockedUntil - Date.now()));
+  }
+
+  function setLiveActionsUnlocked(enabled) {
+    if (!enabled) {
+      liveActionsUnlockedUntil = 0;
+      if (liveAuthorizationTimer) clearTimeout(liveAuthorizationTimer);
+      liveAuthorizationTimer = null;
+      if (externalLiveRunActive) {
+        globalThis.InstaAioDmThreadUnsender?.stop?.();
+        renderAll();
+        status('Live actions locked. Thread-wide Unsend is stopping.');
+        return;
+      }
+      if (state.run?.status === 'running') {
+        stopForExpiredAuthorization();
+        return;
+      }
+      renderAll();
+      status('Live actions locked. Instagram was not changed.');
+      return;
+    }
+
+    // A typed phrase prevents an accidental checkbox or synthetic pointer event
+    // from granting destructive authority. This tab-only window is never saved
+    // as a general preference; only an already-confirmed account run carries its
+    // expiry across the profile navigations that the run itself causes.
+    const answer = globalThis.prompt(
+      `Type ${LIVE_AUTHORIZATION_PHRASE} to unlock Follow, Unfollow, and Unsend for 15 minutes.`,
+      '',
+    );
+    if (answer !== LIVE_AUTHORIZATION_PHRASE) {
+      liveActionsUnlockedUntil = 0;
+      renderAll();
+      status('Live actions stayed locked. The authorization phrase did not match.');
+      return;
+    }
+    liveActionsUnlockedUntil = Date.now() + LIVE_AUTHORIZATION_MS;
+    scheduleLiveAuthorizationExpiry();
+    renderAll();
+    status('Live actions unlocked for 15 minutes. Each run still needs confirmation.');
+  }
 
   function clampNumber(value, [minimum, maximum], fallback) {
     const number = Number(value);
@@ -967,6 +1200,10 @@
   async function continueAccountRun() {
     const run = resumableAccountRun();
     if (!run) return;
+    if (!runAuthorizationValid(run)) {
+      stopForExpiredAuthorization();
+      return;
+    }
     const username = run.queue[0];
     const onTarget = engine.normalizeUsername(location.pathname) === username;
 
@@ -1020,6 +1257,11 @@
   }
 
   async function startAccountRun({ action, usernames }) {
+    if (!requireNewRunAuthorization()) return;
+    if (!managerTabStorageAvailable) {
+      status('This userscript manager does not provide isolated tab storage, so account batches stay disabled. Scans and no-click checks still work.');
+      return;
+    }
     if (state.run?.status === 'running') {
       status('A run is already going. Stop it first.');
       return;
@@ -1043,12 +1285,14 @@
       failed: 0,
       current: '',
       stopReason: null,
+      authorizationExpiresAt: liveActionsUnlockedUntil,
       results: [],
     });
     await continueAccountRun();
   }
 
   async function runBatch({ kind, action, items }) {
+    if (!requireNewRunAuthorization()) return;
     if (state.run?.status === 'running') {
       status('A run is already going. Stop it first.');
       return;
@@ -1073,11 +1317,16 @@
       failed: 0,
       current: '',
       stopReason: null,
+      authorizationExpiresAt: liveActionsUnlockedUntil,
       results: [],
     });
 
     for (let index = 0; index < queued.length; index += 1) {
       if (batchAbort) break;
+      if (!runAuthorizationValid()) {
+        stopForExpiredAuthorization();
+        return;
+      }
       const item = queued[index];
       const label = kind === 'dm' ? (item.preview || item.messageId) : `@${item.username}`;
       setRun({ current: label });
@@ -1191,6 +1440,7 @@
       );
     },
     'run-accounts': async () => {
+      if (!requireNewRunAuthorization()) return;
       const action = query('[data-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
       const source = query('[data-role="bot-source"]')?.value || 'not-following-me-back';
       const count = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
@@ -1235,6 +1485,7 @@
     },
     // One button: find everything you sent in this thread, then remove it.
     'unsend-all': async () => {
+      if (!requireNewRunAuthorization()) return;
       if (state.run?.status === 'running') {
         status('A run is already going. Stop it first.');
         return;
@@ -1270,6 +1521,7 @@
       await runBatch({ kind: 'dm', items: messages });
     },
     'run-unsend': async () => {
+      if (!requireNewRunAuthorization()) return;
       const found = state.sentDms || [];
       if (!found.length) {
         status('Scan your sent messages first.');
@@ -1380,6 +1632,10 @@
     try {
       if (event.target.matches('[data-role="list-type"]')) {
         renderChecker();
+        return;
+      }
+      if (event.target.matches('[data-role="live-actions"]')) {
+        setLiveActionsUnlocked(event.target.checked);
         return;
       }
       if (event.target.matches('[data-preference="opacity"]')) {
@@ -1514,12 +1770,36 @@
     else applyLayout();
   });
 
+  function toggleToolboxShortcut(event) {
+    if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey || event.key.toLowerCase() !== 'i') return;
+    savePreferences({ open: !preferences.open });
+    event.preventDefault();
+  }
+  window.addEventListener('keydown', toggleToolboxShortcut, true);
+
   const duplicateObserver = new MutationObserver(() => {
     if (!document.getElementById(EXTENSION_ROOT_ID)) return;
     duplicateObserver.disconnect();
+    window.removeEventListener('keydown', toggleToolboxShortcut, true);
     host.remove();
   });
   duplicateObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+  Object.defineProperty(globalThis, 'InstaAioUserscriptLiveAuthority', {
+    configurable: false,
+    enumerable: false,
+    value: Object.freeze({
+      canStart: () => newLiveRunAuthorized()
+        && state.run?.status !== 'running'
+        && !externalLiveRunActive,
+      expiresAt: () => (newLiveRunAuthorized() ? liveActionsUnlockedUntil : 0),
+      setExternalRunActive: (active) => {
+        externalLiveRunActive = active === true;
+        renderAll();
+      },
+    }),
+    writable: false,
+  });
 
   document.documentElement.append(host);
   saveState();

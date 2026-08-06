@@ -356,6 +356,39 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
     'sidecar reopen focus',
   );
 
+  await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+    shadow.querySelector('[data-ia-section="messages"]').click();
+    shadow.querySelector('[data-ia-action="mass-unsend"]').click();
+  })()`, true);
+  await waitForPageValue(
+    webContents,
+    `document.querySelector('#insta-aio-sidecar-root')?.shadowRoot
+      ?.querySelector('[data-ia-role="arm-dialog"]')?.open === true`,
+    'thread-wide Unsend arm dialog',
+  );
+  await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+    shadow.querySelector('[data-ia-role="arm-input"]').value = 'UNSEND ALL DMS';
+    shadow.querySelector('[data-ia-role="arm-dialog"]').close('confirm');
+  })()`, true);
+  const massArm = await waitForPageValue(
+    webContents,
+    `(() => {
+      const shadow = document.querySelector('#insta-aio-sidecar-root')?.shadowRoot;
+      const badge = shadow?.querySelector('[data-ia-role="unsend-badge"]')?.textContent;
+      if (badge !== 'armed 15m') return null;
+      return {
+        badge,
+        button: shadow.querySelector('[data-ia-action="mass-unsend"]')?.textContent,
+        clicks: globalThis.fixtureDmClickCount,
+      };
+    })()`,
+    'thread-wide Unsend no-click arm',
+  );
+  assert.equal(massArm.button, 'Unsend all DMs');
+  assert.equal(massArm.clicks, 0, 'arming thread-wide Unsend opens no Instagram control');
+
   app.setAccessibilitySupportEnabled(true);
   webContents.debugger.attach('1.3');
   try {
@@ -378,7 +411,7 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
   } finally {
     if (webContents.debugger.isAttached()) webContents.debugger.detach();
   }
-  console.log('Accepted overlay keyboard focus and Chromium accessibility-tree contract.');
+  console.log('Accepted overlay keyboard focus, no-click thread Unsend arm, and Chromium accessibility-tree contract.');
 }
 
 // Drives the thread-wide unsend against a stand-in that reproduces the two
@@ -398,10 +431,24 @@ async function acceptThreadUnsend(webContents, baseUrl) {
 
   const outcome = await webContents.executeJavaScript(`(async () => {
     const runner = globalThis.InstaAioDmThreadUnsender;
-    const result = await runner.start({ minDelayMs: 0, maxDelayMs: 0 });
+    const inspection = runner.inspect();
+    const rejected = await runner.start({
+      authorizationExpiresAt: Date.now() + 60_000,
+      expectedThreadId: 'different-thread',
+      minDelayMs: 0,
+      maxDelayMs: 0,
+    });
+    const result = await runner.start({
+      authorizationExpiresAt: Date.now() + 60_000,
+      expectedThreadId: inspection.threadId,
+      minDelayMs: 0,
+      maxDelayMs: 0,
+    });
     const rows = [...document.querySelectorAll('#thread .row')];
     return {
       result,
+      rejected,
+      fixtureDecoyUnsendClicks: globalThis.fixtureDecoyUnsendClicks,
       fixtureUnsentCount: globalThis.fixtureUnsentCount,
       remainingSent: rows.filter((row) => row.classList.contains('mine')).length,
       leftoverDialogs: document.querySelectorAll('[role="dialog"]').length,
@@ -410,12 +457,14 @@ async function acceptThreadUnsend(webContents, baseUrl) {
   })()`, true);
 
   // Six of the twelve fixture rows are sent by this account.
+  assert.match(outcome.rejected?.message || '', /Thread-specific live authorization is required/);
+  assert.equal(outcome.fixtureDecoyUnsendClicks, 0, 'a stale document-global Unsend decoy is never activated');
   assert.equal(outcome.fixtureUnsentCount, 6, 'every sent message was actually unsent');
   assert.equal(outcome.remainingSent, 0, 'no sent message was left behind');
   assert.equal(outcome.leftoverDialogs, 0, 'no confirmation dialog was left open');
   assert.equal(outcome.result?.processed, 6);
   assert.equal(outcome.result?.failures ?? 0, 0, 'a working thread produces no failures');
-  console.log(`Accepted thread-wide Unsend against a portalled menu (${outcome.fixtureUnsentCount} removed, 0 failures).`);
+  console.log(`Accepted thread-bound Unsend against a portalled menu (${outcome.fixtureUnsentCount} removed, stale decoy untouched).`);
 }
 
 async function acceptUserscriptToolbox(webContents, baseUrl) {
@@ -439,11 +488,18 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       move: shadow.querySelector('[data-role="move"]')?.getAttribute('aria-label'),
       open: !shadow.querySelector('.panel').hidden,
       opacity: shadow.querySelector('[data-preference="opacity"]')?.value,
+      opacityMin: shadow.querySelector('[data-preference="opacity"]')?.min,
       resize: shadow.querySelector('[data-role="resize"]')?.getAttribute('aria-label'),
       mode: shadow.querySelector('.mode')?.textContent,
+      liveToggle: {
+        checked: shadow.querySelector('[data-role="live-actions"]')?.checked,
+        disabled: shadow.querySelector('[data-role="live-actions"]')?.disabled,
+      },
       liveControls: [
         'run-accounts', 'run-unsend', 'scan-list', 'scan-sent', 'stop-run',
       ].map((action) => Boolean(shadow.querySelector('[data-action="' + action + '"]'))),
+      destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
+        .map((control) => control.disabled),
       engineExecutors: [
         typeof globalThis.InstaAioInstagramInspector?.performReviewedProfileAction,
         typeof globalThis.InstaAioInstagramInspector?.performReviewedDmUnsend,
@@ -455,13 +511,49 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.deepEqual(initial.resizeCorners, [true, true], 'both resize corners exist');
   assert.equal(initial.open, true);
   assert.equal(initial.opacity, '94');
+  assert.equal(initial.opacityMin, '55');
   assert.match(initial.move, /Move toolbox/);
   assert.match(initial.resize, /Resize toolbox/);
-  assert.match(initial.mode, /live actions enabled/i);
+  assert.match(initial.mode, /live actions locked/i);
+  assert.deepEqual(initial.liveToggle, { checked: false, disabled: false });
+  assert.deepEqual(initial.destructiveDisabled, [true, true, true]);
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
   assert.deepEqual(initial.liveControls, [true, true, true, true, true]);
   assert.deepEqual(initial.engineExecutors, ['function', 'function']);
+
+  const unlocked = await webContents.executeJavaScript(`(() => {
+    globalThis.prompt = () => 'ENABLE LIVE ACTIONS';
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    const toggle = shadow.querySelector('[data-role="live-actions"]');
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change', { bubbles: true }));
+    return {
+      mode: shadow.querySelector('.mode')?.textContent,
+      destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
+        .map((control) => control.disabled),
+      clicks: globalThis.fixtureProfileClickCount,
+    };
+  })()`, true);
+  assert.match(unlocked.mode, /live actions unlocked/i);
+  assert.deepEqual(unlocked.destructiveDisabled, [false, false, false]);
+  assert.equal(unlocked.clicks, 0, 'unlocking authority performs no Instagram action');
+
+  const relocked = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    const toggle = shadow.querySelector('[data-role="live-actions"]');
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change', { bubbles: true }));
+    return {
+      mode: shadow.querySelector('.mode')?.textContent,
+      destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
+        .map((control) => control.disabled),
+      clicks: globalThis.fixtureProfileClickCount,
+    };
+  })()`, true);
+  assert.match(relocked.mode, /live actions locked/i);
+  assert.deepEqual(relocked.destructiveDisabled, [true, true, true]);
+  assert.equal(relocked.clicks, 0, 'relocking authority performs no Instagram action');
 
   await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
@@ -526,7 +618,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.match(messages.result, /Exact sent message resolved/);
   assert.ok(messages.rows >= 1);
   assert.equal(messages.stored.exact, true);
-  console.log('Accepted the movable Tampermonkey toolbox, local follower comparison, and account/DM no-click checks.');
+  console.log('Accepted the movable Tampermonkey toolbox, default live lock, local follower comparison, and account/DM no-click checks.');
 }
 
 async function acceptPwaInstallability(webContents, baseUrl) {

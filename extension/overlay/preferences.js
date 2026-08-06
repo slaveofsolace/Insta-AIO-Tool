@@ -13,7 +13,7 @@
   const MAX_PANEL_WIDTH = 560;
   const MIN_PANEL_HEIGHT = 280;
   const MAX_PANEL_HEIGHT = 1_200;
-  const MIN_OPACITY = 0.7;
+  const MIN_OPACITY = 0.55;
   const MAX_OPACITY = 1;
 
   function boundedNumber(value, minimum, maximum, fallback = null) {

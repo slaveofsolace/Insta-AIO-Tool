@@ -22,6 +22,7 @@
   <div data-pagelet="IGDMessagesList">
     <div id="thread"></div>
   </div>
+  <span id="stale-unsend-decoy">Unsend</span>
   <div id="portal" class="hidden"></div>
 
   <script>
@@ -32,6 +33,10 @@
     const thread = document.getElementById('thread');
     const portal = document.getElementById('portal');
     globalThis.fixtureUnsentCount = 0;
+    globalThis.fixtureDecoyUnsendClicks = 0;
+    document.getElementById('stale-unsend-decoy').addEventListener('click', () => {
+      globalThis.fixtureDecoyUnsendClicks += 1;
+    });
 
     function makeRow(index, mine) {
       const row = document.createElement('div');

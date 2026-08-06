@@ -1,11 +1,13 @@
 # Overlay QA
 
-Last updated: 2026-08-03
+Last updated: 2026-08-05
 
 ## Current status
 
 The production-script overlay matrix is green on Windows. An explicit update
-generated 38 baselines, every image was inspected in an agent visual review,
+generated 39 baselines, including a centered/resized 62%-opacity proof. The
+previous 38-state set had a full agent review; the updated floating and Messages
+states were inspected at full resolution after regeneration,
 and a subsequent non-updating check reproduced all semantic, geometry,
 collision, accessibility-tree, performance, and screenshot expectations. The
 ordinary CI workflow now runs `qa:overlay:check` on `windows-latest`; CI never
@@ -13,8 +15,8 @@ updates baselines.
 
 The reviewed evidence lives under
 `docs/evidence/overlay-ui-2026-08-02/after/win32`. Its manifest SHA-256 at the
-2026-08-03 checkpoint is
-`42bdfd4daaad56aab0601078e3e795a12fc2218153f81c61dd7ae4a32cca0f81`.
+2026-08-05 checkpoint is
+`c0e5fbdd5788eafdb99787e84b280032353055b8cc2a9745ea7cbc6a784cf27a`.
 This establishes synthetic-fixture and Windows-rendering evidence only. It does
 not establish human visual or screen-reader acceptance, cross-platform pixel
 parity, persistent-profile acceptance, or authenticated Instagram selector
@@ -105,11 +107,12 @@ and hash happen to match a previously captured image.
 
 ## Viewport and presentation matrix
 
-The full matrix contains 38 unique scenarios: the 20 required states above plus
-18 presentation variants.
+The full matrix contains 39 unique scenarios: the 20 required states above plus
+19 presentation variants.
 
 | Coverage | Scenario IDs |
 | --- | --- |
+| Floating layout and translucency | `toolbox-floating-translucent` |
 | Dark desktop | `profile-dark-desktop`, `queue-dark-desktop` |
 | Short laptop | `profile-short-laptop`, `queue-short-laptop-dark` |
 | Narrow tablet | `profile-narrow-tablet`, `messages-narrow-tablet-dark` |
@@ -164,12 +167,13 @@ docs/evidence/overlay-ui-2026-08-02/after/<platform>/
 
 The manifest records the platform, built extension version, scenario data,
 geometry metrics, and SHA-256 for every capture. Hashes are platform-specific;
-a Windows manifest is not evidence for Linux or macOS. Local checks permit only
-four one-channel raster-rounding pixels. Windows CI additionally permits at
-most 1,200 changed pixels and 0.4% of the capture to account for the measured
-native text and scrollbar rasterization differences across runner images. Both
-caps must pass. All state semantics, geometry, collision, accessibility-tree,
-and performance assertions still run without tolerance, CI never updates the
+a Windows manifest is not evidence for Linux or macOS. Non-Windows local checks
+permit only four one-channel raster-rounding pixels. Windows checks permit at
+most 1,200 changed pixels and 0.4% of the capture to account for measured native
+text and scrollbar rasterization differences between otherwise identical
+hidden runner sessions. Both Windows caps must pass. All state semantics,
+geometry, collision, accessibility-tree, and performance assertions still run
+without tolerance, CI never updates the
 baseline, and a failed CI comparison uploads all actual captures and the runner
 log for review.
 
@@ -188,12 +192,13 @@ log for review.
 7. Only after the reviewed platform baseline is committed, add the corresponding
    non-updating CI check. Do not generate or accept baselines in ordinary CI.
 
-The Windows procedure was completed on 2026-08-03. The agent inspected all four
-contact sheets and representative full-resolution desktop, messages, mobile,
-200% zoom, forced-colors, native-dialog, armed, and safe-stop captures. No
-clipping, target obstruction, unreadable state, incorrect theme, or unsafe
-collision placement was found. This is recorded as agent visual review, not
-independent human acceptance.
+The original Windows procedure was completed on 2026-08-03. On 2026-08-05 the
+matrix was regenerated for the responsive header fix, the lower opacity bound,
+the floating scenario, and truthful live-lock copy. The centered translucent
+desktop state and the Messages live-lock state were inspected at full resolution;
+mobile overflow, semantics, collision, accessibility-tree, and geometry were
+also enforced by the harness across all 39 scenarios. No human visual or
+screen-reader acceptance is claimed.
 
 ## Required runtime matrix before acceptance
 
@@ -219,9 +224,9 @@ test suite.
 
 Completed at this checkpoint:
 
-- generated and agent-reviewed all 38 Windows baselines;
+- generated 39 Windows baselines and visually reviewed the changed key states;
 - reproduced them with the non-updating check and added the Windows CI gate;
-- ran the complete command matrix above with 153 repository tests passing; and
+- ran the complete command matrix above with 186 repository tests passing; and
 - reviewed the diff and permission boundary: production extension permissions
   did not expand, target-aware adaptation creates no action token, the Chrome
   debugging pipe is confined to disposable QA, and the overlay harness denies

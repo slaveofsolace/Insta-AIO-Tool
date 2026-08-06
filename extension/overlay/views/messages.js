@@ -8,6 +8,16 @@
   const runner = globalThis.InstaAioDmThreadUnsender;
   const subscriptions = new WeakMap();
   const styledShadows = new WeakSet();
+  const massUnsendArms = new WeakMap();
+  const MASS_UNSEND_ARM_TTL_MS = 15 * 60 * 1_000;
+  const MASS_UNSEND_ARM_PHRASE = 'UNSEND ALL DMS';
+
+  function massUnsendArm(runtime) {
+    const arm = massUnsendArms.get(runtime.model);
+    if (Number(arm?.expiresAt) > Date.now() && String(arm?.threadId || '')) return arm;
+    massUnsendArms.delete(runtime.model);
+    return null;
+  }
 
   function matchingArm(intent, arm) {
     return Boolean(
@@ -260,18 +270,31 @@
     const button = runtime.query('[data-ia-action="mass-unsend"]');
     const progress = disclosure?.querySelector('.ia-direct-unsend-progress');
     const active = ['preparing', 'running', 'waiting', 'stopping'].includes(state.status);
+    const massArm = massUnsendArm(runtime);
     if (disclosure) disclosure.hidden = false;
     if (badge) {
-      badge.textContent = active ? `${state.processed} unsent` : state.status === 'completed' ? 'complete' : 'ready';
+      badge.textContent = active
+        ? `${state.processed} unsent`
+        : state.status === 'completed'
+          ? 'complete'
+          : massArm
+            ? 'armed 15m'
+            : 'live locked';
       badge.dataset.tone = state.status === 'error' ? 'danger' : active ? 'warning' : state.status === 'completed' ? 'good' : 'neutral';
     }
     if (detail) {
       detail.textContent = active || ['completed', 'stopped', 'error'].includes(state.status)
         ? state.message
-        : 'Loads the open conversation and removes messages sent by this account, newest to oldest.';
+        : massArm
+          ? 'Thread-wide Unsend is armed temporarily. Select it again to review the permanent action.'
+          : 'Locked by default. First unlock with the typed phrase; no menu opens and nothing is removed.';
     }
     if (button) {
-      button.textContent = active ? 'Stop unsending' : 'Unsend all DMs';
+      button.textContent = active
+        ? 'Stop unsending'
+        : massArm
+          ? 'Unsend all DMs'
+          : 'Unlock Unsend all DMs';
       button.disabled = state.status === 'stopping';
     }
     if (progress) {
@@ -384,8 +407,44 @@
       runner.stop();
       return;
     }
+    let massArm = massUnsendArm(runtime);
+    if (!massArm) {
+      const inspection = runner.inspect();
+      if (!inspection.ready || !inspection.threadId) throw new Error(inspection.reason || 'The conversation could not be identified.');
+      const phrase = await runtime.requestArmPhrase({
+        description: 'This unlocks thread-wide Unsend in this tab for 15 minutes. It does not open a message menu or remove anything.',
+        phrase: MASS_UNSEND_ARM_PHRASE,
+      });
+      if (phrase == null) return;
+      if (String(phrase).trim() !== MASS_UNSEND_ARM_PHRASE) {
+        runtime.status('Thread-wide Unsend stayed locked. The authorization phrase did not match.', 'error');
+        renderDirect(runtime);
+        return;
+      }
+      const current = runner.inspect();
+      if (!current.ready || current.threadId !== inspection.threadId) {
+        runtime.status('Thread-wide Unsend stayed locked because the conversation changed.', 'error');
+        renderDirect(runtime);
+        return;
+      }
+      massArm = Object.freeze({
+        expiresAt: Date.now() + MASS_UNSEND_ARM_TTL_MS,
+        threadId: inspection.threadId,
+      });
+      massUnsendArms.set(runtime.model, massArm);
+      renderDirect(runtime);
+      runtime.status('Thread-wide Unsend armed for 15 minutes. Nothing was removed. Select Unsend all DMs again to review execution.', 'good');
+      setTimeout(() => renderDirect(runtime), MASS_UNSEND_ARM_TTL_MS + 50);
+      return;
+    }
     const inspection = runner.inspect();
     if (!inspection.ready) throw new Error(inspection.reason);
+    if (inspection.threadId !== massArm.threadId) {
+      massUnsendArms.delete(runtime.model);
+      renderDirect(runtime);
+      runtime.status('Thread-wide Unsend stayed locked because the armed conversation changed.', 'error');
+      return;
+    }
     const confirmed = runtime.window.confirm(
       'Unsend every message you sent in this conversation?\n\n'
       + 'The conversation will load from newest to oldest. This is permanent and cannot be undone.',
@@ -394,7 +453,14 @@
       runtime.status('Canceled. Nothing was changed.', 'neutral');
       return;
     }
-    await runner.start({ minDelayMs: 1_000, maxDelayMs: 2_000 });
+    massUnsendArms.delete(runtime.model);
+    renderDirect(runtime);
+    await runner.start({
+      authorizationExpiresAt: massArm.expiresAt,
+      expectedThreadId: massArm.threadId,
+      minDelayMs: 1_000,
+      maxDelayMs: 2_000,
+    });
   }
 
   async function arm(runtime) {
