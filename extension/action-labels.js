@@ -613,6 +613,7 @@
     if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
     const reversed = reversedLayout(scroller);
     let quietRounds = 0;
+    let topNudgeUsed = false;
     // Instagram pauses between pages on a long thread, so a few quiet rounds
     // does not mean the history ended. Giving up after three left most of a
     // long conversation unloaded, which is the same impatience the follower
@@ -623,17 +624,30 @@
       const beforeHeight = scroller.scrollHeight;
       const beforeRows = candidateRows(scroller).length;
       const target = oldestOffset(scroller, reversed);
-      if (Math.abs(scroller.scrollTop - target) <= 5) {
+      if (Math.abs(scroller.scrollTop - target) > 5) {
+        scroller.scrollTop = target;
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
+      } else if (!topNudgeUsed && quietRounds >= 2) {
+        // Some Instagram builds only restart lazy history loading after real
+        // movement at the oldest edge. Wake that loader once per loaded page,
+        // not on every quiet poll: repeated nudges made the conversation look
+        // as though the run was permanently fighting the user's scroll.
         scroller.scrollTop = target + (reversed ? 1 : -1) * Math.max(80, Math.floor(scroller.clientHeight / 2));
         dispatch(scroller, new Event('scroll', { bubbles: true }));
         await delay(80, signal);
+        scroller.scrollTop = target;
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
+        topNudgeUsed = true;
+      } else {
+        // A synthetic edge notification is enough while waiting for a loader
+        // that is already in flight and does not visibly move the thread.
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
       }
-      scroller.scrollTop = target;
-      dispatch(scroller, new Event('scroll', { bubbles: true }));
       await delay(500, signal);
       await waitForLoader(root, signal);
       const grew = scroller.scrollHeight > beforeHeight || candidateRows(scroller).length > beforeRows;
       quietRounds = grew ? 0 : quietRounds + 1;
+      if (grew) topNudgeUsed = false;
       publish({
         status: 'preparing',
         message: grew ? 'Loading older messages…' : 'Checking for older messages…',
@@ -649,27 +663,40 @@
     await delay(100, signal);
   }
 
+  function rowNeedsReposition(row, scroller) {
+    if (!isVisible(row)) return true;
+    const rowRect = row.getBoundingClientRect?.();
+    const scrollerRect = scroller?.getBoundingClientRect?.();
+    if (!rowRect || !scrollerRect) return false;
+    const inset = Math.min(16, Math.max(4, Math.floor(scrollerRect.height * 0.04)));
+    return rowRect.top < scrollerRect.top + inset
+      || rowRect.bottom > scrollerRect.bottom - inset;
+  }
+
+  async function exposeRow(row, scroller, signal) {
+    if (!rowNeedsReposition(row, scroller)) return isVisible(row);
+    row.scrollIntoView({ block: 'center', inline: 'nearest' });
+    dispatch(scroller, new Event('scroll', { bubbles: true }));
+    await delay(60, signal);
+    return isVisible(row);
+  }
+
   async function nextSentRow(context, signal) {
     const { scroller } = context;
-    // Always center the selected row before hover. A row can have enough pixels
-    // inside a clipping ancestor to count as visible while its menu affordance
-    // remains outside that exposed portion on another platform or font stack.
+    // Leave a comfortably visible row in place. Re-centering every message made
+    // the processing phase continually fight the thread position. Partially
+    // clipped rows are still exposed before hover so their menu affordance is
+    // reachable on other platforms and font stacks.
     const visible = firstVisibleCandidate(scroller);
     if (visible) {
-      visible.scrollIntoView({ block: 'center', inline: 'nearest' });
-      dispatch(scroller, new Event('scroll', { bubbles: true }));
-      await delay(60, signal);
-      if (isVisible(visible)) return visible;
+      if (await exposeRow(visible, scroller, signal)) return visible;
     }
 
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
       if (signal.aborted) return null;
       const [row] = candidateRows(scroller).reverse();
       if (row) {
-        row.scrollIntoView({ block: 'center', inline: 'nearest' });
-        dispatch(scroller, new Event('scroll', { bubbles: true }));
-        await delay(60, signal);
-        if (isVisible(row)) return row;
+        if (await exposeRow(row, scroller, signal)) return row;
         // Still hidden: hand it back anyway on the final pass so a row that
         // simply cannot be scrolled into view is attempted rather than skipped.
         if (pass === MAX_SCAN_PASSES - 1) return row;
@@ -891,6 +918,7 @@
       isVisible,
       nextSentRow,
       reversedLayout,
+      rowNeedsReposition,
       sentByCurrentUser,
     });
   }
@@ -1014,7 +1042,7 @@
     const nowLead = query('[data-panel="now"] .lead');
     if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
     const messageLead = query('[data-panel="messages"] .lead');
-    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Remove messages you sent in the open conversation, newest to oldest.';
+    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Load older history once, then remove your sent messages from the oldest loaded message forward.';
 
     const scanButton = query('[data-action="scan-sent"]');
     if (scanButton) scanButton.textContent = 'Check conversation';
@@ -1092,7 +1120,7 @@
       // eslint-disable-next-line no-alert
       const confirmed = globalThis.confirm(
         'Unsend every message you sent in this conversation?\n\n'
-        + 'The conversation will be loaded from newest to oldest. This is permanent and cannot be undone.',
+        + 'Older history will load once, then removal works forward from the oldest loaded sent message. This is permanent and cannot be undone.',
       );
       if (!confirmed) {
         setText('status', 'Cancelled. Nothing was changed.');

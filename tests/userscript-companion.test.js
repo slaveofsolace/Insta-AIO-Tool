@@ -48,7 +48,9 @@ test('live Follow, Unfollow, and Unsend are available and go through the engine'
   assert.match(shell, /engine\.performReviewedDmUnsend\(/);
   assert.match(shell, /engine\.collectAccountList\(/);
   assert.match(shell, /engine\.enumerateSentDms\(/);
-  assert.match(source, /data-action="run-accounts"/);
+  assert.match(source, /data-action="review-accounts"/);
+  assert.match(shell, /button\.dataset\.action = 'run-accounts'/);
+  assert.match(shell, /accountRunDraft\.signature !== current\.signature/);
   assert.match(source, /data-action="run-unsend"/);
   // Scanning is now a guided two-step sequence; the underlying handler is
   // still what both steps and the context prompt call.

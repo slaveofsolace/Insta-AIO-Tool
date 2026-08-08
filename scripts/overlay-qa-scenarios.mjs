@@ -324,7 +324,18 @@ const matrixStates = [
   scenario('profile-zoom-200-light', { zoom: 2 }),
   scenario('profile-zoom-200-dark', { theme: 'dark', zoom: 2 }),
   scenario('queue-zoom-200-light', { section: 'queue', zoom: 2 }),
-  scenario('queue-zoom-200-dark', { section: 'queue', theme: 'dark', zoom: 2 }),
+  scenario('queue-zoom-200-dark', {
+    section: 'queue',
+    semantics: [
+      semantic('[data-ia-role="queue-open"]', {
+        equals: 'Open profile',
+        minContrast: 4.5,
+        visible: true,
+      }),
+    ],
+    theme: 'dark',
+    zoom: 2,
+  }),
   scenario('profile-forced-colors', { forcedColors: true }),
   scenario('queue-forced-colors', { forcedColors: true, section: 'queue' }),
   scenario('collapsed-desktop', {
@@ -337,6 +348,22 @@ const matrixStates = [
     presentation: 'launcher',
     targetSelector: '.profile button',
     viewport: 'mobile',
+  }),
+  scenario('queue-run-review', {
+    after: 'bot-review',
+    section: 'queue',
+    semantics: [
+      semantic('[data-ia-role="bot-badge"]', { equals: '1 reviewed', tone: 'warning' }),
+      semantic('[data-ia-role="bot-review-title"]', { equals: '1 target ready to confirm' }),
+      semantic('[data-ia-role="bot-review-detail"]', {
+        includes: ['0 duplicates removed', '0 left outside this bounded run', 'rechecked before action'],
+      }),
+      semantic('[data-ia-role="bot-detail"]', { includes: ['Reviewed: @demo_creator', 'rechecked before action'] }),
+      semantic('[data-ia-role="bot-review-list"]', { includes: ['@demo_creator'] }),
+      semantic('[data-ia-action="bot-review"]', { hidden: true }),
+      semantic('[data-ia-action="bot-start"]', { hidden: false }),
+    ],
+    targetSelector: null,
   }),
 ];
 

@@ -149,7 +149,7 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.9.2 preserves the stricter signed live paths for one reviewed PWA
+Extension 0.10.3 preserves the stricter signed live paths for one reviewed PWA
 item. The PWA sends a signed intent; the Instagram overlay requires the matching
 profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW
 @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds.
@@ -186,14 +186,14 @@ Load `dist/extension` as an unpacked extension, or install the generated ZIP thr
 
 Open Instagram after loading the extension. A compact **AIO** launcher appears
 on the right by default; the full overlay opens only when the operator requests
-it. On desktop, drag its header to move it, drag either corner to resize it, and
+it. On desktop, drag its header to move it, drag the lower-right handle to resize it, and
 use **Settings → Surface transparency** to choose 55–100% opacity. Reset restores
 the bounded default. On narrow screens it becomes a fitted bottom sheet. It
 provides:
 
 - Current-page session, profile, relationship, and queue-match inspection
-- Repeated visible-row capture that merges follower or following usernames
-- The existing manual queue JSON workflow with Open, Complete, and Skip controls
+- Guided full-list Following and Followers scans, followed by an explicit local Compare step
+- A review-first account queue that freezes the exact targets before Start becomes available
 - Sanitized history for signed account/DM dry runs and controlled one-item results received from the PWA
 - Instagram-side, 90-second one-use arms for a fresh signed one-item Follow, Unfollow, or exact sent-message Unsend intent
 - Read-only visible-message evidence plus conditional exact-identity DM dry runs that never open a menu
@@ -205,23 +205,29 @@ Press **Alt + Shift + I** to toggle the sidecar.
 
 The sidecar carries the three tools in one place, each on its own tab.
 
-**Follower checker.** Open your Followers or Following dialog and press
-**Scan full list**. The scan auto-scrolls the open dialog and reads every row it
-renders, so it is not limited to the first screen. It reports `complete` only
-when the list actually reaches its end; a truncated scan says so instead of
-silently under-reporting. Capture both lists to get mutuals, not-following-me-back,
-and I-don't-follow-back counts, computed locally.
+**Follower checker.** Open your Following dialog and choose **Scan Following**,
+then open Followers and choose **Scan Followers**. Each scan auto-scrolls the
+open dialog and reads every row it renders, so it is not limited to the first
+screen. It reports `complete` only when the list actually reaches its end; a
+truncated scan says so instead of silently under-reporting. **Compare** stays
+disabled until both lists are present and then shows mutuals,
+not-following-me-back, and I-don't-follow-back counts computed locally.
 
 **Follow / Unfollow bot.** In the Follow / Unfollow tab, pick a target source
-(either checker result, or the manual queue), an action, and how many to run.
-Each target is opened, re-verified, and acted on one at a time.
+(either checker result or the manual queue), an action, and how many to run.
+Choose **Review run** to freeze and inspect the exact targets, duplicates, and
+omissions. **Start** appears only while that review still matches the controls.
+Each target is opened, re-verified, and acted on one at a time. **Complete** and
+**Skip** remain available under the secondary options disclosure.
 
-**Mass DM unsend.** Open a conversation and press **Check conversation**. The
-visible **Unsend all DMs** disclosure starts `live locked`. Choose **Unlock
-Unsend all DMs**, type `UNSEND ALL DMS`, then select **Unsend all DMs** again and
-accept the permanent-action confirmation. The authorization expires after 15
-minutes, the runner re-checks it before every message, and only rows proven sent
-by the current account are eligible. Unsending is permanent.
+**Mass DM unsend.** Open a conversation. The primary **Unsend all DMs** card
+starts `live locked`; the quieter **Check conversation** control provides a
+read-only evidence refresh. Choose **Unlock Unsend all DMs**, type `UNSEND ALL
+DMS`, then select **Unsend all DMs** again and accept the permanent-action
+confirmation. The authorization expires after 15 minutes, the runner re-checks
+it before every message, and only rows proven sent by the current account are
+eligible. The history loader no longer repeatedly repositions a thread that is
+already at its loaded boundary. Unsending is permanent.
 
 ### Batch pacing and safety
 
@@ -263,7 +269,7 @@ The handshake rotates the one-time code into a derived session secret. Messages 
 
 Install `userscripts/insta-aio-companion.user.js` in Tampermonkey.
 
-The generated script injects a movable, two-corner-resizable, translucent
+The generated script injects a movable, lower-right-resizable, translucent
 three-tab toolbox directly on `instagram.com`. It includes the full-list follower
 scanner and local comparison, queue and checker target sources for paced Follow
 or Unfollow runs, and the source-audited thread-wide DM Unsend runner. It uses the
@@ -332,9 +338,9 @@ ignored `test-results`.
 The overlay-specific commands rebuild the production extension before loading
 its manifest-ordered content scripts in the deterministic Instagram fixture.
 Use `pnpm run qa:overlay:update` only for an intentional, manually reviewed
-baseline replacement. The 39-state Windows baseline includes a centered,
+baseline replacement. The 40-state Windows baseline includes a centered,
 resized 62%-opacity proof plus desktop, tablet, mobile, zoom, forced-colors,
-collision, and locked-action states. It has been reproduced by
+collision, locked-action, and review-before-start states. It has been reproduced by
 `qa:overlay:check`; CI runs the non-updating check on Windows.
 Human screen-reader review, persistent-profile installation, and authenticated
 Instagram selector acceptance remain separate operator/release gates.

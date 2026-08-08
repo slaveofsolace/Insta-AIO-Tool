@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-08-05
+Last reviewed: 2026-08-08
 
 ## Application boundaries
 
@@ -15,6 +15,11 @@ no-click dry runs by default, exact confirmation material, transactional
 reservations, durable checkpoints, and safe stops for ambiguous state.
 Execution adapters revalidate the confirmed preview, current enable setting,
 and current batch limit before entering a live path.
+
+The local account toolbox also separates review from authority. A deterministic
+review signature freezes the selected source, action, limit, and exact target
+list. Any input change discards the draft and hides Start; live authorization is
+checked only after a matching review exists.
 
 The injected toolbox surfaces follow the same default-off rule. Tampermonkey
 does not persist a general live preference: `ENABLE LIVE ACTIONS` opens a
@@ -32,6 +37,12 @@ extension's thread tool first requires
 `UNSEND ALL DMS`, performs no action while arming, then requires a second
 permanent-action confirmation. No new host permission, remote dependency,
 credential field, private endpoint, or network request was added.
+
+The PWA service worker uses network-first handling for same-origin GET requests,
+caches only successful same-origin responses, bypasses the HTTP cache while
+checking for service-worker updates, and deletes earlier cache versions. When
+the current origin is reachable, stale cached application code therefore cannot
+silently retain an older safety policy.
 
 Each running PWA account or DM execution owns a matching `AbortController` and
 an immutable reviewed-job identity. Discard aborts only that matching execution.
@@ -123,9 +134,15 @@ current patch closes all three layers and adds pre-dispatch, post-reservation,
 post-dispatch, non-resurrection, and legitimate-control regressions. The complete
 patch also centralizes exact localized action labels as valid UTF-8 and refuses
 to issue a profile or message capability when Web Crypto cannot supply entropy.
-The repository suite now passes 191 of 191 tests; extension packaging
-independently runs the executable controlled-live safety subset before creating
-artifacts.
+The 2026-08-08 workflow patch received a complete diff-focused review over ten
+changed files plus two supporting safety-contract files. All twelve review
+receipts were closed and no plausible security candidate survived discovery.
+All 215 repository tests, extension fixture acceptance, real disposable-Chrome
+pairing, nine PWA baselines, the 40-state overlay check, the production
+dependency audit, and the 10,000-message ZIP benchmark passed. Native installer
+lifecycle and additional-platform gates remain release/CI requirements;
+extension packaging independently runs the executable controlled-live safety
+subset before creating artifacts.
 
 An authenticated Instagram Follow, Unfollow, or DM action has deliberately not
 been run. It remains a separate operator acceptance gate requiring an exact

@@ -216,3 +216,17 @@ test('precaches component migration modules for offline PWA startup', async () =
     assert.equal(serviceWorker.includes(`'${path}'`), true, `${path} is not precached`);
   }
 });
+
+test('PWA refreshes online assets while retaining an offline cache fallback', async () => {
+  const serviceWorker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
+  const loader = await readFile(new URL('../src/app.parts/part-04.jsfrag', import.meta.url), 'utf8');
+
+  assert.match(serviceWorker, /const CACHE_NAME = 'insta-aio-v11'/);
+  assert.ok(
+    serviceWorker.indexOf('await fetch(event.request)') < serviceWorker.indexOf('await caches.match(event.request)'),
+    'online fetch must be attempted before the offline cache fallback',
+  );
+  assert.match(serviceWorker, /requestUrl\.origin === self\.location\.origin/);
+  assert.match(loader, /updateViaCache: 'none'/);
+  assert.match(loader, /registration\.update\(\)/);
+});

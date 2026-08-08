@@ -2,16 +2,19 @@
 
 ## Current checkpoint
 
-The current implementation is based on main commit `8f853d4` and the bounded
-2026-08-05 overlay usability update. It preserves the modular production graph,
+The current implementation began from main commit `28a70ca` and includes the
+bounded 2026-08-08 overlay workflow update. It preserves the modular production graph,
 PWA, migrations, existing exchange contracts, and signed one-item bridge while
 adding the operator-facing behavior requested from the installed Chrome build:
 
-- draggable header and two resize corners on desktop;
+- draggable header and one lower-right resize handle on desktop;
 - fitted mobile/bottom-sheet geometry with no horizontal overflow;
 - persisted 55–100% surface opacity with an 88% default;
 - an explicit three-tool landing surface;
 - the same three-tool engine in the generated Tampermonkey script; and
+- guided Following/Followers comparison and review-before-start account runs;
+- a simplified, primary thread-Unsend card whose history loader does not keep
+  repositioning an already settled conversation; and
 - default-locked local batches plus an expiry-enforcing thread Unsend runner.
 
 This is runtime-tested synthetic-fixture evidence, not authenticated Instagram
@@ -25,14 +28,14 @@ full Instagram overlay and owns these in-page surfaces:
 | Surface | In-page responsibility | Durable authority |
 | --- | --- | --- |
 | Now | Route, session, exact profile relationship, queue match, next safe step | None |
-| Capture | Merge rendered rows or deliberately scan the open Followers/Following dialog to completion | PWA after explicit import |
-| Queue | Navigate local items, compare follower drafts, run phrase-gated paced account batches, and show signed summaries | PWA reviewed jobs/ledgers for signed runs; extension-local state for toolbox batches |
-| Messages | Capture visible fragments, expose a phrase-gated thread Unsend runner, and show the exact signed DM gate when available | PWA reviewed job/ledgers for signed one-message work; tab-scoped authorization for thread runs |
+| Capture | Guide separate Following and Followers full scans, compare only when both are present, and retain manual capture under secondary controls | PWA after explicit import |
+| Queue | Keep one primary profile-navigation action, freeze exact targets in Review run, reveal Start only for a matching review, and show signed summaries | PWA reviewed jobs/ledgers for signed runs; extension-local state for toolbox batches |
+| Messages | Keep thread Unsend primary, capture visible fragments secondarily, and show the exact signed DM gate when available | PWA reviewed job/ledgers for signed one-message work; tab-scoped authorization for thread runs |
 | Workspace | Show sanitized pairing facts and link to the exact paired origin | PWA |
 
 The generated Tampermonkey script embeds the same exact-label and Instagram
-engine sources behind a userscript-specific three-tab shell. It supports full
-list scanning/comparison, no-click review, paced Follow/Unfollow, and thread DM
+engine sources behind a userscript-specific three-tab shell. It supports guided
+full-list scanning/comparison, review-before-start paced Follow/Unfollow, and thread DM
 Unsend. Destructive controls start disabled and need a typed, non-persistent
 15-minute authorization plus a separate run confirmation. It does not receive
 the signed extension bridge, PWA one-item arms, or durable workspace ledgers.
@@ -104,10 +107,16 @@ saved. Capture and queue contracts remain V1 and import-compatible.
 - At 600 pixels or narrower the panel becomes a bounded bottom sheet.
 - Surface opacity is adjustable from 55% to 100%; backdrop blur and stronger
   inner surfaces preserve legibility while Instagram remains visible below.
+- One lower-right resize handle avoids duplicate grip controls while preserving
+  bounded pointer and keyboard resizing.
 - Short-height, reduced-motion, forced-color, focus-restoration, and closed
   shadow-root rules are part of the production shell.
 - Route changes use Navigation API, `popstate`, and debounced URL comparison;
   there is no recurring location poll.
+- The PWA service worker is registered with `updateViaCache: 'none'`, checks for
+  an update on startup, and uses network-first handling for successful
+  same-origin GET responses. A stale cache cannot indefinitely pin old
+  safety-sensitive application code when the current origin is reachable.
 
 ## Execution boundary
 
@@ -117,6 +126,10 @@ a local account batch, or create a separate `UNSEND ALL DMS` tab arm. Execution
 remains in the audited background/content drivers. The thread runner itself
 requires a future authorization expiry and rechecks it before every message;
 the first unlock never opens a menu or removes anything.
+
+Local account execution requires a review signature over the selected source,
+action, limit, and exact target list. Editing any of those inputs discards the
+draft and hides Start; live authority is checked only after review succeeds.
 
 While an arm is active, or for a bounded ten-second transition after the bridge
 consumes one, the full panel is suspended. A measured status strip is placed on
@@ -141,7 +154,7 @@ Lightweight checks completed after the implementation:
   passed and package validation passed
 - Overlay source scan: no `.click()`, `dispatchEvent()`, or `setInterval()`
 
-The QA sources cover 39 unique scenarios, state-specific assertions on all 20
+The QA sources cover 40 unique scenarios, state-specific assertions on all 20
 required states, selector contracts, child-process watchdog escalation, and
 rejection of a deliberately wrong semantic state. On Windows, all scenarios
 rendered through the production content-script graph and passed semantics,
@@ -149,13 +162,14 @@ geometry, collision, accessibility-tree, and screenshot checks. The changed key
 states were inspected at full resolution, and the complete matrix was reproduced
 by the non-updating baseline check.
 
-The 2026-08-05 guarded matrix also passed assembly, all 186 repository tests,
-production extension fixture acceptance, real Chrome pairing,
-nine PWA screenshot baselines, the 39-state overlay update/check, the ZIP
-benchmark, and whitespace validation. The measured overlay probe rendered one
-bounded current item after a 2,000-item queue update in 25.9 ms with 234 overlay
-nodes; route transition was 97.8 ms. The review procedure and platform boundary
-are recorded in [`OVERLAY_QA.md`](./OVERLAY_QA.md).
+The 2026-08-08 workflow checkpoint passed deterministic assembly, all 215
+repository tests, production extension fixture acceptance, real disposable-
+Chrome pairing, nine PWA baselines, the 10,000-message ZIP benchmark, and the
+40-state overlay update/check. The measured overlay probe rendered one
+bounded current item after a 2,000-item queue update in 23.2 ms with 380 overlay
+nodes; route transition was 85.4 ms. Native installer lifecycle and additional
+platform gates remain release/CI requirements. The review procedure and platform boundary are
+recorded in [`OVERLAY_QA.md`](./OVERLAY_QA.md).
 
 ## Nonclaims
 

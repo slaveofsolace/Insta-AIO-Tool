@@ -789,6 +789,7 @@
     if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
     const reversed = reversedLayout(scroller);
     let quietRounds = 0;
+    let topNudgeUsed = false;
     // Instagram pauses between pages on a long thread, so a few quiet rounds
     // does not mean the history ended. Giving up after three left most of a
     // long conversation unloaded, which is the same impatience the follower
@@ -799,17 +800,30 @@
       const beforeHeight = scroller.scrollHeight;
       const beforeRows = candidateRows(scroller).length;
       const target = oldestOffset(scroller, reversed);
-      if (Math.abs(scroller.scrollTop - target) <= 5) {
+      if (Math.abs(scroller.scrollTop - target) > 5) {
+        scroller.scrollTop = target;
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
+      } else if (!topNudgeUsed && quietRounds >= 2) {
+        // Some Instagram builds only restart lazy history loading after real
+        // movement at the oldest edge. Wake that loader once per loaded page,
+        // not on every quiet poll: repeated nudges made the conversation look
+        // as though the run was permanently fighting the user's scroll.
         scroller.scrollTop = target + (reversed ? 1 : -1) * Math.max(80, Math.floor(scroller.clientHeight / 2));
         dispatch(scroller, new Event('scroll', { bubbles: true }));
         await delay(80, signal);
+        scroller.scrollTop = target;
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
+        topNudgeUsed = true;
+      } else {
+        // A synthetic edge notification is enough while waiting for a loader
+        // that is already in flight and does not visibly move the thread.
+        dispatch(scroller, new Event('scroll', { bubbles: true }));
       }
-      scroller.scrollTop = target;
-      dispatch(scroller, new Event('scroll', { bubbles: true }));
       await delay(500, signal);
       await waitForLoader(root, signal);
       const grew = scroller.scrollHeight > beforeHeight || candidateRows(scroller).length > beforeRows;
       quietRounds = grew ? 0 : quietRounds + 1;
+      if (grew) topNudgeUsed = false;
       publish({
         status: 'preparing',
         message: grew ? 'Loading older messages…' : 'Checking for older messages…',
@@ -825,27 +839,40 @@
     await delay(100, signal);
   }
 
+  function rowNeedsReposition(row, scroller) {
+    if (!isVisible(row)) return true;
+    const rowRect = row.getBoundingClientRect?.();
+    const scrollerRect = scroller?.getBoundingClientRect?.();
+    if (!rowRect || !scrollerRect) return false;
+    const inset = Math.min(16, Math.max(4, Math.floor(scrollerRect.height * 0.04)));
+    return rowRect.top < scrollerRect.top + inset
+      || rowRect.bottom > scrollerRect.bottom - inset;
+  }
+
+  async function exposeRow(row, scroller, signal) {
+    if (!rowNeedsReposition(row, scroller)) return isVisible(row);
+    row.scrollIntoView({ block: 'center', inline: 'nearest' });
+    dispatch(scroller, new Event('scroll', { bubbles: true }));
+    await delay(60, signal);
+    return isVisible(row);
+  }
+
   async function nextSentRow(context, signal) {
     const { scroller } = context;
-    // Always center the selected row before hover. A row can have enough pixels
-    // inside a clipping ancestor to count as visible while its menu affordance
-    // remains outside that exposed portion on another platform or font stack.
+    // Leave a comfortably visible row in place. Re-centering every message made
+    // the processing phase continually fight the thread position. Partially
+    // clipped rows are still exposed before hover so their menu affordance is
+    // reachable on other platforms and font stacks.
     const visible = firstVisibleCandidate(scroller);
     if (visible) {
-      visible.scrollIntoView({ block: 'center', inline: 'nearest' });
-      dispatch(scroller, new Event('scroll', { bubbles: true }));
-      await delay(60, signal);
-      if (isVisible(visible)) return visible;
+      if (await exposeRow(visible, scroller, signal)) return visible;
     }
 
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
       if (signal.aborted) return null;
       const [row] = candidateRows(scroller).reverse();
       if (row) {
-        row.scrollIntoView({ block: 'center', inline: 'nearest' });
-        dispatch(scroller, new Event('scroll', { bubbles: true }));
-        await delay(60, signal);
-        if (isVisible(row)) return row;
+        if (await exposeRow(row, scroller, signal)) return row;
         // Still hidden: hand it back anyway on the final pass so a row that
         // simply cannot be scrolled into view is attempted rather than skipped.
         if (pass === MAX_SCAN_PASSES - 1) return row;
@@ -1067,6 +1094,7 @@
       isVisible,
       nextSentRow,
       reversedLayout,
+      rowNeedsReposition,
       sentByCurrentUser,
     });
   }
@@ -1190,7 +1218,7 @@
     const nowLead = query('[data-panel="now"] .lead');
     if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
     const messageLead = query('[data-panel="messages"] .lead');
-    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Remove messages you sent in the open conversation, newest to oldest.';
+    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Load older history once, then remove your sent messages from the oldest loaded message forward.';
 
     const scanButton = query('[data-action="scan-sent"]');
     if (scanButton) scanButton.textContent = 'Check conversation';
@@ -1268,7 +1296,7 @@
       // eslint-disable-next-line no-alert
       const confirmed = globalThis.confirm(
         'Unsend every message you sent in this conversation?\n\n'
-        + 'The conversation will be loaded from newest to oldest. This is permanent and cannot be undone.',
+        + 'Older history will load once, then removal works forward from the oldest loaded sent message. This is permanent and cannot be undone.',
       );
       if (!confirmed) {
         setText('status', 'Cancelled. Nothing was changed.');
@@ -3274,12 +3302,12 @@
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar"><span data-role="scan-fill"></span></div><p class="lead" data-role="scan-detail"></p></div>
           <div class="field"><label for="aio-filter">Filter results</label><input id="aio-filter" type="search" placeholder="Search a username" data-role="result-filter"></div>
           <details class="settings-inline"><summary>More</summary><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows only</button><button class="button quiet" type="button" data-action="download-list">Download a raw list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="aio-list-type">Raw list to use</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
-        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="card" data-role="queue-current"></div><div class="review" data-role="run-review" hidden><strong data-role="review-title"></strong><ul class="list list--compact" data-role="review-list"></ul><p class="lead" data-role="review-skips"></p></div>
+        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="card" data-role="queue-current"></div>
           <details class="settings-inline"><summary>Single account tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
           <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
-          <div class="toolbar"><button class="button danger" type="button" data-action="run-accounts" data-live-action>Start run</button></div>
+          <p class="lead" data-role="account-run-summary">Choose a source, action, and bounded amount, then review the exact targets.</p><div class="toolbar"><button class="button primary big" type="button" data-action="review-accounts" data-role="account-run-primary">Review run</button></div><div class="review" data-role="run-review" hidden><strong data-role="review-title"></strong><ul class="list list--compact" data-role="review-list"></ul><p class="lead" data-role="review-skips"></p></div>
           <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
         <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action data-role="unsend-primary">Unsend all DMs</button></div>
           <div class="toolbar"><button class="button quiet" type="button" data-action="scan-sent">Check first, without removing anything</button></div>
@@ -3446,24 +3474,20 @@
     if (state.capture.followers.length && state.capture.following.length) {
       const actions = document.createElement('div');
       actions.className = 'toolbar';
-      for (const [label, key, file] of [
-        ["Export who doesn't follow me back", 'notFollowingMeBack', 'not-following-me-back'],
-        ["Export who I don't follow back", 'iDoNotFollowBack', 'i-do-not-follow-back'],
-      ]) {
-        const button = document.createElement('button');
-        button.className = 'button quiet';
-        button.type = 'button';
-        button.textContent = `${label} (${comparison[key].length})`;
-        button.addEventListener('click', () => downloadJson(`insta-aio-${file}-${Date.now()}.json`, {
-          schemaVersion: 1,
-          kind: 'insta-aio-comparison',
-          list: file,
-          generatedAt: nowIso(),
-          complete: state.capture.complete || {},
-          accounts: comparison[key],
-        }));
-        actions.append(button);
-      }
+      const button = document.createElement('button');
+      button.className = 'button quiet';
+      button.type = 'button';
+      button.textContent = 'Download comparison';
+      button.addEventListener('click', () => downloadJson(`insta-aio-follower-comparison-${Date.now()}.json`, {
+        schemaVersion: 1,
+        kind: 'insta-aio-comparison',
+        generatedAt: nowIso(),
+        complete: state.capture.complete || {},
+        mutuals: comparison.mutuals,
+        notFollowingMeBack: comparison.notFollowingMeBack,
+        iDoNotFollowBack: comparison.iDoNotFollowBack,
+      }));
+      actions.append(button);
       result.append(actions);
     }
 
@@ -3500,6 +3524,7 @@
     const resultDetail = document.createElement('p');
     resultDetail.textContent = state.accountCheck?.result || 'Open the exact queued profile, then run the check.';
     result.append(resultTitle, resultDetail);
+    renderAccountRunPrimary();
   }
 
   function renderMessages() {
@@ -3695,6 +3720,7 @@
   let liveActionsUnlockedUntil = 0;
   let liveAuthorizationTimer = null;
   let externalLiveRunActive = false;
+  let accountRunDraft = null;
 
   function authorizationRemainingMinutes(expiresAt) {
     return Math.max(1, Math.ceil((Number(expiresAt) - Date.now()) / 60_000));
@@ -4276,7 +4302,7 @@
 
   // --- Sections 4 and 5: show the targets before anything runs ------------
 
-  function renderRunReview(items, skipped) {
+  function renderRunReview(items, { omitted = 0, removed = 0 } = {}) {
     const panel = query('[data-role="run-review"]');
     if (!panel) return;
     panel.hidden = !items.length;
@@ -4298,9 +4324,98 @@
     }
     // Naming why targets were dropped is the difference between a trustworthy
     // count and a surprising one.
-    setText('review-skips', skipped
-      ? `${skipped} skipped: already followed, or not in the scanned list.`
-      : 'No accounts were skipped.');
+    setText(
+      'review-skips',
+      `${removed} duplicate or already-followed target${removed === 1 ? '' : 's'} removed; ${omitted} left outside this bounded run. Every profile is rechecked before action.`,
+    );
+  }
+
+  function accountRunPlan() {
+    const action = query('[data-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
+    const source = query('[data-role="bot-source"]')?.value || 'not-following-me-back';
+    const count = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
+    const comparison = compareCapture();
+    const names = (list) => (list || []).map((entry) => entry.username || entry).filter(Boolean);
+    const pools = {
+      queue: () => (state.queue.queue || [])
+        .filter((entry) => ACTIONABLE_STATUSES.has(entry.status))
+        .map((entry) => entry.account?.username)
+        .filter(Boolean),
+      'i-do-not-follow-back': () => names(comparison.iDoNotFollowBack),
+      'not-following-me-back': () => names(comparison.notFollowingMeBack),
+      'scanned-followers': () => names(state.capture.followers),
+      'scanned-following': () => names(state.capture.following),
+    };
+    const pool = (pools[source] || pools['not-following-me-back'])();
+    let eligible = pool;
+    if (action === 'follow' && state.capture.following.length) {
+      const already = new Set(names(state.capture.following));
+      eligible = eligible.filter((username) => !already.has(username));
+    }
+    const unique = [...new Set(eligible)];
+    const items = unique.slice(0, count).map((username) => ({ username }));
+    return Object.freeze({
+      action,
+      items: Object.freeze(items),
+      omitted: Math.max(0, unique.length - items.length),
+      removed: Math.max(0, pool.length - unique.length),
+      signature: JSON.stringify({ action, count, source, usernames: items.map((item) => item.username) }),
+      source,
+    });
+  }
+
+  function renderAccountRunPrimary() {
+    const button = query('[data-role="account-run-primary"]');
+    if (!button) return;
+    if (accountRunDraft) {
+      button.dataset.action = 'run-accounts';
+      button.dataset.liveAction = '';
+      button.textContent = `Start ${accountRunDraft.action} run`;
+      button.classList.add('danger');
+      button.classList.remove('primary');
+      const preview = accountRunDraft.items.slice(0, 3).map((item) => `@${item.username}`).join(', ');
+      setText('account-run-summary', `Reviewed: ${preview}${accountRunDraft.items.length > 3 ? `, +${accountRunDraft.items.length - 3} more` : ''}. Every profile is rechecked before action.`);
+    } else {
+      button.dataset.action = 'review-accounts';
+      delete button.dataset.liveAction;
+      button.disabled = false;
+      button.textContent = 'Review run';
+      button.classList.add('primary');
+      button.classList.remove('danger');
+      setText('account-run-summary', 'Choose a source, action, and bounded amount, then review the exact targets.');
+    }
+  }
+
+  function clearAccountRunDraft() {
+    accountRunDraft = null;
+    renderRunReview([]);
+    renderAccountRunPrimary();
+  }
+
+  function reviewAccountRun() {
+    const plan = accountRunPlan();
+    if (!plan.items.length) {
+      clearAccountRunDraft();
+      status(
+        plan.source.startsWith('scanned')
+          ? 'That list is empty. Open the list you want and scan it in the checker first.'
+          : 'No targets. Scan both lists in the checker first, or import a queue.',
+      );
+      return;
+    }
+    accountRunDraft = plan;
+    renderRunReview(plan.items, plan);
+    renderAccountRunPrimary();
+    renderShellState();
+    const start = query('[data-role="account-run-primary"]');
+    const scroll = start?.closest('.scroll');
+    const startRect = start?.getBoundingClientRect?.();
+    const scrollRect = scroll?.getBoundingClientRect?.();
+    if (startRect && scrollRect && startRect.bottom > scrollRect.bottom - 12) {
+      scroll.scrollTop += startRect.bottom - scrollRect.bottom + 12;
+    }
+    start?.focus?.({ preventScroll: true });
+    status(`Reviewed ${plan.items.length} ${plan.action} target${plan.items.length === 1 ? '' : 's'}. Nothing has run.`);
   }
 
   function renderDmSummary() {
@@ -4372,6 +4487,7 @@
       const target = query('[data-role="context-cta"]')?.dataset.ctaAction;
       if (target && actions[target]) actions[target]();
     },
+    'review-accounts': () => reviewAccountRun(),
     open: () => savePreferences({ open: true }),
     close: () => savePreferences({ open: false }),
     'stop-run': () => {
@@ -4437,48 +4553,20 @@
       );
     },
     'run-accounts': async () => {
-      if (!requireNewRunAuthorization()) return;
-      const action = query('[data-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
-      const source = query('[data-role="bot-source"]')?.value || 'not-following-me-back';
-      const count = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
-      const comparison = compareCapture();
-      const names = (list) => (list || []).map((entry) => entry.username || entry);
-      const pools = {
-        queue: () => (state.queue.queue || [])
-          .filter((entry) => ACTIONABLE_STATUSES.has(entry.status))
-          .map((entry) => entry.account?.username),
-        'i-do-not-follow-back': () => names(comparison.iDoNotFollowBack),
-        'not-following-me-back': () => names(comparison.notFollowingMeBack),
-        // Scanning works on whichever list is open, including another account's,
-        // so these two are how you build an audience from someone else's people.
-        'scanned-followers': () => names(state.capture.followers),
-        'scanned-following': () => names(state.capture.following),
-      };
-      let pool = (pools[source] || pools['not-following-me-back'])();
-
-      // Following someone you already follow is a wasted action and a needless
-      // request, so drop anyone already in the Following draft.
-      if (action === 'follow' && state.capture.following.length) {
-        const already = new Set(names(state.capture.following));
-        pool = pool.filter((username) => !already.has(username));
-      }
-
-      const items = [...new Set(pool.filter(Boolean))]
-        .slice(0, count)
-        .map((username) => ({ username }));
-      if (!items.length) {
-        status(
-          source.startsWith('scanned')
-            ? 'That list is empty. Open the list you want and use Scan full list first.'
-            : 'No targets. Scan both your lists in the checker first, or import a queue.',
-        );
+      const current = accountRunPlan();
+      if (!accountRunDraft || accountRunDraft.signature !== current.signature) {
+        clearAccountRunDraft();
+        status('Targets changed. Review the run again before unlocking live actions.');
         return;
       }
+      if (!requireNewRunAuthorization()) return;
       if (!confirmRun(
-        `${action === 'follow' ? 'Follow' : 'Unfollow'} ${items.length} account${items.length === 1 ? '' : 's'}?\n\n`
+        `${accountRunDraft.action === 'follow' ? 'Follow' : 'Unfollow'} ${accountRunDraft.items.length} reviewed account${accountRunDraft.items.length === 1 ? '' : 's'}?\n\n`
         + 'This tab will move between profiles and the run continues across page loads. It changes your account.',
       )) return;
-      await startAccountRun({ action, usernames: items.map((item) => item.username) });
+      const approved = accountRunDraft;
+      clearAccountRunDraft();
+      await startAccountRun({ action: approved.action, usernames: approved.items.map((item) => item.username) });
     },
     // One button: find everything you sent in this thread, then remove it.
     'unsend-all': async () => {
@@ -4642,6 +4730,11 @@
 
   shadow.addEventListener('change', async (event) => {
     try {
+      if (event.target.matches('[data-role="bot-source"], [data-role="bot-action"], [data-role="bot-count"]')) {
+        clearAccountRunDraft();
+        status('Run choices changed. Review the targets again.');
+        return;
+      }
       if (event.target.matches('[data-role="list-type"]')) {
         renderChecker();
         return;
@@ -4824,4 +4917,3 @@
     });
   }
 })();
-

@@ -130,7 +130,7 @@ test('column-reverse detection matches Instagram thread paging', () => {
   assert.equal(runner.__test.reversedLayout(normal), true);
 });
 
-test('the next visible message row is centered before its hover control is requested', async () => {
+test('the next comfortably visible message row is not repositioned before hover', async () => {
   const runner = loadRunner();
   const documentElement = { parentElement: null };
   const view = {
@@ -159,6 +159,52 @@ test('the next visible message row is centered before its hover control is reque
     scrollIntoView: (options) => {
       assert.equal(options.block, 'center');
       assert.equal(options.inline, 'nearest');
+      scrollCalls += 1;
+    },
+  };
+  scroller.children.push(row);
+
+  const selected = await runner.__test.nextSentRow(
+    { scroller },
+    { aborted: false, addEventListener: () => {} },
+  );
+  assert.equal(selected, row);
+  assert.equal(scrollCalls, 0);
+});
+
+test('a clipped sent-message row is centered once before hover', async () => {
+  const runner = loadRunner();
+  const documentElement = { parentElement: null };
+  const view = {
+    getComputedStyle: (element) => element.style || {},
+    innerHeight: 800,
+    innerWidth: 1_280,
+  };
+  const ownerDocument = { defaultView: view, documentElement };
+  let scrollCalls = 0;
+  let exposed = false;
+  const scroller = Object.assign(new EventTarget(), {
+    children: [],
+    getBoundingClientRect: () => ({ bottom: 300, height: 200, left: 0, right: 600, top: 100, width: 600 }),
+    ownerDocument,
+    parentElement: documentElement,
+    style: { overflowX: 'hidden', overflowY: 'auto' },
+  });
+  const row = {
+    children: [],
+    getAttribute: (name) => (name === 'data-sent-by-me' ? 'true' : ''),
+    getBoundingClientRect: () => (exposed
+      ? { bottom: 190, height: 40, left: 20, right: 300, top: 150, width: 280 }
+      : { bottom: 118, height: 40, left: 20, right: 300, top: 78, width: 280 }),
+    hasAttribute: () => false,
+    isConnected: true,
+    ownerDocument,
+    parentElement: scroller,
+    querySelector: () => ({}),
+    scrollIntoView: (options) => {
+      assert.equal(options.block, 'center');
+      assert.equal(options.inline, 'nearest');
+      exposed = true;
       scrollCalls += 1;
     },
   };
@@ -228,4 +274,6 @@ test('history is loaded to the top and the run then works down from there', () =
   // read as the end of the conversation.
   assert.match(body, /quietRounds < 10/);
   assert.match(body, /page < 600/);
+  assert.match(body, /let topNudgeUsed = false/);
+  assert.match(body, /!topNudgeUsed && quietRounds >= 2/);
 });

@@ -1,13 +1,13 @@
 # Overlay QA
 
-Last updated: 2026-08-05
+Last updated: 2026-08-08
 
 ## Current status
 
 The production-script overlay matrix is green on Windows. An explicit update
-generated 39 baselines, including a centered/resized 62%-opacity proof. The
-previous 38-state set had a full agent review; the updated floating and Messages
-states were inspected at full resolution after regeneration,
+generated 40 baselines, including a centered/resized 62%-opacity proof and the
+new review-before-start account-run state. The changed floating, Messages,
+checker, account-run, and DM states were inspected at full resolution after regeneration,
 and a subsequent non-updating check reproduced all semantic, geometry,
 collision, accessibility-tree, performance, and screenshot expectations. The
 ordinary CI workflow now runs `qa:overlay:check` on `windows-latest`; CI never
@@ -15,8 +15,8 @@ updates baselines.
 
 The reviewed evidence lives under
 `docs/evidence/overlay-ui-2026-08-02/after/win32`. Its manifest SHA-256 at the
-2026-08-05 checkpoint is
-`c0e5fbdd5788eafdb99787e84b280032353055b8cc2a9745ea7cbc6a784cf27a`.
+2026-08-08 checkpoint is
+`de314e261dc598a58b42afb7423ef6ce7438820b6deb9ee6a124d13354834da5`.
 This establishes synthetic-fixture and Windows-rendering evidence only. It does
 not establish human visual or screen-reader acceptance, cross-platform pixel
 parity, persistent-profile acceptance, or authenticated Instagram selector
@@ -77,7 +77,7 @@ component is not used.
 
 ## Required state coverage
 
-The 20 required states carry 63 state-specific semantic expectations that run
+The 20 required states carry state-specific semantic expectations that run
 before any screenshot can be accepted:
 
 | Area | Scenarios |
@@ -107,8 +107,8 @@ and hash happen to match a previously captured image.
 
 ## Viewport and presentation matrix
 
-The full matrix contains 39 unique scenarios: the 20 required states above plus
-19 presentation variants.
+The full matrix contains 40 unique scenarios: the 20 required states above plus
+20 presentation and workflow variants.
 
 | Coverage | Scenario IDs |
 | --- | --- |
@@ -121,6 +121,7 @@ The full matrix contains 39 unique scenarios: the 20 required states above plus
 | 200% zoom | `profile-zoom-200-light`, `profile-zoom-200-dark`, `queue-zoom-200-light`, `queue-zoom-200-dark` |
 | Forced colors | `profile-forced-colors`, `queue-forced-colors` |
 | Collapsed launcher | `collapsed-desktop`, `collapsed-mobile` |
+| Review before account execution | `queue-run-review` |
 
 The configured CSS viewports are 1440×900, 1280×720, 820×900, 390×844,
 and 844×390. The harness also checks panel, scroller, selected-view, document,
@@ -141,9 +142,9 @@ After screenshot scenarios, the harness measures:
 The current thresholds are under 100 ms for each sampled idle task window,
 under 500 ms for the route transition, under 1,000 ms for the 2,000-item queue
 update, exactly one rendered current item, and fewer than 400 overlay nodes. The
-2026-08-03 Windows update measured 4.694 ms collapsed idle task time, 5.743 ms
-open idle task time, a 97.8 ms route transition, and a 25.9 ms 2,000-item queue
-update that rendered one current item with 234 overlay nodes.
+2026-08-08 Windows update measured 2.945 ms collapsed idle task time, 2.777 ms
+open idle task time, an 85.4 ms route transition, and a 23.2 ms 2,000-item queue
+update that rendered one current item with 380 overlay nodes.
 
 ## Evidence layout
 
@@ -193,12 +194,13 @@ log for review.
 7. Only after the reviewed platform baseline is committed, add the corresponding
    non-updating CI check. Do not generate or accept baselines in ordinary CI.
 
-The original Windows procedure was completed on 2026-08-03. On 2026-08-05 the
-matrix was regenerated for the responsive header fix, the lower opacity bound,
-the floating scenario, and truthful live-lock copy. The centered translucent
-desktop state and the Messages live-lock state were inspected at full resolution;
-mobile overflow, semantics, collision, accessibility-tree, and geometry were
-also enforced by the harness across all 39 scenarios. No human visual or
+The original Windows procedure was completed on 2026-08-03. On 2026-08-08 the
+matrix was regenerated for the guided checker, account-run review phase,
+simplified DM hierarchy, responsive header, lower opacity bound, floating
+scenario, and truthful live-lock copy. The centered translucent desktop state,
+Messages live-lock state, and account-run review state were inspected at full
+resolution; mobile overflow, semantics, collision, accessibility-tree, and
+geometry were also enforced by the harness across all 40 scenarios. No human visual or
 screen-reader acceptance is claimed.
 
 ## Required runtime matrix before acceptance
@@ -225,9 +227,12 @@ test suite.
 
 Completed at this checkpoint:
 
-- generated 39 Windows baselines and visually reviewed the changed key states;
+- generated 40 Windows baselines and visually reviewed the changed key states;
 - reproduced them with the non-updating check and added the Windows CI gate;
-- ran the complete command matrix above with 186 repository tests passing; and
+- passed deterministic assembly, all 215 repository tests, production extension
+  fixture acceptance, real disposable-Chrome pairing, all nine PWA baselines,
+  the non-updating 40-state overlay check, the 10,000-message ZIP benchmark, and
+  the production dependency audit; and
 - reviewed the diff and permission boundary: production extension permissions
   did not expand, target-aware adaptation creates no action token, the Chrome
   debugging pipe is confined to disposable QA, and the overlay harness denies

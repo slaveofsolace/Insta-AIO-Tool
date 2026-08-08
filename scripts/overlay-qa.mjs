@@ -268,7 +268,7 @@ async function applyAfterState(webContents, scenario) {
       const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
       const captureListType = ${JSON.stringify(scenario.captureListType)};
       if (${JSON.stringify(action)} === 'capture-visible' && captureListType) {
-        const listType = shadow.querySelector('[data-ia-role="list-type"]');
+        const listType = shadow.querySelector('[data-ia-role="manual-list-type"]');
         if (!listType) throw new Error('Capture list-type control is missing.');
         listType.value = captureListType;
         listType.dispatchEvent(new Event('change', { bubbles: true }));
@@ -282,6 +282,24 @@ async function applyAfterState(webContents, scenario) {
       webContents,
       `Number(document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('[data-ia-role="${role}"]').textContent) > 0`,
       `${scenario.id}: ${action}`,
+    );
+  }
+  if (scenario.after === 'bot-review') {
+    await webContents.executeJavaScript(`(() => {
+      const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+      const disclosure = shadow.querySelector('[data-ia-role="bot-disclosure"]');
+      const source = shadow.querySelector('[data-ia-role="bot-source"]');
+      const control = shadow.querySelector('[data-ia-action="bot-review"]');
+      if (!disclosure || !source || !control) throw new Error('Follow / Unfollow review controls are missing.');
+      disclosure.open = true;
+      source.value = 'queue';
+      source.dispatchEvent(new Event('change', { bubbles: true }));
+      control.click();
+    })()`, true);
+    await waitForValue(
+      webContents,
+      `document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('[data-ia-role="bot-review"]')?.hidden === false`,
+      `${scenario.id}: read-only target review`,
     );
   }
   if (scenario.after === 'wait-account-expired') {
@@ -345,8 +363,29 @@ async function inspectScenario(webContents, scenario) {
     const presentationRect = rect(presentation);
     const targetRect = rect(target);
     const semanticSelectors = ${JSON.stringify(semanticSelectors)};
+    const colorChannels = (value) => {
+      const match = String(value || '').match(/rgba?\\(([^)]+)\\)/i);
+      if (!match) return null;
+      const values = match[1].split(/[\\s,\\/]+/).filter(Boolean).map(Number);
+      if (values.length < 3 || values.slice(0, 3).some((channel) => !Number.isFinite(channel))) return null;
+      return { alpha: Number.isFinite(values[3]) ? values[3] : 1, channels: values.slice(0, 3) };
+    };
+    const luminance = (channels) => channels
+      .map((channel) => channel / 255)
+      .map((channel) => (channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4))
+      .reduce((total, channel, index) => total + channel * [.2126, .7152, .0722][index], 0);
+    const contrast = (foreground, background) => {
+      const first = colorChannels(foreground);
+      const second = colorChannels(background);
+      if (!first || !second || first.alpha < .99 || second.alpha < .99) return null;
+      const light = Math.max(luminance(first.channels), luminance(second.channels));
+      const dark = Math.min(luminance(first.channels), luminance(second.channels));
+      return (light + .05) / (dark + .05);
+    };
     const semantics = Object.fromEntries(semanticSelectors.map((selector) => {
       const element = shadow.querySelector(selector);
+      const style = element ? getComputedStyle(element) : null;
+      const foreground = style?.webkitTextFillColor || style?.color || '';
       return [selector, {
         attributes: element
           ? Object.fromEntries([...element.attributes].map((attribute) => [attribute.name, attribute.value]))
@@ -354,6 +393,10 @@ async function inspectScenario(webContents, scenario) {
         disabled: element && 'disabled' in element ? Boolean(element.disabled) : null,
         exists: Boolean(element),
         hidden: element ? Boolean(element.hidden) : null,
+        backgroundColor: style?.backgroundColor || '',
+        color: style?.color || '',
+        textContrast: style ? contrast(foreground, style.backgroundColor) : null,
+        textFillColor: style?.webkitTextFillColor || '',
         text: element ? String(element.textContent || '').replace(/\\s+/g, ' ').trim() : '',
         tone: element?.dataset?.tone || null,
         visible: visible(element),
@@ -511,6 +554,16 @@ function assertScenario(metrics, scenario) {
     if (Object.hasOwn(expectation, 'tone')) {
       assert.equal(actual.tone, expectation.tone, `${scenario.id}: tone mismatch: ${expectation.selector}`);
     }
+    if (Object.hasOwn(expectation, 'minContrast')) {
+      assert.ok(
+        Number(actual.textContrast) >= expectation.minContrast,
+        `${scenario.id}: ${expectation.selector} text contrast ${String(actual.textContrast)} is below ${expectation.minContrast}; ${JSON.stringify({
+          backgroundColor: actual.backgroundColor,
+          color: actual.color,
+          textFillColor: actual.textFillColor,
+        })}`,
+      );
+    }
     for (const [name, value] of Object.entries(expectation.attributes || {})) {
       if (value === null) {
         assert.equal(
@@ -599,6 +652,8 @@ async function captureScenario(browserWindow, baseUrl, scenario, expectedManifes
   const metrics = await inspectScenario(webContents, scenario);
   assertScenario(metrics, scenario);
   await accessibilitySmoke(webContents, scenario);
+  webContents.invalidate();
+  await waitForPaint(webContents, `${scenario.id}: final raster`);
 
   const screenshot = (await browserWindow.capturePage()).toPNG();
   const filename = `${scenario.id}.png`;
