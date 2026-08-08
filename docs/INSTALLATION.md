@@ -94,6 +94,11 @@ locked** or the extension's equivalent live-off state before any read-only
 walkthrough. The artifact proves which bytes passed CI; it does not replace the
 persistent-profile, authenticated, or human acceptance checks.
 
+Use the [operator acceptance runbook](./OPERATOR_ACCEPTANCE.md) for the
+persistent-profile, screen-reader, PWA-pairing, and separately authorized
+one-item live checks. A general installation test is not authorization for an
+Instagram mutation.
+
 ### Installing from the repository page instead
 
 Tampermonkey can also install straight from GitHub's file view:
