@@ -555,6 +555,12 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
         .map((control) => control.disabled),
       hasContextStrip: Boolean(shadow.querySelector('[data-role="context"]')),
+      context: {
+        title: shadow.querySelector('[data-role="context-title"]')?.textContent,
+        action: shadow.querySelector('[data-role="context-cta"]')?.dataset.ctaAction,
+        label: shadow.querySelector('[data-role="context-cta"]')?.textContent,
+      },
+      introHidden: shadow.querySelector('[data-role="intro"]')?.hidden,
       unsendPrimaryVisible: shadow.querySelector('[data-role="unsend-primary"]')?.hidden === false,
       engineExecutors: [
         typeof globalThis.InstaAioInstagramInspector?.performReviewedProfileAction,
@@ -587,6 +593,12 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.deepEqual(initial.liveToggle, { checked: false, disabled: false });
   assert.deepEqual(initial.destructiveDisabled, [true, true]);
   assert.deepEqual(initial.reviewControl, { disabled: false, live: false });
+  assert.equal(initial.introHidden, false);
+  assert.deepEqual(initial.context, {
+    title: 'Following list open',
+    action: 'scan-following',
+    label: 'Scan Following',
+  });
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
   assert.deepEqual(initial.liveControls, [true, true, true, true, true, true]);
@@ -596,6 +608,46 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   // visibility behind a separate step removed the one-click path for no gain.
   assert.equal(initial.unsendPrimaryVisible, true);
   assert.deepEqual(initial.engineExecutors, ['function', 'function']);
+
+  const introRoute = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    shadow.querySelector('[data-view="messages"]').click();
+    shadow.querySelector('[data-action="intro-done"]').click();
+    return {
+      introHidden: shadow.querySelector('[data-role="intro"]')?.hidden,
+      selected: [...shadow.querySelectorAll('[role="tab"]')]
+        .find((tab) => tab.getAttribute('aria-selected') === 'true')?.dataset.view,
+      visible: [...shadow.querySelectorAll('[role="tabpanel"]')]
+        .find((panel) => !panel.hidden)?.dataset.panel,
+    };
+  })()`, true);
+  assert.deepEqual(introRoute, { introHidden: true, selected: 'checker', visible: 'checker' });
+
+  await webContents.executeJavaScript(`(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    dialog.remove();
+    setTimeout(() => {
+      dialog.setAttribute('aria-label', 'Followers');
+      dialog.querySelector('h2').textContent = 'Followers';
+      document.querySelector('main').append(dialog);
+    }, 20);
+  })()`, true);
+  const refreshedContext = await waitForPageValue(
+    webContents,
+    `(() => {
+      const shadow = document.querySelector('#insta-aio-userscript-root')?.shadowRoot;
+      const cta = shadow?.querySelector('[data-role="context-cta"]');
+      return shadow?.querySelector('[data-role="context-title"]')?.textContent === 'Followers list open'
+        && cta?.dataset.ctaAction === 'scan-followers'
+        ? { title: 'Followers list open', action: cta.dataset.ctaAction, label: cta.textContent }
+        : null;
+    })()`,
+    'userscript follower-dialog context refresh',
+  );
+  assert.deepEqual(refreshedContext, {
+    title: 'Followers list open', action: 'scan-followers', label: 'Scan Followers',
+  });
+  await webContents.executeJavaScript(`globalThis.fixtureSetList('following')`, true);
 
   const unlocked = await webContents.executeJavaScript(`(() => {
     globalThis.prompt = () => 'ENABLE LIVE ACTIONS';

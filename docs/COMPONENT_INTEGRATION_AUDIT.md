@@ -189,7 +189,7 @@ attribute, exact timestamp, exact content digest, and one sent candidate. Dry
 run never invokes hover, menu, dialog, loop, or Unsend paths. Fixture coverage
 proves exact, missing, changed, received, wrong-thread, and ambiguous outcomes.
 
-Extension 0.10.3 also independently migrates the source-audited one-message UI
+Extension 0.10.4 also independently migrates the source-audited one-message UI
 sequence behind a stronger capability boundary. It retains the exact row's
 source-backed hover and action-control patterns plus exact localized Unsend
 labels. Those labels now live in one frozen UTF-8 module, normalize with NFKC,
@@ -238,7 +238,7 @@ The reviewed sources do not supply a safe live executor that satisfies current
 contracts. The independent action and DM adapters implement transaction
 ordering, durable checkpoints, no-click dry runs, and safe stops.
 
-Extension 0.10.3 includes independently implemented controlled account and DM
+Extension 0.10.4 includes independently implemented controlled account and DM
 drivers;
 it does not copy the SimpleInstaBot executor. A fresh signed job of exactly one
 item creates a sanitized intent. The Instagram sidecar requires the matching

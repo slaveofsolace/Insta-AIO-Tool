@@ -30,10 +30,11 @@ select **Install**:
 
 **[Install Insta AIO Toolbox](https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js)**
 
-Go to [chrome://extensions/?id=dhdgffkkebhmkfjojejmpbldmpobfkfo](url)
-(Extensions -> Find TamperMonkey -> Click details)
+Then allow the userscript to run in Chrome:
 
-Scroll down and find "Allow User Scripts" - enable that.
+1. Open `chrome://extensions/?id=dhdgffkkebhmkfjojejmpbldmpobfkfo`.
+2. Open Tampermonkey's **Details**.
+3. Enable **Allow User Scripts**.
 
 Reload Instagram and press **Alt + Shift + I**. Updates arrive automatically.
 
@@ -154,7 +155,7 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.10.3 preserves the stricter signed live paths for one reviewed PWA
+Extension 0.10.4 preserves the stricter signed live paths for one reviewed PWA
 item. The PWA sends a signed intent; the Instagram overlay requires the matching
 profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW
 @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds.

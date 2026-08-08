@@ -17,6 +17,11 @@ test('first use explains the tools, local storage, and the read-only boundary', 
   // It is dismissible and remembered, not shown on every load.
   assert.match(shell, /'intro-done':/);
   assert.match(shell, /introDone: value\.introDone === true/);
+  assert.match(
+    shell,
+    /'intro-done': \(\) => \{[\s\S]*?savePreferences\(\{ view: 'checker' \}\);[\s\S]*?query\('\[data-view="checker"\]'\)\?\.focus\(\);/,
+    'the button labelled Start with the checker must actually select the checker',
+  );
 });
 
 test('the panel names the current Instagram context for every handled state', () => {
@@ -27,11 +32,14 @@ test('the panel names the current Instagram context for every handled state', ()
     'Rate limited',
     'Conversation open',
     'Inbox open',
-    'Follower list open',
     'Nothing to work on here',
   ]) {
     assert.ok(shell.includes(state), `context state missing: ${state}`);
   }
+  assert.match(shell, /listType: 'followers', label: 'Followers'/);
+  assert.match(shell, /listType: 'following', label: 'Following'/);
+  assert.match(shell, /action: `scan-\$\{followerList\.listType\}`/);
+  assert.match(shell, /new MutationObserver\(\(records\) => \{[\s\S]*?renderContext\(\);/);
   // Blocked states must not offer an action that cannot work.
   assert.match(shell, /tone: 'blocked'/);
   assert.match(shell, /const show = Boolean\(context\.cta\) && state\.run\?\.status !== 'running'/);

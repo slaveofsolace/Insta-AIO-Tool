@@ -1528,6 +1528,23 @@
   // session on every render, and naming exactly one useful next action, removes
   // the guesswork. This only describes state; it never unlocks anything.
 
+  function openFollowerListContext() {
+    for (const dialog of document.querySelectorAll('[role="dialog"]')) {
+      const heading = [...dialog.querySelectorAll('[role="heading"], h1, h2')]
+        .map(visibleText)
+        .find(Boolean);
+      const firstLine = visibleText(dialog).split(/\r?\n/).map((line) => line.trim()).find(Boolean);
+      const label = [dialog.getAttribute('aria-label'), heading, firstLine]
+        .filter(Boolean)
+        .join(' ')
+        .normalize('NFKC')
+        .toLocaleLowerCase();
+      if (/(^|\s)followers(\s|$)/.test(label)) return { dialog, listType: 'followers', label: 'Followers' };
+      if (/(^|\s)following(\s|$)/.test(label)) return { dialog, listType: 'following', label: 'Following' };
+    }
+    return null;
+  }
+
   function currentContext() {
     const session = engine.inspectSession?.() || {};
     if (session.sessionExpired) {
@@ -1557,14 +1574,13 @@
     if (path.startsWith('/direct')) {
       return { tone: 'warning', title: 'Inbox open', detail: 'Open a single conversation to use Unsend.' };
     }
-    const dialog = [...document.querySelectorAll('[role="dialog"]')]
-      .find((node) => /follower|following/i.test(node.textContent || ''));
-    if (dialog) {
+    const followerList = openFollowerListContext();
+    if (followerList) {
       return {
         tone: 'ready',
-        title: 'Follower list open',
-        detail: 'Scan it to read every row, not just what is on screen.',
-        cta: { label: 'Scan full list', action: 'scan-list' },
+        title: `${followerList.label} list open`,
+        detail: `Scan ${followerList.label} to read every row, not just what is on screen.`,
+        cta: { label: `Scan ${followerList.label}`, action: `scan-${followerList.listType}` },
         view: 'checker',
       };
     }
@@ -1598,6 +1614,10 @@
       if (show) {
         cta.textContent = context.cta.label;
         cta.dataset.ctaAction = context.cta.action;
+        cta.dataset.ctaView = context.view || '';
+      } else {
+        delete cta.dataset.ctaAction;
+        delete cta.dataset.ctaView;
       }
     }
   }
@@ -1796,8 +1816,6 @@
           ? 'The whole conversation was read.'
           : 'The conversation did not fully load, so there may be more further back.');
     }
-    // The destructive action only appears once a read-only check has produced
-    // a real count, so it can never be the first thing a new user presses.
     // Never hidden. Progressive disclosure applies to secondary controls, not
     // to the action the tool exists for.
     if (primary) primary.hidden = false;
@@ -1842,11 +1860,15 @@
     'intro-done': () => {
       state.introDone = true;
       saveState();
+      savePreferences({ view: 'checker' });
       renderAll();
       query('[data-view="checker"]')?.focus();
     },
     'context-cta': () => {
-      const target = query('[data-role="context-cta"]')?.dataset.ctaAction;
+      const cta = query('[data-role="context-cta"]');
+      const target = cta?.dataset.ctaAction;
+      const view = cta?.dataset.ctaView;
+      if (view) savePreferences({ view });
       if (target && actions[target]) actions[target]();
     },
     'review-accounts': () => reviewAccountRun(),
@@ -2229,7 +2251,7 @@
   window.addEventListener('keydown', toggleToolboxShortcut, true);
 
   let lastLocationHref = location.href;
-  const duplicateObserver = new MutationObserver(() => {
+  const duplicateObserver = new MutationObserver((records) => {
     const currentHref = location.href;
     if (currentHref !== lastLocationHref) {
       lastLocationHref = currentHref;
@@ -2240,6 +2262,11 @@
       state.sentDmsChecked = false;
       saveState();
       renderAll();
+    } else if (records.some((record) => [...record.addedNodes, ...record.removedNodes].some((node) => (
+      node.nodeType === Node.ELEMENT_NODE
+      && (node.matches?.('[role="dialog"]') || node.querySelector?.('[role="dialog"]'))
+    )))) {
+      renderContext();
     }
     if (!document.getElementById(EXTENSION_ROOT_ID)) return;
     duplicateObserver.disconnect();
