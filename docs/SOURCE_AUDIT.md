@@ -56,12 +56,16 @@ Saved checker results migrate as partial, read-only reports. They do not contain
 ## instagram-dm-unsender
 
 - Repository: <https://github.com/thoughtsunificator/instagram-dm-unsender>
-- Reviewed release: `0.7.2`
+- Reviewed tag: `v0.7.2`
+- Reviewed revision: `a8d7b4d9b76967f54cd9890fc3b1e0bb9c1b8d6a`
 - Supplied artifact SHA-256: `2DC5D357B6C3BBFE1F9E10E8D2F9252E7446C490FB3C16DF1B59719CB1D1FE2C`
 - License: MIT
 - Author: Romain Lebesle
 
-The supplied userscript bundle and embedded source map were reviewed. The map contained 21 original modules and confirmed the full source set.
+The supplied userscript bundle and embedded source map were reviewed. The map
+contained 21 original modules. After normalizing source-map paths and line
+endings, all 21 embedded `sourcesContent` entries matched the corresponding
+upstream `v0.7.2` source files (21/21).
 
 Adopted as independent adapter behavior:
 

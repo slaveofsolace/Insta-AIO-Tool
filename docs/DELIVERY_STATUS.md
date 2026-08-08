@@ -32,7 +32,7 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-Extension 0.9.2 preserves the production-controlled one-item account boundary:
+Extension 0.10.3 preserves the production-controlled one-item account boundary:
 
 - Fresh signed live intent with action permission
 - Exactly one reviewed account item
@@ -67,7 +67,7 @@ content digest, and sent ownership all match uniquely. The background rechecks
 the returned identity before recording success. Missing stable DOM identity
 still stops with `exact-message-identity-unavailable`.
 
-Extension 0.9.2 preserves a separate controlled live boundary for exactly one
+Extension 0.10.3 preserves a separate controlled live boundary for exactly one
 twice-confirmed sent message:
 
 - A fresh signed intent whose reviewed preview is unchanged
@@ -102,8 +102,11 @@ around that one-message acceptance gate. It starts locked, requires the exact
 permanent-action confirmation, and passes the expiry into the source-audited
 runner. The arm also records the exact thread ID. The runner refuses a missing,
 expired, or wrong-thread authorization, checks again before every control, and
-accepts only one newly surfaced menu and confirmation candidate. Its successful
-local fixture proves a stale visible Unsend decoy receives zero clicks and uses
+accepts only one newly surfaced menu and confirmation candidate. The history
+loader performs at most one bounded wake-up nudge per newly loaded page instead
+of repeatedly repositioning a conversation that is already settled. The
+successful local fixture proves a stale visible Unsend decoy receives zero
+clicks and uses
 only synthetic rows; no
 authenticated message was removed.
 
@@ -120,9 +123,11 @@ Complete:
 - Session-material payload rejection
 - Read-only Instagram inspection
 - Visible Instagram sidecar with isolated styling and keyboard toggle
-- Draggable/two-corner-resizable desktop panel, fitted mobile sheet, reset, and
+- Draggable/lower-right-resizable desktop panel, fitted mobile sheet, reset, and
   persisted 55–100% translucency
-- Explicit Follower checker, Follow / Unfollow, and DM Unsend surfaces
+- Guided Following and Followers scans with an explicit local Compare step
+- Review-before-start Follow / Unfollow with a frozen exact-target draft
+- Primary DM Unsend card with secondary read-only conversation evidence
 - Visible follower/following capture with deduplication and import-compatible JSON
 - Imported manual queue navigation and extension-local Complete/Skip state
 - Sanitized signed dry-run history
@@ -184,7 +189,7 @@ Implemented:
 - Production sidecar keyboard/accessibility-tree acceptance in isolated Chromium
 - Real unpacked-extension read-only pairing in disposable Chrome for Testing
 - Modular quiet-operator overlay source, V1/V2-to-V3 preferences, bounded SPA
-  observation, target-aware collision handling, and a reviewed 39-scenario
+  observation, target-aware collision handling, and a reviewed 40-scenario
   Windows overlay baseline with a non-updating CI gate
 
 The dated walkthrough matrix and screenshots are in
@@ -192,16 +197,18 @@ The dated walkthrough matrix and screenshots are in
 The separate post-redesign overlay matrix and its evidence boundary are
 in [`docs/OVERLAY_QA.md`](./OVERLAY_QA.md).
 
-On 2026-08-05 deterministic assembly, the 193-test repository suite, production
-extension fixture acceptance, real Chrome-for-Testing pairing, the nine-state
-PWA baseline check, the 39-state overlay check, and extension ZIP packaging
-passed in the isolated worktree. CI run 46 reproduced the repository, Windows
-overlay, and macOS packaging gates at commit `53f6449`. No authenticated
-Instagram mutation was part of that matrix.
+On 2026-08-08 the workflow update passed deterministic assembly, all 215
+repository tests, production extension fixture acceptance, real disposable-
+Chrome pairing, all nine PWA baselines, the 40-state overlay update/check, the
+10,000-message ZIP benchmark, and the production dependency audit. The changed
+Windows captures were inspected at full resolution. Native installer lifecycle,
+current persistent-profile installation, and a new green commit/CI run remain
+required before this update is a release checkpoint. No authenticated Instagram
+mutation was part of the completed matrix.
 
 Pending acceptance:
 
-- Install or update userscript/extension 0.9.2 in the operator's intended
+- Install or update userscript/extension 0.10.3 in the operator's intended
   persistent Chrome profile and confirm that live actions start locked
 - Authenticated Instagram walkthrough with the installed companion loaded,
   without arming an action
@@ -223,8 +230,10 @@ The controlled-action reviews reproduced bounded defects in target ownership,
 dialog freshness, durable reservation, restored limits, exact-message live
 control, packaging, discard-time cancellation, and secure capability issuance.
 All are remediated with focused regressions; `docs/SECURITY_REVIEW.md` records no
-surviving reportable finding in the reviewed patch. The current 193-test suite,
-companion source validation, unpacked/ZIP extension build, nine-image Windows
-PWA baseline check, and 39-image Windows overlay check pass. The overlay recovery
-work is committed and included in green CI run 46. Authenticated profile DOM was
-inspected read-only; no authenticated account or DM mutation has been run.
+surviving candidate in the 2026-08-08 diff-focused discovery review. Companion
+source validation, all 215 repository tests, extension fixture acceptance, real
+disposable-Chrome pairing, nine PWA baselines, the 40-image Windows overlay
+check, the ZIP benchmark, and the production dependency audit pass. A coherent
+commit and native installer/CI gates remain pending. Authenticated profile DOM was
+inspected read-only in an earlier diagnostic; no authenticated account or DM
+mutation has been run.

@@ -597,13 +597,14 @@
     ),
     'cancel-dm-live': () => messagesView.cancel(runtime),
     'batch-stop': () => batchController.abort(runtime),
+    'bot-review': () => queueView.botReview(runtime),
     'bot-start': () => queueView.botStart(runtime),
     'capture-visible': () => captureView.captureVisible(runtime),
     close: () => setOpen(false),
     'inspect-messages': () => messagesView.inspect(runtime),
     'mass-unsend': () => messagesView.massUnsend(runtime),
     'save-limits': () => batchController.saveLimits(runtime),
-    'scan-full-list': () => captureView.scanFullList(runtime),
+    'scan-full-list': (target) => captureView.scanFullList(runtime, target.dataset.listType),
     'scan-sent-dms': () => messagesView.scanSent(runtime),
     open: (opener) => setOpen(true, { opener }),
     'queue-complete': () => queueView.updateCurrent(runtime, 'completed'),
@@ -645,6 +646,9 @@
   }
 
   function onShadowChange(event) {
+    if (['bot-source', 'bot-action', 'bot-count'].includes(event.target.dataset?.iaRole)) {
+      queueView.invalidateBotReview(runtime);
+    }
     const preference = event.target.dataset?.iaPreference;
     if (preference) {
       const rawValue = preference === 'opacity'

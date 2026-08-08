@@ -36,18 +36,23 @@ batch controls deliberately stay disabled unless those tab APIs are available.
 
 ### Using it
 
-**Follower checker** — open your Followers or Following list, then **Scan full
-list**. It scrolls the open list and reads every row. Scan both to get mutuals
-and not-following-back.
+**Follower checker** — open Following and choose **Scan Following**, then open
+Followers and choose **Scan Followers**. Each step scrolls only the open list and
+reads every rendered row. **Compare** becomes available once both lists exist and
+shows mutuals and both not-following-back groups locally.
 
-**Follow / Unfollow** — pick targets, action, and how many, then **Start run**.
-The script opens each profile when its turn comes and resolves the exact
-relationship control again before acting.
+**Follow / Unfollow** — pick targets, action, and how many, then choose **Review
+run**. The exact targets, duplicates, and omissions are frozen for inspection;
+**Start** appears only while that review matches the current controls. The script
+opens each profile when its turn comes and resolves the exact relationship
+control again before acting.
 
-**DM Unsend** — open a conversation and use **Check conversation** or **Scan
-first**. **Unsend all DMs** loads the thread and processes only rows proven sent
-by the current account, newest to oldest. Each action uses the source-audited
-menu and confirmation sequence. This cannot be undone.
+**DM Unsend** — open a conversation and use the primary **Unsend all DMs** card.
+The quieter **Check conversation** control refreshes read-only evidence. The
+runner loads history and processes only rows proven sent by the current account,
+newest to oldest, without repeatedly repositioning a thread already at its
+loaded boundary. Each action uses the source-audited menu and confirmation
+sequence. This cannot be undone.
 
 **Unlocking live controls** — open the gear menu, select **Enable live actions
 for 15 minutes**, and type `ENABLE LIVE ACTIONS`. This only enables the buttons;
@@ -67,7 +72,7 @@ accepts only the newly surfaced menu and confirmation controls for each item.
 Updates are automatic. Tampermonkey re-checks the same address and offers new
 versions as they are published.
 
-For this handoff, confirm the Tampermonkey dashboard shows **0.9.2 or later**
+For this handoff, confirm the Tampermonkey dashboard shows **0.10.3 or later**
 after updating. A panel that says **Live actions enabled in this tab** is the
 legacy 0.9.0 build; reload only after Tampermonkey shows the newer version. The
 current build starts with **Userscript mode · live actions locked**.
@@ -126,11 +131,11 @@ shared code into `dist/extension/lib/`, and the extension will not start without
 
 After rebuilding, reload the extension in the extension manager **and** reload
 any open Instagram tabs, or you will keep running the previous version.
-For this handoff, the extension manager should show **0.9.2 or later**.
+For this handoff, the extension manager should show **0.10.3 or later**.
 
 On a fresh install Instagram shows only a small launcher; opening it reveals the
-tools. On desktop, drag the header to move the panel and either marked corner to
-resize it. Surface opacity ranges from 55% to 100%, with a readable 88% default;
+tools. On desktop, drag the header to move the panel and use the marked
+lower-right handle to resize it. Surface opacity ranges from 55% to 100%, with a readable 88% default;
 the Instagram page remains visible underneath at lower values. Dock side, width,
 theme, density, position, size, and opacity stay on your machine. Narrow screens
 use a fitted bottom sheet instead of an off-screen floating panel.
@@ -139,18 +144,20 @@ use a fitted bottom sheet instead of an off-screen floating panel.
 
 No pairing is needed for these. Open the panel on Instagram and use:
 
-**Follower checker.** Open your Followers or Following list, then choose
-**Scan full list**. It scrolls the open list and reads every row, so it is not
-limited to what is on screen. It reports a complete scan only when the list
-truly reaches its end; a partial scan says so rather than quietly under-counting.
-Scan both lists to get the mutual and not-following-back numbers.
+**Follower checker.** Open Following and choose **Scan Following**, then open
+Followers and choose **Scan Followers**. Each scan scrolls the open list and
+reads every row, so it is not limited to what is on screen. It reports a complete
+scan only when the list truly reaches its end; a partial scan says so rather than
+quietly under-counting. Choose **Compare** after both lists are present.
 
-**Follow / Unfollow.** Choose where the targets come from (either checker result,
-or an imported queue), the action, and how many to run this time. Each account is
-opened, re-checked, and acted on individually.
+**Follow / Unfollow.** Choose where the targets come from (either checker result
+or an imported queue), the action, and how many to run this time. Choose **Review
+run** to inspect and freeze the exact targets, duplicates, and omissions. **Start**
+appears only while the review remains current. Each account is opened, re-checked,
+and acted on individually.
 
-**Mass DM unsend.** Open a conversation and choose **Check conversation**.
-Expand **Unsend all DMs**; its badge is `live locked` by default. Choose
+**Mass DM unsend.** Open a conversation. The primary **Unsend all DMs** card is
+`live locked` by default; **Check conversation** is a secondary read-only check. Choose
 **Unlock Unsend all DMs**, type `UNSEND ALL DMS`, then choose **Unsend all DMs**
 again and accept the permanent-action confirmation. The 15-minute authorization
 is checked before each message, and only rows proven sent by the current account

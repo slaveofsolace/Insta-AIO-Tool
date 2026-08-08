@@ -458,7 +458,7 @@
     }
     const confirmed = runtime.window.confirm(
       'Unsend every message you sent in this conversation?\n\n'
-      + 'The conversation will load from newest to oldest. This is permanent and cannot be undone.',
+      + 'Older history will load once, then removal works forward from the oldest loaded sent message. This is permanent and cannot be undone.',
     );
     if (!confirmed) {
       runtime.status('Canceled. Nothing was changed.', 'neutral');

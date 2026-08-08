@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-05T23:05:49.722Z",
+  "capturedAt": "2026-08-08T14:56:07.844Z",
   "platform": "win32",
-  "builtExtensionVersion": "0.9.0",
+  "builtExtensionVersion": "0.10.3",
   "screenshots": [
     {
       "id": "toolbox-floating-translucent",
@@ -156,6 +156,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Follower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -171,6 +175,10 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "",
               "tone": null,
               "visible": true
@@ -186,6 +194,10 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "",
               "tone": null,
               "visible": true
@@ -204,6 +216,10 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(255, 255, 255)",
+              "color": "rgb(16, 16, 16)",
+              "textContrast": 19.028110547666497,
+              "textFillColor": "rgb(16, 16, 16)",
               "text": "",
               "tone": null,
               "visible": false
@@ -267,7 +283,7 @@
     },
     {
       "id": "profile-not-following-no-match",
-      "sha256": "5a53bb6b29d8bad31db8155ceb3df603baab7bbe612c87b739740495d4a24201",
+      "sha256": "5523031cc74145c12cfb3969c7752c26b5245a497cd95d3ed3324ded4345a488",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -392,6 +408,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Page readyIdentity and state were read without clicking.@@demo_creatorProfile reviewnot-followingRouteprofileQueueNext: @someone_elseNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.Installed Instagram toolsFollower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -462,7 +482,7 @@
     },
     {
       "id": "profile-following-queue-match",
-      "sha256": "167e1fd7bcd0135d28aa42d85b8c4d77f59bc2081f73bd93cf39b241dfc5c2c9",
+      "sha256": "d98f5110866fe9e94ec99719b48db143e1864fb4fabb878425e0180f3f6c2e11",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -587,6 +607,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Page readyIdentity and state were read without clicking.@@demo_creatorProfile reviewfollowingRouteprofileQueueMatches unfollowNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.Installed Instagram toolsFollower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -657,7 +681,7 @@
     },
     {
       "id": "profile-ambiguous-safe-stop",
-      "sha256": "ae2bb5862c22bcd786c679643d6d27d2acf38d81a9400737618edd8e8a33e23b",
+      "sha256": "b5360eab698bf60c0f0d486448a0ee2cf5da77c2b57e62409ece0a4bd5c1a1f2",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -781,6 +805,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Page readyIdentity and state were read without clicking.@@demo_creatorProfile reviewAmbiguous — safe stopRouteprofileQueueMatches unfollowNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.Installed Instagram toolsFollower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -851,7 +879,7 @@
     },
     {
       "id": "followers-first-capture",
-      "sha256": "09aca8e29b4502e2022dd320b24450ce684b85d3d18355a53434a5d776281af7",
+      "sha256": "2a524f15b5bb8ba8616a3ef8d63154c470a283dc08214f6db66ca8fd93171534",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "followers",
@@ -989,6 +1017,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "3",
               "tone": null,
               "visible": true
@@ -1000,6 +1032,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "followers · updated Aug 2, 2026, 12:00 PM",
               "tone": null,
               "visible": true
@@ -1011,6 +1047,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "3 unique followers accounts captured",
               "tone": null,
               "visible": true
@@ -1022,6 +1062,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "3 rendered; 3 added; 0 duplicates ignored.",
               "tone": null,
               "visible": true
@@ -1081,13 +1125,18 @@
             },
             {
               "height": 44,
-              "label": "FollowingFollowers",
-              "width": 283
+              "label": "Scan",
+              "width": 55.6875
             },
             {
               "height": 44,
-              "label": "Scan full list",
-              "width": 102.109375
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 283
             },
             {
               "height": 44,
@@ -1096,13 +1145,13 @@
             },
             {
               "height": 44,
-              "label": "Clear checker",
-              "width": 110.609375
+              "label": "Download selected list",
+              "width": 168.875
             },
             {
               "height": 44,
-              "label": "Download selected list",
-              "width": 168.875
+              "label": "Clear checker",
+              "width": 110.609375
             }
           ],
           "viewTitle": "Follower checker",
@@ -1112,7 +1161,7 @@
     },
     {
       "id": "following-repeated-capture",
-      "sha256": "b57bb24c2bb8f34ed5b453407b65919a4b8ea2d291c5cf2dcb03b84ee9304403",
+      "sha256": "f2d2518cc3ce643cc7c644534ad98c6335070ae0e97d47b0a73a6704c4074fc1",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "following",
@@ -1250,6 +1299,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "4",
               "tone": null,
               "visible": true
@@ -1261,6 +1314,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "following · updated Aug 2, 2026, 12:00 PM",
               "tone": null,
               "visible": true
@@ -1272,6 +1329,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "4 unique following accounts captured",
               "tone": null,
               "visible": true
@@ -1283,6 +1344,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "3 rendered; 2 added; 1 duplicate ignored.",
               "tone": null,
               "visible": true
@@ -1342,13 +1407,18 @@
             },
             {
               "height": 44,
-              "label": "FollowingFollowers",
-              "width": 283
+              "label": "Scan",
+              "width": 55.6875
             },
             {
               "height": 44,
-              "label": "Scan full list",
-              "width": 102.109375
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 283
             },
             {
               "height": 44,
@@ -1357,13 +1427,13 @@
             },
             {
               "height": 44,
-              "label": "Clear checker",
-              "width": 110.609375
+              "label": "Download selected list",
+              "width": 168.875
             },
             {
               "height": 44,
-              "label": "Download selected list",
-              "width": 168.875
+              "label": "Clear checker",
+              "width": 110.609375
             }
           ],
           "viewTitle": "Follower checker",
@@ -1373,7 +1443,7 @@
     },
     {
       "id": "queue-locked",
-      "sha256": "c36c4f2c8baf5ef3ac569eb44c9543a5770039d1a5cd763edb1e6444c5c67b57",
+      "sha256": "536a87aac8034e2658559545b6bee58c9b0d78154a7008066195f2bbf980963b",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -1427,11 +1497,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 687.390625,
+            "bottom": 744.390625,
             "height": 69.171875,
             "left": 1080,
             "right": 1410,
-            "top": 618.21875,
+            "top": 675.21875,
             "width": 330
           },
           "header": {
@@ -1479,18 +1549,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 688.390625,
-            "height": 634.390625,
+            "bottom": 745.390625,
+            "height": 691.390625,
             "left": 1031,
             "right": 1411,
             "top": 54,
             "width": 380
           },
-          "panelAreaShare": 0.18600959683641977,
+          "panelAreaShare": 0.20272255979938272,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 688.390625,
-            "height": 634.390625,
+            "bottom": 745.390625,
+            "height": 691.390625,
             "left": 1031,
             "right": 1411,
             "top": 54,
@@ -1508,6 +1578,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Live actions locked",
               "tone": null,
               "visible": true
@@ -1521,6 +1595,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(155, 93, 9)",
+              "textContrast": null,
+              "textFillColor": "rgb(155, 93, 9)",
               "text": "locked",
               "tone": "warning",
               "visible": true
@@ -1533,6 +1611,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "Confirm one live item in the paired PWA before an exact arm is even available.",
               "tone": null,
               "visible": true
@@ -1547,6 +1629,10 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm exact action",
               "tone": null,
               "visible": true
@@ -1604,13 +1690,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -1634,8 +1720,8 @@
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -1650,7 +1736,7 @@
     },
     {
       "id": "queue-exact-target-ready",
-      "sha256": "bc41873572461316e847667567ab8ac59d422115402eb8b653a8d1c5a88adca4",
+      "sha256": "c374db63d20603304c1d1de260f5436bd54960bbba1323aa8b33a17da1e9f53d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -1705,11 +1791,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 862.34375,
+            "bottom": 883,
             "height": 69.171875,
             "left": 1080,
             "right": 1410,
-            "top": 793.171875,
+            "top": 813.828125,
             "width": 330
           },
           "header": {
@@ -1757,18 +1843,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 863.34375,
-            "height": 809.34375,
+            "bottom": 882,
+            "height": 828,
             "left": 1031,
             "right": 1411,
             "top": 54,
             "width": 380
           },
-          "panelAreaShare": 0.2373075810185185,
+          "panelAreaShare": 0.2427777777777778,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 863.34375,
-            "height": 809.34375,
+            "bottom": 882,
+            "height": 828,
             "left": 1031,
             "right": 1411,
             "top": 54,
@@ -1786,6 +1872,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "unfollow @demo_creator",
               "tone": null,
               "visible": true
@@ -1799,6 +1889,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(155, 93, 9)",
+              "textContrast": null,
+              "textFillColor": "rgb(155, 93, 9)",
               "text": "ready",
               "tone": "warning",
               "visible": true
@@ -1811,6 +1905,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "This profile and relationship exactly match the signed intent. Arming alone does not click.",
               "tone": null,
               "visible": true
@@ -1824,6 +1922,10 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm one unfollow",
               "tone": null,
               "visible": true
@@ -1888,13 +1990,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -1909,22 +2011,22 @@
             {
               "height": 44,
               "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
               "label": "",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -2044,6 +2146,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "unfollow @demo_creator",
               "tone": null,
               "visible": false
@@ -2057,6 +2163,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(173, 48, 37)",
+              "textContrast": null,
+              "textFillColor": "rgb(173, 48, 37)",
               "text": "armed",
               "tone": "danger",
               "visible": false
@@ -2069,6 +2179,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "90s remaining",
               "tone": null,
               "visible": false
@@ -2083,6 +2197,10 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "One action armed",
               "tone": null,
               "visible": false
@@ -2094,6 +2212,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "One-use arm active · page controls remain untouched",
               "tone": null,
               "visible": true
@@ -2125,7 +2247,7 @@
     },
     {
       "id": "queue-arm-expired",
-      "sha256": "1e236b023947ba403f95ddef1ce05f37c189035ff450b3280079f73999f86d98",
+      "sha256": "91100bcc65b8c08d722eadcb3865ff93a5fa5a669f93f7f3c8542812a8ebcc69",
       "scenario": {
         "after": "wait-account-expired",
         "captureListType": null,
@@ -2184,11 +2306,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 879.734375,
+            "bottom": 883,
             "height": 69.171875,
             "left": 1080,
             "right": 1410,
-            "top": 810.5625,
+            "top": 813.828125,
             "width": 330
           },
           "header": {
@@ -2236,18 +2358,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 880.734375,
-            "height": 826.734375,
+            "bottom": 882,
+            "height": 828,
             "left": 1031,
             "right": 1411,
             "top": 54,
             "width": 380
           },
-          "panelAreaShare": 0.2424066840277778,
+          "panelAreaShare": 0.2427777777777778,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 880.734375,
-            "height": 826.734375,
+            "bottom": 882,
+            "height": 828,
             "left": 1031,
             "right": 1411,
             "top": 54,
@@ -2265,6 +2387,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "unfollow @demo_creator",
               "tone": null,
               "visible": true
@@ -2278,6 +2404,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(173, 48, 37)",
+              "textContrast": null,
+              "textFillColor": "rgb(173, 48, 37)",
               "text": "expired",
               "tone": "danger",
               "visible": true
@@ -2290,6 +2420,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "The prior arm expired. Type the exact phrase again to create a new 90-second arm; the old expiry is never extended.",
               "tone": null,
               "visible": true
@@ -2303,6 +2437,10 @@
               "disabled": null,
               "exists": true,
               "hidden": true,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "1s remaining",
               "tone": null,
               "visible": false
@@ -2316,6 +2454,10 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm fresh unfollow",
               "tone": null,
               "visible": true
@@ -2380,13 +2522,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -2401,22 +2543,22 @@
             {
               "height": 44,
               "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
               "label": "",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -2431,7 +2573,7 @@
     },
     {
       "id": "messages-evidence-only",
-      "sha256": "e3913d5dded1d8d017e0dfc0003b2f84dfe0bf4c4002a97669666b69b5c2ae80",
+      "sha256": "44cca097a7219bca08fa4699ed7265e81d5e8efa6d6e14ef2d74591b120442e4",
       "scenario": {
         "after": "inspect-messages",
         "captureListType": null,
@@ -2567,6 +2709,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "3",
               "tone": null,
               "visible": true
@@ -2578,6 +2724,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Conversation ready",
               "tone": null,
               "visible": true
@@ -2589,6 +2739,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "You can read visible evidence or start Unsend all DMs.",
               "tone": null,
               "visible": true
@@ -2602,6 +2756,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "locked",
               "tone": "neutral",
               "visible": true
@@ -2661,6 +2819,11 @@
             },
             {
               "height": 44,
+              "label": "Unlock Unsend all DMs",
+              "width": 253
+            },
+            {
+              "height": 44,
               "label": "Check conversation",
               "width": 149.46875
             },
@@ -2676,11 +2839,6 @@
             },
             {
               "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 173.25
-            },
-            {
-              "height": 44,
               "label": "Arm exact message",
               "width": 149.171875
             }
@@ -2692,7 +2850,7 @@
     },
     {
       "id": "messages-exact-target-ready",
-      "sha256": "79c0cb7b236d5dbde1eca8320e7f6493ad789f801e3c0c70b635e4c25795aa8b",
+      "sha256": "6493708cf6c81c516dc0ac450a8ea3d88153ed6fb3f9d3f4466f222af102e540",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2828,6 +2986,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Message sent-1",
               "tone": null,
               "visible": true
@@ -2841,6 +3003,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(155, 93, 9)",
+              "textContrast": null,
+              "textFillColor": "rgb(155, 93, 9)",
               "text": "ready",
               "tone": "warning",
               "visible": true
@@ -2853,6 +3019,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "Exactly one rendered sent-message identity matches. Arming does not open its menu.",
               "tone": null,
               "visible": true
@@ -2866,6 +3036,10 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm one Unsend",
               "tone": null,
               "visible": true
@@ -2925,6 +3099,11 @@
             },
             {
               "height": 44,
+              "label": "Unlock Unsend all DMs",
+              "width": 253
+            },
+            {
+              "height": 44,
               "label": "Check conversation",
               "width": 149.46875
             },
@@ -2937,11 +3116,6 @@
               "height": 44,
               "label": "Download evidence",
               "width": 150.875
-            },
-            {
-              "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 173.25
             },
             {
               "height": 44,
@@ -2961,7 +3135,7 @@
     },
     {
       "id": "messages-wrong-conversation",
-      "sha256": "ce916067734e1ef089dd3cf73baf3a0ce52e53f7448e1697c32157be1a0e4490",
+      "sha256": "c9391b41df04f3dc228eeac2010ecee3d963fc5fe363699e81b5a1bb2295b4a3",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3096,6 +3270,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Message sent-1",
               "tone": null,
               "visible": true
@@ -3109,6 +3287,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(173, 48, 37)",
+              "textContrast": null,
+              "textFillColor": "rgb(173, 48, 37)",
               "text": "open message",
               "tone": "danger",
               "visible": true
@@ -3121,6 +3303,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "Open the exact conversation and keep sent message sent-1 rendered.",
               "tone": null,
               "visible": true
@@ -3135,6 +3321,10 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm one Unsend",
               "tone": null,
               "visible": true
@@ -3194,6 +3384,11 @@
             },
             {
               "height": 44,
+              "label": "Unlock Unsend all DMs",
+              "width": 253
+            },
+            {
+              "height": 44,
               "label": "Check conversation",
               "width": 149.46875
             },
@@ -3206,11 +3401,6 @@
               "height": 44,
               "label": "Download evidence",
               "width": 150.875
-            },
-            {
-              "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 173.25
             },
             {
               "height": 44,
@@ -3339,6 +3529,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Message sent-1",
               "tone": null,
               "visible": false
@@ -3352,6 +3546,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(173, 48, 37)",
+              "textContrast": null,
+              "textFillColor": "rgb(173, 48, 37)",
               "text": "armed",
               "tone": "danger",
               "visible": false
@@ -3364,6 +3562,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "90s remaining",
               "tone": null,
               "visible": false
@@ -3378,6 +3580,10 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
               "text": "One message armed",
               "tone": null,
               "visible": false
@@ -3389,6 +3595,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "message sent-1",
               "tone": null,
               "visible": true
@@ -3400,6 +3610,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "One-use arm active · page controls remain untouched",
               "tone": null,
               "visible": true
@@ -3431,7 +3645,7 @@
     },
     {
       "id": "workspace-unpaired",
-      "sha256": "c8de2447e16e70c33402d84c8723424e6c696a3f1814d2ad1fbcd0aaf432ed8d",
+      "sha256": "27eb7b5c85027ed2b3b50b14ab4555a5566d4ad1e8ee0720539ed4ff789b8574",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3567,6 +3781,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Workspace not paired",
               "tone": null,
               "visible": true
@@ -3578,6 +3796,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "Create a code in PWA Settings, then pair the exact PWA tab from extension setup.",
               "tone": null,
               "visible": true
@@ -3587,6 +3809,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "None",
               "tone": null,
               "visible": true
@@ -3601,6 +3827,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Open workspace",
               "tone": null,
               "visible": true
@@ -3664,7 +3894,7 @@
     },
     {
       "id": "workspace-read-only",
-      "sha256": "f26f02c8d58781fc500d1a82c445d29f0b169a99e555b0e0ccddb9d4765eea54",
+      "sha256": "f6664d3edd6d5afee1f07194e4d6ba8d2bddb95bb734f81497d43032cc08c90d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3794,6 +4024,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Workspace paired",
               "tone": null,
               "visible": true
@@ -3803,6 +4037,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "read",
               "tone": null,
               "visible": true
@@ -3818,6 +4056,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Open workspace",
               "tone": null,
               "visible": true
@@ -3881,7 +4123,7 @@
     },
     {
       "id": "workspace-action-permission",
-      "sha256": "40c8b84b186bdd423c1d315359901b2b000b9f8d1b2da322efb8a75292020a17",
+      "sha256": "d88a8322f45c9ce6cd36f20af9c587329a8dc9b9f0f01ab5e5800042df2e5f12",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4011,6 +4253,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Workspace paired",
               "tone": null,
               "visible": true
@@ -4020,6 +4266,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "read + action",
               "tone": null,
               "visible": true
@@ -4035,6 +4285,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Open workspace",
               "tone": null,
               "visible": true
@@ -4194,6 +4448,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(173, 48, 37)",
+              "textContrast": null,
+              "textFillColor": "rgb(173, 48, 37)",
               "text": "armed",
               "tone": "danger",
               "visible": false
@@ -4205,6 +4463,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "@demo_creator",
               "tone": null,
               "visible": true
@@ -4216,6 +4478,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
               "text": "Instagram action surface visible · overlay controls suspended",
               "tone": null,
               "visible": true
@@ -4247,7 +4513,7 @@
     },
     {
       "id": "session-expired",
-      "sha256": "42c9cd54a8935fb3e47e82058dcdbbde4e3e77b9f3aea6c57d808cabbbdd1f31",
+      "sha256": "83c88a0607f92841edd4d8e73120f2baf251fe32941a68772c59fe2890faf6e8",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4370,6 +4636,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Login requiredSign in manually before inspecting again.IGNo exact target on this routeInstagram contextloginRouteloginQueueNext: @demo_creatorNext safe stepRefresh page contextInspection remains available; account and message actions stay unavailable.Refresh page contextObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.Installed Instagram toolsFollower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -4433,7 +4703,7 @@
     },
     {
       "id": "session-challenge",
-      "sha256": "3c82f69a2d6708b08fd62de4097103641d78b5d9a28f14941785e3c76b022a3c",
+      "sha256": "04ba1dc54618d0d2a6355e6c72e94a502a71abf556b01503a1260d21369c4b08",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4556,6 +4826,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Challenge detectedResolve Instagram’s challenge manually before continuing.IGNo exact target on this routeInstagram contextfeedRoutefeedQueueNext: @demo_creatorNext safe stepRefresh page contextInspection remains available; account and message actions stay unavailable.Refresh page contextObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.Installed Instagram toolsFollower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -4619,7 +4893,7 @@
     },
     {
       "id": "session-rate-limited",
-      "sha256": "cc15724a6e0d60ca8352c4743c20006aa61be693d27ab3a6f974e13c7eb5bf46",
+      "sha256": "27f99c5e18eca5564806979851ba942bc4edc39badb56b158bc22f6972056655",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4742,6 +5016,10 @@
               "disabled": null,
               "exists": true,
               "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
               "text": "Rate limit detectedWait before doing more work in this session.@@demo_creatorProfile reviewNot resolvedRouteprofileQueueMatches unfollowNext safe stepRefresh no-click inspectionRe-read the exact profile header and relationship control without activating it.Refresh no-click inspectionObserved Aug 2, 2026, 12:00 PM. Inspection is no-click.Installed Instagram toolsFollower checkerCapture Followers and Following separately, then compare the rendered rows locally.read onlyFollow / UnfollowImport a reviewed queue and inspect one exact profile without clicking first.live lockedDM UnsendRead visible evidence or resolve one exact reviewed sent message without opening its menu.live locked",
               "tone": null,
               "visible": true
@@ -4805,7 +5083,7 @@
     },
     {
       "id": "profile-dark-desktop",
-      "sha256": "18f1c4815377edb6e6537757f077b5b3c72e1549a1852910520588c13c4af53f",
+      "sha256": "2b3f5f3cc7bfc06a4cec2a87a4086726648b739cb64d2a4b54740c1120f0f658",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4978,7 +5256,7 @@
     },
     {
       "id": "queue-dark-desktop",
-      "sha256": "21b1de854d615a498d11cfcbc0c8e70ca49277e3f30a68dca626827e927857e9",
+      "sha256": "26e099fbf385bfb734c9e9f3c6cb996f4bd6339a6f58ed835c4ebb3815e19dfa",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5012,11 +5290,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 687.390625,
+            "bottom": 744.390625,
             "height": 69.171875,
             "left": 1080,
             "right": 1410,
-            "top": 618.21875,
+            "top": 675.21875,
             "width": 330
           },
           "header": {
@@ -5064,18 +5342,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 688.390625,
-            "height": 634.390625,
+            "bottom": 745.390625,
+            "height": 691.390625,
             "left": 1031,
             "right": 1411,
             "top": 54,
             "width": 380
           },
-          "panelAreaShare": 0.18600959683641977,
+          "panelAreaShare": 0.20272255979938272,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 688.390625,
-            "height": 634.390625,
+            "bottom": 745.390625,
+            "height": 691.390625,
             "left": 1031,
             "right": 1411,
             "top": 54,
@@ -5145,13 +5423,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -5175,8 +5453,8 @@
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -5191,7 +5469,7 @@
     },
     {
       "id": "profile-short-laptop",
-      "sha256": "96936403b69d59c9678dd7b8e4b1c032217db228c1b89f8c83196b35932ae44b",
+      "sha256": "d20f34bf0ae28cb13a93d80ad49262a23f28f91d3539f40e012c86dcadb18b6b",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5364,7 +5642,7 @@
     },
     {
       "id": "queue-short-laptop-dark",
-      "sha256": "576f2708cef1831a7c134d3665fca25587ad34e0a575de190783c26f2c76e442",
+      "sha256": "7cb963b2ed59b4278e306231419ed376ce891129b41ad0b0b1a56c7f8edb1609",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5398,11 +5676,11 @@
           "documentWidth": 1265,
           "dock": "right",
           "footer": {
-            "bottom": 687.390625,
+            "bottom": 703,
             "height": 69.171875,
             "left": 920,
             "right": 1250,
-            "top": 618.21875,
+            "top": 633.828125,
             "width": 330
           },
           "header": {
@@ -5450,18 +5728,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 688.390625,
-            "height": 634.390625,
+            "bottom": 702,
+            "height": 648,
             "left": 871,
             "right": 1251,
             "top": 54,
             "width": 380
           },
-          "panelAreaShare": 0.2615759955512153,
+          "panelAreaShare": 0.2671875,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 688.390625,
-            "height": 634.390625,
+            "bottom": 702,
+            "height": 648,
             "left": 871,
             "right": 1251,
             "top": 54,
@@ -5531,13 +5809,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -5547,22 +5825,22 @@
             {
               "height": 44,
               "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
               "label": "",
-              "width": 298
+              "width": 283
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -5577,7 +5855,7 @@
     },
     {
       "id": "profile-narrow-tablet",
-      "sha256": "f94f26e107a7a26960706fb6715167b0b74e7b1760162472b6c6171f3fa078f2",
+      "sha256": "80d34d7dc1930e57ecfe96b021f270aed1cfb7e87f5eeb3494c888dfbe3bd7b5",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5750,7 +6028,7 @@
     },
     {
       "id": "messages-narrow-tablet-dark",
-      "sha256": "077d7394d3a0a10349c7fb701f04c55d5b9532a7c3fa96d2f6fb686e7983d5f7",
+      "sha256": "7a86c447b2b308445bd2b3fbbb8ab50f9c25eef7d9f4cf4b3614969cde0bfe97",
       "scenario": {
         "after": "inspect-messages",
         "captureListType": null,
@@ -5911,6 +6189,11 @@
               "width": 44
             },
             {
+              "height": 56,
+              "label": "Unlock Unsend all DMs",
+              "width": 169
+            },
+            {
               "height": 44,
               "label": "Check conversation",
               "width": 149.46875
@@ -5927,11 +6210,6 @@
             },
             {
               "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 173.25
-            },
-            {
-              "height": 44,
               "label": "Arm exact message",
               "width": 149.171875
             }
@@ -5943,7 +6221,7 @@
     },
     {
       "id": "profile-mobile-portrait",
-      "sha256": "a426e9ec8420623d4da9868d31678345a6f6040d79515fed5e0773a042c12f20",
+      "sha256": "e378ecab26c78769b507eeb33273eb8d7138f2173137e95ea5ea76ba920275c7",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6111,7 +6389,7 @@
     },
     {
       "id": "queue-mobile-portrait-dark",
-      "sha256": "0e5bb6d9600b44d2319a70cc21a5219cc728484f9acb50f7b3791247013b65a4",
+      "sha256": "b06e5aa44941921250f5df1597c3f34bcae228cfd767e6f168aa03d87203359f",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6145,30 +6423,30 @@
           "documentWidth": 390,
           "dock": "right",
           "footer": {
-            "bottom": 790,
+            "bottom": 792,
             "height": 51.78125,
             "left": 1,
             "right": 389,
-            "top": 738.21875,
+            "top": 740.21875,
             "width": 388
           },
           "header": {
-            "bottom": 292.15625,
+            "bottom": 286.453125,
             "height": 99.765625,
             "left": 1,
             "right": 389,
-            "top": 192.390625,
+            "top": 186.6875,
             "width": 388
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 263.765625,
+                "bottom": 258.0625,
                 "height": 44,
                 "left": 289,
                 "right": 379,
-                "top": 219.765625,
+                "top": 214.0625,
                 "width": 90
               },
               "scroll": 90
@@ -6176,11 +6454,11 @@
             "copy": {
               "client": 270,
               "rect": {
-                "bottom": 281.15625,
+                "bottom": 275.453125,
                 "height": 78.765625,
                 "left": 11,
                 "right": 281,
-                "top": 202.390625,
+                "top": 196.6875,
                 "width": 270
               },
               "scroll": 270
@@ -6198,20 +6476,20 @@
           "overflowing": [],
           "panel": {
             "bottom": 844,
-            "height": 652.609375,
+            "height": 658.3125,
             "left": 0,
             "right": 390,
-            "top": 191.390625,
+            "top": 185.6875,
             "width": 390
           },
-          "panelAreaShare": 0.773233856635071,
+          "panelAreaShare": 0.7799911137440758,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 844,
-            "height": 652.609375,
+            "height": 658.3125,
             "left": 0,
             "right": 390,
-            "top": 191.390625,
+            "top": 185.6875,
             "width": 390
           },
           "presentationIntersectsTarget": false,
@@ -6273,13 +6551,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -6289,22 +6567,22 @@
             {
               "height": 44,
               "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 356
+              "width": 341
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 356
+              "width": 341
             },
             {
               "height": 44,
               "label": "",
-              "width": 356
+              "width": 341
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -6319,7 +6597,7 @@
     },
     {
       "id": "profile-mobile-landscape",
-      "sha256": "15ddb287f7ee9ebc278a70c23928091f626fe4ccdda0077fbf17421cc392ae1d",
+      "sha256": "ce7c475ac16415ac3ffebcb4962a252e70fe17472a51b55391ebc3bd0cae18c3",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6492,7 +6770,7 @@
     },
     {
       "id": "queue-mobile-landscape-dark",
-      "sha256": "ad479b27518ecec19112aeb1699921a9c7c413690396d8c170c34dab6dd57b00",
+      "sha256": "d028a041aa9d2553b528bd8c31a68c9c1aadcb7a1553ccb0f4e27e9b27274748",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6659,13 +6937,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -6689,8 +6967,8 @@
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -6705,7 +6983,7 @@
     },
     {
       "id": "profile-zoom-200-light",
-      "sha256": "64a900929a227f5bf7c0a500b8658c4f5cef00795828f8ef01eaa5468cab8134",
+      "sha256": "ce5c053444917946e6b23587cc82bfeb7ac9f83b7d0fcb30acf0f4cd78cf7aeb",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6878,7 +7156,7 @@
     },
     {
       "id": "profile-zoom-200-dark",
-      "sha256": "1632279636bfce437024ba019faeaed77409436f429032199949e5d7457272a4",
+      "sha256": "6c00e2f976c0599d15110a83e3accb6ae566a6960d13b48cf5c477c11d7e8829",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7051,7 +7329,7 @@
     },
     {
       "id": "queue-zoom-200-light",
-      "sha256": "b0fd4f77864e7a59c07ead1b1a46ee165de4c7718bce0b17cda2a76b98288fb5",
+      "sha256": "4663714925fc77065eb76fcf7797705cb0bf528f19439f3a3f9c6794b5964de1",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7225,13 +7503,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.0703125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -7255,8 +7533,8 @@
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.6015625
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -7271,7 +7549,7 @@
     },
     {
       "id": "queue-zoom-200-dark",
-      "sha256": "a480b157903967e26079fb15f896057c5df8a8c92d56fc8d4e63014ece9696a5",
+      "sha256": "bdb3f5e43053b0e44590a05ae5b03b8287137ef9e861be324c52427f3d9ac4b3",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7294,7 +7572,14 @@
         "viewport": "desktop",
         "width": "standard",
         "zoom": 2,
-        "semantics": [],
+        "semantics": [
+          {
+            "equals": "Open profile",
+            "minContrast": 4.5,
+            "visible": true,
+            "selector": "[data-ia-role=\"queue-open\"]"
+          }
+        ],
         "metrics": {
           "activeElementSection": "queue",
           "adaptiveDock": "reviewed-target",
@@ -7385,7 +7670,27 @@
           "scrollerHorizontalOverflow": 0,
           "selectedHidden": false,
           "selectedHorizontalOverflow": 0,
-          "semantics": {},
+          "semantics": {
+            "[data-ia-role=\"queue-open\"]": {
+              "attributes": {
+                "class": "ia-link-button",
+                "data-ia-role": "queue-open",
+                "rel": "noreferrer",
+                "href": "https://www.instagram.com/demo_creator/",
+                "target": "_self"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Open profile",
+              "tone": null,
+              "visible": true
+            }
+          },
           "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
           "strip": null,
           "target": {
@@ -7445,13 +7750,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.0703125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -7475,8 +7780,8 @@
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.6015625
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -7664,7 +7969,7 @@
     },
     {
       "id": "queue-forced-colors",
-      "sha256": "51cd9af8903f470709dcefd2337a6409050721af5391d10748b11cc397a86a8a",
+      "sha256": "6f9ce54536561e238718fd93406965d654d54e6f1b999bf4ad81bc2fbcd2aff9",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7698,11 +8003,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 688.390625,
+            "bottom": 745.390625,
             "height": 69.171875,
             "left": 1081,
             "right": 1409,
-            "top": 619.21875,
+            "top": 676.21875,
             "width": 328
           },
           "header": {
@@ -7750,18 +8055,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 690.390625,
-            "height": 636.390625,
+            "bottom": 747.390625,
+            "height": 693.390625,
             "left": 1031,
             "right": 1411,
             "top": 54,
             "width": 380
           },
-          "panelAreaShare": 0.18659601658950617,
+          "panelAreaShare": 0.20330897955246913,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 690.390625,
-            "height": 636.390625,
+            "bottom": 747.390625,
+            "height": 693.390625,
             "left": 1031,
             "right": 1411,
             "top": 54,
@@ -7831,13 +8136,13 @@
             },
             {
               "height": 44,
-              "label": "Complete",
-              "width": 87.40625
+              "label": "Mark complete",
+              "width": 121.921875
             },
             {
               "height": 44,
-              "label": "Skip",
-              "width": 53.078125
+              "label": "Skip item",
+              "width": 85.390625
             },
             {
               "height": 44,
@@ -7861,8 +8166,8 @@
             },
             {
               "height": 44,
-              "label": "Start run",
-              "width": 81.609375
+              "label": "Review targets",
+              "width": 118.8125
             },
             {
               "height": 44,
@@ -8084,16 +8389,377 @@
           "width": "standard"
         }
       }
+    },
+    {
+      "id": "queue-run-review",
+      "sha256": "71c1266bd6ab99657153af0ddac592dc557ab5237a556cacd7c258687c97af1d",
+      "scenario": {
+        "after": "bot-review",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "layout": "docked",
+        "mode": "qa-profile-following-queue",
+        "opacity": null,
+        "open": true,
+        "pairing": "action",
+        "panelHeight": null,
+        "panelWidth": null,
+        "position": null,
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "queue",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "1 reviewed",
+            "tone": "warning",
+            "selector": "[data-ia-role=\"bot-badge\"]"
+          },
+          {
+            "equals": "1 target ready to confirm",
+            "selector": "[data-ia-role=\"bot-review-title\"]"
+          },
+          {
+            "includes": [
+              "0 duplicates removed",
+              "0 left outside this bounded run",
+              "rechecked before action"
+            ],
+            "selector": "[data-ia-role=\"bot-review-detail\"]"
+          },
+          {
+            "includes": [
+              "Reviewed: @demo_creator",
+              "rechecked before action"
+            ],
+            "selector": "[data-ia-role=\"bot-detail\"]"
+          },
+          {
+            "includes": [
+              "@demo_creator"
+            ],
+            "selector": "[data-ia-role=\"bot-review-list\"]"
+          },
+          {
+            "hidden": true,
+            "selector": "[data-ia-action=\"bot-review\"]"
+          },
+          {
+            "hidden": false,
+            "selector": "[data-ia-action=\"bot-start\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "queue",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 883,
+            "height": 51.78125,
+            "left": 1080,
+            "right": 1410,
+            "top": 831.21875,
+            "width": 330
+          },
+          "header": {
+            "bottom": 172.15625,
+            "height": 117.15625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "headerSizing": {
+            "actions": {
+              "client": 90,
+              "rect": {
+                "bottom": 135.078125,
+                "height": 44,
+                "left": 1310,
+                "right": 1400,
+                "top": 91.078125,
+                "width": 90
+              },
+              "scroll": 90
+            },
+            "copy": {
+              "client": 160,
+              "rect": {
+                "bottom": 161.15625,
+                "height": 96.15625,
+                "left": 1142,
+                "right": 1302,
+                "top": 65,
+                "width": 160
+              },
+              "scroll": 160
+            },
+            "header": {
+              "client": 330,
+              "scroll": 330
+            }
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "layout": "docked",
+          "launcher": null,
+          "opacity": "88%",
+          "overflowing": [],
+          "panel": {
+            "bottom": 882,
+            "height": 828,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.2427777777777778,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 882,
+            "height": 828,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"bot-badge\"]": {
+              "attributes": {
+                "class": "ia-badge",
+                "data-ia-role": "bot-badge",
+                "data-tone": "warning"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(155, 93, 9)",
+              "textContrast": null,
+              "textFillColor": "rgb(155, 93, 9)",
+              "text": "1 reviewed",
+              "tone": "warning",
+              "visible": true
+            },
+            "[data-ia-role=\"bot-review-title\"]": {
+              "attributes": {
+                "data-ia-role": "bot-review-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "1 target ready to confirm",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bot-review-detail\"]": {
+              "attributes": {
+                "class": "ia-note",
+                "data-ia-role": "bot-review-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
+              "text": "0 duplicates removed; 0 left outside this bounded run. Every profile is rechecked before action.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bot-detail\"]": {
+              "attributes": {
+                "class": "ia-gate-detail",
+                "data-ia-role": "bot-detail"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(115, 115, 115)",
+              "textContrast": null,
+              "textFillColor": "rgb(115, 115, 115)",
+              "text": "Reviewed: @demo_creator. Every profile is rechecked before action.",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"bot-review-list\"]": {
+              "attributes": {
+                "class": "ia-list ia-list--compact",
+                "data-ia-role": "bot-review-list"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "@demo_creator",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"bot-review\"]": {
+              "attributes": {
+                "class": "ia-button",
+                "type": "button",
+                "data-ia-action": "bot-review",
+                "hidden": ""
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": true,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Review targets",
+              "tone": null,
+              "visible": false
+            },
+            "[data-ia-action=\"bot-start\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--danger",
+                "type": "button",
+                "data-ia-action": "bot-start"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgb(0, 149, 246)",
+              "color": "rgb(255, 255, 255)",
+              "textContrast": 3.1675437726105624,
+              "textFillColor": "rgb(255, 255, 255)",
+              "text": "Start unfollow run",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Reviewed 1 unfollow target. Nothing has run.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Toolbox",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Follower checker",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Follow / Unfollow",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "DM Unsend",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Move sidecar; use arrow keys for precise movement",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open profile",
+              "width": 105.6875
+            },
+            {
+              "height": 44,
+              "label": "Mark complete",
+              "width": 121.921875
+            },
+            {
+              "height": 44,
+              "label": "Skip item",
+              "width": 85.390625
+            },
+            {
+              "height": 44,
+              "label": "Arm exact action",
+              "width": 133.21875
+            },
+            {
+              "height": 44,
+              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 253
+            },
+            {
+              "height": 44,
+              "label": "UnfollowFollow",
+              "width": 253
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 253
+            },
+            {
+              "height": 44,
+              "label": "Start unfollow run",
+              "width": 141.234375
+            },
+            {
+              "height": 44,
+              "label": "Download queue state",
+              "width": 168.921875
+            }
+          ],
+          "viewTitle": "Follow / Unfollow",
+          "width": "standard"
+        }
+      }
     }
   ],
   "performance": {
-    "collapsedTaskMs": 4.016,
-    "openTaskMs": 3.6689999999999987,
+    "collapsedTaskMs": 2.9450000000000003,
+    "openTaskMs": 2.777,
     "queue": {
-      "durationMs": 25.5,
+      "durationMs": 23.200000000186265,
       "renderedItems": 1,
-      "totalOverlayNodes": 348
+      "totalOverlayNodes": 380
     },
-    "routeTransitionMs": 93
+    "routeTransitionMs": 85.39999999990687
   }
 }

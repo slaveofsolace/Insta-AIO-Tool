@@ -546,8 +546,12 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
         disabled: shadow.querySelector('[data-role="live-actions"]')?.disabled,
       },
       liveControls: [
-        'run-accounts', 'run-unsend', 'scan-following', 'scan-followers', 'scan-sent', 'stop-run',
+        'review-accounts', 'run-unsend', 'scan-following', 'scan-followers', 'scan-sent', 'stop-run',
       ].map((action) => Boolean(shadow.querySelector('[data-action="' + action + '"]'))),
+      reviewControl: {
+        disabled: shadow.querySelector('[data-action="review-accounts"]')?.disabled,
+        live: shadow.querySelector('[data-action="review-accounts"]')?.hasAttribute('data-live-action'),
+      },
       destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
         .map((control) => control.disabled),
       hasContextStrip: Boolean(shadow.querySelector('[data-role="context"]')),
@@ -581,7 +585,8 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.match(initial.resize, /Resize toolbox/);
   assert.match(initial.mode, /live actions locked/i);
   assert.deepEqual(initial.liveToggle, { checked: false, disabled: false });
-  assert.deepEqual(initial.destructiveDisabled, [true, true, true]);
+  assert.deepEqual(initial.destructiveDisabled, [true, true]);
+  assert.deepEqual(initial.reviewControl, { disabled: false, live: false });
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
   assert.deepEqual(initial.liveControls, [true, true, true, true, true, true]);
@@ -606,7 +611,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     };
   })()`, true);
   assert.match(unlocked.mode, /live actions unlocked/i);
-  assert.deepEqual(unlocked.destructiveDisabled, [false, false, false]);
+  assert.deepEqual(unlocked.destructiveDisabled, [false, false]);
   assert.equal(unlocked.clicks, 0, 'unlocking authority performs no Instagram action');
 
   const relocked = await webContents.executeJavaScript(`(() => {
@@ -622,7 +627,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     };
   })()`, true);
   assert.match(relocked.mode, /live actions locked/i);
-  assert.deepEqual(relocked.destructiveDisabled, [true, true, true]);
+  assert.deepEqual(relocked.destructiveDisabled, [true, true]);
   assert.equal(relocked.clicks, 0, 'relocking authority performs no Instagram action');
 
   await webContents.executeJavaScript(`(() => {

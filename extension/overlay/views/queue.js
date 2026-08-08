@@ -4,6 +4,7 @@
   const modules = globalThis.__instaAioOverlayModules;
   const shared = modules?.shared;
   if (!shared || modules.queueView) return;
+  const botDrafts = new WeakMap();
 
   function matchingArm(intent, arm) {
     return Boolean(
@@ -213,6 +214,7 @@
     renderCurrent(runtime);
     renderRuns(runtime);
     renderLiveGate(runtime);
+    renderBotDraft(runtime, botDrafts.get(runtime.model) || null);
   }
 
   async function importQueue(runtime, file) {
@@ -294,8 +296,8 @@
 
   function botTargets(runtime, source) {
     if (source === 'queue') {
-      return (runtime.model.manualQueue?.items || [])
-        .filter((entry) => entry.status === 'pending')
+      return (runtime.model.manualQueue?.queue || runtime.model.manualQueue?.items || [])
+        .filter((entry) => shared.ACTIONABLE_QUEUE_STATUSES.has(entry.status))
         .map((entry) => entry.account?.username)
         .filter(Boolean);
     }
@@ -307,42 +309,132 @@
     return list.map((account) => account.username || account).filter(Boolean);
   }
 
-  async function botStart(runtime) {
-    const { query, status } = runtime;
+  function botPlan(runtime) {
+    const { query } = runtime;
     const source = query('[data-ia-role="bot-source"]')?.value || 'not-following-me-back';
     const action = query('[data-ia-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
-    const requested = Number(query('[data-ia-role="bot-count"]')?.value) || 20;
+    const requested = Math.max(1, Math.min(250, Number(query('[data-ia-role="bot-count"]')?.value) || 20));
+    const pool = botTargets(runtime, source);
+    const unique = [...new Set(pool)];
+    const selected = unique.slice(0, requested);
+    return Object.freeze({
+      action,
+      omitted: Math.max(0, unique.length - selected.length),
+      removed: Math.max(0, pool.length - unique.length),
+      requested,
+      selected: Object.freeze(selected),
+      signature: JSON.stringify({ action, requested, selected, source }),
+      source,
+    });
+  }
 
-    const usernames = botTargets(runtime, source);
-    if (!usernames.length) {
-      status(
-        source === 'queue'
+  function renderBotDraft(runtime, draft) {
+    const { document, query, setText } = runtime;
+    const review = query('[data-ia-role="bot-review"]');
+    const reviewButton = query('[data-ia-action="bot-review"]');
+    const startButton = query('[data-ia-action="bot-start"]');
+    const badge = query('[data-ia-role="bot-badge"]');
+    if (review) review.hidden = !draft;
+    if (reviewButton) reviewButton.hidden = Boolean(draft);
+    if (startButton) {
+      startButton.hidden = !draft;
+      if (draft) startButton.textContent = `Start ${draft.action} run`;
+    }
+    if (badge) {
+      badge.textContent = draft ? `${draft.selected.length} reviewed` : 'idle';
+      badge.dataset.tone = draft ? 'warning' : 'neutral';
+    }
+    if (!draft) {
+      setText('bot-detail', 'Each target is opened, verified, and acted on one at a time with randomised pacing.');
+      return;
+    }
+    const preview = draft.selected.slice(0, 3).map((username) => `@${username}`).join(', ');
+    setText(
+      'bot-detail',
+      `Reviewed: ${preview}${draft.selected.length > 3 ? `, +${draft.selected.length - 3} more` : ''}. Every profile is rechecked before action.`,
+    );
+    setText('bot-review-title', `${draft.selected.length} target${draft.selected.length === 1 ? '' : 's'} ready to confirm`);
+    setText(
+      'bot-review-detail',
+      `${draft.removed} duplicate${draft.removed === 1 ? '' : 's'} removed; ${draft.omitted} left outside this bounded run. Every profile is rechecked before action.`,
+    );
+    const list = query('[data-ia-role="bot-review-list"]');
+    if (!list) return;
+    list.replaceChildren();
+    for (const username of draft.selected.slice(0, 8)) {
+      const row = document.createElement('li');
+      row.className = 'ia-list-item';
+      row.textContent = `@${username}`;
+      list.append(row);
+    }
+    if (draft.selected.length > 8) {
+      const row = document.createElement('li');
+      row.className = 'ia-list-item';
+      row.textContent = `+ ${draft.selected.length - 8} more`;
+      list.append(row);
+    }
+  }
+
+  function invalidateBotReview(runtime) {
+    botDrafts.delete(runtime.model);
+    renderBotDraft(runtime, null);
+  }
+
+  function botReview(runtime) {
+    const draft = botPlan(runtime);
+    if (!draft.selected.length) {
+      runtime.status(
+        draft.source === 'queue'
           ? 'The manual queue has no pending accounts.'
           : 'Capture both Followers and Following in the checker first.',
         'error',
       );
+      invalidateBotReview(runtime);
       return;
     }
-    const selected = usernames.slice(0, requested);
-    const items = selected.map((username, index) => ({
-      id: `bot-${action}-${username}-${index}`,
+    botDrafts.set(runtime.model, draft);
+    renderBotDraft(runtime, draft);
+    const start = runtime.query('[data-ia-action="bot-start"]');
+    const scroll = start?.closest('.ia-scroll');
+    const startRect = start?.getBoundingClientRect?.();
+    const scrollRect = scroll?.getBoundingClientRect?.();
+    if (startRect && scrollRect && startRect.bottom > scrollRect.bottom - 12) {
+      scroll.scrollTop += startRect.bottom - scrollRect.bottom + 12;
+    }
+    start?.focus?.({ preventScroll: true });
+    runtime.status(`Reviewed ${draft.selected.length} ${draft.action} target${draft.selected.length === 1 ? '' : 's'}. Nothing has run.`, 'good');
+  }
+
+  async function botStart(runtime) {
+    const reviewed = botDrafts.get(runtime.model);
+    const current = botPlan(runtime);
+    if (!reviewed || reviewed.signature !== current.signature) {
+      invalidateBotReview(runtime);
+      runtime.status('Targets changed. Review the run again before any live authorization.', 'error');
+      return;
+    }
+    const items = reviewed.selected.map((username, index) => ({
+      id: `bot-${reviewed.action}-${username}-${index}`,
       username,
     }));
 
     await modules.batch.start(runtime, {
       kind: 'account',
-      action,
+      action: reviewed.action,
       items,
-      description: `This opens and ${action}s ${items.length} account${items.length === 1 ? '' : 's'}, one at a time, with randomised pacing. Each profile is verified before the action runs. This tab will navigate between profiles.`,
+      description: `This opens and ${reviewed.action}s ${items.length} reviewed account${items.length === 1 ? '' : 's'}, one at a time, with randomised pacing. Each profile is verified before the action runs. This tab will navigate between profiles.`,
     });
+    invalidateBotReview(runtime);
   }
 
   shared.install('queueView', {
     arm,
+    botReview,
     botStart,
     botTargets,
     cancel,
     importQueue,
+    invalidateBotReview,
     liveContextMatches,
     matchingArm,
     render,

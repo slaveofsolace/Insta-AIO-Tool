@@ -35,12 +35,29 @@
         ? `${listType} · updated ${shared.shortDate(workspace.capturedAt[listType])}`
         : `${listType} · not captured yet`,
     );
+    const followersComplete = workspace.complete?.followers === true;
+    const followingComplete = workspace.complete?.following === true;
+    const comparisonComplete = followersComplete && followingComplete;
+    setText('following-step-detail', workspace.following.length
+      ? `${workspace.following.length} unique · ${followingComplete ? 'complete' : 'partial'}`
+      : 'Open your Following list first');
+    setText('followers-step-detail', workspace.followers.length
+      ? `${workspace.followers.length} unique · ${followersComplete ? 'complete' : 'partial'}`
+      : 'Open your Followers list next');
+    setText('compare-step-detail', workspace.followers.length && workspace.following.length
+      ? `${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following back`
+      : 'Scan both lists first');
+    const compareBadge = query('[data-ia-role="compare-step-badge"]');
+    if (compareBadge) {
+      compareBadge.textContent = comparisonComplete ? 'complete' : workspace.followers.length && workspace.following.length ? 'partial' : 'waiting';
+      compareBadge.dataset.tone = comparisonComplete ? 'good' : workspace.followers.length && workspace.following.length ? 'warning' : 'neutral';
+    }
     if (workspace.followers.length && workspace.following.length) {
       setState(
         runtime,
-        'Partial follower comparison ready',
+        comparisonComplete ? 'Follower comparison complete' : 'Partial follower comparison ready',
         `${comparison.mutuals.length} mutual; ${comparison.notFollowingMeBack.length} not following you back; ${comparison.iDoNotFollowBack.length} you do not follow back.`,
-        'good',
+        comparisonComplete ? 'good' : 'warning',
       );
     } else {
       const missing = workspace.followers.length ? 'Following' : 'Followers';
@@ -122,9 +139,11 @@
 
   async function captureVisible(runtime) {
     const { inspector, model, query, status } = runtime;
-    const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
+    const listType = query('[data-ia-role="manual-list-type"]')?.value === 'followers'
       ? 'followers'
       : 'following';
+    const source = query('[data-ia-role="list-type"]');
+    if (source) source.value = listType;
     const visible = inspector.captureVisibleAccounts();
     if (!visible.length) {
       status('No rendered account rows were found. Open or scroll the Instagram list and try again.', 'error');
@@ -185,11 +204,17 @@
   }
 
   // Auto-scrolls the open Followers/Following dialog and reads every rendered row.
-  async function scanFullList(runtime) {
+  async function scanFullList(runtime, requestedListType = null) {
     const { inspector, query, status } = runtime;
-    const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
+    const listType = requestedListType === 'followers'
       ? 'followers'
-      : 'following';
+      : requestedListType === 'following'
+        ? 'following'
+        : query('[data-ia-role="list-type"]')?.value === 'followers'
+          ? 'followers'
+          : 'following';
+    const source = query('[data-ia-role="list-type"]');
+    if (source) source.value = listType;
     if (typeof inspector.collectAccountList !== 'function') {
       status('This page is running an older content script. Reload Instagram and try again.', 'error');
       return;

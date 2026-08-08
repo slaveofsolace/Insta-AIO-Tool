@@ -102,6 +102,20 @@ test('sidecar exposes every tool family and accessibility controls', () => {
   assert.match(overlay, /attachShadow\(\{ mode: openShadow \? 'open' : 'closed' \}\)/);
 });
 
+test('sidecar guides list capture, reviews account targets, and keeps one DM primary action', () => {
+  assert.match(overlay, /data-list-type="following"/);
+  assert.match(overlay, /data-list-type="followers"/);
+  assert.match(overlay, /data-ia-role="compare-step-badge"/);
+  assert.match(overlay, /comparisonComplete \? 'Follower comparison complete' : 'Partial follower comparison ready'/);
+  assert.match(overlay, /data-ia-action="bot-review"/);
+  assert.match(overlay, /function botPlan\(runtime\)/);
+  assert.match(overlay, /reviewed\.signature !== current\.signature/);
+  assert.match(overlay, /data-ia-role="bot-review-list"/);
+  assert.match(overlay, /class="ia-primary-action" data-ia-role="unsend-disclosure"/);
+  assert.match(overlay, /data-ia-action="mass-unsend">Unlock Unsend all DMs/);
+  assert.match(overlay, /<summary>Visible evidence<\/summary>/);
+});
+
 test('visible DM evidence and its download stay bound to the open conversation', () => {
   assert.match(overlay, /function activeConversationId\(\)/);
   assert.match(overlay, /String\(result\?\.conversationId \|\| ''\) === conversationId/);

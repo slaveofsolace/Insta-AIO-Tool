@@ -58,9 +58,16 @@ test('a partial scan is never presented as a complete comparison', () => {
 });
 
 test('a run shows its targets and skip reasons before it starts', () => {
-  assert.match(shell, /function renderRunReview\(items, skipped\)/);
+  assert.match(shell, /function renderRunReview\(items, \{ omitted = 0, removed = 0 \} = \{\}\)/);
   assert.match(generated, /data-role="run-review"/);
-  assert.match(shell, /already followed, or not in the scanned list/);
+  assert.match(shell, /function reviewAccountRun\(\)/);
+  assert.match(shell, /renderRunReview\(plan\.items, plan\)/);
+  assert.match(shell, /data-action="review-accounts"/);
+  assert.match(shell, /duplicate or already-followed/);
+  // Review is read-only; live authority is checked only after the frozen
+  // preview still matches the current fields.
+  const runBody = shell.slice(shell.indexOf("'run-accounts': async"), shell.indexOf("'unsend-all': async"));
+  assert.ok(runBody.indexOf('accountRunDraft.signature !== current.signature') < runBody.indexOf('requireNewRunAuthorization()'));
 });
 
 test('the unsend action is always reachable and confirms before removing', () => {

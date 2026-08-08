@@ -21,12 +21,13 @@ matches the next actionable manual-queue item.
 
 ### Capture
 
-**Capture visible rows** reads only the account anchors already rendered in an
-Instagram dialog or the main page. **Scan full list** is a separate deliberate
-operation that scrolls only the currently open Followers/Following dialog until
-it reaches the end or a bounded safe stop. Both paths merge normalized usernames
-into the selected local draft and report partial completion instead of silently
-under-counting.
+The primary checker workflow is deliberately sequential: open Following and
+choose **Scan Following**, open Followers and choose **Scan Followers**, then
+choose **Compare**. Each scan scrolls only the currently open matching dialog
+until it reaches the end or a bounded safe stop. The manual visible-row capture,
+download, and reset controls remain under the secondary disclosure. Both paths
+merge normalized usernames into the selected local draft and report partial
+completion instead of silently under-counting.
 
 The downloaded record remains import-compatible:
 
@@ -43,7 +44,8 @@ The downloaded record remains import-compatible:
 ### Queue
 
 Imports the existing `insta-aio-manual-queue` JSON export. It selects the next
-pending, ready, paused, or failed item and exposes three deliberate controls:
+pending, ready, paused, or failed item. **Open profile** is the single primary
+control; secondary options expose:
 
 - Open the exact normalized profile
 - Mark the extension-local item complete
@@ -53,6 +55,11 @@ Completion and skip do not mutate the PWA automatically. The sidecar can
 download `insta-aio-companion-state` JSON for review or archiving. Signed dry-run
 and controlled live results sent through the PWA bridge appear in a separate
 read-only history.
+
+The local Follow / Unfollow runner also has an explicit **Review run** phase.
+Review freezes the exact targets and reports duplicates and omissions. **Start**
+is rendered only while the review signature still matches the selected source,
+action, limit, and target list; any change invalidates it.
 
 Queue also contains the **Controlled live gate**. It remains locked until the
 paired PWA sends a fresh signed live intent containing exactly one reviewed
@@ -99,14 +106,17 @@ the Messages gate only after the PWA's two confirmations. The sidecar enables
 arming only when the open thread resolves the exact sent-message identity; the
 background repeats that check before creating the 90-second arm.
 
-The visible **Unsend all DMs** disclosure is an independent local thread tool.
-It starts `live locked`. The first selection requests the exact `UNSEND ALL DMS`
+The primary **Unsend all DMs** card is an independent local thread tool. It
+starts `live locked`; the quieter **Check conversation** control refreshes
+read-only evidence. The first selection requests the exact `UNSEND ALL DMS`
 phrase and creates a 15-minute tab arm without opening a menu. A second selection
 shows the permanent-action confirmation. The source-audited runner then accepts
 only rows proven sent by the current account, follows the rendered menu/dialog
 sequence, paces attempts, and checks the authorization expiry before every next
-message. Expiry, Stop, session loss, challenge, block, rate limit, or repeated
-failure ends the run.
+message. The history loader performs at most one bounded wake-up nudge for each
+newly loaded page instead of repeatedly scrolling an already settled thread.
+Expiry, Stop, session loss, challenge, block, rate limit, or repeated failure
+ends the run.
 
 ### Workspace
 
@@ -124,8 +134,8 @@ Instagram cookies, or credentials.
 - Escape collapses it while focus is inside.
 - Arrow keys plus Home and End move through the semantic five-tool tab rail.
 - Focus indicators are visible and status changes use an `aria-live` region.
-- On desktop the header is draggable, two corner grips resize the panel, and
-  keyboard arrows work on both move and resize handles.
+- On desktop the header is draggable, one lower-right grip resizes the panel,
+  and keyboard arrows work on the move and resize handles.
 - Dock side, 336/380/480-pixel presets, custom bounded size/position, 55–100%
   surface opacity, auto/light/dark theme, and comfortable/compact density are
   stored in the V3 preference record.

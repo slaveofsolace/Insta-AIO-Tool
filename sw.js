@@ -1,4 +1,4 @@
-const CACHE_NAME = 'insta-aio-v10';
+const CACHE_NAME = 'insta-aio-v11';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './assets/icon-192.png', './assets/icon-512.png', './src/styles.css', './src/app-loader.js',
@@ -35,5 +35,19 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
+      const requestUrl = new URL(event.request.url);
+      if (response.ok && requestUrl.origin === self.location.origin) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch (error) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });

@@ -1,6 +1,6 @@
 # Component integration audit
 
-Audit date: 2026-07-30
+Audit date: 2026-08-08
 
 Integration means that a source was reviewed, its applicable data was mapped, source-specific code was implemented, fixtures were tested, and behavior was documented. A source's historical browser executor is not considered integrated merely because its data migration is supported.
 
@@ -11,7 +11,7 @@ Integration means that a source was reviewed, its applicable data was mapped, so
 | Instagram Helper | Revision `5853d856a18a395aab7c8b8c7e3633175e23ddaf` | Message-data migration | Valid, duplicate, malformed, and incomplete records | Message migration integrated |
 | SimpleInstaBot | Revision `5eed7e4ac7ac7db6922eb9e5ed6db36ad9f18fca` | Follow/unfollow history migration | Success, failure, no-action, duplicate, malformed, unsupported photo history | History migration integrated |
 | Follower checker | Revision `3876d9a67bc8255a79990a1616c20cae296d7194` | Read-only partial relationship report | Duplicate, invalid, and incomplete metadata | Partial-report migration integrated |
-| instagram-dm-unsender | Release 0.7.2, supplied SHA-256 `2DC5D357B6C3BBFE1F9E10E8D2F9252E7446C490FB3C16DF1B59719CB1D1FE2C` | Exact-candidate adapter and stateless migration report | Exact, missing, ambiguous, received, confirmation mismatch | Safe adapter behavior integrated; mass loop excluded |
+| instagram-dm-unsender | Tag `v0.7.2`, revision `a8d7b4d9b76967f54cd9890fc3b1e0bb9c1b8d6a`, supplied SHA-256 `2DC5D357B6C3BBFE1F9E10E8D2F9252E7446C490FB3C16DF1B59719CB1D1FE2C` | Exact-candidate adapter and stateless migration report | Exact, missing, ambiguous, received, confirmation mismatch | Safe adapter behavior integrated; mass loop excluded |
 
 ## Instagram Helper
 
@@ -151,7 +151,10 @@ No explicit source license was identified, so its implementation was not copied.
 
 ### Runtime and source completeness
 
-The supplied file is a userscript bundle with an embedded source map. The source map identifies 21 original modules and confirms the reviewed release source.
+The supplied file is a userscript bundle with an embedded source map. The source
+map identifies 21 original modules. Normalized comparison against revision
+`a8d7b4d9b76967f54cd9890fc3b1e0bb9c1b8d6a` matched every embedded source to its
+upstream `v0.7.2` file (21/21).
 
 The script has no external dependencies, no granted userscript APIs, and no persistent job database.
 
@@ -186,7 +189,7 @@ attribute, exact timestamp, exact content digest, and one sent candidate. Dry
 run never invokes hover, menu, dialog, loop, or Unsend paths. Fixture coverage
 proves exact, missing, changed, received, wrong-thread, and ambiguous outcomes.
 
-Extension 0.4.0 also independently migrates the source-audited one-message UI
+Extension 0.10.3 also independently migrates the source-audited one-message UI
 sequence behind a stronger capability boundary. It retains the exact row's
 source-backed hover and action-control patterns plus exact localized Unsend
 labels. Those labels now live in one frozen UTF-8 module, normalize with NFKC,
@@ -235,7 +238,7 @@ The reviewed sources do not supply a safe live executor that satisfies current
 contracts. The independent action and DM adapters implement transaction
 ordering, durable checkpoints, no-click dry runs, and safe stops.
 
-Extension 0.4.0 includes independently implemented controlled account and DM
+Extension 0.10.3 includes independently implemented controlled account and DM
 drivers;
 it does not copy the SimpleInstaBot executor. A fresh signed job of exactly one
 item creates a sanitized intent. The Instagram sidecar requires the matching
