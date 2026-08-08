@@ -363,6 +363,7 @@ Windows packaging has been exercised through unpacked launch, packaged-renderer 
 - [Component integration audit](./docs/COMPONENT_INTEGRATION_AUDIT.md)
 - [Migration report](./docs/COMPONENT_MIGRATION_REPORT.md)
 - [Delivery status](./docs/DELIVERY_STATUS.md)
+- [Operator acceptance runbook](./docs/OPERATOR_ACCEPTANCE.md)
 - [Maintainer guide](./docs/MAINTAINER_GUIDE.md)
 - [Performance](./docs/PERFORMANCE.md)
 - [Security policy](./SECURITY.md)
