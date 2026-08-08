@@ -3,6 +3,11 @@
   const vis = (el) => {
     const r = el.getBoundingClientRect();
     const s = getComputedStyle(el);
+    const closedDetails = el.closest('details:not([open])');
+    if (closedDetails) {
+      const summary = [...closedDetails.children].find((child) => child.tagName === 'SUMMARY');
+      if (!summary?.contains(el)) return false;
+    }
     return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none';
   };
   const visibleHitPoint = (el) => {
