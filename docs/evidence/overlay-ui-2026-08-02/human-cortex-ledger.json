@@ -590,7 +590,7 @@
       "id": "ev_reference_export",
       "kind": "SOURCE",
       "access": "INSPECTED_CURRENT",
-      "locator": "C:/Users/suhai/.codex/attachments/af8b04fa-847f-450e-852f-63f8b86b1cc9/pasted-text.txt",
+      "locator": "attachment:pasted-text.txt",
       "captured_at": "2026-08-02T18:45:27.8937235Z",
       "integrity": "sha256:5D450C386904C39B156B498C7BC7C31FD48638AFB9BB880E881F84834F04A9C0",
       "supports_claim_ids": [
@@ -778,7 +778,7 @@
       "id": "ev_discard_validation",
       "kind": "TEST_RESULT",
       "access": "GENERATED_CURRENT",
-      "locator": "C:/Users/suhai/AppData/Local/Temp/codex-security-scans/Insta-AIO-Tool/1f7dab1_localpatch_20260802T175316Z/artifacts/05_findings/IAIO-DIFF-C-001-LIVE-DISCARD-RACE",
+      "locator": "security-scan:IAIO-DIFF-C-001-LIVE-DISCARD-RACE",
       "captured_at": "2026-08-02T18:45:27.8937235Z",
       "integrity": "defensive PoC 2 passed; attack-path Low P3 on earlier equivalent adapter flow",
       "supports_claim_ids": [

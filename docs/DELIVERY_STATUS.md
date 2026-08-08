@@ -32,7 +32,7 @@ The account-action core is complete:
 - Before/after evidence
 - Safe-stop classification
 
-Extension 0.10.3 preserves the production-controlled one-item account boundary:
+Extension 0.10.4 preserves the production-controlled one-item account boundary:
 
 - Fresh signed live intent with action permission
 - Exactly one reviewed account item
@@ -67,7 +67,7 @@ content digest, and sent ownership all match uniquely. The background rechecks
 the returned identity before recording success. Missing stable DOM identity
 still stops with `exact-message-identity-unavailable`.
 
-Extension 0.10.3 preserves a separate controlled live boundary for exactly one
+Extension 0.10.4 preserves a separate controlled live boundary for exactly one
 twice-confirmed sent message:
 
 - A fresh signed intent whose reviewed preview is unchanged
@@ -201,17 +201,24 @@ On 2026-08-08 the workflow update passed deterministic assembly, all 215
 repository tests, production extension fixture acceptance, real disposable-
 Chrome pairing, all nine PWA baselines, the 40-state overlay update/check, the
 10,000-message ZIP benchmark, and the production dependency audit. The changed
-Windows captures were inspected at full resolution. Native installer lifecycle,
-current persistent-profile installation, and a new green commit/CI run remain
-required before this update is a release checkpoint. No authenticated Instagram
-mutation was part of the completed matrix.
+Windows captures were inspected at full resolution. PR #14 CI run 67 then passed
+the test, Windows-overlay, Windows-package, and macOS-package jobs and produced
+all three artifact families before the change was merged to `main`.
+
+A later read-only walkthrough in the operator's authenticated persistent Chrome
+profile confirmed Tampermonkey injection, the default live lock, home/profile
+context, and the rendered Followers dialog. It also exposed two userscript
+context defects now corrected in the 0.10.4 candidate. The sanitized evidence
+boundary is recorded in
+[`docs/evidence/persistent-profile-2026-08-08/README.md`](./evidence/persistent-profile-2026-08-08/README.md).
+No authenticated Instagram mutation was part of either matrix.
 
 Pending acceptance:
 
-- Install or update userscript/extension 0.10.3 in the operator's intended
+- Install or update userscript/extension 0.10.4 in the operator's intended
   persistent Chrome profile and confirm that live actions start locked
-- Authenticated Instagram walkthrough with the installed companion loaded,
-  without arming an action
+- Repeat the non-armed Followers/Following and conversation-route walkthrough
+  after the persistent profile has updated to 0.10.4
 - Human screen-reader walkthrough
 - PWA installation/pairing confirmation in the operator's persistent Chrome profile
 - Native screenshot baselines for any additional release platform where they will be gated

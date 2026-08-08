@@ -28,7 +28,7 @@ async function loadBackground({ profileResponses, performResponses, stored }) {
 
   globalThis.chrome = {
     runtime: {
-      getManifest: () => ({ version: '0.10.3' }),
+      getManifest: () => ({ version: '0.10.4' }),
       onMessage: { addListener(listener) { runtimeListener = listener; } },
     },
     storage: {
