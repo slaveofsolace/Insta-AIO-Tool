@@ -208,8 +208,14 @@ all three artifact families before the change was merged to `main`.
 A later read-only walkthrough in the operator's authenticated persistent Chrome
 profile confirmed Tampermonkey injection, the default live lock, home/profile
 context, and the rendered Followers dialog. It also exposed two userscript
-context defects now corrected in the 0.10.4 candidate. The sanitized evidence
-boundary is recorded in
+context defects. Version 0.10.4 corrects both: the first-run action now selects
+the Checker workflow even when another view was persisted, and the context
+refreshes when a Followers or Following dialog opens without a route change.
+PR #15 CI run 71 passed all four jobs and produced the browser-companion,
+Windows-installer, and macOS-package artifacts before merge commit
+`962f61df839bc4ed8095e909def08d238127ea5e` was published to `main`. The
+permanent Tampermonkey download/update URL now serves 0.10.4. The sanitized
+evidence boundary is recorded in
 [`docs/evidence/persistent-profile-2026-08-08/README.md`](./evidence/persistent-profile-2026-08-08/README.md).
 No authenticated Instagram mutation was part of either matrix.
 
@@ -241,6 +247,6 @@ surviving candidate in the 2026-08-08 diff-focused discovery review. Companion
 source validation, all 215 repository tests, extension fixture acceptance, real
 disposable-Chrome pairing, nine PWA baselines, the 40-image Windows overlay
 check, the ZIP benchmark, and the production dependency audit pass. A coherent
-commit and native installer/CI gates remain pending. Authenticated profile DOM was
-inspected read-only in an earlier diagnostic; no authenticated account or DM
-mutation has been run.
+0.10.4 commit and every configured CI/package gate passed in PR #15 run 71.
+Authenticated profile DOM was inspected read-only in an earlier diagnostic; no
+authenticated account or DM mutation has been run.
