@@ -29,7 +29,9 @@ Install [Tampermonkey](https://www.tampermonkey.net/), then open this link and
 select **Install**:
 
 **[Install Insta AIO Toolbox](https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js)**
-Go to chrome://extensions/?id=dhdgffkkebhmkfjojejmpbldmpobfkfo
+
+Go to [chrome://extensions/?id=dhdgffkkebhmkfjojejmpbldmpobfkfo](url)
+(Extensions -> Find TamperMonkey -> Click details)
 
 Scroll down and find "Allow User Scripts" - enable that.
 
