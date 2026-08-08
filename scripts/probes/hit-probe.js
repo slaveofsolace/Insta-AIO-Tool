@@ -40,6 +40,18 @@
       y: visible.top + ((visible.bottom - visible.top) / 2),
     };
   };
+  const describe = (el) => {
+    const identity = [
+      el.tagName,
+      el.id ? `#${el.id}` : '',
+      el.classList?.length ? `.${[...el.classList].join('.')}` : '',
+      el.getAttribute?.('type') ? `[type=${el.getAttribute('type')}]` : '',
+      el.getAttribute?.('data-role') ? `[data-role=${el.getAttribute('data-role')}]` : '',
+      el.getAttribute?.('data-file') ? `[data-file=${el.getAttribute('data-file')}]` : '',
+    ].join('');
+    const rect = el.getBoundingClientRect();
+    return `${identity}@${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.width)}x${Math.round(rect.height)}`;
+  };
   // For each interactive control, ask the document what is actually on top at
   // its centre. Anything that resolves to a different control is unclickable.
   const blocked = [];
@@ -53,7 +65,7 @@
     if (!top) continue;
     const resolved = top.closest('button, select, input, summary, a[href], [role="tab"]');
     if (resolved && resolved !== el) {
-      blocked.push((el.className || el.tagName) + ' blocked by ' + (resolved.className || resolved.tagName));
+      blocked.push(`${describe(el)} sampled@${Math.round(point.x)},${Math.round(point.y)} blocked by ${describe(resolved)}`);
     }
   }
   // Contrast: a control whose text matches its own background is invisible.
