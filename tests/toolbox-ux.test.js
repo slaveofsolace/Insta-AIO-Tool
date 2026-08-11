@@ -82,6 +82,7 @@ test('the settings popover uses the resized layout viewport on every desktop', (
 
 test('the context strip keeps explicit readable text in dark Instagram themes', () => {
   assert.match(shell, /\.context \{[^}]*background: var\(--aio-bg-sunken[^}]*color: var\(--aio-text/);
+  assert.match(shell, /\.context-copy strong \{[^}]*color: var\(--aio-text/);
 });
 
 test('a partial scan is never presented as a complete comparison', () => {
