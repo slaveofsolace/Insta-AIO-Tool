@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 const tokensSource = await readFile(new URL('../extension/overlay/tokens.js', import.meta.url), 'utf8');
+const actionLabels = await readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8');
 const overlayShell = await readFile(new URL('../extension/overlay/shell.js', import.meta.url), 'utf8');
 const toolboxShell = await readFile(new URL('../userscripts/src/toolbox-shell.js', import.meta.url), 'utf8');
 const generated = await readFile(new URL('../userscripts/insta-aio-companion.user.js', import.meta.url), 'utf8');
@@ -75,6 +76,8 @@ test('both surfaces ship the tokens rather than a private palette', () => {
   // silently falls back to its own colours and the two drift again.
   assert.ok(generated.includes(tokensSource.trim()), 'tokens are embedded in the userscript bundle');
   assert.match(generated, /InstaAioTokens/);
+  assert.match(toolboxShell, /InstaAioTokens\?\.css\(\{ density: 'compact' \}\)/);
+  assert.doesNotMatch(actionLabels, /--aio-instagram-/);
 });
 
 test('the design system documents the roles the code actually defines', () => {

@@ -956,75 +956,68 @@
     style.id = 'insta-aio-instagram-design-v2';
     style.textContent = `
       :host {
-        --aio-instagram-bg: rgb(var(--ig-primary-background, 255, 255, 255));
-        --aio-instagram-elevated: rgb(var(--ig-elevated-background, 255, 255, 255));
-        --aio-instagram-secondary: rgb(var(--ig-secondary-background, 250, 250, 250));
-        --aio-instagram-text: rgb(var(--ig-primary-text, 38, 38, 38));
-        --aio-instagram-muted: rgb(var(--ig-secondary-text, 115, 115, 115));
-        --aio-instagram-line: rgb(var(--ig-separator, 219, 219, 219));
-        --aio-instagram-blue: rgb(var(--ig-primary-button, 0, 149, 246));
         color-scheme: light dark;
-        font-family: var(--font-family-system, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+        font-family: var(--aio-font, var(--font-family-system, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif));
       }
       .panel {
-        border-color: var(--aio-instagram-line) !important;
+        border-color: var(--aio-line) !important;
         border-radius: 16px !important;
-        background: color-mix(in srgb, var(--aio-instagram-bg) var(--aio-alpha), transparent) !important;
-        color: var(--aio-instagram-text) !important;
+        background: color-mix(in srgb, var(--aio-bg) var(--aio-alpha), transparent) !important;
+        color: var(--aio-text) !important;
         box-shadow: 0 12px 38px rgba(0,0,0,.18) !important;
         font-family: inherit !important;
         animation: aio-instagram-enter 160ms cubic-bezier(.2,.8,.2,1);
       }
       .header, .footer, .tabs, .run-panel {
-        border-color: var(--aio-instagram-line) !important;
-        background: color-mix(in srgb, var(--aio-instagram-bg) var(--aio-alpha-strong), transparent) !important;
+        border-color: var(--aio-line) !important;
+        background: color-mix(in srgb, var(--aio-bg) var(--aio-alpha-strong), transparent) !important;
       }
       .header p, .lead, .card p, .metric span, .field label, .footer, .list small, .tool span {
-        color: var(--aio-instagram-muted) !important;
+        color: var(--aio-text-muted) !important;
       }
-      .tab { color: var(--aio-instagram-muted) !important; transition: color 140ms ease, background 140ms ease; }
+      .tab { color: var(--aio-text-muted) !important; transition: color 140ms ease, background 140ms ease; }
       .tab[aria-selected="true"] {
-        border-bottom-color: var(--aio-instagram-text) !important;
+        border-bottom-color: var(--aio-text) !important;
         background: transparent !important;
-        color: var(--aio-instagram-text) !important;
+        color: var(--aio-text) !important;
       }
       .card, .tool, .metric, select, input {
-        border-color: var(--aio-instagram-line) !important;
-        background: color-mix(in srgb, var(--aio-instagram-elevated) var(--aio-alpha-strong), transparent) !important;
-        color: var(--aio-instagram-text) !important;
+        border-color: var(--aio-line) !important;
+        background: color-mix(in srgb, var(--aio-bg-raised) var(--aio-alpha-strong), transparent) !important;
+        color: var(--aio-text) !important;
       }
       .tool, .card, .metric { border-radius: 12px !important; }
       .tool { transition: transform 140ms ease, background 140ms ease; }
-      .tool:hover { transform: translateY(-1px); background: var(--aio-instagram-secondary) !important; }
+      .tool:hover { transform: translateY(-1px); background: var(--aio-bg-sunken) !important; }
       .button, .file {
         min-height: 44px !important;
-        border-color: var(--aio-instagram-line) !important;
+        border-color: var(--aio-line) !important;
         border-radius: 8px !important;
-        background: var(--aio-instagram-secondary) !important;
-        color: var(--aio-instagram-text) !important;
+        background: var(--aio-bg-sunken) !important;
+        color: var(--aio-text) !important;
         font-size: var(--system-14-font-size, 14px) !important;
         font-weight: 600 !important;
         transition: filter 140ms ease, transform 140ms ease, opacity 140ms ease !important;
       }
       .button:hover, .file:hover { filter: brightness(.97); }
       .button.primary, .button.danger {
-        border-color: var(--aio-instagram-blue) !important;
-        background: var(--aio-instagram-blue) !important;
-        color: #fff !important;
+        border-color: var(--aio-accent) !important;
+        background: var(--aio-accent) !important;
+        color: var(--aio-on-accent) !important;
       }
       .launcher {
-        border-color: var(--aio-instagram-line) !important;
+        border-color: var(--aio-line) !important;
         border-radius: 50% !important;
-        background: var(--aio-instagram-bg) !important;
-        color: var(--aio-instagram-text) !important;
+        background: var(--aio-bg) !important;
+        color: var(--aio-text) !important;
         box-shadow: 0 6px 20px rgba(0,0,0,.16) !important;
         transition: transform 140ms ease, box-shadow 140ms ease !important;
       }
       .launcher:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.2) !important; }
-      .mode { border-color: var(--aio-instagram-line) !important; color: var(--aio-instagram-muted) !important; }
-      .notice { border-left: 0 !important; border: 1px solid var(--aio-instagram-line) !important; border-radius: 10px; background: var(--aio-instagram-secondary) !important; color: var(--aio-instagram-text) !important; }
-      .run-bar { background: var(--aio-instagram-line) !important; }
-      .run-bar span { background: var(--aio-instagram-blue) !important; }
+      .mode { border-color: var(--aio-line) !important; color: var(--aio-text-muted) !important; }
+      .notice { border-left: 0 !important; border: 1px solid var(--aio-line) !important; border-radius: 10px; background: var(--aio-bg-sunken) !important; color: var(--aio-text) !important; }
+      .run-bar { background: var(--aio-line) !important; }
+      .run-bar span { background: var(--aio-accent) !important; }
       @keyframes aio-instagram-enter { from { opacity: 0; transform: translateY(6px) scale(.99); } to { opacity: 1; transform: none; } }
       @media (prefers-color-scheme: dark) {
         :host { color-scheme: dark; }

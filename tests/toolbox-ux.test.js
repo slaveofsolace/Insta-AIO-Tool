@@ -56,6 +56,22 @@ test('the checker is a sequence that reports completeness per list', () => {
   assert.match(shell, /\(partial\)/);
 });
 
+test('the checker scan controls name the exact list they operate on', () => {
+  const following = generated.match(/<button[^>]*data-action="scan-following"[^>]*>([^<]+)<\/button>/);
+  const followers = generated.match(/<button[^>]*data-action="scan-followers"[^>]*>([^<]+)<\/button>/);
+  assert.equal(following?.[1], 'Scan Following');
+  assert.equal(followers?.[1], 'Scan Followers');
+  assert.notEqual(following?.[1], followers?.[1]);
+  assert.match(shell, /button\.textContent = `\$\{status === 'todo' \? 'Scan' : 'Rescan'\} \$\{listLabel\}`/);
+});
+
+test('the userscript migrates the old opaque default while preserving explicit choices', () => {
+  assert.match(shell, /schemaVersion: 2,[\s\S]*?opacity: 0\.88/);
+  assert.match(shell, /source\.schemaVersion === 1 && Number\(source\.opacity\) === 0\.94/);
+  assert.match(shell, /clamp\(opacity \?\? 0\.88, 0\.55, 1\)/);
+  assert.match(generated, /<input[^>]*value="88"[^>]*data-preference="opacity"/);
+});
+
 test('a partial scan is never presented as a complete comparison', () => {
   // The compare step only reads "done" when both scans reached the end.
   assert.match(
