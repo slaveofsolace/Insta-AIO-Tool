@@ -75,7 +75,7 @@
   <script nonce="insta-aio-overlay-qa">
     const FixtureNativeDate = Date;
     const fixtureClockStartedAt = FixtureNativeDate.now();
-    const fixtureClockOrigin = FixtureNativeDate.parse('2026-08-02T17:00:00.000Z');
+    const fixtureClockOrigin = FixtureNativeDate.parse('2026-08-02T12:00:00.000Z');
     class FixtureDate extends FixtureNativeDate {
       constructor(...argumentsList) {
         super(...(argumentsList.length
@@ -271,7 +271,7 @@
     const fixturePairings = fixturePairingMode === 'none' ? [] : [{
       origin: 'http://127.0.0.1:4173',
       permissions: fixturePairingMode === 'read' ? ['read'] : ['read', 'action'],
-      pairedAt: '2026-07-31T12:00:00.000Z',
+      pairedAt: '2026-07-31T07:00:00.000Z',
     }];
     const fixtureSection = ['now', 'capture', 'queue', 'messages', 'workspace']
       .includes(fixtureSearch.get('section'))
@@ -310,7 +310,7 @@
       action: fixtureAction,
       status: 'ready',
       reason: 'fixture review',
-      scheduledFor: '2026-07-31T12:00:00.000Z',
+      scheduledFor: '2026-07-31T07:00:00.000Z',
     }];
     const fixtureAccountArm = ['qa-account-armed', 'qa-native-dialog', 'qa-account-expiring']
       .includes(fixtureMode)
@@ -355,7 +355,7 @@
           schemaVersion: 1,
           kind: 'insta-aio-visible-list',
           listType: 'following',
-          capturedAt: '2026-07-31T12:00:00.000Z',
+          capturedAt: '2026-07-31T07:00:00.000Z',
           following: [
             { username: 'alpha.friend', displayName: '', source: 'extension-visible-dom' },
             { username: 'older_account', displayName: '', source: 'extension-visible-dom' },
@@ -376,14 +376,14 @@
             { username: 'mutual.friend', displayName: 'Mutual Friend' },
           ],
           capturedAt: {
-            followers: '2026-07-31T12:00:00.000Z',
-            following: '2026-07-31T12:05:00.000Z',
+            followers: '2026-07-31T07:00:00.000Z',
+            following: '2026-07-31T07:05:00.000Z',
           },
           complete: { followers: true, following: true },
         },
       } : {}),
       instaAioOverlayManualQueueV1: {
-        importedAt: '2026-07-31T12:00:00.000Z',
+        importedAt: '2026-07-31T07:00:00.000Z',
         queue: fixtureQueue,
       },
     };
@@ -420,7 +420,7 @@
               recentRuns: [{
                 kind: 'insta-aio-reviewed-action-job',
                 jobId: 'fixture-job-1',
-                receivedAt: '2026-07-31T12:04:00.000Z',
+                receivedAt: '2026-07-31T07:04:00.000Z',
                 mode: 'dry-run',
                 status: 'dry-run-complete',
                 stopReason: null,

@@ -150,6 +150,7 @@ test('overlay QA is loopback-confined and has bounded child-process cleanup', ()
   assert.match(overlayQa, /assert\.deepEqual\(rasterProblems, \[\]/);
   assert.match(overlayQa, /prefers-color-scheme/);
   assert.match(overlayQaRunner, /const childWatchdogMs = 5 \* 60 \* 1000/);
+  assert.match(overlayQaRunner, /TZ: 'UTC'/);
   assert.match(overlayQaRunner, /child\.kill\('SIGTERM'\)/);
   assert.match(overlayQaRunner, /child\.kill\('SIGKILL'\)/);
   assert.doesNotMatch(overlayQaRunner, /taskkill|killall|Stop-Process/i);
