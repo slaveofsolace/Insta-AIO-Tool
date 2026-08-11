@@ -69,6 +69,9 @@ test('browser acceptance covers accessibility, installability, and read-only pai
   assert.match(acceptance, /permissions, 'read'/);
   assert.match(acceptance, /setPermissionCheckHandler\(\(\) => false\)/);
   assert.match(acceptance, /setPermissionRequestHandler/);
+  assert.match(acceptance, /async function resizeViewport/);
+  assert.match(acceptance, /innerWidth === \$\{viewport\.width\} && innerHeight === \$\{viewport\.height\}/);
+  assert.match(acceptance, /requestAnimationFrame\(\(\) => requestAnimationFrame/);
 });
 
 test('Chrome acceptance loads and pairs the real extension through the restricted DevTools pipe', () => {

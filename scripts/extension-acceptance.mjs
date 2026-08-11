@@ -153,6 +153,25 @@ async function waitForPageValue(webContents, expression, label, timeoutMs = 10_0
   throw new Error(`Timed out waiting for ${label}.`);
 }
 
+async function resizeViewport(webContents, viewport) {
+  await webContents.executeJavaScript(
+    `(() => { globalThis.resizeTo?.(${viewport.width}, ${viewport.height}); return true; })()`,
+    true,
+  );
+  await waitForPageValue(
+    webContents,
+    `innerWidth === ${viewport.width} && innerHeight === ${viewport.height}`,
+    `${viewport.label}: viewport resize`,
+  );
+  // Native macOS window resizing can report the new inner bounds before the
+  // next container-query layout is painted. Two frames make the assertion
+  // sample the settled UI while keeping the containment boundary strict.
+  await webContents.executeJavaScript(
+    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))',
+    true,
+  );
+}
+
 async function loadFixture(webContents, baseUrl, mode) {
   const url = `${baseUrl}/fixture.html?mode=${encodeURIComponent(mode)}&shadow=open`;
   await withTimeout(webContents.loadURL(url), `${mode}: fixture load`);
@@ -497,10 +516,7 @@ async function acceptToolboxLayout(webContents, baseUrl) {
   const probe = await readFile(path.join(repositoryRoot, 'scripts', 'probes', 'layout-audit.js'), 'utf8');
   for (const viewport of viewportMatrix) {
     webContents.setZoomFactor(1);
-    await webContents.executeJavaScript(
-      `(() => { globalThis.resizeTo?.(${viewport.width}, ${viewport.height}); return true; })()`,
-      true,
-    );
+    await resizeViewport(webContents, viewport);
     const sized = await webContents.executeJavaScript(probe, true);
     assert.deepEqual(sized.overlaps, [], `${viewport.label}: sections overlap`);
     assert.deepEqual(sized.duplicateIds, [], `${viewport.label}: duplicate ids`);
