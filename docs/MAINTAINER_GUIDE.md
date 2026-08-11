@@ -37,6 +37,7 @@ Required gate:
 
 ```bash
 pnpm run assemble
+pnpm run verify:repo-hygiene
 pnpm test
 ```
 

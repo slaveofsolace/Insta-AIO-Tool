@@ -759,8 +759,7 @@ function fidelityLedger(results, performance) {
     capturedAt: new Date().toISOString(),
     platform: process.platform,
     source: {
-      before: 'docs/OVERLAY_UI_AUDIT.md and docs/evidence/overlay-ui-2026-08-02/before',
-      after: `docs/evidence/overlay-ui-2026-08-02/after/${process.platform}`,
+      current: `docs/evidence/overlay-ui-2026-08-02/after/${process.platform}`,
     },
     comparison: [
       { area: 'shell', before: 'Default-open, visually dominant field desk', after: `Fresh collapsed launcher; standard open share ${(standard.metrics.panelAreaShare * 100).toFixed(2)}%`, status: 'MEASURED' },
@@ -774,7 +773,7 @@ function fidelityLedger(results, performance) {
       { area: 'accessibility', before: 'DOM/focus checks only', after: 'Semantic tabs, forced colors, reduced motion, zoom matrix, and AX smoke; human screen-reader still open', status: 'PARTIAL' },
     ],
     performance,
-    nonclaims: [
+    limitations: [
       'Platform screenshot hashes are not cross-platform visual proof.',
       'Automated accessibility checks are not human screen-reader acceptance.',
       'Synthetic Instagram fixtures are not authenticated selector acceptance.',
