@@ -3,8 +3,7 @@
   "capturedAt": "2026-08-08T14:56:07.848Z",
   "platform": "win32",
   "source": {
-    "before": "docs/OVERLAY_UI_AUDIT.md and docs/evidence/overlay-ui-2026-08-02/before",
-    "after": "docs/evidence/overlay-ui-2026-08-02/after/win32"
+    "current": "docs/evidence/overlay-ui-2026-08-02/after/win32"
   },
   "comparison": [
     {
@@ -72,7 +71,7 @@
     },
     "routeTransitionMs": 85.39999999990687
   },
-  "nonclaims": [
+  "limitations": [
     "Platform screenshot hashes are not cross-platform visual proof.",
     "Automated accessibility checks are not human screen-reader acceptance.",
     "Synthetic Instagram fixtures are not authenticated selector acceptance.",

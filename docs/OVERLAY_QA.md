@@ -13,9 +13,9 @@ collision, accessibility-tree, performance, and screenshot expectations. The
 ordinary CI workflow now runs `qa:overlay:check` on `windows-latest`; CI never
 updates baselines.
 
-The reviewed evidence lives under
+The baseline set lives under
 `docs/evidence/overlay-ui-2026-08-02/after/win32`. Its manifest SHA-256 at the
-2026-08-08 checkpoint is
+time of the reviewed update is
 `de314e261dc598a58b42afb7423ef6ce7438820b6deb9ee6a124d13354834da5`.
 This establishes synthetic-fixture and Windows-rendering evidence only. It does
 not establish human visual or screen-reader acceptance, cross-platform pixel
@@ -186,9 +186,9 @@ log for review.
 3. Inspect every generated image, not only its hash. Reject clipping,
    obstruction, unreadable copy, wrong state, theme mismatch, unsafe collision
    placement, or a screenshot that does not show the named scenario.
-4. Review `fidelity-ledger.json` against the before evidence and the selected
-   quiet-operator specification.
-5. Record the reviewer and platform in the delivery handoff.
+4. Review `fidelity-ledger.json` against the current quiet-operator
+   specification and named scenario.
+5. Record the reviewer and platform in the release notes.
 6. Run `pnpm run qa:overlay:check` without changing the baseline and require an
    exact pass.
 7. Only after the reviewed platform baseline is committed, add the corresponding
@@ -205,7 +205,7 @@ screen-reader acceptance is claimed.
 
 ## Required runtime matrix before acceptance
 
-At minimum, the final checkpoint must record fresh results for:
+At minimum, a release must record fresh results for:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -223,9 +223,9 @@ The overlay check does not replace the extension controlled-action acceptance,
 the disposable Chrome pairing test, the PWA screenshot suite, or the repository
 test suite.
 
-## Remaining acceptance and nonclaims
+## Remaining acceptance
 
-Completed at this checkpoint:
+Automated coverage includes:
 
 - generated 40 Windows baselines and visually reviewed the changed key states;
 - reproduced them with the non-updating check and added the Windows CI gate;

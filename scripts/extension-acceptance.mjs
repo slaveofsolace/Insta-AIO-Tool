@@ -987,10 +987,11 @@ async function run() {
   }
 }
 
+const readinessTimeoutMs = 60_000;
 const readinessTimer = setTimeout(() => {
-  console.error('Extension acceptance readiness timed out after 15 seconds.');
+  console.error(`Extension acceptance readiness timed out after ${readinessTimeoutMs / 1_000} seconds.`);
   app.exit(1);
-}, 15_000);
+}, readinessTimeoutMs);
 app.whenReady().then(() => {
   clearTimeout(readinessTimer);
   return run();

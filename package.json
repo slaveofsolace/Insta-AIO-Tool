@@ -5,7 +5,6 @@
   "type": "module",
   "main": "desktop/main.mjs",
   "description": "Local-first Instagram relationship, queue, and message-data management suite.",
-  "author": "slaveofsolace",
   "repository": {
     "type": "git",
     "url": "https://github.com/slaveofsolace/Insta-AIO-Tool.git"
@@ -37,7 +36,8 @@
     "qa:overlay:update": "pnpm run build:extension && node scripts/run-overlay-qa.mjs --update",
     "qa:overlay:check": "pnpm run build:extension && node scripts/run-overlay-qa.mjs --check",
     "verify:dependencies": "node scripts/verify-dependencies.mjs",
-    "test": "node scripts/verify-dependencies.mjs && node scripts/build-extension.mjs --check && node scripts/build-userscript.mjs --check && node --test",
+    "verify:repo-hygiene": "node scripts/check-repository-hygiene.mjs",
+    "test": "node scripts/verify-dependencies.mjs && node scripts/check-repository-hygiene.mjs && node scripts/build-extension.mjs --check && node scripts/build-userscript.mjs --check && node --test",
     "serve": "node scripts/serve.mjs",
     "build:userscript": "node scripts/build-userscript.mjs"
   },

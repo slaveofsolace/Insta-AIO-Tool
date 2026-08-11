@@ -3,7 +3,6 @@
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
 // @version      0.10.5
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
-// @author       slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
 // @supportURL   https://github.com/slaveofsolace/Insta-AIO-Tool/issues
 // @downloadURL  https://raw.githubusercontent.com/slaveofsolace/Insta-AIO-Tool/main/userscripts/insta-aio-companion.user.js

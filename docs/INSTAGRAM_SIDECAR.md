@@ -210,7 +210,7 @@ durable ledger records, each from a user-selected authenticated run.
 
 See [Overlay UI implementation](./OVERLAY_UI_IMPLEMENTATION.md) for the ordered
 module graph, V1/V2-to-V3 preference migration, current verification,
-and explicit post-implementation runtime nonclaims. See
+and runtime limits. See
 [Overlay QA](./OVERLAY_QA.md) for the production-script screenshot/state matrix,
 baseline acceptance procedure, measured Windows performance, reviewed
-post-redesign evidence, and remaining target-environment nonclaims.
+post-redesign evidence, and remaining target-environment checks.

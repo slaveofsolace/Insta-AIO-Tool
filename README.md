@@ -258,7 +258,7 @@ See
 for the runtime and data boundaries and
 [Overlay UI implementation](./docs/OVERLAY_UI_IMPLEMENTATION.md) for the
 module and migration status. The dedicated screenshot/state matrix, baseline
-workflow, and current nonclaims are documented in
+workflow, and manual acceptance limits are documented in
 [Overlay QA](./docs/OVERLAY_QA.md).
 
 Pairing is origin-specific:
@@ -335,7 +335,15 @@ pnpm run qa:overlay:check
 pnpm run benchmark:zip
 ```
 
-The automated suite covers imports, migrations, archive integrity and limits, action/DM reviews, no-click execution, PWA and extension-side transactional ledgers, bridge signing and replay protection, one-item intent/arm expiry and consumption, secure-token fail-closed behavior, reviewed UTF-8 action labels, verified-profile-header Follow/Unfollow fixtures, suggested-account isolation, stale-dialog rejection, extension permissions, sidecar packaging and safety invariants, desktop hardening, state migration, service-worker assets, and large-list windowing. `qa:extension` runs the actual production content script and overlay through bounded local Follow, Unfollow, and one-message Unsend DOM chains in isolated Chromium, then checks keyboard accessibility, the Chromium accessibility tree, PWA installability, and read-only pairing defaults. `qa:chrome` loads and pairs the real unpacked package in a disposable Chrome-for-Testing profile. The browser QA command exercises every PWA view at fixed desktop, tablet, and mobile sizes, verifies that live settings remain off, and compares nine Windows Chromium screenshots with tracked SHA-256 baselines.
+The automated suite covers imports, migrations, archive limits, reviewed action
+and DM jobs, no-click execution, bridge signing and replay protection, extension
+permissions, desktop hardening, state migration, service-worker assets, and
+large-list rendering. `qa:extension` runs the production content script through
+local synthetic Follow, Unfollow, and one-message Unsend DOM fixtures. It also
+checks keyboard access, the Chromium accessibility tree, PWA installability,
+and read-only pairing defaults. `qa:chrome` loads and pairs the unpacked package
+in a disposable Chrome-for-Testing profile. Browser QA exercises every PWA view
+at desktop, tablet, and mobile sizes while keeping live settings off.
 
 Use `pnpm run qa:browser:update` only when intentionally accepting a reviewed
 visual change. Baselines are platform-specific and actual run output stays under
@@ -351,7 +359,11 @@ collision, locked-action, and review-before-start states. It has been reproduced
 Human screen-reader review, persistent-profile installation, and authenticated
 Instagram selector acceptance remain separate operator/release gates.
 
-Windows packaging has been exercised through unpacked launch, packaged-renderer smoke, silent NSIS install, installed-app launch, and silent uninstall. The CI workflow provisions Chrome for Testing for real extension pairing and builds a macOS DMG/ZIP that is mounted, copied, QA-only ad-hoc signed with hardened-runtime Electron entitlements, launched in smoke mode, and removed. Release entitlements do not include the ad-hoc library-validation exception. Apple Developer ID signing/notarization, a human screen-reader review, installation in the operator's intended persistent Chrome profile, and a user-selected real Instagram mutation remain release/operator acceptance rather than automated claims.
+Windows packaging covers unpacked launch, packaged-renderer smoke, NSIS install,
+installed-app launch, and uninstall. CI also builds and smoke-tests macOS DMG and
+ZIP packages with QA-only ad-hoc signing. Apple Developer ID signing and
+notarization, human screen-reader review, persistent-profile installation, and
+any user-selected live Instagram action remain manual release checks.
 
 ## Documentation
 
@@ -362,7 +374,7 @@ Windows packaging has been exercised through unpacked launch, packaged-renderer 
 - [Source audit](./docs/SOURCE_AUDIT.md)
 - [Component integration audit](./docs/COMPONENT_INTEGRATION_AUDIT.md)
 - [Migration report](./docs/COMPONENT_MIGRATION_REPORT.md)
-- [Delivery status](./docs/DELIVERY_STATUS.md)
+- [Release status](./docs/RELEASE_STATUS.md)
 - [Operator acceptance runbook](./docs/OPERATOR_ACCEPTANCE.md)
 - [Maintainer guide](./docs/MAINTAINER_GUIDE.md)
 - [Performance](./docs/PERFORMANCE.md)

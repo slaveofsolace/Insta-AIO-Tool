@@ -70,10 +70,10 @@ complete repository suite passes 191 of 191 tests.
 All screenshots contain empty or synthetic local data. The original interactive
 desktop evidence remains available:
 
-- [Overview](./evidence/browser-qa-2026-08-02/pwa-overview.png)
-- [Action Queue](./evidence/browser-qa-2026-08-02/pwa-action-queue.png)
-- [Messages](./evidence/browser-qa-2026-08-02/pwa-messages.png)
-- [Activity](./evidence/browser-qa-2026-08-02/pwa-activity.png)
+- [Overview](./evidence/browser-qa-2026-08-02/pwa-overview.jpg)
+- [Action Queue](./evidence/browser-qa-2026-08-02/pwa-action-queue.jpg)
+- [Messages](./evidence/browser-qa-2026-08-02/pwa-messages.jpg)
+- [Activity](./evidence/browser-qa-2026-08-02/pwa-activity.jpg)
 
 The deterministic Windows Chromium baseline is tracked under
 [`tests/baselines/pwa/win32`](../tests/baselines/pwa/win32/manifest.json):
@@ -96,23 +96,22 @@ with `--enable-unsafe-extension-debugging`. Those switches are confined to the
 disposable QA child/profile; the harness exposes no TCP debugging port and does
 not alter production extension permissions.
 
-## Overlay-specific QA checkpoint
+## Overlay-specific QA
 
-The redesigned Instagram overlay now has a separate 39-scenario harness that
+The Instagram overlay has a separate 40-scenario harness that
 loads the production-built content-script graph and checks state semantics,
 geometry, target intersection, responsive presentations, accessibility-tree
 names, and bounded performance before comparing screenshots. Its commands are
 `pnpm run qa:overlay:update` and `pnpm run qa:overlay:check`.
 
-All 39 Windows scenarios passed their semantic, geometry, collision,
-accessibility-tree, and performance checks. The prior matrix received a full
-agent review and the new translucent/layout and live-lock states were inspected
-at full resolution; the reviewed baseline reproduced through
+All 40 Windows scenarios passed their semantic, geometry, collision,
+accessibility-tree, and performance checks. The translucent, layout, and
+live-lock states were inspected at full resolution; the reviewed baseline reproduced through
 `qa:overlay:check`, and the non-updating Windows check is wired into CI. That is
 runtime evidence for the synthetic fixture—not human screen-reader acceptance,
 cross-platform visual proof, persistent-profile acceptance, or authenticated
 Instagram selector acceptance. See [Overlay QA](./OVERLAY_QA.md) for the
-matrix, evidence layout, measured results, and explicit nonclaims.
+matrix, evidence layout, measured results, and manual acceptance limits.
 
 ## Design judgment
 

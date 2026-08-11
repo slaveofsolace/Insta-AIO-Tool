@@ -1,46 +1,12 @@
 # Overlay UI specification
 
-- Specification date: 2026-08-02
-- Input build: `ff8b4b8c9587114273e45d28e8bac14ec1d3f643`
-- Selected direction: **Quiet professional operator panel**
+The overlay is a quiet operator panel that stays subordinate to Instagram. It
+keeps the PWA, pairing, exact-intent, reservation, one-item, and page-driver
+architecture unchanged.
 
-This specification implements the acceptance contract in
-`docs/OVERLAY_UI_BRIEF.md`. It does not reopen the PWA,
-pairing, exact-intent, reservation, one-item, or page-driver architecture.
-
-## Concept decision
-
-Both required concepts were rendered through the same deterministic Instagram
-fixture in light and dark:
-
-- Compact Instagram-native utility: 356 × 588 px, 16.15% viewport area
-- Quiet professional operator panel: 380 × 680 px, 19.94% viewport area
-
-Neither concept intersected the fixture's native profile relationship control.
-The measurements and SHA-256 receipts are in
-`docs/evidence/overlay-ui-2026-08-02/concepts/concept-metrics.json`.
-
-| Criterion | Weight | Instagram-native | Operator panel |
-|---|---:|---:|---:|
-| Occlusion and footprint | 20 | 5.0 | 4.0 |
-| Target and next-action clarity | 18 | 4.0 | 5.0 |
-| Cognitive load | 14 | 4.5 | 4.5 |
-| Accessibility potential | 16 | 3.5 | 5.0 |
-| Light and dark fit | 10 | 5.0 | 5.0 |
-| Implementation risk | 8 | 4.5 | 3.5 |
-| Safety-state visibility | 14 | 4.0 | 5.0 |
-| **Weighted score** | **100** | **86.6** | **92.2** |
-
-The operator direction wins because it keeps every tool family reachable,
-separates extension ownership from Instagram, gives the exact target and safety
-state the strongest hierarchy, and naturally reduces to an icon/status strip.
-Its default Now state remains content-bounded; it must not become a permanent
-full-height rail.
-
-The rejected Instagram-native concept remains useful evidence. Its compact
-footprint informs mobile and collision states, but its five compressed text tabs
-and `More` bucket weaken navigation and could make the extension look like a
-native Instagram control.
+The default view is collapsed. When open, the exact target, current safety
+state, and next available action take priority over explanatory copy. Desktop
+placement is movable and resizable; narrow layouts use a fitted bottom sheet.
 
 ## Design direction
 
@@ -329,14 +295,12 @@ viewport, theme, 200% zoom, mobile-landscape, forced-color, and native-surface
 matrix. Geometry assertions are separate from screenshot comparison. Baselines
 are explicitly updated and platform-specific.
 
-## Nonclaims and handoff
+## Verification boundary
 
-The concept score is an engineering selection, not human visual acceptance. The
-final implementation still requires automated matrix evidence and a user review.
-Authenticated persistent-profile fit, human screen-reader acceptance, and any
-real Follow, Unfollow, or Unsend remain `Pending verification` items.
+Automated fixture checks cover the production runtime matrix, geometry, state
+semantics, and platform-specific screenshots. Authenticated persistent-profile
+fit, human screen-reader acceptance, and any real Follow, Unfollow, or Unsend
+action require separate operator review.
 
-Implementation is now tracked in [OVERLAY_UI_IMPLEMENTATION.md](./OVERLAY_UI_IMPLEMENTATION.md).
-The source checkpoint satisfies the modular and static safety design, while the
-required production runtime visual/geometry matrix and human acceptance remain
-open.
+Implementation details are in
+[OVERLAY_UI_IMPLEMENTATION.md](./OVERLAY_UI_IMPLEMENTATION.md).

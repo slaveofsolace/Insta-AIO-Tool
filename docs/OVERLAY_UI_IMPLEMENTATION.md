@@ -1,11 +1,9 @@
 # Overlay UI implementation
 
-## Current checkpoint
+## Current behavior
 
-The current implementation began from main commit `28a70ca` and includes the
-bounded 2026-08-08 overlay workflow update. It preserves the modular production graph,
-PWA, migrations, existing exchange contracts, and signed one-item bridge while
-adding the operator-facing behavior requested from the installed Chrome build:
+The overlay uses the modular production graph while preserving the PWA,
+migrations, exchange contracts, and signed one-item bridge. It provides:
 
 - draggable header and one lower-right resize handle on desktop;
 - fitted mobile/bottom-sheet geometry with no horizontal overflow;
@@ -17,8 +15,9 @@ adding the operator-facing behavior requested from the installed Chrome build:
   repositioning an already settled conversation; and
 - default-locked local batches plus an expiry-enforcing thread Unsend runner.
 
-This is runtime-tested synthetic-fixture evidence, not authenticated Instagram
-mutation or human accessibility acceptance.
+Automated tests use synthetic Instagram fixtures. Authenticated selector checks,
+live account changes, and human screen-reader review require separate operator
+acceptance.
 
 ## Runtime surfaces
 
@@ -142,40 +141,21 @@ expired. Dynamic Instagram, queue, message, pairing, and run text is written
 with `textContent`. One audited static shell assignment is the only overlay
 `innerHTML` use. Object URLs are revoked on replacement and teardown.
 
-## Verification recorded at this checkpoint
+## Verification
 
-Lightweight checks completed after the implementation:
+The repository checks every production overlay module, the extension package,
+preference migration, and runtime module graph. The overlay matrix contains 40
+scenarios with state-specific assertions, selector contracts, a child-process
+watchdog, geometry checks, accessibility-tree checks, and screenshot comparison.
+The benchmark also verifies that a 2,000-item queue renders only the current
+item instead of expanding the overlay DOM without a limit.
 
-- Syntax checks for every production overlay module and bootstrap: pass
-- `tests/instagram-overlay.test.js`, `tests/extension-package.test.js`,
-  `tests/overlay-preferences.test.js`, and
-  `tests/overlay-runtime-modules.test.js`: 27 passed, 0 failed
-- `node scripts/build-extension.mjs --check`: 25 controlled-live safety tests
-  passed and package validation passed
-- Overlay source scan: no `.click()`, `dispatchEvent()`, or `setInterval()`
+The complete command set and platform boundary are recorded in
+[`OVERLAY_QA.md`](./OVERLAY_QA.md).
 
-The QA sources cover 40 unique scenarios, state-specific assertions on all 20
-required states, selector contracts, child-process watchdog escalation, and
-rejection of a deliberately wrong semantic state. On Windows, all scenarios
-rendered through the production content-script graph and passed semantics,
-geometry, collision, accessibility-tree, and screenshot checks. The changed key
-states were inspected at full resolution, and the complete matrix was reproduced
-by the non-updating baseline check.
+## Manual checks
 
-The 2026-08-08 workflow checkpoint passed deterministic assembly, all 215
-repository tests, production extension fixture acceptance, real disposable-
-Chrome pairing, nine PWA baselines, the 10,000-message ZIP benchmark, and the
-40-state overlay update/check. The measured overlay probe rendered one
-bounded current item after a 2,000-item queue update in 23.2 ms with 380 overlay
-nodes; route transition was 85.4 ms. Native installer lifecycle and additional
-platform gates remain release/CI requirements. The review procedure and platform boundary are
-recorded in [`OVERLAY_QA.md`](./OVERLAY_QA.md).
-
-## Nonclaims
-
-- No authenticated Instagram mutation was attempted.
-- Agent visual review is not a human visual or screen-reader acceptance claim.
-- Deterministic fixture checks do not prove current authenticated Instagram DOM
-  compatibility.
-- Automated accessibility checks do not replace human screen-reader review.
-- Windows screenshot hashes do not establish Linux or macOS visual parity.
+- Authenticated Instagram routes and selectors.
+- Any explicitly authorized live Follow, Unfollow, or Unsend action.
+- Human visual and screen-reader review.
+- Screenshot baselines for platforms other than the tracked Windows set.
