@@ -486,13 +486,13 @@
   shadow.innerHTML = `
     <style>
       ${sharedTokenCss}
-      :host { all: initial; --aio-alpha: 88%; --aio-alpha-strong: 96%; --aio-width: 390px; --aio-height: 620px; color-scheme: light dark; color: var(--aio-text, #1b211c); font-family: var(--aio-font, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif); }
+      :host { all: initial; --aio-alpha: 88%; --aio-alpha-strong: 96%; --aio-width: 390px; --aio-height: 620px; --aio-settings-max-height: 460px; color-scheme: light dark; color: var(--aio-text, #1b211c); font-family: var(--aio-font, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif); }
       *, *::before, *::after { box-sizing: border-box; }
       button, input, select { font: inherit; }
       button, label, summary { cursor: pointer; }
       [hidden] { display: none !important; }
       .launcher { position: fixed; z-index: 2147482900; right: 16px; bottom: 16px; width: 46px; height: 46px; border: 1px solid var(--aio-line, #cfd5cc); border-radius: 14px; background: color-mix(in srgb, var(--aio-bg, #fff) var(--aio-alpha), transparent); color: var(--aio-text, #172018); box-shadow: var(--aio-shadow-popover, 0 10px 32px rgba(0,0,0,.2)); font-weight: 850; }
-      .panel { container-type: size; animation: aio-in var(--aio-motion-fast, 120ms) var(--aio-ease, ease) both; position: fixed; z-index: 2147482900; top: 62px; right: 16px; width: min(var(--aio-width), calc(100vw - 24px)); height: min(var(--aio-height), calc(100dvh - 74px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--aio-line, #cfd5cc); border-radius: var(--aio-radius-lg, 14px); background: color-mix(in srgb, var(--aio-bg, #f7f8f5) var(--aio-alpha), transparent); color: var(--aio-text, #1b211c); box-shadow: var(--aio-shadow-panel, 0 20px 60px rgba(0,0,0,.24)); backdrop-filter: blur(10px) saturate(.95); -webkit-backdrop-filter: blur(10px) saturate(.95); font: var(--aio-text-md, 14px)/var(--aio-leading-md, 20px) var(--aio-font, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif); }
+      .panel { animation: aio-in var(--aio-motion-fast, 120ms) var(--aio-ease, ease) both; position: fixed; z-index: 2147482900; top: 62px; right: 16px; width: min(var(--aio-width), calc(100vw - 24px)); height: min(var(--aio-height), calc(100dvh - 74px)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--aio-line, #cfd5cc); border-radius: var(--aio-radius-lg, 14px); background: color-mix(in srgb, var(--aio-bg, #f7f8f5) var(--aio-alpha), transparent); color: var(--aio-text, #1b211c); box-shadow: var(--aio-shadow-panel, 0 20px 60px rgba(0,0,0,.24)); backdrop-filter: blur(10px) saturate(.95); -webkit-backdrop-filter: blur(10px) saturate(.95); font: var(--aio-text-md, 14px)/var(--aio-leading-md, 20px) var(--aio-font, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif); }
       :host([data-floating="true"]) .panel { top: var(--aio-top); right: auto; left: var(--aio-left); }
       .header { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; min-height: 66px; padding: 10px; border-bottom: 1px solid var(--aio-line, #d8ddd4); background: color-mix(in srgb, var(--aio-bg, #fff) var(--aio-alpha-strong), transparent); }
       .handle, .icon { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: inherit; }
@@ -546,7 +546,7 @@
       details.settings { position: relative; }
       details.settings > summary { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 9px; list-style: none; font-size: 18px; }
       details.settings > summary::-webkit-details-marker { display:none; }
-      .settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; width: min(250px, calc(100vw - 32px)); max-height: min(500px, calc(100cqh - 86px)); overflow: auto; padding: 12px; border: 1px solid var(--aio-line, #cfd5cc); border-radius: 10px; background: color-mix(in srgb, var(--aio-bg-raised, #fff) 97%, transparent); color: var(--aio-text, #1b211c); box-shadow: var(--aio-shadow-panel, 0 16px 46px rgba(0,0,0,.2)); }
+      .settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; width: min(250px, calc(100vw - 32px)); max-height: var(--aio-settings-max-height); overflow: auto; padding: 12px; border: 1px solid var(--aio-line, #cfd5cc); border-radius: 10px; background: color-mix(in srgb, var(--aio-bg-raised, #fff) 97%, transparent); color: var(--aio-text, #1b211c); box-shadow: var(--aio-shadow-panel, 0 16px 46px rgba(0,0,0,.2)); }
       .range-row { display:grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items:center; }
       .footer { padding-right: 46px; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--aio-line, #d8ddd4); background: color-mix(in srgb, var(--aio-bg, #fff) var(--aio-alpha-strong), transparent); color: var(--aio-text-muted, #687068); font-size: 11px; }
       .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; z-index: 5; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
@@ -720,6 +720,11 @@
     const size = panelSize();
     host.style.setProperty('--aio-width', `${size.width}px`);
     host.style.setProperty('--aio-height', `${size.height}px`);
+    const renderedPanelHeight = innerWidth <= 600
+      ? Math.min(innerHeight * 0.78, 720)
+      : Math.min(size.height, Math.max(0, innerHeight - 74));
+    const settingsMaxHeight = Math.max(44, Math.min(500, Math.floor(renderedPanelHeight - 86)));
+    host.style.setProperty('--aio-settings-max-height', `${settingsMaxHeight}px`);
     const percent = Math.round(preferences.opacity * 100);
     host.style.setProperty('--aio-alpha', `${percent}%`);
     host.style.setProperty('--aio-alpha-strong', `${Math.min(100, percent + 8)}%`);

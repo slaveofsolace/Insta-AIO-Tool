@@ -73,8 +73,10 @@ test('the userscript migrates the old opaque default while preserving explicit c
 });
 
 test('the settings popover uses the resized layout viewport on every desktop', () => {
-  assert.match(shell, /\.panel \{ container-type: size;/);
-  assert.match(shell, /\.settings-panel \{[^}]*max-height: min\(500px, calc\(100cqh - 86px\)\)/);
+  assert.match(shell, /\.settings-panel \{[^}]*max-height: var\(--aio-settings-max-height\)/);
+  assert.match(shell, /const renderedPanelHeight = innerWidth <= 600/);
+  assert.match(shell, /Math\.min\(size\.height, Math\.max\(0, innerHeight - 74\)\)/);
+  assert.match(shell, /host\.style\.setProperty\('--aio-settings-max-height', `\$\{settingsMaxHeight\}px`\)/);
   assert.doesNotMatch(shell, /\.settings-panel \{[^}]*max-height:[^;}]*dvh/);
 });
 

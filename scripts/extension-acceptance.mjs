@@ -167,7 +167,10 @@ async function resizeViewport(webContents, viewport) {
   // next container-query layout is painted. Two frames make the assertion
   // sample the settled UI while keeping the containment boundary strict.
   await webContents.executeJavaScript(
-    'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))',
+    `(() => {
+      globalThis.dispatchEvent(new Event('resize'));
+      return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))));
+    })()`,
     true,
   );
 }
