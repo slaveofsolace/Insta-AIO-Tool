@@ -72,6 +72,12 @@ test('the userscript migrates the old opaque default while preserving explicit c
   assert.match(generated, /<input[^>]*value="88"[^>]*data-preference="opacity"/);
 });
 
+test('the settings popover uses the resized layout viewport on every desktop', () => {
+  assert.match(shell, /\.settings-panel \{[^}]*max-height: min\(500px, calc\(100vh - 160px\)\)/);
+  assert.match(shell, /\.settings-panel \{ max-height:min\(500px, calc\(78vh - 86px\)\); \} \}/);
+  assert.doesNotMatch(shell, /\.settings-panel \{[^}]*max-height:[^;}]*dvh/);
+});
+
 test('a partial scan is never presented as a complete comparison', () => {
   // The compare step only reads "done" when both scans reached the end.
   assert.match(
