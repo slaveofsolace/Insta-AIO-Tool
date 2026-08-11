@@ -69,6 +69,13 @@ test('browser acceptance covers accessibility, installability, and read-only pai
   assert.match(acceptance, /permissions, 'read'/);
   assert.match(acceptance, /setPermissionCheckHandler\(\(\) => false\)/);
   assert.match(acceptance, /setPermissionRequestHandler/);
+  assert.match(acceptance, /async function resizeViewport/);
+  assert.match(acceptance, /innerWidth === \$\{viewport\.width\} && innerHeight === \$\{viewport\.height\}/);
+  assert.match(acceptance, /dispatchEvent\(new Event\('resize'\)\)/);
+  assert.match(acceptance, /requestAnimationFrame\(\(\) => requestAnimationFrame/);
+  assert.match(acceptance, /details\.open = true;[\s\S]*?requestAnimationFrame/);
+  assert.match(acceptance, /configuredMaxHeight/);
+  assert.match(acceptance, /--ig-primary-text'[\s\S]*?requestAnimationFrame/);
 });
 
 test('Chrome acceptance loads and pairs the real extension through the restricted DevTools pipe', () => {
@@ -89,7 +96,7 @@ test('Chrome acceptance loads and pairs the real extension through the restricte
   assert.match(chromeAcceptance, /Page\.getAppManifest/);
   assert.match(chromeAcceptance, /Page\.getInstallabilityErrors/);
   assert.match(chromeAcceptance, /complete-extension-pairing/);
-  assert.match(chromeAcceptance, /Extension 0.10.4 connected/);
+  assert.match(chromeAcceptance, /Extension 0.10.5 connected/);
   assert.match(chromeAcceptance, /permissions, \['read'\]/);
   assert.match(chromeAcceptance, /await rm\(resolvedResultsRoot/);
   assert.match(
@@ -139,6 +146,7 @@ test('overlay QA is loopback-confined and has bounded child-process cleanup', ()
   assert.match(overlayQa, /difference\.changedPixels <= 4/);
   assert.match(overlayQa, /rasterProblems\.push/);
   assert.match(overlayQa, /assert\.deepEqual\(rasterProblems, \[\]/);
+  assert.match(overlayQa, /prefers-color-scheme/);
   assert.match(overlayQaRunner, /const childWatchdogMs = 5 \* 60 \* 1000/);
   assert.match(overlayQaRunner, /child\.kill\('SIGTERM'\)/);
   assert.match(overlayQaRunner, /child\.kill\('SIGKILL'\)/);

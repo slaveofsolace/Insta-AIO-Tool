@@ -153,6 +153,28 @@ async function waitForPageValue(webContents, expression, label, timeoutMs = 10_0
   throw new Error(`Timed out waiting for ${label}.`);
 }
 
+async function resizeViewport(webContents, viewport) {
+  await webContents.executeJavaScript(
+    `(() => { globalThis.resizeTo?.(${viewport.width}, ${viewport.height}); return true; })()`,
+    true,
+  );
+  await waitForPageValue(
+    webContents,
+    `innerWidth === ${viewport.width} && innerHeight === ${viewport.height}`,
+    `${viewport.label}: viewport resize`,
+  );
+  // Native macOS window resizing can report the new inner bounds before the
+  // next container-query layout is painted. Two frames make the assertion
+  // sample the settled UI while keeping the containment boundary strict.
+  await webContents.executeJavaScript(
+    `(() => {
+      globalThis.dispatchEvent(new Event('resize'));
+      return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))));
+    })()`,
+    true,
+  );
+}
+
 async function loadFixture(webContents, baseUrl, mode) {
   const url = `${baseUrl}/fixture.html?mode=${encodeURIComponent(mode)}&shadow=open`;
   await withTimeout(webContents.loadURL(url), `${mode}: fixture load`);
@@ -497,13 +519,36 @@ async function acceptToolboxLayout(webContents, baseUrl) {
   const probe = await readFile(path.join(repositoryRoot, 'scripts', 'probes', 'layout-audit.js'), 'utf8');
   for (const viewport of viewportMatrix) {
     webContents.setZoomFactor(1);
-    await webContents.executeJavaScript(
-      `(() => { globalThis.resizeTo?.(${viewport.width}, ${viewport.height}); return true; })()`,
-      true,
-    );
+    await resizeViewport(webContents, viewport);
     const sized = await webContents.executeJavaScript(probe, true);
     assert.deepEqual(sized.overlaps, [], `${viewport.label}: sections overlap`);
     assert.deepEqual(sized.duplicateIds, [], `${viewport.label}: duplicate ids`);
+    const settingsBounds = await webContents.executeJavaScript(`new Promise((resolve) => {
+      const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+      const details = shadow.querySelector('details.settings');
+      details.open = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const settingsElement = shadow.querySelector('.settings-panel');
+        const settings = settingsElement.getBoundingClientRect();
+        const panel = shadow.querySelector('.panel').getBoundingClientRect();
+        const computed = getComputedStyle(settingsElement);
+        details.open = false;
+        resolve({
+          settings: { left: settings.left, top: settings.top, right: settings.right, bottom: settings.bottom },
+          panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom },
+          computed: {
+            maxHeight: computed.maxHeight,
+            boxSizing: computed.boxSizing,
+            configuredMaxHeight: getComputedStyle(shadow.host).getPropertyValue('--aio-settings-max-height').trim(),
+          },
+        });
+      }));
+    })`, true);
+    const settingsGeometry = JSON.stringify(settingsBounds);
+    assert.ok(settingsBounds.settings.left >= settingsBounds.panel.left - 1, `${viewport.label}: settings escape left ${settingsGeometry}`);
+    assert.ok(settingsBounds.settings.top >= settingsBounds.panel.top - 1, `${viewport.label}: settings escape top ${settingsGeometry}`);
+    assert.ok(settingsBounds.settings.right <= settingsBounds.panel.right + 1, `${viewport.label}: settings escape right ${settingsGeometry}`);
+    assert.ok(settingsBounds.settings.bottom <= settingsBounds.panel.bottom + 1, `${viewport.label}: settings escape bottom ${settingsGeometry}`);
   }
   console.log(`Accepted toolbox layout (${report.visibleChildren} sections, no overlap or overflow, ${viewportMatrix.length} viewports).`);
 }
@@ -548,6 +593,10 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       liveControls: [
         'review-accounts', 'run-unsend', 'scan-following', 'scan-followers', 'scan-sent', 'stop-run',
       ].map((action) => Boolean(shadow.querySelector('[data-action="' + action + '"]'))),
+      checkerScanLabels: [
+        shadow.querySelector('[data-action="scan-following"]')?.textContent.trim(),
+        shadow.querySelector('[data-action="scan-followers"]')?.textContent.trim(),
+      ],
       reviewControl: {
         disabled: shadow.querySelector('[data-action="review-accounts"]')?.disabled,
         live: shadow.querySelector('[data-action="review-accounts"]')?.hasAttribute('data-live-action'),
@@ -585,7 +634,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   // always dead.
   assert.deepEqual(initial.resizeCorners, [true, false], 'resize is bottom-right only');
   assert.equal(initial.open, true);
-  assert.equal(initial.opacity, '94');
+  assert.equal(initial.opacity, '88');
   assert.equal(initial.opacityMin, '55');
   assert.match(initial.move, /Move toolbox/);
   assert.match(initial.resize, /Resize toolbox/);
@@ -602,12 +651,44 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
   assert.deepEqual(initial.liveControls, [true, true, true, true, true, true]);
+  assert.deepEqual(initial.checkerScanLabels, ['Scan Following', 'Scan Followers']);
   assert.equal(initial.hasContextStrip, true);
   // The unsend action is always reachable. It performs its own read of the
   // conversation and confirms before removing anything, so gating its
   // visibility behind a separate step removed the one-click path for no gain.
   assert.equal(initial.unsendPrimaryVisible, true);
   assert.deepEqual(initial.engineExecutors, ['function', 'function']);
+
+  const darkTheme = await webContents.executeJavaScript(`new Promise((resolve) => {
+    const root = document.documentElement;
+    const values = {
+      '--ig-primary-background': '0 0 0',
+      '--ig-elevated-background': '38 38 38',
+      '--ig-secondary-background': '18 18 18',
+      '--ig-primary-text': '245 245 245',
+      '--ig-secondary-text': '168 168 168',
+      '--ig-separator': '54 54 54',
+      '--ig-primary-button': '0 149 246',
+    };
+    for (const [name, value] of Object.entries(values)) root.style.setProperty(name, value);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+      const context = shadow.querySelector('[data-role="context"]');
+      const title = shadow.querySelector('[data-role="context-title"]');
+      const result = {
+        contextBackground: getComputedStyle(context).backgroundColor,
+        contextText: getComputedStyle(title).color,
+        panelText: getComputedStyle(shadow.querySelector('.panel')).color,
+      };
+      for (const name of Object.keys(values)) root.style.removeProperty(name);
+      resolve(result);
+    }));
+  })`, true);
+  assert.deepEqual(darkTheme, {
+    contextBackground: 'rgb(18, 18, 18)',
+    contextText: 'rgb(245, 245, 245)',
+    panelText: 'rgb(245, 245, 245)',
+  });
 
   const introRoute = await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;

@@ -31,7 +31,10 @@
     if (!inFlow(el)) return false;
     const r = el.getBoundingClientRect();
     return r.bottom > pr.bottom + 2 || r.top < pr.top - 2 || r.right > pr.right + 2 || r.left < pr.left - 2;
-  }).map((el) => (el.className || el.tagName) + ' h=' + Math.round(el.getBoundingClientRect().height));
+  }).map((el) => {
+    const rect = el.getBoundingClientRect();
+    return `${el.className || el.tagName} @${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.right)},${Math.round(rect.bottom)} panel@${Math.round(pr.left)},${Math.round(pr.top)},${Math.round(pr.right)},${Math.round(pr.bottom)}`;
+  });
   const ids = [...shadow.querySelectorAll('[id]')].map((el) => el.id);
   const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
   const small = [...shadow.querySelectorAll('button, select, input, summary, [role="tab"]')]

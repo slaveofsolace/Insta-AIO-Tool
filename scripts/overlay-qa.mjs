@@ -618,6 +618,7 @@ async function captureScenario(browserWindow, baseUrl, scenario, expectedManifes
       media: 'screen',
       features: [
         { name: 'prefers-reduced-motion', value: 'reduce' },
+        { name: 'prefers-color-scheme', value: scenario.theme === 'dark' ? 'dark' : 'light' },
         { name: 'forced-colors', value: scenario.forcedColors ? 'active' : 'none' },
       ],
     }),
@@ -851,6 +852,7 @@ async function run() {
         media: 'screen',
         features: [
           { name: 'prefers-reduced-motion', value: 'reduce' },
+          { name: 'prefers-color-scheme', value: 'light' },
           { name: 'forced-colors', value: 'none' },
         ],
       }),

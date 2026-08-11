@@ -219,12 +219,24 @@ evidence boundary is recorded in
 [`docs/evidence/persistent-profile-2026-08-08/README.md`](./evidence/persistent-profile-2026-08-08/README.md).
 No authenticated Instagram mutation was part of either matrix.
 
+Version 0.10.5 completes the userscript theme wiring that 0.10.4 only bundled:
+the toolbox now consumes the shared Instagram-aware tokens instead of mixing a
+private light palette with dark page text. It also migrates the untouched 94%
+surface default to the documented 88% translucency while preserving every other
+saved opacity, keeps the first-use explanation scrollable in short panels, and
+bounds the preferences surface inside desktop, mobile, landscape, and 200%-zoom
+viewports. The Checker controls retain the explicit **Scan Following** and
+**Scan Followers** names after every rerender. Production Chromium acceptance
+exercises the local comparison, account and DM no-click checks, layout controls,
+dark-theme context contrast, and default live lock without an authenticated
+Instagram mutation.
+
 Pending acceptance:
 
-- Install or update userscript/extension 0.10.4 in the operator's intended
+- Install or update userscript/extension 0.10.5 in the operator's intended
   persistent Chrome profile and confirm that live actions start locked
 - Repeat the non-armed Followers/Following and conversation-route walkthrough
-  after the persistent profile has updated to 0.10.4
+  after the persistent profile has updated to 0.10.5
 - Human screen-reader walkthrough
 - PWA installation/pairing confirmation in the operator's persistent Chrome profile
 - Native screenshot baselines for any additional release platform where they will be gated
