@@ -523,18 +523,27 @@ async function acceptToolboxLayout(webContents, baseUrl) {
     const sized = await webContents.executeJavaScript(probe, true);
     assert.deepEqual(sized.overlaps, [], `${viewport.label}: sections overlap`);
     assert.deepEqual(sized.duplicateIds, [], `${viewport.label}: duplicate ids`);
-    const settingsBounds = await webContents.executeJavaScript(`(() => {
+    const settingsBounds = await webContents.executeJavaScript(`new Promise((resolve) => {
       const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
       const details = shadow.querySelector('details.settings');
       details.open = true;
-      const settings = shadow.querySelector('.settings-panel').getBoundingClientRect();
-      const panel = shadow.querySelector('.panel').getBoundingClientRect();
-      details.open = false;
-      return {
-        settings: { left: settings.left, top: settings.top, right: settings.right, bottom: settings.bottom },
-        panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom },
-      };
-    })()`, true);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const settingsElement = shadow.querySelector('.settings-panel');
+        const settings = settingsElement.getBoundingClientRect();
+        const panel = shadow.querySelector('.panel').getBoundingClientRect();
+        const computed = getComputedStyle(settingsElement);
+        details.open = false;
+        resolve({
+          settings: { left: settings.left, top: settings.top, right: settings.right, bottom: settings.bottom },
+          panel: { left: panel.left, top: panel.top, right: panel.right, bottom: panel.bottom },
+          computed: {
+            maxHeight: computed.maxHeight,
+            boxSizing: computed.boxSizing,
+            configuredMaxHeight: getComputedStyle(shadow.host).getPropertyValue('--aio-settings-max-height').trim(),
+          },
+        });
+      }));
+    })`, true);
     const settingsGeometry = JSON.stringify(settingsBounds);
     assert.ok(settingsBounds.settings.left >= settingsBounds.panel.left - 1, `${viewport.label}: settings escape left ${settingsGeometry}`);
     assert.ok(settingsBounds.settings.top >= settingsBounds.panel.top - 1, `${viewport.label}: settings escape top ${settingsGeometry}`);
