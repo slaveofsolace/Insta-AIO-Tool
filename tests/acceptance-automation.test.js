@@ -46,6 +46,7 @@ test('isolated Chromium acceptance executes production account and DM DOM chains
   assert.match(runner, /hostedLinuxNoSandbox \? \['--no-sandbox'\]/);
   assert.match(runner, /INSTA_AIO_EXTENSION_ACCEPTANCE_USER_DATA/);
   assert.match(runner, /await rm\(userDataRoot/);
+  assert.match(acceptance, /const readinessTimeoutMs = 60_000/);
   assert.match(acceptance, /acceptProfileAction/);
   assert.match(acceptance, /action: 'follow'/);
   assert.match(acceptance, /action: 'unfollow'/);
