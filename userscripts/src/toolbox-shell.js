@@ -585,7 +585,7 @@
       .field input[type="checkbox"] { min-width: 20px; min-height: 20px; }
       /* The checkbox itself stays small; its label carries the 44px target. */
       .field label { display: inline-flex; align-items: center; min-height: 44px; }
-      .context { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--aio-line, #d8ddd4); background: var(--aio-bg-sunken, #eef1ec); }
+      .context { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--aio-line, #d8ddd4); background: var(--aio-bg-sunken, #eef1ec); color: var(--aio-text, #1b211c); }
       .context-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aio-text-muted, #687068); }
       .context[data-tone="ready"] .context-dot { background: var(--aio-success, #0a7d3f); }
       .context[data-tone="warning"] .context-dot { background: var(--aio-warning, #b26a00); }

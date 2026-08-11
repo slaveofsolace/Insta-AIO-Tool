@@ -80,6 +80,10 @@ test('the settings popover uses the resized layout viewport on every desktop', (
   assert.doesNotMatch(shell, /\.settings-panel \{[^}]*max-height:[^;}]*dvh/);
 });
 
+test('the context strip keeps explicit readable text in dark Instagram themes', () => {
+  assert.match(shell, /\.context \{[^}]*background: var\(--aio-bg-sunken[^}]*color: var\(--aio-text/);
+});
+
 test('a partial scan is never presented as a complete comparison', () => {
   // The compare step only reads "done" when both scans reached the end.
   assert.match(
