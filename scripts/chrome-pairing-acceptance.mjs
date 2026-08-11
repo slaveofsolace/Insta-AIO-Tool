@@ -90,6 +90,7 @@ async function prepareExtension() {
     'http://127.0.0.1/*',
   ])];
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  return manifest.version;
 }
 
 class PipeCdpClient {
@@ -202,7 +203,7 @@ async function run() {
   const chromePath = await findChrome();
   await rm(resultsRoot, { recursive: true, force: true });
   await mkdir(userDataRoot, { recursive: true });
-  await prepareExtension();
+  const extensionVersion = await prepareExtension();
 
   const server = createAppServer();
   const address = await listen(server);
@@ -353,7 +354,7 @@ async function run() {
     );
     await waitFor(async () => evaluate(
       pwa,
-      `document.body.innerText.includes('Extension 0.10.5 connected; live account actions are locked by default.')`,
+      `document.body.innerText.includes(${JSON.stringify(`Extension ${extensionVersion} connected; live account actions are locked by default.`)})`,
     ), 'paired extension ping');
     const storedPairings = await evaluate(
       popup,

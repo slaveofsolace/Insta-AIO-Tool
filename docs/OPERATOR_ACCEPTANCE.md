@@ -24,7 +24,7 @@ tokens, or private Instagram screenshots in the repository.
 ## 1. Install and prove the safe default
 
 1. Follow [Installation](./INSTALLATION.md) and update the companion.
-2. In Tampermonkey, confirm **Insta AIO Instagram Toolbox 0.10.5** or later. If
+2. In Tampermonkey, confirm **Insta AIO Instagram Toolbox 0.10.6** or later. If
    Chrome is used, open Tampermonkey's extension details and enable
    **Allow User Scripts**.
 3. Reload `https://www.instagram.com/`, then press **Alt + Shift + I**.

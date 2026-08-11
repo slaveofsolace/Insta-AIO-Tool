@@ -24,6 +24,7 @@ function scenario(id, options = {}) {
     density: 'comfortable',
     dock: 'right',
     forcedColors: false,
+    firstRun: true,
     layout: 'docked',
     mode: 'qa-profile-following-queue',
     opacity: null,
@@ -47,6 +48,24 @@ function scenario(id, options = {}) {
 }
 
 const requiredStates = [
+  scenario('first-run-walkthrough', {
+    firstRun: false,
+    semantics: [
+      semantic('[data-ia-role="first-run"]', {
+        hidden: false,
+        includes: ['Follower checker', 'Follow / Unfollow', 'DM Unsend', 'Live actions stay locked'],
+      }),
+      semantic('[data-ia-action="first-run-start"]', {
+        attributes: { type: 'button' },
+        equals: 'Open follower checker',
+      }),
+      semantic('[data-ia-action="first-run-dismiss"]', {
+        attributes: { type: 'button' },
+        equals: 'Not now',
+      }),
+    ],
+    targetSelector: null,
+  }),
   scenario('toolbox-floating-translucent', {
     layout: 'floating',
     opacity: 0.62,
@@ -121,6 +140,21 @@ const requiredStates = [
       }),
     ],
     targetSelector: '.fixture-dialog',
+  }),
+  scenario('checker-filtered-results', {
+    after: 'filter-checker-results',
+    mode: 'qa-checker-results',
+    section: 'capture',
+    semantics: [
+      semantic('[data-ia-role="capture-state-title"]', { equals: 'Follower comparison complete' }),
+      semantic('[data-ia-role="checker-browser"]', { hidden: false, visible: true }),
+      semantic('[data-ia-role="checker-filter-count"]', { numberEquals: 1 }),
+      semantic('[data-ia-role="checker-filtered-list"]', {
+        includes: ['@beta_account', 'Beta Account'],
+        excludes: ['@alpha.friend'],
+      }),
+    ],
+    targetSelector: null,
   }),
   scenario('queue-locked', {
     mode: 'qa-queue-locked',

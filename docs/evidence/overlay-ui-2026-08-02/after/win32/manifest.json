@@ -1,9 +1,263 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-08T14:56:07.844Z",
+  "capturedAt": "2026-08-11T21:06:46.460Z",
   "platform": "win32",
-  "builtExtensionVersion": "0.10.4",
+  "builtExtensionVersion": "0.10.6",
   "screenshots": [
+    {
+      "id": "first-run-walkthrough",
+      "sha256": "8690c1ff41611660dd41098d3d059955642e4437f6711d920bf973037dc8a098",
+      "scenario": {
+        "after": null,
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "firstRun": false,
+        "layout": "docked",
+        "mode": "qa-profile-following-queue",
+        "opacity": null,
+        "open": true,
+        "pairing": "action",
+        "panelHeight": null,
+        "panelWidth": null,
+        "position": null,
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "now",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "hidden": false,
+            "includes": [
+              "Follower checker",
+              "Follow / Unfollow",
+              "DM Unsend",
+              "Live actions stay locked"
+            ],
+            "selector": "[data-ia-role=\"first-run\"]"
+          },
+          {
+            "attributes": {
+              "type": "button"
+            },
+            "equals": "Open follower checker",
+            "selector": "[data-ia-action=\"first-run-start\"]"
+          },
+          {
+            "attributes": {
+              "type": "button"
+            },
+            "equals": "Not now",
+            "selector": "[data-ia-action=\"first-run-dismiss\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "now",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 883,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 813.828125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 172.15625,
+            "height": 117.15625,
+            "left": 1080,
+            "right": 1410,
+            "top": 55,
+            "width": 330
+          },
+          "headerSizing": {
+            "actions": {
+              "client": 90,
+              "rect": {
+                "bottom": 135.078125,
+                "height": 44,
+                "left": 1310,
+                "right": 1400,
+                "top": 91.078125,
+                "width": 90
+              },
+              "scroll": 90
+            },
+            "copy": {
+              "client": 160,
+              "rect": {
+                "bottom": 161.15625,
+                "height": 96.15625,
+                "left": 1142,
+                "right": 1302,
+                "top": 65,
+                "width": 160
+              },
+              "scroll": 160
+            },
+            "header": {
+              "client": 330,
+              "scroll": 330
+            }
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "layout": "docked",
+          "launcher": null,
+          "opacity": "88%",
+          "overflowing": [],
+          "panel": {
+            "bottom": 882,
+            "height": 828,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.2427777777777778,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 882,
+            "height": 828,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"first-run\"]": {
+              "attributes": {
+                "class": "ia-first-run",
+                "data-ia-role": "first-run",
+                "aria-labelledby": "ia-first-run-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "color(srgb 1 1 1 / 0.96)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Start with a read-only checkInsta AIO adds three tools to Instagram without sending account data elsewhere.Follower checkerScan Followers and Following, then compare usernames on this device.Follow / UnfollowBuild and review an exact target list. Live actions stay locked by default.DM UnsendInspect one conversation before reviewing exact sent messages. Live removal stays locked.Open follower checkerNot now",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"first-run-start\"]": {
+              "attributes": {
+                "class": "ia-button",
+                "type": "button",
+                "data-ia-action": "first-run-start"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Open follower checker",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-action=\"first-run-dismiss\"]": {
+              "attributes": {
+                "class": "ia-button ia-button--quiet",
+                "type": "button",
+                "data-ia-action": "first-run-dismiss"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Not now",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Toolbox",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Follower checker",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Follow / Unfollow",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "DM Unsend",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Move sidecar; use arrow keys for precise movement",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Open follower checker",
+              "width": 168.796875
+            },
+            {
+              "height": 44,
+              "label": "Not now",
+              "width": 81.125
+            },
+            {
+              "height": 44,
+              "label": "Refresh no-click inspection",
+              "width": 255
+            }
+          ],
+          "viewTitle": "Instagram tools",
+          "width": "standard"
+        }
+      }
+    },
     {
       "id": "toolbox-floating-translucent",
       "sha256": "95c0357fb0bab44ca912928a9763558a7bed1188b2435f36bc8504fd5e4c8133",
@@ -13,6 +267,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "floating",
         "mode": "qa-profile-following-queue",
         "opacity": 0.62,
@@ -290,6 +545,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-not-following",
         "opacity": null,
@@ -489,6 +745,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -688,6 +945,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-ambiguous",
         "opacity": null,
@@ -879,13 +1137,14 @@
     },
     {
       "id": "followers-first-capture",
-      "sha256": "2a524f15b5bb8ba8616a3ef8d63154c470a283dc08214f6db66ca8fd93171534",
+      "sha256": "1a37986cd7108f18643638e318302c3c7c17c9d4cec349120dad21f5fdd89485",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "followers",
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-followers-first",
         "opacity": null,
@@ -1036,7 +1295,7 @@
               "color": "rgb(115, 115, 115)",
               "textContrast": null,
               "textFillColor": "rgb(115, 115, 115)",
-              "text": "followers · updated Aug 2, 2026, 12:00 PM",
+              "text": "captured followers · updated Aug 2, 2026, 12:00 PM",
               "tone": null,
               "visible": true
             },
@@ -1161,13 +1420,14 @@
     },
     {
       "id": "following-repeated-capture",
-      "sha256": "f2d2518cc3ce643cc7c644534ad98c6335070ae0e97d47b0a73a6704c4074fc1",
+      "sha256": "bc8ab0649ed4427fdf3e1cc4935b226c9bdd4d8aa0aab840a57e2b672ec26d21",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "following",
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-following-repeat",
         "opacity": null,
@@ -1318,7 +1578,7 @@
               "color": "rgb(115, 115, 115)",
               "textContrast": null,
               "textFillColor": "rgb(115, 115, 115)",
-              "text": "following · updated Aug 2, 2026, 12:00 PM",
+              "text": "captured following · updated Aug 2, 2026, 12:00 PM",
               "tone": null,
               "visible": true
             },
@@ -1442,6 +1702,303 @@
       }
     },
     {
+      "id": "checker-filtered-results",
+      "sha256": "b26fcb604bf23ba1277eec50a58622f0ea307c8f958f80f88124c5074b81a5af",
+      "scenario": {
+        "after": "filter-checker-results",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "firstRun": true,
+        "layout": "docked",
+        "mode": "qa-checker-results",
+        "opacity": null,
+        "open": true,
+        "pairing": "action",
+        "panelHeight": null,
+        "panelWidth": null,
+        "position": null,
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "capture",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "equals": "Follower comparison complete",
+            "selector": "[data-ia-role=\"capture-state-title\"]"
+          },
+          {
+            "hidden": false,
+            "visible": true,
+            "selector": "[data-ia-role=\"checker-browser\"]"
+          },
+          {
+            "numberEquals": 1,
+            "selector": "[data-ia-role=\"checker-filter-count\"]"
+          },
+          {
+            "includes": [
+              "@beta_account",
+              "Beta Account"
+            ],
+            "excludes": [
+              "@alpha.friend"
+            ],
+            "selector": "[data-ia-role=\"checker-filtered-list\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "capture",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 881,
+            "height": 69.171875,
+            "left": 1080,
+            "right": 1410,
+            "top": 811.828125,
+            "width": 330
+          },
+          "header": {
+            "bottom": 170.15625,
+            "height": 117.15625,
+            "left": 1080,
+            "right": 1410,
+            "top": 53,
+            "width": 330
+          },
+          "headerSizing": {
+            "actions": {
+              "client": 90,
+              "rect": {
+                "bottom": 133.078125,
+                "height": 44,
+                "left": 1310,
+                "right": 1400,
+                "top": 89.078125,
+                "width": 90
+              },
+              "scroll": 90
+            },
+            "copy": {
+              "client": 160,
+              "rect": {
+                "bottom": 159.15625,
+                "height": 96.15625,
+                "left": 1142,
+                "right": 1302,
+                "top": 63,
+                "width": 160
+              },
+              "scroll": 160
+            },
+            "header": {
+              "client": 330,
+              "scroll": 330
+            }
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "layout": "docked",
+          "launcher": null,
+          "opacity": "88%",
+          "overflowing": [
+            {
+              "className": "ia-select",
+              "overflow": 18,
+              "role": "checker-category",
+              "tagName": "SELECT"
+            }
+          ],
+          "panel": {
+            "bottom": 882,
+            "height": 828,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "panelAreaShare": 0.2427777777777778,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 882,
+            "height": 828,
+            "left": 1031,
+            "right": 1411,
+            "top": 54,
+            "width": 380
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"capture-state-title\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Follower comparison complete",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-browser\"]": {
+              "attributes": {
+                "class": "ia-checker-browser",
+                "data-ia-role": "checker-browser",
+                "aria-label": "Follower comparison accounts"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Show accountsNot following me backI do not follow backMutual followersFind a username1matching not following me back@beta_accountBeta Account",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-filter-count\"]": {
+              "attributes": {
+                "data-ia-role": "checker-filter-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "1",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-filtered-list\"]": {
+              "attributes": {
+                "class": "ia-list",
+                "data-ia-role": "checker-filtered-list"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "@beta_accountBeta Account",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Inspection ready. Live actions remain locked until one signed exact-item intent is armed.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Toolbox",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Follower checker",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Follow / Unfollow",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "DM Unsend",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Move sidecar; use arrow keys for precise movement",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "Not following me backI do not follow backMutual followers",
+              "width": 137.5
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 137.5
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 283
+            },
+            {
+              "height": 44,
+              "label": "Capture visible rows",
+              "width": 153.890625
+            },
+            {
+              "height": 44,
+              "label": "Download selected list",
+              "width": 168.875
+            },
+            {
+              "height": 44,
+              "label": "Clear checker",
+              "width": 110.609375
+            }
+          ],
+          "viewTitle": "Follower checker",
+          "width": "standard"
+        }
+      }
+    },
+    {
       "id": "queue-locked",
       "sha256": "536a87aac8034e2658559545b6bee58c9b0d78154a7008066195f2bbf980963b",
       "scenario": {
@@ -1450,6 +2007,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-queue-locked",
         "opacity": null,
@@ -1743,6 +2301,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-account-ready",
         "opacity": null,
@@ -2048,6 +2607,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-account-armed",
         "opacity": null,
@@ -2254,6 +2814,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-account-expiring",
         "opacity": null,
@@ -2580,6 +3141,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "messages",
         "opacity": null,
@@ -2857,6 +3419,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-messages-ready",
         "opacity": null,
@@ -3142,6 +3705,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-messages-wrong",
         "opacity": null,
@@ -3427,6 +3991,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-messages-armed",
         "opacity": null,
@@ -3645,13 +4210,14 @@
     },
     {
       "id": "workspace-unpaired",
-      "sha256": "27eb7b5c85027ed2b3b50b14ab4555a5566d4ad1e8ee0720539ed4ff789b8574",
+      "sha256": "a9541d6cae2de34835ab8a8a0c544befb9e76b1913e2bec713b0398d808567df",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-workspace",
         "opacity": null,
@@ -3894,13 +4460,14 @@
     },
     {
       "id": "workspace-read-only",
-      "sha256": "f6664d3edd6d5afee1f07194e4d6ba8d2bddb95bb734f81497d43032cc08c90d",
+      "sha256": "9d918dcf9c45cda4e5d6ce18c02c8fbb6aeb877dae8ad61c47cf96512182c1f9",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-workspace",
         "opacity": null,
@@ -4123,13 +4690,14 @@
     },
     {
       "id": "workspace-action-permission",
-      "sha256": "d88a8322f45c9ce6cd36f20af9c587329a8dc9b9f0f01ab5e5800042df2e5f12",
+      "sha256": "8ebf8587d8f6d554fb967750444a4941106c1c4b2bb60982218e9ecfb5d58080",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-workspace",
         "opacity": null,
@@ -4359,6 +4927,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-native-dialog",
         "opacity": null,
@@ -4520,6 +5089,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-session-expired",
         "opacity": null,
@@ -4710,6 +5280,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-session-challenge",
         "opacity": null,
@@ -4893,13 +5464,14 @@
     },
     {
       "id": "session-rate-limited",
-      "sha256": "27f99c5e18eca5564806979851ba942bc4edc39badb56b158bc22f6972056655",
+      "sha256": "60df634cae6659c277e324a41efad741c358be1e96dd184bfc89d6392fd2653a",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-session-rate-limit",
         "opacity": null,
@@ -5090,6 +5662,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -5263,6 +5836,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -5476,6 +6050,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -5649,6 +6224,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -5862,6 +6438,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -6035,6 +6612,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "messages",
         "opacity": null,
@@ -6221,13 +6799,14 @@
     },
     {
       "id": "profile-mobile-portrait",
-      "sha256": "e378ecab26c78769b507eeb33273eb8d7138f2173137e95ea5ea76ba920275c7",
+      "sha256": "052f45c94c8f9cf3bdf3c4981ca8b08269b5803c8dea4ea203a03c34f471b247",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -6396,6 +6975,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -6604,6 +7184,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -6770,13 +7351,14 @@
     },
     {
       "id": "queue-mobile-landscape-dark",
-      "sha256": "d028a041aa9d2553b528bd8c31a68c9c1aadcb7a1553ccb0f4e27e9b27274748",
+      "sha256": "265dc3f7e4f1c637efec1a53ed32083fb4b5215ca258fe25769b4cf51497b27a",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -6983,13 +7565,14 @@
     },
     {
       "id": "profile-zoom-200-light",
-      "sha256": "ce5c053444917946e6b23587cc82bfeb7ac9f83b7d0fcb30acf0f4cd78cf7aeb",
+      "sha256": "93cfa028775bdbebe9e7b67f96b9bcd1d385758aca7a22ea5e34f033461d661b",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -7156,13 +7739,14 @@
     },
     {
       "id": "profile-zoom-200-dark",
-      "sha256": "6c00e2f976c0599d15110a83e3accb6ae566a6960d13b48cf5c477c11d7e8829",
+      "sha256": "3471f4df76352abd96365433df46e7a705206032c94b73fae2ed9ed0d194deb2",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -7329,13 +7913,14 @@
     },
     {
       "id": "queue-zoom-200-light",
-      "sha256": "4663714925fc77065eb76fcf7797705cb0bf528f19439f3a3f9c6794b5964de1",
+      "sha256": "4374b83a0898d2f1e65f0d110e23bbca82be9fb17a9dfb449c5c040bd437e1b6",
       "scenario": {
         "after": null,
         "captureListType": null,
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -7556,6 +8141,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -7803,6 +8389,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": true,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -7976,6 +8563,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": true,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -8189,6 +8777,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -8294,6 +8883,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -8399,6 +8989,7 @@
         "density": "comfortable",
         "dock": "right",
         "forcedColors": false,
+        "firstRun": true,
         "layout": "docked",
         "mode": "qa-profile-following-queue",
         "opacity": null,
@@ -8456,7 +9047,7 @@
           }
         ],
         "metrics": {
-          "activeElementSection": "queue",
+          "activeElementSection": null,
           "adaptiveDock": null,
           "adaptiveWidth": null,
           "bodyWidth": 1425,
@@ -8753,13 +9344,13 @@
     }
   ],
   "performance": {
-    "collapsedTaskMs": 2.9450000000000003,
-    "openTaskMs": 2.777,
+    "collapsedTaskMs": 3.7030000000000003,
+    "openTaskMs": 2.236,
     "queue": {
-      "durationMs": 23.200000000186265,
+      "durationMs": 27.9000000001397,
       "renderedItems": 1,
-      "totalOverlayNodes": 380
+      "totalOverlayNodes": 384
     },
-    "routeTransitionMs": 85.39999999990687
+    "routeTransitionMs": 85.20000000018626
   }
 }

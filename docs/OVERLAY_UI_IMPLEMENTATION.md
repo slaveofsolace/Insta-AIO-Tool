@@ -9,8 +9,11 @@ migrations, exchange contracts, and signed one-item bridge. It provides:
 - fitted mobile/bottom-sheet geometry with no horizontal overflow;
 - persisted 55–100% surface opacity with an 88% default;
 - an explicit three-tool landing surface;
+- a first-open walkthrough that distinguishes read-only checks from locked live
+  actions;
 - the same three-tool engine in the generated Tampermonkey script; and
 - guided Following/Followers comparison and review-before-start account runs;
+- local category and username filtering for captured follower comparisons;
 - a simplified, primary thread-Unsend card whose history loader does not keep
   repositioning an already settled conversation; and
 - default-locked local batches plus an expiry-enforcing thread Unsend runner.
@@ -98,6 +101,10 @@ saved. Capture and queue contracts remain V1 and import-compatible.
 
 - Fresh installs start as a 44-pixel launcher; the panel does not take over the
   Instagram page on first load.
+- The first opened panel introduces all three tools once; migrated preferences
+  skip it, and completion is stored only in the V3 preference record.
+- Completed follower comparisons expose category and text filters with a
+  100-row DOM cap; filtering reads only normalized local capture data.
 - Standard width is 380 pixels, with 336- and 480-pixel presets, left/right
   docking, bounded custom size, persisted desktop position, and reset control.
 - The five tools remain visible in a 48-pixel semantic rail; Arrow keys plus

@@ -186,6 +186,13 @@
     .ia-tool-card span { margin-top: 3px; color: var(--ia-muted); font-size: 12px; }
     .ia-tool-card em { color: var(--ia-good); font-size: 11px; font-style: normal; font-weight: 700; white-space: nowrap; }
 
+    .ia-first-run { margin-bottom: 14px; padding: 14px; border: 1px solid var(--ia-line); border-left: 3px solid var(--ia-signal); border-radius: 10px; background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); }
+    .ia-first-run h2 { margin: 0; font-size: 17px; }
+    .ia-first-run > p { margin: 5px 0 0; color: var(--ia-muted); font-size: 12px; }
+    .ia-first-run ol { display: grid; gap: 8px; margin: 12px 0 0; padding-left: 22px; }
+    .ia-first-run li { padding-left: 3px; font-size: 13px; }
+    .ia-first-run li span { display: block; margin-top: 2px; color: var(--ia-muted); font-size: 12px; }
+
     .ia-checker-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
     .ia-checker-metric { padding: 11px; border: 1px solid var(--ia-line); border-radius: 9px; background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); }
     .ia-checker-metric span, .ia-checker-metric strong { display: block; }
@@ -196,6 +203,10 @@
     .ia-checker-result dl { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; margin: 0; }
     .ia-checker-result dt { color: var(--ia-muted); font-size: 12px; }
     .ia-checker-result dd { margin: 0; font-weight: 700; }
+    .ia-checker-browser { margin-top: 12px; }
+    .ia-filter-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+    .ia-checker-browser .ia-count { margin-top: 12px; }
+    .ia-checker-browser .ia-list { max-height: 260px; overflow: auto; }
     .ia-flow { display: grid; gap: 8px; margin-top: 12px; }
     .ia-flow-step { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 10px; border: 1px solid var(--ia-line); border-radius: 9px; background: color-mix(in srgb, var(--ia-surface-raised) var(--ia-panel-alpha-strong), transparent); }
     .ia-flow-step-number { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; background: var(--ia-rail); color: var(--ia-muted); font-size: 12px; font-weight: 700; }
@@ -308,6 +319,7 @@
         max-height: min(78dvh, calc(100dvh - env(safe-area-inset-top)));
         border-radius: 14px 14px 0 0;
       }
+      .ia-filter-grid { grid-template-columns: 1fr; }
       .ia-move-handle, .ia-resize-handle { display: none; }
       .ia-shell { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
       .ia-header { grid-template-columns: minmax(0, 1fr) auto; }
@@ -405,7 +417,7 @@
               </div>
             </header>
             <div class="ia-scroll">
-              <section class="ia-view" id="ia-view-now" role="tabpanel" aria-labelledby="ia-tab-now" tabindex="0" data-ia-view="now"><div data-ia-role="now-content"></div></section>
+              <section class="ia-view" id="ia-view-now" role="tabpanel" aria-labelledby="ia-tab-now" tabindex="0" data-ia-view="now"><div data-ia-role="first-run-slot"></div><div data-ia-role="now-content"></div></section>
               <section class="ia-view" id="ia-view-capture" role="tabpanel" aria-labelledby="ia-tab-capture" tabindex="0" data-ia-view="capture" hidden>
                 <div class="ia-state-row" data-ia-role="capture-state" data-tone="neutral"><span class="ia-state-dot"></span><div><strong data-ia-role="capture-state-title">No list detected</strong><span data-ia-role="capture-state-detail">Open Followers or Following, then capture the rendered batch.</span></div></div>
                 <div class="ia-checker-metrics" aria-label="Follower checker draft counts"><div class="ia-checker-metric"><span>Followers captured</span><strong data-ia-role="followers-count">0</strong></div><div class="ia-checker-metric"><span>Following captured</span><strong data-ia-role="following-count">0</strong></div></div>
@@ -417,6 +429,7 @@
                 </ol>
                 <p class="ia-note" data-ia-role="scan-note">Each scan auto-scrolls only the open list dialog and reads rendered rows. It never follows, unfollows, or messages anyone.</p>
                 <div class="ia-checker-result" data-ia-role="checker-result"></div>
+                <div data-ia-role="checker-browser-slot"></div>
                 <div class="ia-count"><strong data-ia-role="capture-count">0</strong><span data-ia-role="capture-detail">No draft yet</span></div>
                 <ul class="ia-list" data-ia-role="capture-list"></ul>
                 <details class="ia-disclosure"><summary>Manual capture, export, and reset</summary><div class="ia-disclosure-body"><div class="ia-field"><label for="ia-list-type-manual">List for manual capture</label><select class="ia-select" id="ia-list-type-manual" data-ia-role="manual-list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div><div class="ia-toolbar"><button class="ia-button ia-button--quiet" type="button" data-ia-action="capture-visible">Capture visible rows</button><a class="ia-link-button ia-link-button--quiet" data-ia-role="capture-download" aria-disabled="true">Download selected list</a><button class="ia-button ia-button--quiet" type="button" data-ia-action="reset-capture">Clear checker</button></div><p class="ia-note">Manual captures merge by username and never auto-scroll. A comparison stays marked partial until both full scans reach their ends.</p></div></details>
@@ -477,6 +490,8 @@
       <dialog class="ia-dialog" data-ia-role="arm-dialog" aria-labelledby="ia-arm-title" aria-describedby="ia-arm-description">
         <form method="dialog"><div><h2 id="ia-arm-title">Arm controlled action</h2><p id="ia-arm-description" data-ia-role="arm-description">Type the exact phrase for this reviewed item.</p></div><code data-ia-role="arm-phrase"></code><div class="ia-field"><label for="ia-arm-input">Exact arming phrase</label><input class="ia-text-input" id="ia-arm-input" data-ia-role="arm-input" autocomplete="off" spellcheck="false"></div><div class="ia-toolbar"><button class="ia-button ia-button--quiet" value="cancel">Cancel</button><button class="ia-button ia-button--danger" value="confirm">Arm for 90 seconds</button></div></form>
       </dialog>
+      <template data-ia-template="first-run"><section class="ia-first-run" data-ia-role="first-run" aria-labelledby="ia-first-run-title"><h2 id="ia-first-run-title">Start with a read-only check</h2><p>Insta AIO adds three tools to Instagram without sending account data elsewhere.</p><ol><li><strong>Follower checker</strong><span>Scan Followers and Following, then compare usernames on this device.</span></li><li><strong>Follow / Unfollow</strong><span>Build and review an exact target list. Live actions stay locked by default.</span></li><li><strong>DM Unsend</strong><span>Inspect one conversation before reviewing exact sent messages. Live removal stays locked.</span></li></ol><div class="ia-toolbar"><button class="ia-button" type="button" data-ia-action="first-run-start">Open follower checker</button><button class="ia-button ia-button--quiet" type="button" data-ia-action="first-run-dismiss">Not now</button></div></section></template>
+      <template data-ia-template="checker-browser"><section class="ia-checker-browser" data-ia-role="checker-browser" aria-label="Follower comparison accounts"><div class="ia-filter-grid"><div class="ia-field"><label for="ia-checker-category">Show accounts</label><select class="ia-select" id="ia-checker-category" data-ia-role="checker-category"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I do not follow back</option><option value="mutuals">Mutual followers</option></select></div><div class="ia-field"><label for="ia-checker-search">Find a username</label><input class="ia-text-input" id="ia-checker-search" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Search usernames" data-ia-role="checker-search"></div></div><div class="ia-count" aria-live="polite"><strong data-ia-role="checker-filter-count">0</strong><span data-ia-role="checker-filter-detail">accounts</span></div><ul class="ia-list" data-ia-role="checker-filtered-list"></ul></section></template>
     `;
     return Object.freeze({ host, shadow });
   }

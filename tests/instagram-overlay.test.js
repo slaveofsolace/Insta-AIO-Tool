@@ -67,7 +67,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.10.5');
+  assert.equal(manifest.version, '0.10.6');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -114,6 +114,17 @@ test('sidecar guides list capture, reviews account targets, and keeps one DM pri
   assert.match(overlay, /class="ia-primary-action" data-ia-role="unsend-disclosure"/);
   assert.match(overlay, /data-ia-action="mass-unsend">Unlock Unsend all DMs/);
   assert.match(overlay, /<summary>Visible evidence<\/summary>/);
+});
+
+test('fresh installs explain all tools and follower comparisons can be filtered', () => {
+  assert.match(overlay, /data-ia-role="first-run"/);
+  assert.match(overlay, /data-ia-action="first-run-start"/);
+  assert.match(overlay, /if \(model\.preferences\?\.firstRunComplete\) \{\s+slot\.replaceChildren\(\)/);
+  assert.match(overlay, /savePreference\(\{ firstRunComplete: true \}\)/);
+  assert.match(overlay, /data-ia-role="checker-category"/);
+  assert.match(overlay, /data-ia-role="checker-search"/);
+  assert.match(overlay, /filterComparisonResults/);
+  assert.match(overlay, /No captured username matches this search/);
 });
 
 test('visible DM evidence and its download stay bound to the open conversation', () => {

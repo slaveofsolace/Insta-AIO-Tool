@@ -289,7 +289,7 @@
           : 'standard',
         theme: fixtureTheme,
         density: fixtureSearch.get('density') === 'compact' ? 'compact' : 'comfortable',
-        firstRunComplete: true,
+        firstRunComplete: fixtureSearch.get('firstRun') !== 'false',
         ...(fixtureFloatingLayout ? {
           opacity: Number(fixtureSearch.get('opacity')),
           panelHeight: Number(fixtureSearch.get('panelHeight')),
@@ -362,6 +362,26 @@
           ],
         },
       } : {}),
+      ...(fixtureMode === 'qa-checker-results' ? {
+        instaAioOverlayCaptureWorkspaceV2: {
+          schemaVersion: 2,
+          kind: 'insta-aio-visible-checker-workspace',
+          followers: [
+            { username: 'follower_only', displayName: 'Follower Only' },
+            { username: 'mutual.friend', displayName: 'Mutual Friend' },
+          ],
+          following: [
+            { username: 'alpha.friend', displayName: 'Alpha Friend' },
+            { username: 'beta_account', displayName: 'Beta Account' },
+            { username: 'mutual.friend', displayName: 'Mutual Friend' },
+          ],
+          capturedAt: {
+            followers: '2026-07-31T12:00:00.000Z',
+            following: '2026-07-31T12:05:00.000Z',
+          },
+          complete: { followers: true, following: true },
+        },
+      } : {}),
       instaAioOverlayManualQueueV1: {
         importedAt: '2026-07-31T12:00:00.000Z',
         queue: fixtureQueue,
@@ -383,7 +403,7 @@
     globalThis.chrome = {
       runtime: {
         lastError: null,
-        getManifest: () => ({ version: '0.10.5' }),
+        getManifest: () => ({ version: '0.10.6' }),
         onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
         sendMessage: (request, callback) => {
           if (request.kind === 'insta-aio-overlay-state') {
@@ -391,7 +411,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm || fixtureStorage.dmArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -427,7 +447,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -444,7 +464,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: false,
               liveArm: null,
               pairings: fixtureStorage.bridgePairings,
@@ -472,7 +492,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -489,7 +509,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: null,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,

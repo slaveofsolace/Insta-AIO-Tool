@@ -137,8 +137,8 @@ to issue a profile or message capability when Web Crypto cannot supply entropy.
 The 2026-08-08 workflow patch received a complete diff-focused review over ten
 changed files plus two supporting safety-contract files. All twelve review
 receipts were closed and no plausible security candidate survived discovery.
-All 215 repository tests, extension fixture acceptance, real disposable-Chrome
-pairing, nine PWA baselines, the 40-state overlay check, the production
+The repository test suite, extension fixture acceptance, real disposable-Chrome
+pairing, nine PWA baselines, the 42-state overlay check, the production
 dependency audit, and the 10,000-message ZIP benchmark passed. Native installer
 lifecycle and additional-platform gates remain release/CI requirements;
 extension packaging independently runs the executable controlled-live safety
