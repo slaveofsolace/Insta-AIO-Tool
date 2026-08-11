@@ -155,7 +155,7 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.10.5 preserves the stricter signed live paths for one reviewed PWA
+Extension 0.10.6 preserves the stricter signed live paths for one reviewed PWA
 item. The PWA sends a signed intent; the Instagram overlay requires the matching
 profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW
 @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds.
@@ -217,7 +217,9 @@ open dialog and reads every row it renders, so it is not limited to the first
 screen. It reports `complete` only when the list actually reaches its end; a
 truncated scan says so instead of silently under-reporting. **Compare** stays
 disabled until both lists are present and then shows mutuals,
-not-following-me-back, and I-don't-follow-back counts computed locally.
+not-following-me-back, and I-don't-follow-back counts computed locally. The
+result browser switches between those groups and filters captured usernames or
+display names without sending a request.
 
 **Follow / Unfollow bot.** In the Follow / Unfollow tab, pick a target source
 (either checker result or the manual queue), an action, and how many to run.
@@ -352,7 +354,8 @@ ignored `test-results`.
 The overlay-specific commands rebuild the production extension before loading
 its manifest-ordered content scripts in the deterministic Instagram fixture.
 Use `pnpm run qa:overlay:update` only for an intentional, manually reviewed
-baseline replacement. The 40-state Windows baseline includes a centered,
+baseline replacement. The 42-state Windows baseline includes fresh-install and
+filtered-checker evidence, plus a centered,
 resized 62%-opacity proof plus desktop, tablet, mobile, zoom, forced-colors,
 collision, locked-action, and review-before-start states. It has been reproduced by
 `qa:overlay:check`; CI runs the non-updating check on Windows.

@@ -591,8 +591,8 @@
       .context[data-tone="warning"] .context-dot { background: var(--aio-warning, #b26a00); }
       .context[data-tone="blocked"] .context-dot { background: var(--aio-danger, #8c1d1d); }
       .context-copy { min-width: 0; }
-      .context-copy strong { display: block; color: var(--aio-text, #1b211c); font-size: 13px; }
-      .context-copy span { display: block; color: var(--aio-text-muted, #687068); font-size: 12px; overflow-wrap: anywhere; }
+      .context-copy strong { display: block; color: var(--aio-text, #1b211c) !important; font-size: 13px; }
+      .context-copy span { display: block; color: var(--aio-text-muted, #687068) !important; font-size: 12px; overflow-wrap: anywhere; }
       .context-cta { white-space: nowrap; }
       .intro { padding: 14px; border-bottom: 1px solid var(--aio-line, #d8ddd4); }
       .intro h2 { margin: 0 0 8px; font-size: 15px; }

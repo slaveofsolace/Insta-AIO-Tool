@@ -241,6 +241,7 @@ function scenarioUrl(baseUrl, scenario) {
   const parameters = new URLSearchParams({
     density: scenario.density,
     dock: scenario.dock,
+    firstRun: String(scenario.firstRun),
     mode: scenario.mode,
     open: String(scenario.open),
     pairing: scenario.pairing,
@@ -300,6 +301,21 @@ async function applyAfterState(webContents, scenario) {
       webContents,
       `document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('[data-ia-role="bot-review"]')?.hidden === false`,
       `${scenario.id}: read-only target review`,
+    );
+  }
+  if (scenario.after === 'filter-checker-results') {
+    await webContents.executeJavaScript(`(() => {
+      const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+      const search = shadow.querySelector('[data-ia-role="checker-search"]');
+      if (!search) throw new Error('Follower checker search control is missing.');
+      search.value = 'beta';
+      search.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      shadow.querySelector('[data-ia-role="checker-browser"]')?.scrollIntoView({ block: 'center' });
+    })()`, true);
+    await waitForValue(
+      webContents,
+      `document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('[data-ia-role="checker-filter-count"]')?.textContent === '1'`,
+      `${scenario.id}: local follower result filter`,
     );
   }
   if (scenario.after === 'wait-account-expired') {

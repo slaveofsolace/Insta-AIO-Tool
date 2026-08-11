@@ -5,7 +5,8 @@ Last updated: 2026-08-08
 ## Current status
 
 The production-script overlay matrix is green on Windows. An explicit update
-generated 40 baselines, including a centered/resized 62%-opacity proof and the
+generated 42 baselines, including fresh-install and filtered-checker proof, a
+centered/resized 62%-opacity proof, and the
 new review-before-start account-run state. The changed floating, Messages,
 checker, account-run, and DM states were inspected at full resolution after regeneration,
 and a subsequent non-updating check reproduced all semantic, geometry,
@@ -227,11 +228,11 @@ test suite.
 
 Automated coverage includes:
 
-- generated 40 Windows baselines and visually reviewed the changed key states;
+- generated 42 Windows baselines and visually reviewed the changed key states;
 - reproduced them with the non-updating check and added the Windows CI gate;
-- passed deterministic assembly, all 215 repository tests, production extension
+- passed deterministic assembly, the repository test suite, production extension
   fixture acceptance, real disposable-Chrome pairing, all nine PWA baselines,
-  the non-updating 40-state overlay check, the 10,000-message ZIP benchmark, and
+  the non-updating 42-state overlay check, the 10,000-message ZIP benchmark, and
   the production dependency audit; and
 - reviewed the diff and permission boundary: production extension permissions
   did not expand, target-aware adaptation creates no action token, the Chrome

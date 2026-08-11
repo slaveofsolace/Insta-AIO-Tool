@@ -97,7 +97,8 @@ test('Chrome acceptance loads and pairs the real extension through the restricte
   assert.match(chromeAcceptance, /Page\.getAppManifest/);
   assert.match(chromeAcceptance, /Page\.getInstallabilityErrors/);
   assert.match(chromeAcceptance, /complete-extension-pairing/);
-  assert.match(chromeAcceptance, /Extension 0.10.5 connected/);
+  assert.match(chromeAcceptance, /const extensionVersion = await prepareExtension\(\)/);
+  assert.match(chromeAcceptance, /Extension \$\{extensionVersion\} connected/);
   assert.match(chromeAcceptance, /permissions, \['read'\]/);
   assert.match(chromeAcceptance, /await rm\(resolvedResultsRoot/);
   assert.match(
@@ -149,6 +150,7 @@ test('overlay QA is loopback-confined and has bounded child-process cleanup', ()
   assert.match(overlayQa, /assert\.deepEqual\(rasterProblems, \[\]/);
   assert.match(overlayQa, /prefers-color-scheme/);
   assert.match(overlayQaRunner, /const childWatchdogMs = 5 \* 60 \* 1000/);
+  assert.match(overlayQaRunner, /TZ: 'UTC'/);
   assert.match(overlayQaRunner, /child\.kill\('SIGTERM'\)/);
   assert.match(overlayQaRunner, /child\.kill\('SIGKILL'\)/);
   assert.doesNotMatch(overlayQaRunner, /taskkill|killall|Stop-Process/i);

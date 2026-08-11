@@ -75,7 +75,7 @@
   <script nonce="insta-aio-overlay-qa">
     const FixtureNativeDate = Date;
     const fixtureClockStartedAt = FixtureNativeDate.now();
-    const fixtureClockOrigin = FixtureNativeDate.parse('2026-08-02T17:00:00.000Z');
+    const fixtureClockOrigin = FixtureNativeDate.parse('2026-08-02T12:00:00.000Z');
     class FixtureDate extends FixtureNativeDate {
       constructor(...argumentsList) {
         super(...(argumentsList.length
@@ -271,7 +271,7 @@
     const fixturePairings = fixturePairingMode === 'none' ? [] : [{
       origin: 'http://127.0.0.1:4173',
       permissions: fixturePairingMode === 'read' ? ['read'] : ['read', 'action'],
-      pairedAt: '2026-07-31T12:00:00.000Z',
+      pairedAt: '2026-07-31T07:00:00.000Z',
     }];
     const fixtureSection = ['now', 'capture', 'queue', 'messages', 'workspace']
       .includes(fixtureSearch.get('section'))
@@ -289,7 +289,7 @@
           : 'standard',
         theme: fixtureTheme,
         density: fixtureSearch.get('density') === 'compact' ? 'compact' : 'comfortable',
-        firstRunComplete: true,
+        firstRunComplete: fixtureSearch.get('firstRun') !== 'false',
         ...(fixtureFloatingLayout ? {
           opacity: Number(fixtureSearch.get('opacity')),
           panelHeight: Number(fixtureSearch.get('panelHeight')),
@@ -310,7 +310,7 @@
       action: fixtureAction,
       status: 'ready',
       reason: 'fixture review',
-      scheduledFor: '2026-07-31T12:00:00.000Z',
+      scheduledFor: '2026-07-31T07:00:00.000Z',
     }];
     const fixtureAccountArm = ['qa-account-armed', 'qa-native-dialog', 'qa-account-expiring']
       .includes(fixtureMode)
@@ -355,15 +355,35 @@
           schemaVersion: 1,
           kind: 'insta-aio-visible-list',
           listType: 'following',
-          capturedAt: '2026-07-31T12:00:00.000Z',
+          capturedAt: '2026-07-31T07:00:00.000Z',
           following: [
             { username: 'alpha.friend', displayName: '', source: 'extension-visible-dom' },
             { username: 'older_account', displayName: '', source: 'extension-visible-dom' },
           ],
         },
       } : {}),
+      ...(fixtureMode === 'qa-checker-results' ? {
+        instaAioOverlayCaptureWorkspaceV2: {
+          schemaVersion: 2,
+          kind: 'insta-aio-visible-checker-workspace',
+          followers: [
+            { username: 'follower_only', displayName: 'Follower Only' },
+            { username: 'mutual.friend', displayName: 'Mutual Friend' },
+          ],
+          following: [
+            { username: 'alpha.friend', displayName: 'Alpha Friend' },
+            { username: 'beta_account', displayName: 'Beta Account' },
+            { username: 'mutual.friend', displayName: 'Mutual Friend' },
+          ],
+          capturedAt: {
+            followers: '2026-07-31T07:00:00.000Z',
+            following: '2026-07-31T07:05:00.000Z',
+          },
+          complete: { followers: true, following: true },
+        },
+      } : {}),
       instaAioOverlayManualQueueV1: {
-        importedAt: '2026-07-31T12:00:00.000Z',
+        importedAt: '2026-07-31T07:00:00.000Z',
         queue: fixtureQueue,
       },
     };
@@ -383,7 +403,7 @@
     globalThis.chrome = {
       runtime: {
         lastError: null,
-        getManifest: () => ({ version: '0.10.5' }),
+        getManifest: () => ({ version: '0.10.6' }),
         onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
         sendMessage: (request, callback) => {
           if (request.kind === 'insta-aio-overlay-state') {
@@ -391,7 +411,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm || fixtureStorage.dmArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -400,7 +420,7 @@
               recentRuns: [{
                 kind: 'insta-aio-reviewed-action-job',
                 jobId: 'fixture-job-1',
-                receivedAt: '2026-07-31T12:04:00.000Z',
+                receivedAt: '2026-07-31T07:04:00.000Z',
                 mode: 'dry-run',
                 status: 'dry-run-complete',
                 stopReason: null,
@@ -427,7 +447,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -444,7 +464,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: false,
               liveArm: null,
               pairings: fixtureStorage.bridgePairings,
@@ -472,7 +492,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -489,7 +509,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: null,
-              extensionVersion: '0.10.5',
+              extensionVersion: '0.10.6',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,

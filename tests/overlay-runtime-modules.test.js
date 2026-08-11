@@ -264,3 +264,38 @@ test('follower checker migrates the legacy draft and compares both rendered list
   assert.equal(exported.followers.length, 2);
   assert.equal('following' in exported, false);
 });
+
+test('follower comparison filters stay local, bounded, and category-specific', () => {
+  const { shared } = loadModules();
+  const comparison = {
+    iDoNotFollowBack: [{ username: 'follower_only', displayName: 'Taylor North' }],
+    mutuals: [{ username: 'mutual.friend', displayName: 'Morgan' }],
+    notFollowingMeBack: [
+      { username: 'alpha.friend', displayName: 'Alpha' },
+      { username: 'beta_account', displayName: 'Taylor South' },
+    ],
+  };
+  const searched = shared.filterComparisonResults(
+    comparison,
+    'not-following-me-back',
+    '@TAYLOR',
+  );
+  assert.equal(searched.category, 'not-following-me-back');
+  assert.equal(searched.total, 1);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(searched.accounts.map((account) => account.username))),
+    ['beta_account'],
+  );
+  assert.equal(searched.truncated, false);
+
+  const bounded = shared.filterComparisonResults(comparison, 'mutuals', '', 0);
+  assert.equal(bounded.total, 1);
+  assert.equal(bounded.accounts.length, 1);
+  assert.equal(bounded.truncated, false);
+
+  const fallback = shared.filterComparisonResults(comparison, 'unknown-category', '', 1);
+  assert.equal(fallback.category, 'not-following-me-back');
+  assert.equal(fallback.total, 2);
+  assert.equal(fallback.accounts.length, 1);
+  assert.equal(fallback.truncated, true);
+});

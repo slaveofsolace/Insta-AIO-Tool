@@ -27,7 +27,10 @@ choose **Compare**. Each scan scrolls only the currently open matching dialog
 until it reaches the end or a bounded safe stop. The manual visible-row capture,
 download, and reset controls remain under the secondary disclosure. Both paths
 merge normalized usernames into the selected local draft and report partial
-completion instead of silently under-counting.
+completion instead of silently under-counting. Once both lists exist, the
+result browser switches among mutuals and both non-mutual groups and filters by
+captured username or display name. Filtering stays in memory and renders at
+most 100 matching rows at once.
 
 The downloaded record remains import-compatible:
 
@@ -130,6 +133,9 @@ Instagram cookies, or credentials.
 
 - A fresh V3 install starts collapsed as a 44-pixel launcher. Migration from
   V1/V2 preserves valid prior choices and adds bounded layout defaults.
+- Opening a fresh install shows one compact walkthrough naming the checker,
+  Follow / Unfollow, and DM Unsend boundaries. Starting with the checker or
+  dismissing the walkthrough persists `firstRunComplete` locally.
 - **Alt + Shift + I** toggles it.
 - Escape collapses it while focus is inside.
 - Arrow keys plus Home and End move through the semantic five-tool tab rail.

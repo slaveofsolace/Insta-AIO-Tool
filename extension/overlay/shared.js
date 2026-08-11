@@ -51,6 +51,11 @@
   const MAX_CAPTURE_ACCOUNTS = 2_000;
   const MAX_QUEUE_ITEMS = 2_000;
   const MAX_TEXT_LENGTH = 500;
+  const COMPARISON_CATEGORIES = Object.freeze({
+    'i-do-not-follow-back': 'iDoNotFollowBack',
+    mutuals: 'mutuals',
+    'not-following-me-back': 'notFollowingMeBack',
+  });
 
   function safeText(value, fallback = '') {
     const text = String(value ?? '').trim();
@@ -227,6 +232,35 @@
     };
   }
 
+  function filterComparisonResults(
+    comparison,
+    category = 'not-following-me-back',
+    query = '',
+    limit = 100,
+  ) {
+    const normalizedCategory = Object.hasOwn(COMPARISON_CATEGORIES, category)
+      ? category
+      : 'not-following-me-back';
+    const source = Array.isArray(comparison?.[COMPARISON_CATEGORIES[normalizedCategory]])
+      ? comparison[COMPARISON_CATEGORIES[normalizedCategory]]
+      : [];
+    const normalizedQuery = safeText(query).replace(/^@+/, '').toLocaleLowerCase();
+    const matches = normalizedQuery
+      ? source.filter((account) => (
+        safeText(account?.username).toLocaleLowerCase().includes(normalizedQuery)
+        || safeText(account?.displayName).toLocaleLowerCase().includes(normalizedQuery)
+      ))
+      : source;
+    const requestedLimit = Number.isFinite(Number(limit)) ? Math.trunc(Number(limit)) : 100;
+    const boundedLimit = Math.max(1, Math.min(100, requestedLimit));
+    return {
+      accounts: matches.slice(0, boundedLimit),
+      category: normalizedCategory,
+      total: matches.length,
+      truncated: matches.length > boundedLimit,
+    };
+  }
+
   function createModel(extensionVersion) {
     return {
       bridge: {
@@ -291,6 +325,7 @@
   install('shared', {
     ACTIONABLE_QUEUE_STATUSES,
     ALLOWED_QUEUE_STATUSES,
+    COMPARISON_CATEGORIES,
     MAX_CAPTURE_ACCOUNTS,
     MAX_QUEUE_ITEMS,
     SECTION_COPY,
@@ -303,6 +338,7 @@
     countdownLabel,
     createModel,
     currentQueueItem,
+    filterComparisonResults,
     install,
     migrateCaptureWorkspace,
     normalizeCapture,

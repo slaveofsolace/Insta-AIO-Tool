@@ -12,6 +12,64 @@
     runtime.setText('capture-state-detail', detail);
   }
 
+  function renderComparisonBrowser(runtime, comparison, ready) {
+    const {
+      document, query, setText,
+    } = runtime;
+    const slot = query('[data-ia-role="checker-browser-slot"]');
+    if (!slot) return;
+    if (!ready) {
+      slot.replaceChildren();
+      return;
+    }
+    if (!query('[data-ia-role="checker-browser"]')) {
+      const template = query('template[data-ia-template="checker-browser"]');
+      if (template) slot.append(template.content.cloneNode(true));
+    }
+    const list = query('[data-ia-role="checker-filtered-list"]');
+    if (!list) return;
+    list.replaceChildren();
+
+    const categoryControl = query('[data-ia-role="checker-category"]');
+    const searchControl = query('[data-ia-role="checker-search"]');
+    const result = shared.filterComparisonResults(
+      comparison,
+      categoryControl?.value,
+      searchControl?.value,
+    );
+    const selectedLabel = categoryControl?.selectedOptions?.[0]?.textContent || 'accounts';
+    const hasQuery = Boolean(String(searchControl?.value || '').trim());
+    setText('checker-filter-count', String(result.total));
+    setText(
+      'checker-filter-detail',
+      hasQuery ? `matching ${selectedLabel.toLocaleLowerCase()}` : selectedLabel.toLocaleLowerCase(),
+    );
+
+    for (const account of result.accounts) {
+      const row = document.createElement('li');
+      row.className = 'ia-list-item';
+      const title = document.createElement('strong');
+      title.textContent = `@${account.username}`;
+      const detail = document.createElement('small');
+      detail.textContent = account.displayName || account.profileUrl;
+      row.append(title, detail);
+      list.append(row);
+    }
+    if (!result.total) {
+      const empty = document.createElement('li');
+      empty.className = 'ia-empty';
+      empty.textContent = hasQuery
+        ? 'No captured username matches this search.'
+        : 'No accounts are in this comparison group.';
+      list.append(empty);
+    } else if (result.truncated) {
+      const more = document.createElement('li');
+      more.className = 'ia-list-item';
+      more.textContent = `+ ${result.total - result.accounts.length} more; narrow the username search to see them.`;
+      list.append(more);
+    }
+  }
+
   function render(runtime) {
     const {
       document, downloads, model, query, setText,
@@ -32,7 +90,7 @@
     setText(
       'capture-detail',
       accounts.length
-        ? `${listType} · updated ${shared.shortDate(workspace.capturedAt[listType])}`
+        ? `captured ${listType} · updated ${shared.shortDate(workspace.capturedAt[listType])}`
         : `${listType} · not captured yet`,
     );
     const followersComplete = workspace.complete?.followers === true;
@@ -97,6 +155,11 @@
         checker.append(detail);
       }
     }
+    renderComparisonBrowser(
+      runtime,
+      comparison,
+      Boolean(workspace.followers.length && workspace.following.length),
+    );
 
     if (batch?.listType === listType) {
       setState(

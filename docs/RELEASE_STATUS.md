@@ -1,6 +1,6 @@
 # Release status
 
-Current version: **0.10.5**
+Current version: **0.10.6**
 
 ## Available tools
 
@@ -11,6 +11,7 @@ Current version: **0.10.5**
   userscript, then compares them locally.
 - Reports mutuals, accounts that do not follow back, and accounts the user does
   not follow back.
+- Filters any comparison group by captured username or display name, locally.
 - Does not need live-action permission.
 
 ### Follow / Unfollow
@@ -44,6 +45,10 @@ Current version: **0.10.5**
 
 All imported data and local run state remain on the user's machine. The project
 does not require an application account or hosted data service.
+
+Fresh extension installs show a compact three-tool walkthrough the first time
+the launcher is opened. Migrated profiles keep their prior view and are not
+shown the walkthrough again.
 
 ## Automated verification
 

@@ -199,6 +199,18 @@
     };
   }
 
+  function renderFirstRun() {
+    const slot = query('[data-ia-role="first-run-slot"]');
+    if (!slot) return;
+    if (model.preferences?.firstRunComplete) {
+      slot.replaceChildren();
+      return;
+    }
+    if (query('[data-ia-role="first-run"]')) return;
+    const template = query('template[data-ia-template="first-run"]');
+    if (template) slot.append(template.content.cloneNode(true));
+  }
+
   function applyPreferences(next) {
     model.preferences = preferences.normalize(next, model.preferences || preferences.defaults());
     model.open = model.preferences.open;
@@ -213,6 +225,7 @@
     const opacityControl = query('[data-ia-preference="opacity"]');
     if (opacityControl) opacityControl.value = String(Math.round(model.preferences.opacity * 100));
     setText('opacity-output', `${Math.round(model.preferences.opacity * 100)}%`);
+    renderFirstRun();
     layoutController?.apply(model.preferences);
     themeController?.setPreference(model.preferences.theme);
   }
@@ -223,6 +236,7 @@
     applyPreferences(next);
     try {
       model.preferences = await preferences.save(storage, previous, patch);
+      return true;
     } catch (error) {
       applyPreferences(previous);
       setSection(previous.section, { persist: false });
@@ -233,7 +247,14 @@
         restoreFocus: false,
       });
       status(`Overlay preference was not saved: ${error.message}`, 'error');
+      return false;
     }
+  }
+
+  async function completeFirstRun(nextSection = null) {
+    const saved = await savePreference({ firstRunComplete: true });
+    if (!saved) return;
+    if (nextSection) setSection(nextSection, { focus: true });
   }
 
   function setOpen(open, {
@@ -601,6 +622,8 @@
     'bot-start': () => queueView.botStart(runtime),
     'capture-visible': () => captureView.captureVisible(runtime),
     close: () => setOpen(false),
+    'first-run-dismiss': () => completeFirstRun(),
+    'first-run-start': () => completeFirstRun('capture'),
     'inspect-messages': () => messagesView.inspect(runtime),
     'mass-unsend': () => messagesView.massUnsend(runtime),
     'save-limits': () => batchController.saveLimits(runtime),
@@ -668,6 +691,10 @@
       captureView.render(runtime);
       return;
     }
+    if (event.target.matches?.('[data-ia-role="checker-category"]')) {
+      captureView.render(runtime);
+      return;
+    }
     if (!event.target.matches?.('[data-ia-role="queue-file"]')) return;
     const file = event.target.files?.[0];
     if (file) void execute(() => queueView.importQueue(runtime, file));
@@ -675,6 +702,10 @@
   }
 
   function onShadowInput(event) {
+    if (event.target.matches?.('[data-ia-role="checker-search"]')) {
+      captureView.render(runtime);
+      return;
+    }
     if (event.target.dataset?.iaPreference !== 'opacity') return;
     const opacity = Number(event.target.value) / 100;
     setText('opacity-output', `${Math.round(opacity * 100)}%`);
