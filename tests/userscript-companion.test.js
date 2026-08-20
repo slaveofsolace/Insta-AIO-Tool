@@ -64,6 +64,13 @@ test('live Follow, Unfollow, and Unsend are available and go through the engine'
   assert.doesNotMatch(source, /intentionally unavailable in userscript mode/);
 });
 
+test('the userscript can review the current exact profile as a one-item run', () => {
+  assert.match(source, /<option value="current-profile">Current exact profile<\/option>/);
+  assert.match(shell, /const source = query\('\[data-role="bot-source"\]'\)\?\.value \|\| 'current-profile'/);
+  assert.match(shell, /const count = source === 'current-profile' \? 1 : requestedCount/);
+  assert.match(shell, /engine\.normalizeUsername\?\.\(location\.pathname\)/);
+});
+
 test('live mutation controls are locked by default and authorization expires during a run', () => {
   assert.match(source, /Userscript mode · live actions locked/);
   assert.match(source, /data-role="live-actions"/);

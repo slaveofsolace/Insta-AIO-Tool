@@ -108,6 +108,16 @@ test('a run shows its targets and skip reasons before it starts', () => {
   assert.ok(runBody.indexOf('accountRunDraft.signature !== current.signature') < runBody.indexOf('requireNewRunAuthorization()'));
 });
 
+test('the open exact profile is the direct bounded Follow or Unfollow source', () => {
+  assert.match(generated, /<option value="current-profile">Current exact profile<\/option>/);
+  assert.match(shell, /const source = query\('\[data-role="bot-source"\]'\)\?\.value \|\| 'current-profile'/);
+  assert.match(shell, /const count = source === 'current-profile' \? 1 : requestedCount/);
+  assert.match(shell, /'current-profile': \(\) => \{/);
+  assert.match(shell, /source !== 'current-profile' && action === 'follow'/);
+  assert.match(shell, /view: 'account'/);
+  assert.match(shell, /Open one Instagram profile first\. No target was reviewed\./);
+});
+
 test('read-only conversation resolution precedes the count-specific Unsend plan', () => {
   const checkButton = generated.match(/<button[^>]*class="button primary big"[^>]*data-action="scan-sent"[^>]*>/);
   assert.ok(checkButton, 'the read-only conversation check must be the visible primary action');

@@ -672,9 +672,9 @@
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar"><span data-role="scan-fill"></span></div><p class="lead" data-role="scan-detail"></p></div>
           <div class="field"><label for="aio-filter">Filter results</label><input id="aio-filter" type="search" placeholder="Search a username" data-role="result-filter"></div>
           <div class="card" data-role="comparison"></div><details class="settings-inline"><summary>Advanced: raw captures and export</summary><ul class="list" data-role="capture-list"></ul><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows only</button><button class="button quiet" type="button" data-action="download-list">Download a raw list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="aio-list-type">Raw list to use</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details></section>
-        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="card" data-role="queue-current"></div>
+        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Inspect the profile already open, or choose a bounded reviewed list. Nothing clicks during review.</p><div class="card" data-role="queue-current"></div>
           <div class="toolbar"><button class="button primary" type="button" data-action="account-dry-run">Inspect exact profile</button><button class="button quiet" type="button" data-action="open-profile">Open exact profile</button></div><details class="settings-inline"><summary>Advanced: queue state and files</summary><div class="toolbar"><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
-          <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
+          <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="current-profile">Current exact profile</option><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <p class="lead" data-role="account-run-summary">Choose a source, action, and bounded amount, then review the exact targets.</p><div class="toolbar"><button class="button primary big" type="button" data-action="review-accounts" data-role="account-run-primary">Review run</button></div><div class="review" data-role="run-review" hidden><strong data-role="review-title"></strong><ul class="list list--compact" data-role="review-list"></ul><p class="lead" data-role="review-skips"></p></div>
@@ -1499,8 +1499,8 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Open this account’s Followers or Following to scan them.',
-        view: 'checker',
+        detail: 'Inspect this exact profile, or open its Followers or Following to scan a list.',
+        view: 'account',
       };
     }
     return {
@@ -1625,11 +1625,16 @@
 
   function accountRunPlan() {
     const action = query('[data-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
-    const source = query('[data-role="bot-source"]')?.value || 'not-following-me-back';
-    const count = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
+    const source = query('[data-role="bot-source"]')?.value || 'current-profile';
+    const requestedCount = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
+    const count = source === 'current-profile' ? 1 : requestedCount;
     const comparison = compareCapture();
     const names = (list) => (list || []).map((entry) => entry.username || entry).filter(Boolean);
     const pools = {
+      'current-profile': () => {
+        const username = engine.normalizeUsername?.(location.pathname) || '';
+        return username ? [username] : [];
+      },
       queue: () => (state.queue.queue || [])
         .filter((entry) => ACTIONABLE_STATUSES.has(entry.status))
         .map((entry) => entry.account?.username)
@@ -1639,9 +1644,9 @@
       'scanned-followers': () => names(state.capture.followers),
       'scanned-following': () => names(state.capture.following),
     };
-    const pool = (pools[source] || pools['not-following-me-back'])();
+    const pool = (pools[source] || pools['current-profile'])();
     let eligible = pool;
-    if (action === 'follow' && state.capture.following.length) {
+    if (source !== 'current-profile' && action === 'follow' && state.capture.following.length) {
       const already = new Set(names(state.capture.following));
       eligible = eligible.filter((username) => !already.has(username));
     }
@@ -1690,7 +1695,9 @@
     if (!plan.items.length) {
       clearAccountRunDraft();
       status(
-        plan.source.startsWith('scanned')
+        plan.source === 'current-profile'
+          ? 'Open one Instagram profile first. No target was reviewed.'
+          : plan.source.startsWith('scanned')
           ? 'That list is empty. Open the list you want and scan it in the checker first.'
           : 'No targets. Scan both lists in the checker first, or import a queue.',
       );

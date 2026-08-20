@@ -120,6 +120,14 @@ test('sidecar guides list capture, reviews account targets, and keeps one DM pri
   assert.match(overlay, /<summary>Visible evidence<\/summary>/);
 });
 
+test('sidecar can review only the exact profile already open without an imported queue', () => {
+  assert.match(overlay, /<option value="current-profile">Current exact profile<\/option>/);
+  assert.match(overlay, /source === 'current-profile'/);
+  assert.match(overlay, /context\.pageKind === 'profile' && context\.username \? \[context\.username\] : \[\]/);
+  assert.match(overlay, /const requested = source === 'current-profile'\s+\? 1/);
+  assert.match(overlay, /Open one Instagram profile first\. No target was reviewed\./);
+});
+
 test('fresh installs explain all tools and follower comparisons can be filtered', () => {
   assert.match(overlay, /data-ia-role="first-run"/);
   assert.match(overlay, /data-ia-action="first-run-start"/);
