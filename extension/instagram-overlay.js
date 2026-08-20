@@ -625,6 +625,16 @@
     'first-run-dismiss': () => completeFirstRun(),
     'first-run-start': () => completeFirstRun('capture'),
     'inspect-messages': () => messagesView.inspect(runtime),
+    'layout-preset': (target) => {
+      const viewportHeight = Math.max(320, Number(window.innerHeight) || 720);
+      const presets = {
+        compact: { panelHeight: 520, panelWidth: 380, width: 'compact' },
+        tall: { panelHeight: Math.min(820, viewportHeight - 16), panelWidth: 460, width: 'standard' },
+        wide: { panelHeight: 680, panelWidth: 560, width: 'wide' },
+      };
+      const preset = presets[target.dataset.layoutPreset];
+      return preset ? savePreference(preset) : undefined;
+    },
     'mass-unsend': () => messagesView.massUnsend(runtime),
     'save-limits': () => batchController.saveLimits(runtime),
     'scan-full-list': (target) => captureView.scanFullList(runtime, target.dataset.listType),
@@ -672,6 +682,9 @@
     if (['bot-source', 'bot-action', 'bot-count'].includes(event.target.dataset?.iaRole)) {
       queueView.invalidateBotReview(runtime);
     }
+    if (['unsend-scope', 'unsend-count'].includes(event.target.dataset?.iaRole)) {
+      messagesView.renderSentScan(runtime);
+    }
     const preference = event.target.dataset?.iaPreference;
     if (preference) {
       const rawValue = preference === 'opacity'
@@ -710,6 +723,17 @@
     const opacity = Number(event.target.value) / 100;
     setText('opacity-output', `${Math.round(opacity * 100)}%`);
     layoutController?.previewOpacity(opacity);
+  }
+
+  function onShadowToggle(event) {
+    const details = event.target.closest?.('[data-ia-role="advanced-settings"]');
+    if (!details?.open) return;
+    const body = query('[data-ia-role="advanced-settings-body"]');
+    if (!body || body.childElementCount) return;
+    const template = query('[data-ia-template="advanced-settings"]');
+    if (!template) return;
+    body.append(template.content.cloneNode(true));
+    void batchController.hydrate(runtime);
   }
 
   function onDocumentKeydown(event) {
@@ -795,6 +819,7 @@
     shadow.removeEventListener('keydown', onShadowKeydown);
     shadow.removeEventListener('change', onShadowChange);
     shadow.removeEventListener('input', onShadowInput);
+    shadow.removeEventListener('toggle', onShadowToggle, true);
     document.removeEventListener('keydown', onDocumentKeydown);
     window.removeEventListener('resize', onWindowResize);
     chromeApi.storage.onChanged.removeListener?.(onStorageChanged);
@@ -896,6 +921,7 @@
   shadow.addEventListener('keydown', onShadowKeydown);
   shadow.addEventListener('change', onShadowChange);
   shadow.addEventListener('input', onShadowInput);
+  shadow.addEventListener('toggle', onShadowToggle, true);
   document.addEventListener('keydown', onDocumentKeydown);
   chromeApi.storage.onChanged.addListener(onStorageChanged);
   document.documentElement.append(host);

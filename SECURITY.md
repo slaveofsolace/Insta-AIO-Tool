@@ -36,6 +36,13 @@ Insta AIO Tool:
   extension-side reservations, one-use DOM-token consumption, structurally
   bound interactive menu/dialog controls, and same-thread exact-removal proof
   with stable identity coverage
+- Permits a local thread-wide Unsend only after a no-click full-history check
+  proves a finite eligible count, followed by an exact thread/scope/count/
+  digest/expiry plan, a count-specific typed phrase, and a final confirmation.
+  The count and full-history completeness are revalidated before the first
+  message menu opens; the finite plan is reserved against a persistent daily
+  allowance and uses bounded pacing; capped or incomplete checks cannot create
+  a live plan
 - Requires reviewed job digests and explicit confirmations
 - Uses transactional duplicate and finite-limit enforcement, including restored state
 - Safe-stops on uncertain browser state

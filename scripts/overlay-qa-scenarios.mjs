@@ -215,7 +215,7 @@ const requiredStates = [
       semantic('[data-ia-role="message-count"]', { numberEquals: 3 }),
       semantic('[data-ia-role="message-state-title"]', { equals: 'Conversation ready' }),
       semantic('[data-ia-role="message-state-detail"]', {
-        includes: ['read visible evidence', 'Unsend all DMs'],
+        includes: ['Read visible evidence', 'eligible count'],
       }),
       semantic('[data-ia-role="dm-live-badge"]', { equals: 'locked', tone: 'neutral' }),
     ],

@@ -404,7 +404,7 @@
     globalThis.chrome = {
       runtime: {
         lastError: null,
-        getManifest: () => ({ version: '0.10.6' }),
+        getManifest: () => ({ version: '0.11.0' }),
         onMessage: { addListener: (listener) => runtimeListeners.push(listener) },
         sendMessage: (request, callback) => {
           if (request.kind === 'insta-aio-overlay-state') {
@@ -412,7 +412,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.6',
+              extensionVersion: '0.11.0',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm || fixtureStorage.dmArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -448,7 +448,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.6',
+              extensionVersion: '0.11.0',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -465,7 +465,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.6',
+              extensionVersion: '0.11.0',
               liveExecutionEnabled: false,
               liveArm: null,
               pairings: fixtureStorage.bridgePairings,
@@ -493,7 +493,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: fixtureStorage.dmArm,
-              extensionVersion: '0.10.6',
+              extensionVersion: '0.11.0',
               liveExecutionEnabled: true,
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,
@@ -510,7 +510,7 @@
               controlledAccountActionsAvailable: true,
               controlledDmUnsendAvailable: true,
               dmArm: null,
-              extensionVersion: '0.10.6',
+              extensionVersion: '0.11.0',
               liveExecutionEnabled: Boolean(fixtureStorage.liveArm),
               liveArm: fixtureStorage.liveArm,
               pairings: fixtureStorage.bridgePairings,

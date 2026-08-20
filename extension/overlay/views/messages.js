@@ -8,20 +8,21 @@
   const runner = globalThis.InstaAioDmThreadUnsender;
   const subscriptions = new WeakMap();
   const styledShadows = new WeakSet();
-  const massUnsendArms = new WeakMap();
-  const MASS_UNSEND_ARM_TTL_MS = 15 * 60 * 1_000;
-  const MASS_UNSEND_ARM_PHRASE = 'UNSEND ALL DMS';
+  const DM_PLAN_TTL_MS = 15 * 60 * 1_000;
 
   function activeConversationId() {
     const match = String(location.pathname || '').match(/^\/direct\/t\/([^/?#]+)\/?$/i);
     return match?.[1] || '';
   }
 
-  function massUnsendArm(runtime) {
-    const arm = massUnsendArms.get(runtime.model);
-    if (Number(arm?.expiresAt) > Date.now() && String(arm?.threadId || '')) return arm;
-    massUnsendArms.delete(runtime.model);
-    return null;
+  function currentPreview(runtime) {
+    const preview = runtime.model.dmThreadPreview;
+    return preview?.ready
+      && preview.complete === true
+      && preview.threadId === activeConversationId()
+      && Number(preview.eligibleCount) >= 0
+      ? preview
+      : null;
   }
 
   function matchingArm(intent, arm) {
@@ -135,9 +136,14 @@
         font-weight: 600 !important;
       }
       .ia-button:hover, .ia-link-button:hover, .ia-file-label:hover { filter: brightness(.97); }
-      .ia-button--danger, .ia-button--signal {
+      .ia-button--signal {
         border-color: var(--ia-signal) !important;
         background: var(--ia-signal) !important;
+        color: #fff !important;
+      }
+      .ia-button--danger {
+        border-color: var(--ia-danger) !important;
+        background: var(--ia-danger) !important;
         color: #fff !important;
       }
       .ia-badge { font-weight: 600 !important; }
@@ -171,11 +177,7 @@
     if (disclosure) {
       disclosure.hidden = false;
       const summary = disclosure.querySelector('strong');
-      if (summary) summary.textContent = 'Unsend all DMs';
-      for (const role of ['unsend-scope', 'unsend-count']) {
-        const field = runtime.query(`[data-ia-role="${role}"]`)?.closest('.ia-field');
-        if (field) field.hidden = true;
-      }
+      if (summary) summary.textContent = 'Conversation plan';
       let progress = disclosure.querySelector('.ia-direct-unsend-progress');
       if (!progress) {
         progress = runtime.document.createElement('div');
@@ -275,32 +277,51 @@
     const button = runtime.query('[data-ia-action="mass-unsend"]');
     const progress = disclosure?.querySelector('.ia-direct-unsend-progress');
     const active = ['preparing', 'running', 'waiting', 'stopping'].includes(state.status);
-    const massArm = massUnsendArm(runtime);
+    const preview = currentPreview(runtime);
+    const checked = runtime.model.dmThreadPreview?.ready
+      && runtime.model.dmThreadPreview.threadId === activeConversationId()
+      ? runtime.model.dmThreadPreview
+      : null;
+    const plan = runtime.query('[data-ia-role="unsend-plan"]');
+    const eligible = runtime.query('[data-ia-role="unsend-eligible"]');
+    const scope = runtime.query('[data-ia-role="unsend-scope"]')?.value || 'all';
+    const countField = runtime.query('[data-ia-role="unsend-count"]')?.closest('.ia-field');
     if (disclosure) disclosure.hidden = false;
+    if (plan) plan.hidden = active || !preview || preview.eligibleCount < 1;
+    if (countField) countField.hidden = scope === 'all';
+    if (eligible) eligible.textContent = preview
+      ? `${preview.eligibleCount} sent message${preview.eligibleCount === 1 ? '' : 's'} eligible`
+      : checked
+        ? `${checked.eligibleCount} found · completeness not proven`
+        : 'Check this conversation to resolve the eligible count';
     if (badge) {
       badge.textContent = active
         ? `${state.processed} unsent`
         : state.status === 'completed'
           ? 'complete'
-          : massArm
-            ? 'armed 15m'
-            : 'live locked';
-      badge.dataset.tone = state.status === 'error' ? 'danger' : active ? 'warning' : state.status === 'completed' ? 'good' : 'neutral';
+          : preview
+            ? `${preview.eligibleCount} ready`
+            : checked
+              ? 'incomplete'
+            : 'check first';
+      badge.dataset.tone = state.status === 'error' || (checked && !preview)
+        ? 'danger'
+        : active ? 'warning' : state.status === 'completed' ? 'good' : 'neutral';
     }
     if (detail) {
       detail.textContent = active || ['completed', 'stopped', 'error'].includes(state.status)
         ? state.message
-        : massArm
-          ? 'Thread-wide Unsend is armed temporarily. Select it again to review the permanent action.'
-          : 'Locked by default. First unlock with the typed phrase; no menu opens and nothing is removed.';
+        : preview
+          ? `Read-only check complete for thread ${preview.threadId}. Choose a finite scope, then review the exact plan.`
+          : checked
+            ? `${checked.reason} Destructive plans stay locked.`
+          : 'Check conversation loads sent-message history without opening a message menu or removing anything.';
     }
     if (button) {
       button.textContent = active
         ? 'Stop unsending'
-        : massArm
-          ? 'Unsend all DMs'
-          : 'Unlock Unsend all DMs';
-      button.disabled = state.status === 'stopping';
+        : 'Review Unsend plan';
+      button.disabled = state.status === 'stopping' || !preview || preview.eligibleCount < 1;
     }
     if (progress) {
       progress.hidden = !active && !['completed', 'stopped', 'error'].includes(state.status);
@@ -348,7 +369,7 @@
     if (state) state.dataset.tone = conversationReady ? 'good' : 'neutral';
     setText('message-state-title', conversationReady ? 'Conversation ready' : 'Open a conversation');
     setText('message-state-detail', conversationReady
-      ? 'You can read visible evidence or start Unsend all DMs.'
+      ? 'Read visible evidence or check the full conversation. Unsend controls stay hidden until the eligible count is resolved.'
       : 'Choose a conversation before using message tools.');
 
     for (const fragment of fragments) {
@@ -404,11 +425,12 @@
       runtime.status('Reload Instagram to load the current message runner.', 'error');
       return;
     }
-    const result = runner.inspect();
+    const result = await runner.inspectAll();
+    runtime.model.dmThreadPreview = result.ready ? result : null;
     renderDirect(runtime);
-    runtime.status(result.ready
-      ? `${result.visibleSent} sent message${result.visibleSent === 1 ? '' : 's'} visible now. Unsend all will load the full conversation first.`
-      : result.reason, result.ready ? 'good' : 'error');
+    runtime.status(result.ready && result.complete
+      ? `${result.eligibleCount} sent message${result.eligibleCount === 1 ? '' : 's'} eligible in this conversation. Nothing was changed.`
+      : result.reason, result.ready && result.complete ? 'good' : 'error');
   }
 
   async function massUnsend(runtime) {
@@ -418,59 +440,71 @@
       runner.stop();
       return;
     }
-    let massArm = massUnsendArm(runtime);
-    if (!massArm) {
-      const inspection = runner.inspect();
-      if (!inspection.ready || !inspection.threadId) throw new Error(inspection.reason || 'The conversation could not be identified.');
-      const phrase = await runtime.requestArmPhrase({
-        description: 'This unlocks thread-wide Unsend in this tab for 15 minutes. It does not open a message menu or remove anything.',
-        phrase: MASS_UNSEND_ARM_PHRASE,
-      });
-      if (phrase == null) return;
-      if (String(phrase).trim() !== MASS_UNSEND_ARM_PHRASE) {
-        runtime.status('Thread-wide Unsend stayed locked. The authorization phrase did not match.', 'error');
-        renderDirect(runtime);
-        return;
-      }
-      const current = runner.inspect();
-      if (!current.ready || current.threadId !== inspection.threadId) {
-        runtime.status('Thread-wide Unsend stayed locked because the conversation changed.', 'error');
-        renderDirect(runtime);
-        return;
-      }
-      massArm = Object.freeze({
-        expiresAt: Date.now() + MASS_UNSEND_ARM_TTL_MS,
-        threadId: inspection.threadId,
-      });
-      massUnsendArms.set(runtime.model, massArm);
+    const preview = currentPreview(runtime);
+    if (!preview || preview.eligibleCount < 1) {
+      runtime.status('Check this conversation first. No destructive control was used.', 'error');
       renderDirect(runtime);
-      runtime.status('Thread-wide Unsend armed for 15 minutes. Nothing was removed. Select Unsend all DMs again to review execution.', 'good');
-      setTimeout(() => renderDirect(runtime), MASS_UNSEND_ARM_TTL_MS + 50);
       return;
     }
     const inspection = runner.inspect();
     if (!inspection.ready) throw new Error(inspection.reason);
-    if (inspection.threadId !== massArm.threadId) {
-      massUnsendArms.delete(runtime.model);
+    if (inspection.threadId !== preview.threadId) {
+      runtime.model.dmThreadPreview = null;
       renderDirect(runtime);
-      runtime.status('Thread-wide Unsend stayed locked because the armed conversation changed.', 'error');
+      runtime.status('The conversation changed. Check it again before reviewing an Unsend plan.', 'error');
+      return;
+    }
+    const scope = runtime.query('[data-ia-role="unsend-scope"]')?.value || 'all';
+    const requested = Math.floor(Number(runtime.query('[data-ia-role="unsend-count"]')?.value) || 1);
+    const limit = scope === 'all'
+      ? preview.eligibleCount
+      : Math.min(preview.eligibleCount, Math.max(1, requested));
+    const plan = runner.createPlan({
+      threadId: preview.threadId,
+      scope,
+      limit,
+      eligibleCount: preview.eligibleCount,
+      expiresAt: Date.now() + DM_PLAN_TTL_MS,
+    });
+    if (!plan) throw new Error('The reviewed Unsend plan could not be created. Check the conversation again.');
+    const scopeLabel = scope === 'all'
+      ? 'all eligible sent messages'
+      : `${scope} ${limit} sent message${limit === 1 ? '' : 's'}`;
+    const phrase = `UNSEND ${limit} ${plan.reviewedDigest}`;
+    const entered = await runtime.requestArmPhrase({
+      description: `Thread ${plan.threadId} · ${scopeLabel}. This count-specific plan expires in 15 minutes.`,
+      phrase,
+    });
+    if (entered == null) return;
+    if (String(entered).trim() !== phrase) {
+      runtime.status('Unsend stayed locked because the count-specific phrase did not match.', 'error');
       return;
     }
     const confirmed = runtime.window.confirm(
-      'Unsend every message you sent in this conversation?\n\n'
-      + 'Older history will load once, then removal works forward from the oldest loaded sent message. This is permanent and cannot be undone.',
+      `Permanently unsend ${scopeLabel} from thread ${plan.threadId}?\n\n`
+      + `Reviewed digest: ${plan.reviewedDigest}. The eligible count will be revalidated immediately before any message menu opens.`,
     );
     if (!confirmed) {
       runtime.status('Canceled. Nothing was changed.', 'neutral');
       return;
     }
-    massUnsendArms.delete(runtime.model);
+    const reservation = await runtime.sendBridge({
+      kind: 'insta-aio-reserve-thread-unsend',
+      plan,
+    });
+    if (reservation?.error) {
+      const detail = reservation.error === 'thread-unsend-daily-limit'
+        ? `Only ${reservation.remaining || 0} of ${reservation.limit || 0} daily Unsends remain.`
+        : 'The reviewed plan could not be reserved. Check the conversation again.';
+      runtime.status(`${detail} Nothing was changed.`, 'error');
+      return;
+    }
+    runtime.model.dmThreadPreview = null;
     renderDirect(runtime);
     await runner.start({
-      authorizationExpiresAt: massArm.expiresAt,
-      expectedThreadId: massArm.threadId,
-      minDelayMs: 1_000,
-      maxDelayMs: 2_000,
+      plan,
+      minDelayMs: reservation.pacing?.minDelayMs,
+      maxDelayMs: reservation.pacing?.maxDelayMs,
     });
   }
 

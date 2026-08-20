@@ -387,28 +387,25 @@ function renderOverview() {
     'Relationship history, scheduled reviews, and message-data planning in one local workspace.',
     '<button class="primary" data-action="pick-data-files">Import Instagram data</button>',
   ) + `
-    <section class="grid metrics">
-      ${metric('Followers', snapshot?.followers.length || 0, snapshot ? `Snapshot ${formatDate(snapshot.capturedAt, false)}` : 'No snapshot imported')}
-      ${metric('Following', snapshot?.following.length || 0, `${relationships.mutuals.length} mutual`)}
-      ${metric('Not following back', relationships.notFollowingBack.length, `${diff.lostFollowers.length} newly lost since prior snapshot`)}
-      ${metric('Queue ready', queue.ready || 0, `${queue.waiting || 0} waiting`)}
-      ${metric('New followers', diff.newFollowers.length, 'Compared with prior snapshot')}
-      ${metric('Recent unfollows', diff.lostFollowers.length, 'Detected by snapshot comparison')}
-      ${metric('Messages loaded', state.messages.length, `${sentMessages} identified as sent by you`)}
-      ${metric('Unsend selected', state.selectedMessageIds.length, 'Reviewed preview or one-message gate')}
+    <section class="tool-overview" aria-label="Three-tool workspace">
+      <article class="tool-lane">
+        <div class="tool-lane-index">01</div>
+        <div class="tool-lane-copy"><p class="eyebrow">Read and compare</p><h2>Follower checker</h2><p>Import Followers and Following, compare complete snapshots, and keep raw captures out of the main result view.</p><div class="tool-lane-facts"><span><strong>${snapshot?.followers.length || 0}</strong> followers</span><span><strong>${snapshot?.following.length || 0}</strong> following</span><span><strong>${relationships.notFollowingBack.length}</strong> not following back</span></div></div>
+        <div class="tool-lane-action"><span>${snapshot ? `Snapshot ${formatDate(snapshot.capturedAt, false)}` : 'Import data to begin'}</span><button data-action="navigate" data-view="relationships">Open checker</button></div>
+      </article>
+      <article class="tool-lane">
+        <div class="tool-lane-index">02</div>
+        <div class="tool-lane-copy"><p class="eyebrow">Review exact profiles</p><h2>Follow / Unfollow</h2><p>Compose a bounded target list, inspect relationship state without clicking, then send reviewed work to Instagram.</p><div class="tool-lane-facts"><span><strong>${queue.ready || 0}</strong> ready</span><span><strong>${queue.waiting || 0}</strong> waiting</span><span><strong>${diff.lostFollowers.length}</strong> recent unfollows</span></div></div>
+        <div class="tool-lane-action"><span>Live actions locked on load</span><button data-action="navigate" data-view="queue">Open queue</button></div>
+      </article>
+      <article class="tool-lane">
+        <div class="tool-lane-index">03</div>
+        <div class="tool-lane-copy"><p class="eyebrow">Resolve before removal</p><h2>DM Unsend</h2><p>Review imported conversations and exact sent-message identities before creating a finite Unsend plan.</p><div class="tool-lane-facts"><span><strong>${state.messages.length}</strong> loaded</span><span><strong>${sentMessages}</strong> sent by you</span><span><strong>${state.selectedMessageIds.length}</strong> selected</span></div></div>
+        <div class="tool-lane-action"><span>Permanent actions require fresh confirmation</span><button data-action="navigate" data-view="messages">Open messages</button></div>
+      </article>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <div><h2>Current status</h2><p>Local analysis, reviewed jobs, and delivery safeguards.</p></div>
-      </div>
-      <div class="notice">
-        Imports, relationship history, queue protection, message review, no-click dry runs, extension pairing, and local exports are available. Live actions stay locked by default. A paired, fresh, one-item Follow, Unfollow, or sent-message Unsend job may use the controlled Instagram arm-and-return gate.
-      </div>
-      <div class="kpi-row" style="margin-top:14px">
-        <span><strong>${state.snapshots.length}</strong> snapshots</span>
-        <span><strong>${state.queue.length}</strong> queue records</span>
-        <span><strong>${conversationSummary(state.messages).length}</strong> conversations</span>
-        <span><strong>${state.activity.length}</strong> activity records</span>
-      </div>
+    <section class="workspace-strip" aria-label="Local workspace status">
+      <div><span>Snapshots</span><strong>${state.snapshots.length}</strong></div><div><span>Queue records</span><strong>${state.queue.length}</strong></div><div><span>Conversations</span><strong>${conversationSummary(state.messages).length}</strong></div><div><span>Activity records</span><strong>${state.activity.length}</strong></div>
+      <p>Local analysis, pairing, ledgers, and exports stay here. Instagram mutations remain locked until a fresh exact-item review.</p>
     </section>

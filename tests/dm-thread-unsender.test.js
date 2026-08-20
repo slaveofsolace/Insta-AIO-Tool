@@ -47,8 +47,9 @@ test('thread runner carries the proven 0.7.2 interaction model', () => {
     'MAX_SCAN_PASSES = 3',
     'DEFAULT_MAX_FAILURES = 5',
     'Math.min(60_000',
-    '1_000',
-    '2_000',
+    '1_500',
+    '4_000',
+    '11_000',
     "'zurücknehmen'",
   ]) assert.match(labelsSource, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(labelsSource, /function revealActionButton\(row, signal\)/);
@@ -57,7 +58,9 @@ test('thread runner carries the proven 0.7.2 interaction model', () => {
   assert.match(labelsSource, /function dialogUnsendCandidates\(existing = new Set\(\)\)/);
   assert.match(labelsSource, /filter\(dialogControlHasUnsendLabel\)/);
   assert.match(labelsSource, /function loadAllHistory\(context, signal\)/);
-  assert.match(labelsSource, /function nextSentRow\(context, signal\)/);
+  assert.match(labelsSource, /function nextSentRow\(context, signal, order = 'oldest'\)/);
+  assert.match(labelsSource, /function createPlan\(value = \{\}\)/);
+  assert.match(labelsSource, /function inspectAll\(\)/);
   assert.doesNotMatch(labelsSource, /graphql|private[_ -]?api|cookie|password/i);
 });
 
@@ -218,25 +221,48 @@ test('a clipped sent-message row is centered once before hover', async () => {
   assert.equal(scrollCalls, 1);
 });
 
-test('thread-wide Unsend refuses to start without a live authorization expiry', async () => {
+test('thread-wide Unsend requires an untampered count-specific reviewed plan', async () => {
   const runner = loadRunner();
   const result = await runner.start();
   assert.equal(result.status, 'error');
-  assert.match(result.message, /Live authorization is required/);
+  assert.match(result.message, /count-specific reviewed plan is required/);
+
+  const all = runner.createPlan({
+    threadId: 'thread-123',
+    scope: 'all',
+    limit: 1,
+    eligibleCount: 7,
+    expiresAt: Date.now() + 60_000,
+  });
+  assert.equal(all.limit, 7);
+  assert.equal(all.scope, 'all');
+  assert.match(all.reviewedDigest, /^[0-9a-f]{8}$/);
+
+  const tampered = await runner.start({ plan: { ...all, eligibleCount: 6 } });
+  assert.equal(tampered.status, 'error');
+  assert.match(tampered.message, /count-specific reviewed plan is required/);
 });
 
 test('extension message view uses the shared runner and Instagram design tokens', () => {
   assert.match(messagesSource, /globalThis\.InstaAioDmThreadUnsender/);
-  assert.match(messagesSource, /MASS_UNSEND_ARM_PHRASE = 'UNSEND ALL DMS'/);
-  assert.match(messagesSource, /threadId: inspection\.threadId/);
-  assert.match(messagesSource, /expectedThreadId: massArm\.threadId/);
-  assert.match(messagesSource, /Unsend all DMs/);
+  assert.match(messagesSource, /DM_PLAN_TTL_MS = 15 \* 60 \* 1_000/);
+  assert.match(messagesSource, /threadId: preview\.threadId/);
+  assert.match(messagesSource, /eligibleCount: preview\.eligibleCount/);
+  assert.match(messagesSource, /phrase = `UNSEND \$\{limit\} \$\{plan\.reviewedDigest\}`/);
+  assert.match(messagesSource, /Review Unsend plan/);
   assert.match(messagesSource, /--ig-primary-background/);
   assert.match(messagesSource, /--ig-primary-button/);
   assert.match(messagesSource, /prefers-reduced-motion/);
   assert.match(messagesSource, /Exact message ID, timestamp, digest, conversation, and sent-by-me ownership must all match/);
   assert.match(labelsSource, /authorizationExpiresAt <= Date\.now\(\)/);
   assert.match(labelsSource, /context\.threadId !== expectedThreadId/);
+  assert.match(labelsSource, /currentEligibleCount !== plan\.eligibleCount/);
+  assert.match(labelsSource, /complete: quietRounds >= 10/);
+  assert.match(labelsSource, /More than \$\{MAX_PLAN_MESSAGES\} eligible sent messages were found/);
+  assert.match(messagesSource, /preview\.complete === true/);
+  assert.match(messagesSource, /kind: 'insta-aio-reserve-thread-unsend'/);
+  assert.match(messagesSource, /reservation\.pacing\?\.minDelayMs/);
+  assert.match(labelsSource, /plan\.scope === 'newest'/);
   assert.match(labelsSource, /unsendCandidates\(document\)\.filter\(\(candidate\) => !existing\.has\(candidate\)\)/);
   assert.match(labelsSource, /Instagram showed more than one new Unsend option/);
   assert.doesNotMatch(messagesSource, /\bAI\b/i);

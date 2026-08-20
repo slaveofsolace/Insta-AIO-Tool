@@ -67,7 +67,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.10.6');
+  assert.equal(manifest.version, '0.11.0');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -112,7 +112,11 @@ test('sidecar guides list capture, reviews account targets, and keeps one DM pri
   assert.match(overlay, /reviewed\.signature !== current\.signature/);
   assert.match(overlay, /data-ia-role="bot-review-list"/);
   assert.match(overlay, /class="ia-primary-action" data-ia-role="unsend-disclosure"/);
-  assert.match(overlay, /data-ia-action="mass-unsend">Unlock Unsend all DMs/);
+  assert.match(overlay, /data-ia-action="scan-sent-dms">Check conversation/);
+  assert.match(overlay, /data-ia-role="unsend-plan" hidden/);
+  assert.match(overlay, /data-ia-action="mass-unsend" disabled>Review Unsend plan/);
+  assert.match(overlay, /Advanced: raw captures and export/);
+  assert.match(overlay, /aria-labelledby="ia-bot-composer-title"/);
   assert.match(overlay, /<summary>Visible evidence<\/summary>/);
 });
 

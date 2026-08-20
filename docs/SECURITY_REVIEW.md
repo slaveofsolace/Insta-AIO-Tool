@@ -29,14 +29,16 @@ That resumable run is stored through `GM_getTab`/`GM_saveTab`, not the shared GM
 record; a manager without tab storage leaves account batches disabled. The
 metadata explicitly selects the DOM sandbox so page code does not share
 the toolbox's API globals. DM runs are dropped on reload. The shared thread-wide
-Unsend runner independently rejects a missing or expired
-`authorizationExpiresAt`, requires the armed thread ID to match the current
-thread, and checks both before every page control. It snapshots existing menu
-and dialog candidates and accepts exactly one newly surfaced control. The
-extension's thread tool first requires
-`UNSEND ALL DMS`, performs no action while arming, then requires a second
-permanent-action confirmation. No new host permission, remote dependency,
-credential field, private endpoint, or network request was added.
+Unsend runner independently requires a complete no-click history check and a
+finite plan bound to the exact thread, scope, eligible count, digest, and future
+expiry. It revalidates completeness and count before the first menu and checks
+expiry before every page control. The finite plan is reserved against the
+persistent daily Unsend allowance and uses the saved bounded delay range. It
+snapshots existing menu and dialog
+candidates and accepts exactly one newly surfaced control. The extension's
+thread tool requires the count-specific plan phrase and a final permanent-action
+confirmation. No new host permission, remote dependency, credential field,
+private endpoint, or network request was added.
 
 The PWA service worker uses network-first handling for same-origin GET requests,
 caches only successful same-origin responses, bypasses the HTTP cache while

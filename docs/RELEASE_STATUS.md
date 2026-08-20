@@ -1,6 +1,6 @@
 # Release status
 
-Current version: **0.10.6**
+Current version: **0.11.0**
 
 ## Available tools
 
@@ -30,8 +30,9 @@ Current version: **0.10.6**
 - Supports read-only inspection and no-click dry runs.
 - The signed extension path is limited to one reviewed message with stable
   thread and message identity.
-- The userscript's thread-wide runner requires an exact phrase, a time-limited
-  thread-bound authorization, and a second confirmation.
+- The userscript and extension thread runner require a successful no-click
+  conversation check followed by an exact thread, scope, finite count,
+  reviewed digest, expiry, typed phrase, and final confirmation.
 - Live execution is disabled by default.
 
 ## Delivery formats
@@ -64,6 +65,11 @@ The repository includes checks for:
 - production content-script acceptance against synthetic Instagram fixtures;
 - PWA and overlay screenshot baselines;
 - desktop package smoke tests in CI.
+
+The final local Windows matrix currently passes **222/222 tests**, nine PWA
+screenshots, 42 overlay states, isolated extension/userscript fixture
+acceptance, and disposable-Chrome extension/PWA pairing. The Windows 0.11.0
+installer builds successfully and is intentionally unsigned.
 
 Exact commands are documented in [Overlay QA](./OVERLAY_QA.md),
 [Browser QA](./BROWSER_QA.md), and the [Maintainer guide](./MAINTAINER_GUIDE.md).

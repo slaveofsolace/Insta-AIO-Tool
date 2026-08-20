@@ -6,8 +6,9 @@
   const preferences = modules?.preferences;
   if (!shared || !preferences || modules.layout) return;
 
-  const PRESET_WIDTHS = Object.freeze({ compact: 336, standard: 380, wide: 480 });
+  const PRESET_WIDTHS = Object.freeze({ compact: 380, standard: 460, wide: 560 });
   const VIEWPORT_INSET = 8;
+  const STACKED_LAYOUT_MAX_WIDTH = 860;
 
   function clamp(value, minimum, maximum) {
     return Math.min(maximum, Math.max(minimum, Number(value) || 0));
@@ -93,7 +94,7 @@
       }
       applyOpacity(current.opacity);
 
-      if (current.position && viewport.width > 600) {
+      if (current.position && viewport.width > STACKED_LAYOUT_MAX_WIDTH) {
         const position = constrainPosition(current.position, size, viewport);
         host.dataset.layout = 'floating';
         host.style.setProperty('--ia-panel-left', `${position.x}px`);
@@ -137,7 +138,7 @@
     }
 
     function begin(event, kind) {
-      if (!active || event.button !== 0 || viewportSize(windowLike).width <= 600) return;
+      if (!active || event.button !== 0 || viewportSize(windowLike).width <= STACKED_LAYOUT_MAX_WIDTH) return;
       const rectangle = panel.getBoundingClientRect();
       interaction = {
         kind,
@@ -207,7 +208,7 @@
       if (!active) return;
       const previousPosition = current.position;
       apply(current);
-      if (!previousPosition || viewportSize(windowLike).width <= 600) return;
+      if (!previousPosition || viewportSize(windowLike).width <= STACKED_LAYOUT_MAX_WIDTH) return;
       const size = renderedSize(current);
       const position = constrainPosition(previousPosition, size, viewportSize(windowLike));
       if (position.x !== previousPosition.x || position.y !== previousPosition.y) {
@@ -246,6 +247,7 @@
 
   shared.install('layout', {
     PRESET_WIDTHS,
+    STACKED_LAYOUT_MAX_WIDTH,
     VIEWPORT_INSET,
     constrainPosition,
     constrainSize,

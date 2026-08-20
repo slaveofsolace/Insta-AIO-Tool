@@ -47,12 +47,13 @@ run**. The exact targets, duplicates, and omissions are frozen for inspection;
 opens each profile when its turn comes and resolves the exact relationship
 control again before acting.
 
-**DM Unsend** — open a conversation and use the primary **Unsend all DMs** card.
-The quieter **Check conversation** control refreshes read-only evidence. The
-runner loads history and processes only rows proven sent by the current account,
-newest to oldest, without repeatedly repositioning a thread already at its
-loaded boundary. Each action uses the source-audited menu and confirmation
-sequence. This cannot be undone.
+**DM Unsend** — open a conversation and choose **Check conversation**. The
+no-click pass must prove a complete, finite eligible count before `all`,
+`newest N`, or `oldest N` plan controls appear. The runner processes only rows
+proven sent by the current account and uses the source-audited menu and
+confirmation sequence. The finite plan is reserved against the daily Unsend
+allowance and uses the saved delay range. Incomplete or capped checks cannot
+create a live plan. This cannot be undone.
 
 **Unlocking live controls** — open the gear menu, select **Enable live actions
 for 15 minutes**, and type `ENABLE LIVE ACTIONS`. This only enables the buttons;
@@ -72,7 +73,7 @@ accepts only the newly surfaced menu and confirmation controls for each item.
 Updates are automatic. Tampermonkey re-checks the same address and offers new
 versions as they are published.
 
-Confirm the Tampermonkey dashboard shows **0.10.6 or later**
+Confirm the Tampermonkey dashboard shows **0.11.0 or later**
 after updating. A panel that says **Live actions enabled in this tab** is the
 legacy 0.9.0 build; reload only after Tampermonkey shows the newer version. The
 current build starts with **Userscript mode · live actions locked**.
@@ -136,7 +137,7 @@ shared code into `dist/extension/lib/`, and the extension will not start without
 
 After rebuilding, reload the extension in the extension manager **and** reload
 any open Instagram tabs, or you will keep running the previous version.
-The extension manager should show **0.10.6 or later**.
+The extension manager should show **0.11.0 or later**.
 
 On a fresh install Instagram shows only a small launcher; opening it reveals the
 tools. On desktop, drag the header to move the panel and use the marked
@@ -161,12 +162,14 @@ run** to inspect and freeze the exact targets, duplicates, and omissions. **Star
 appears only while the review remains current. Each account is opened, re-checked,
 and acted on individually.
 
-**Mass DM unsend.** Open a conversation. The primary **Unsend all DMs** card is
-`live locked` by default; **Check conversation** is a secondary read-only check. Choose
-**Unlock Unsend all DMs**, type `UNSEND ALL DMS`, then choose **Unsend all DMs**
-again and accept the permanent-action confirmation. The 15-minute authorization
-is checked before each message, and only rows proven sent by the current account
-are eligible. **Unsending cannot be undone.**
+**DM Unsend.** Open a conversation and choose **Check conversation** first. The
+read-only pass loads history without opening a message menu. After it proves a
+complete finite count, choose `all`, `newest N`, or `oldest N`; review the exact
+thread, count, digest, and expiry; type the count-specific phrase; and accept the
+permanent-action confirmation. The 15-minute authorization is checked before
+each message. The finite plan is reserved against the daily Unsend allowance and
+uses the saved delay range. Incomplete or capped checks remain locked.
+**Unsending cannot be undone.**
 
 ### Batch runs, pacing, and stopping
 

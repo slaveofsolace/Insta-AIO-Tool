@@ -28,7 +28,7 @@
       "width": 1134,
       "height": 700,
       "view": "overview",
-      "sha256": "1320f16cc62c586ceeba070e228399cd1dabdd1878270dd5aad12614a9225198"
+      "sha256": "4aee6e0efd7f04d0544c90505ce124a83f68318a2f50c6bebcd375b53e7b9e95"
     },
     {
       "file": "desktop-messages.png",
@@ -36,7 +36,7 @@
       "width": 1134,
       "height": 700,
       "view": "messages",
-      "sha256": "cf564098355ec2728a8dc332929ddbdc4d227e19c03904ce3a9be7c0eb8243f9"
+      "sha256": "f238cc858a96951ee1b83163a3f215f0c6a201d6d111c657932da050d27cccc8"
     },
     {
       "file": "desktop-settings.png",
@@ -44,7 +44,7 @@
       "width": 1134,
       "height": 700,
       "view": "settings",
-      "sha256": "1ec4cee34aeaf3042eb715e901ff2eb5b0886c3cc4bdb682f87405cc8b75a7bb"
+      "sha256": "7d6b2625feab606b2a28fb8df12f7f94cb54f1edd5915533cf7a8acf8794fae9"
     },
     {
       "file": "tablet-overview.png",
@@ -52,7 +52,7 @@
       "width": 820,
       "height": 900,
       "view": "overview",
-      "sha256": "7fe859ddb31808f788f0c8a79a89f888df52496802480c6e36ef64f25bc40721"
+      "sha256": "166c5d6ec5a7de2c43c47492712f1aff5678241abc0e4d77da100ce132a47fc3"
     },
     {
       "file": "tablet-messages.png",
@@ -60,7 +60,7 @@
       "width": 820,
       "height": 900,
       "view": "messages",
-      "sha256": "4603923e1ae8699532370f8706d36de0a9289a3622537bc0913a0f26f3c8881f"
+      "sha256": "538b71bdc4e5f684ea1959262fcde1c133ca91b741f0342690babcb2f065eaa2"
     },
     {
       "file": "tablet-settings.png",
@@ -68,7 +68,7 @@
       "width": 820,
       "height": 900,
       "view": "settings",
-      "sha256": "cca87b1d48da46d91533703481a57b7d3b18e7e63044bfdfcb26fd01744c7407"
+      "sha256": "233f59a5745ab0a51b189abce14aff728c1cbb00d4173d5dde1a09bbbdd6f917"
     },
     {
       "file": "mobile-overview.png",
@@ -76,7 +76,7 @@
       "width": 390,
       "height": 844,
       "view": "overview",
-      "sha256": "87be014d3b1b874c6ca0c8d9936da563f251ce4cd36a989f5827b9ece3c948e0"
+      "sha256": "7421f21b82c35581274d568cd905bbe68a5b3b9fe5262117c226d9dc12a59ec9"
     },
     {
       "file": "mobile-messages.png",
@@ -84,7 +84,7 @@
       "width": 390,
       "height": 844,
       "view": "messages",
-      "sha256": "bdbfe45903ae129c7ca22eb0da3192173a3dba1c5f154a4206ff75896455aaed"
+      "sha256": "6ac28800f6aa3556e4ddfc61b8d60769a039beb6551984c37cebcba745f27f90"
     },
     {
       "file": "mobile-settings.png",
@@ -92,7 +92,7 @@
       "width": 390,
       "height": 844,
       "view": "settings",
-      "sha256": "a54cc0f5201e3bc73d6a51b63f99bb1714046a7e1cd6b25a727e1620aaa89ce6"
+      "sha256": "a3f00fe3117b84c587ced85b2b676df60147feedf3e26912e60ff7648383f477"
     }
   ]
 }

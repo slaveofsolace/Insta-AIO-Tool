@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const shell = await readFile(new URL('../userscripts/src/toolbox-shell.js', import.meta.url), 'utf8');
+const labels = await readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8');
 const generated = await readFile(new URL('../userscripts/insta-aio-companion.user.js', import.meta.url), 'utf8');
 
 test('first use explains the tools, local storage, and the read-only boundary', () => {
@@ -103,22 +104,26 @@ test('a run shows its targets and skip reasons before it starts', () => {
   assert.match(shell, /duplicate or already-followed/);
   // Review is read-only; live authority is checked only after the frozen
   // preview still matches the current fields.
-  const runBody = shell.slice(shell.indexOf("'run-accounts': async"), shell.indexOf("'unsend-all': async"));
+  const runBody = shell.slice(shell.indexOf("'run-accounts': async"), shell.indexOf("'run-unsend': ()"));
   assert.ok(runBody.indexOf('accountRunDraft.signature !== current.signature') < runBody.indexOf('requireNewRunAuthorization()'));
 });
 
-test('the unsend action is always reachable and confirms before removing', () => {
-  // Hiding the primary action behind a separate check removed the one-click
-  // path without adding any safety: the action reads the conversation itself
-  // and asks for confirmation before anything is removed.
-  assert.match(shell, /if \(primary\) primary\.hidden = false;/);
-  // Match the button tag itself. A looser pattern runs past the markup into
-  // unrelated script and reports a false positive.
-  const unsendButton = generated.match(/<button[^>]*data-role="unsend-primary"[^>]*>/);
-  assert.ok(unsendButton, 'the unsend button must exist in the shipped bundle');
-  assert.doesNotMatch(unsendButton[0], /\shidden(?![-\w])/);
-  assert.match(shell, /state\.sentDmsChecked = true/);
-  assert.match(generated, /data-action="scan-sent"/);
+test('read-only conversation resolution precedes the count-specific Unsend plan', () => {
+  const checkButton = generated.match(/<button[^>]*class="button primary big"[^>]*data-action="scan-sent"[^>]*>/);
+  assert.ok(checkButton, 'the read-only conversation check must be the visible primary action');
+  assert.doesNotMatch(checkButton[0], /\shidden(?![-\w])/);
+  assert.match(generated, /data-role="unsend-plan" hidden/);
+  assert.match(generated, /data-action="run-unsend"[^>]*>Review Unsend plan/);
+  assert.match(labels, /const result = await runner\.inspectAll\(\)/);
+  assert.match(labels, /runner\.createPlan\(\{/);
+  assert.match(labels, /phrase = `UNSEND \$\{limit\} \$\{plan\.reviewedDigest\}`/);
+  assert.match(labels, /The eligible count is revalidated before any message menu opens/);
+  assert.match(labels, /complete: quietRounds >= 10/);
+  assert.match(labels, /if \(!history\.complete \|\| resolvedCount > MAX_PLAN_MESSAGES\)/);
+  assert.doesNotMatch(shell, /'unsend-all':/);
+  const fallback = shell.slice(shell.indexOf("'run-unsend': ()"), shell.indexOf("'save-limits':"));
+  assert.match(fallback, /reviewed DM runner is not ready/);
+  assert.doesNotMatch(fallback, /runBatch|performReviewedDmUnsend|\.click\(/);
   // An empty result says nothing was touched rather than implying success.
   assert.match(shell, /so nothing will be touched/);
   // A partial read is never reported as full coverage.

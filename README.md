@@ -60,10 +60,11 @@ Full steps and the other options are in [Installation](./docs/INSTALLATION.md).
 Live account changes and DM removal are disabled by default. Scans, comparisons,
 visible evidence, and exact-target dry runs remain available while locked. The
 extension batch controls require an exact typed arm phrase. Thread-wide Unsend
-requires a separate `UNSEND ALL DMS` arm followed by a second confirmation; its
-15-minute authorization is bound to the exact open thread and checked before
-every message and page control. The runner accepts only the one newly surfaced
-menu and confirmation control for the message it just opened. The
+starts with a no-click conversation check, then creates a finite plan bound to
+the exact thread, scope (`all`, `newest`, or `oldest`), eligible count, digest,
+and 15-minute expiry. Its count-specific typed phrase and final confirmation are
+revalidated before the first message menu opens. The runner accepts only the
+one newly surfaced menu and confirmation control for the message it just opened. The
 userscript likewise starts with every destructive control disabled and requires
 `ENABLE LIVE ACTIONS` for a tab-scoped 15-minute window before any run can be
 confirmed. Account batches carry only that expiry across the profile navigation
@@ -155,7 +156,7 @@ Queue records must be selected explicitly. A preview lists the exact username an
 
 Dry runs inspect the current profile without clicking. The adapter safe-stops on the wrong profile, an unverified profile header, ambiguous controls, any pre-existing dialog, an unbound Unfollow dialog, session expiry, challenges, rate limits, action blocks, changed protection state, stale confirmation, or a missing/expired live arm. The PWA ledger and the extension's bounded mirror reserve before the isolated driver call and prevent duplicate or over-limit execution.
 
-Extension 0.10.6 preserves the stricter signed live paths for one reviewed PWA
+Extension 0.11.0 preserves the stricter signed live paths for one reviewed PWA
 item. The PWA sends a signed intent; the Instagram overlay requires the matching
 profile or exact sent message plus `ARM FOLLOW @username`, `ARM UNFOLLOW
 @username`, or `ARM UNSEND <code>`; every arm expires after 90 seconds.
@@ -228,14 +229,14 @@ omissions. **Start** appears only while that review still matches the controls.
 Each target is opened, re-verified, and acted on one at a time. **Complete** and
 **Skip** remain available under the secondary options disclosure.
 
-**Mass DM unsend.** Open a conversation. The primary **Unsend all DMs** card
-starts `live locked`; the quieter **Check conversation** control provides a
-read-only evidence refresh. Choose **Unlock Unsend all DMs**, type `UNSEND ALL
-DMS`, then select **Unsend all DMs** again and accept the permanent-action
-confirmation. The authorization expires after 15 minutes, the runner re-checks
-it before every message, and only rows proven sent by the current account are
-eligible. The history loader no longer repeatedly repositions a thread that is
-already at its loaded boundary. Unsending is permanent.
+**DM Unsend.** Open a conversation and choose **Check conversation**. This
+no-click pass loads history and must prove a complete, finite count before the
+plan controls appear. Choose `all`, `newest N`, or `oldest N`, then review the
+exact thread, count, digest, and 15-minute expiry. Type the count-specific phrase
+and accept the permanent-action confirmation. Incomplete or capped checks stay
+locked. The finite plan is reserved against the daily Unsend allowance before
+the first page control and uses the saved delay range; only rows proven sent by
+the current account are eligible. Unsending is permanent.
 
 ### Batch pacing and safety
 
