@@ -134,7 +134,7 @@
 
   function captureWorkspaceDefaults() {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       kind: 'insta-aio-visible-checker-workspace',
       followers: [],
       following: [],
@@ -143,6 +143,10 @@
         following: null,
       },
       complete: {
+        followers: false,
+        following: false,
+      },
+      verified: {
         followers: false,
         following: false,
       },
@@ -166,11 +170,12 @@
 
   function normalizeCaptureWorkspace(value, normalizeUsername) {
     const source = value && typeof value === 'object' ? value : {};
+    const migratedFromUnsafeDialogFallback = Number(source.schemaVersion) < 3;
     const capturedAt = source.capturedAt && typeof source.capturedAt === 'object'
       ? source.capturedAt
       : {};
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       kind: 'insta-aio-visible-checker-workspace',
       followers: normalizeCaptureAccounts(source.followers, normalizeUsername),
       following: normalizeCaptureAccounts(source.following, normalizeUsername),
@@ -179,8 +184,16 @@
         following: safeText(capturedAt.following) || null,
       },
       complete: {
-        followers: source.complete?.followers === true,
-        following: source.complete?.following === true,
+        followers: !migratedFromUnsafeDialogFallback
+          && source.verified?.followers === true
+          && source.complete?.followers === true,
+        following: !migratedFromUnsafeDialogFallback
+          && source.verified?.following === true
+          && source.complete?.following === true,
+      },
+      verified: {
+        followers: !migratedFromUnsafeDialogFallback && source.verified?.followers === true,
+        following: !migratedFromUnsafeDialogFallback && source.verified?.following === true,
       },
     };
   }
@@ -216,13 +229,21 @@
       listType: normalizedType,
       capturedAt: safeText(source.capturedAt?.[normalizedType]) || now(),
       [normalizedType]: Array.isArray(source[normalizedType]) ? source[normalizedType] : [],
+      verifiedDialog: source.verified?.[normalizedType] === true,
       note: 'Only rows rendered in Instagram were captured. Scroll the list manually and capture again to merge more rows.',
     };
   }
 
+  function verifiedCaptureAccounts(workspace, listType) {
+    const normalizedType = listType === 'followers' ? 'followers' : 'following';
+    return workspace?.verified?.[normalizedType] === true && Array.isArray(workspace?.[normalizedType])
+      ? workspace[normalizedType]
+      : [];
+  }
+
   function compareCaptureWorkspace(workspace) {
-    const followers = Array.isArray(workspace?.followers) ? workspace.followers : [];
-    const following = Array.isArray(workspace?.following) ? workspace.following : [];
+    const followers = verifiedCaptureAccounts(workspace, 'followers');
+    const following = verifiedCaptureAccounts(workspace, 'following');
     const followerNames = new Set(followers.map((account) => account.username));
     const followingNames = new Set(following.map((account) => account.username));
     return {
@@ -349,5 +370,6 @@
     safeText,
     sessionState,
     shortDate,
+    verifiedCaptureAccounts,
   });
 })();

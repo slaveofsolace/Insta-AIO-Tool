@@ -84,33 +84,41 @@
     const accounts = workspace[listType] || [];
     const comparison = shared.compareCaptureWorkspace(workspace);
     const batch = model.captureMeta;
-    setText('followers-count', String(workspace.followers.length));
-    setText('following-count', String(workspace.following.length));
+    const followersVerified = workspace.verified?.followers === true;
+    const followingVerified = workspace.verified?.following === true;
+    const selectedVerified = workspace.verified?.[listType] === true;
+    const comparisonReady = followersVerified && followingVerified
+      && workspace.followers.length > 0
+      && workspace.following.length > 0;
+    setText('followers-count', String(followersVerified ? workspace.followers.length : 0));
+    setText('following-count', String(followingVerified ? workspace.following.length : 0));
     setText('capture-count', String(accounts.length));
     setText(
       'capture-detail',
-      accounts.length
+      accounts.length && selectedVerified
         ? `captured ${listType} · updated ${shared.shortDate(workspace.capturedAt[listType])}`
-        : `${listType} · not captured yet`,
+        : accounts.length
+          ? `${listType} · saved rows require a verified rescan`
+          : `${listType} · not captured yet`,
     );
-    const followersComplete = workspace.complete?.followers === true;
-    const followingComplete = workspace.complete?.following === true;
+    const followersComplete = followersVerified && workspace.complete?.followers === true;
+    const followingComplete = followingVerified && workspace.complete?.following === true;
     const comparisonComplete = followersComplete && followingComplete;
     setText('following-step-detail', workspace.following.length
-      ? `${workspace.following.length} unique · ${followingComplete ? 'complete' : 'partial'}`
+      ? `${workspace.following.length} unique · ${!followingVerified ? 'rescan required' : followingComplete ? 'complete' : 'partial'}`
       : 'Open your Following list first');
     setText('followers-step-detail', workspace.followers.length
-      ? `${workspace.followers.length} unique · ${followersComplete ? 'complete' : 'partial'}`
+      ? `${workspace.followers.length} unique · ${!followersVerified ? 'rescan required' : followersComplete ? 'complete' : 'partial'}`
       : 'Open your Followers list next');
-    setText('compare-step-detail', workspace.followers.length && workspace.following.length
+    setText('compare-step-detail', comparisonReady
       ? `${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following back`
       : 'Scan both lists first');
     const compareBadge = query('[data-ia-role="compare-step-badge"]');
     if (compareBadge) {
-      compareBadge.textContent = comparisonComplete ? 'complete' : workspace.followers.length && workspace.following.length ? 'partial' : 'waiting';
-      compareBadge.dataset.tone = comparisonComplete ? 'good' : workspace.followers.length && workspace.following.length ? 'warning' : 'neutral';
+      compareBadge.textContent = comparisonComplete ? 'complete' : comparisonReady ? 'partial' : 'waiting';
+      compareBadge.dataset.tone = comparisonComplete ? 'good' : comparisonReady ? 'warning' : 'neutral';
     }
-    if (workspace.followers.length && workspace.following.length) {
+    if (comparisonReady) {
       setState(
         runtime,
         comparisonComplete ? 'Follower comparison complete' : 'Partial follower comparison ready',
@@ -118,7 +126,7 @@
         comparisonComplete ? 'good' : 'warning',
       );
     } else {
-      const missing = workspace.followers.length ? 'Following' : 'Followers';
+      const missing = followersVerified ? 'Following' : 'Followers';
       setState(
         runtime,
         'Capture both Instagram lists',
@@ -130,11 +138,11 @@
     if (checker) {
       checker.replaceChildren();
       const heading = document.createElement('h2');
-      heading.textContent = workspace.followers.length && workspace.following.length
+      heading.textContent = comparisonReady
         ? 'Rendered-row comparison'
         : 'How the checker works';
       checker.append(heading);
-      if (workspace.followers.length && workspace.following.length) {
+      if (comparisonReady) {
         const facts = document.createElement('dl');
         for (const [label, value] of [
           ['Mutuals', comparison.mutuals.length],
@@ -158,7 +166,7 @@
     renderComparisonBrowser(
       runtime,
       comparison,
-      Boolean(workspace.followers.length && workspace.following.length),
+      comparisonReady,
     );
 
     if (batch?.listType === listType) {
@@ -207,13 +215,13 @@
       : 'following';
     const source = query('[data-ia-role="list-type"]');
     if (source) source.value = listType;
-    const visible = inspector.captureVisibleAccounts();
+    const visible = inspector.captureVisibleAccounts(listType);
     if (!visible.length) {
       status('No rendered account rows were found. Open or scroll the Instagram list and try again.', 'error');
       return;
     }
     const workspace = model.capture || shared.captureWorkspaceDefaults();
-    const existing = workspace[listType] || [];
+    const existing = shared.verifiedCaptureAccounts(workspace, listType);
     const accounts = new Map(existing.map((account) => [account.username, account]));
     const before = accounts.size;
     for (const account of visible) accounts.set(account.username, account);
@@ -222,6 +230,8 @@
       ...workspace,
       [listType]: [...accounts.values()],
       capturedAt: { ...workspace.capturedAt, [listType]: capturedAt },
+      complete: { ...(workspace.complete || {}), [listType]: false },
+      verified: { ...(workspace.verified || {}), [listType]: true },
     }, inspector.normalizeUsername);
     model.captureMeta = {
       listType,
@@ -240,7 +250,7 @@
   async function mergeAccounts(runtime, listType, accounts, { complete, label }) {
     const { inspector, model, status } = runtime;
     const workspace = model.capture || shared.captureWorkspaceDefaults();
-    const existing = workspace[listType] || [];
+    const existing = shared.verifiedCaptureAccounts(workspace, listType);
     const merged = new Map(existing.map((account) => [account.username, account]));
     const before = merged.size;
     for (const account of accounts) merged.set(account.username, account);
@@ -250,6 +260,7 @@
       [listType]: [...merged.values()],
       capturedAt: { ...workspace.capturedAt, [listType]: capturedAt },
       complete: { ...(workspace.complete || {}), [listType]: complete === true },
+      verified: { ...(workspace.verified || {}), [listType]: true },
     }, inspector.normalizeUsername);
     const added = model.capture[listType].length - before;
     model.captureMeta = {
@@ -283,7 +294,7 @@
       return;
     }
     status(`Scanning the open ${listType} list. Leave the dialog open and this tab in front.`, 'warning');
-    const outcome = await inspector.collectAccountList();
+    const outcome = await inspector.collectAccountList({ listType });
     if (outcome?.sessionExpired || outcome?.challenge || outcome?.actionBlocked || outcome?.rateLimited) {
       status('Instagram interrupted the scan (session, checkpoint, or rate limit). Nothing was changed.', 'error');
       return;

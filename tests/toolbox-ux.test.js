@@ -48,6 +48,7 @@ test('the panel names the current Instagram context for every handled state', ()
 
 test('the checker is a sequence that reports completeness per list', () => {
   assert.match(shell, /function scanState\(listType\)/);
+  assert.match(shell, /state\.capture\.verified\?\.\[listType\] !== true\) return 'partial'/);
   assert.match(shell, /state\.capture\.complete\?\.\[listType\] === true \? 'done' : 'partial'/);
   assert.match(generated, /data-step="following"/);
   assert.match(generated, /data-step="followers"/);
@@ -55,6 +56,20 @@ test('the checker is a sequence that reports completeness per list', () => {
   // A partial scan must say so on the step and on the comparison.
   assert.match(shell, /did not reach the end/);
   assert.match(shell, /\(partial\)/);
+});
+
+test('legacy checker rows are quarantined until an exact list dialog is rescanned', () => {
+  assert.match(shell, /const migratedFromUnsafeDialogFallback = Number\(value\.schemaVersion\) < 3/);
+  assert.match(shell, /verified: \{ followers: false, following: false \}/);
+  assert.match(shell, /'scanned-followers': \(\) => names\(verifiedCapture\('followers'\)\)/);
+  assert.match(shell, /'scanned-following': \(\) => names\(verifiedCapture\('following'\)\)/);
+  assert.match(shell, /cannot drive comparisons or runs until rescanned/);
+  assert.match(shell, /if \(observedTypes\.size !== 1\) continue/);
+  assert.equal(
+    shell.match(/new Map\(verifiedCapture\(listType\)\.map\(/g)?.length,
+    2,
+    'both full and visible rescans must replace quarantined rows instead of promoting them',
+  );
 });
 
 test('the checker scan controls name the exact list they operate on', () => {

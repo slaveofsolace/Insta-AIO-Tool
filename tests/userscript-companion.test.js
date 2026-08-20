@@ -183,8 +183,9 @@ test('DM evidence and saved Unsend candidates stay bound to the active conversat
 test('the follower checker remembers whether a scan actually finished', () => {
   // A partial scan that forgets it was partial would silently under-report.
   assert.match(shell, /complete: \{ followers: false, following: false \}/);
-  assert.match(shell, /followers: value\.capture\?\.complete\?\.followers === true/);
-  assert.match(shell, /following: value\.capture\?\.complete\?\.following === true/);
+  assert.match(shell, /verified: \{ followers: false, following: false \}/);
+  assert.match(shell, /value\.capture\?\.verified\?\.followers === true[\s\S]{0,100}?value\.capture\?\.complete\?\.followers === true/);
+  assert.match(shell, /value\.capture\?\.verified\?\.following === true[\s\S]{0,100}?value\.capture\?\.complete\?\.following === true/);
 });
 
 test('the toolbox keeps every byte local and never calls out', () => {

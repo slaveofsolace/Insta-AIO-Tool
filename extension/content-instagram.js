@@ -913,11 +913,9 @@
     return { result: 'unfollowed', relationship: completion.relationship };
   }
 
-  function captureVisibleAccounts() {
-    const roots = [
-      ...document.querySelectorAll('[role="dialog"]'),
-      document.querySelector('main'),
-    ].filter(Boolean);
+  function captureVisibleAccounts(expectedListType = '') {
+    const listContext = accountListDialog(expectedListType);
+    const roots = listContext ? [listContext.dialog] : [];
     const accounts = new Map();
     for (const root of roots) {
       for (const anchor of root.querySelectorAll('a[href^="/"]')) {
@@ -948,12 +946,41 @@
     return best?.element || null;
   }
 
-  function accountListRoot() {
-    const dialogs = visibleDialogs();
-    for (const dialog of dialogs) {
-      if (scrollableWithin(dialog)) return dialog;
+  function accountListTypeFromText(value) {
+    const label = String(value || '')
+      .normalize('NFKC')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    if (/^followers(?:\s|$)/.test(label)) return 'followers';
+    if (/^following(?:\s|$)/.test(label)) return 'following';
+    return '';
+  }
+
+  function accountListDialog(expectedListType = '') {
+    const expected = expectedListType === 'followers' || expectedListType === 'following'
+      ? expectedListType
+      : '';
+    for (const dialog of visibleDialogs()) {
+      const heading = [...dialog.querySelectorAll('[role="heading"], h1, h2')]
+        .map((element) => visibleText(element))
+        .find(Boolean);
+      const firstLine = visibleText(dialog)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find(Boolean);
+      const observedTypes = new Set(
+        [dialog.getAttribute('aria-label'), heading, firstLine]
+          .map(accountListTypeFromText)
+          .filter(Boolean),
+      );
+      if (observedTypes.size !== 1) continue;
+      const [observed] = observedTypes;
+      if (observed && (!expected || observed === expected)) {
+        return { dialog, listType: observed };
+      }
     }
-    return dialogs[0] || document.querySelector('main');
+    return null;
   }
 
   function sleep(ms) {
@@ -962,12 +989,14 @@
 
   // Scrolls the open followers/following dialog to enumerate the full list.
   // Read-only: it only scrolls an already-open list and reads rendered rows.
-  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500 } = {}) {
+  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500, listType = '' } = {}) {
     const session = inspectSession();
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, accounts: [], complete: false, reason: 'session-stop' };
     }
-    const root = accountListRoot();
+    const expectedListType = listType === 'followers' || listType === 'following' ? listType : '';
+    const listContext = accountListDialog(expectedListType);
+    const root = listContext?.dialog || null;
     const scroller = scrollableWithin(root);
     if (!root) {
       return { ...session, accounts: [], complete: false, reason: 'open-a-followers-or-following-list' };
@@ -1040,6 +1069,7 @@
       accounts: [...accounts.values()]
         .sort((left, right) => left.username.localeCompare(right.username)),
       complete,
+      listType: listContext?.listType || null,
       capturedAt: new Date().toISOString(),
       reason: complete ? 'list-complete' : 'list-truncated',
     };

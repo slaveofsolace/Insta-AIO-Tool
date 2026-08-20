@@ -18,6 +18,10 @@ const sources = Object.fromEntries(await Promise.all(moduleNames.map(async (name
   name,
   await readFile(new URL(`../extension/overlay/${name}.js`, import.meta.url), 'utf8'),
 ])));
+const captureViewSource = await readFile(
+  new URL('../extension/overlay/views/capture.js', import.meta.url),
+  'utf8',
+);
 
 function loadModules() {
   const context = vm.createContext({ console, Date, Intl });
@@ -245,10 +249,29 @@ test('follower checker migrates the legacy draft and compares both rendered list
   }, normalizeUsername);
   assert.equal(migrated.source, 'v1');
   assert.equal(migrated.shouldPersist, true);
+  assert.equal(migrated.workspace.schemaVersion, 3);
+  assert.equal(migrated.workspace.verified.following, false);
+  assert.equal(migrated.workspace.complete.following, false);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(migrated.workspace, 'following'))),
+    [],
+  );
+  assert.equal(
+    captureViewSource.match(/shared\.verifiedCaptureAccounts\(workspace, listType\)/g)?.length,
+    2,
+    'both full and visible rescans must replace quarantined rows instead of promoting them',
+  );
+  assert.equal(shared.compareCaptureWorkspace(migrated.workspace).notFollowingMeBack.length, 0);
   const workspace = shared.normalizeCaptureWorkspace({
     ...migrated.workspace,
+    schemaVersion: 3,
     followers: [{ username: 'mutual' }, { username: 'follower_only' }],
+    verified: { followers: true, following: true },
   }, normalizeUsername);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(workspace, 'following'))),
+    JSON.parse(JSON.stringify(workspace.following)),
+  );
   const comparison = shared.compareCaptureWorkspace(workspace);
   assert.deepEqual(JSON.parse(JSON.stringify(
     comparison.mutuals.map((item) => item.username),
@@ -262,6 +285,7 @@ test('follower checker migrates the legacy draft and compares both rendered list
   const exported = shared.captureRecord(workspace, 'followers', () => 'fallback');
   assert.equal(exported.kind, 'insta-aio-visible-list');
   assert.equal(exported.followers.length, 2);
+  assert.equal(exported.verifiedDialog, true);
   assert.equal('following' in exported, false);
 });
 

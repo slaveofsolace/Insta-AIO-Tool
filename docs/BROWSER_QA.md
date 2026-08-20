@@ -1,6 +1,6 @@
 # Browser QA
 
-Last reviewed: 2026-08-05
+Last reviewed: 2026-08-20
 
 ## Scope and safety boundary
 
@@ -60,10 +60,16 @@ the authenticated Instagram session.
 6. Initial hidden-window screenshots could retain an earlier rendered view. The
    harness now uses offscreen rendering and settles animation/compositor frames
    after every navigation before capture.
+7. An authenticated read-only userscript check found that the follower checker
+   could accept profile-level suggestion rows when no Followers or Following
+   dialog was open, then incorrectly label the capture complete. Current source
+   requires the exact requested list dialog, quarantines earlier captures, and
+   replaces quarantined rows on the first verified rescan instead of promoting
+   them into a trusted comparison or action source.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 191 of 191 tests.
+complete repository suite passes 229 of 229 tests.
 
 ## Representative screenshots
 

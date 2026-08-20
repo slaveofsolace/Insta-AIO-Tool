@@ -79,12 +79,13 @@
 
   function stateDefaults() {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       capture: {
         followers: [],
         following: [],
         capturedAt: { followers: null, following: null },
         complete: { followers: false, following: false },
+        verified: { followers: false, following: false },
       },
       queue: { queue: [], importedAt: null },
       accountCheck: null,
@@ -177,8 +178,9 @@
     const defaults = stateDefaults();
     const legacyQueue = GM_getValue(LEGACY_QUEUE_KEY, null);
     const value = source && typeof source === 'object' ? source : defaults;
+    const migratedFromUnsafeDialogFallback = Number(value.schemaVersion) < 3;
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       capture: {
         followers: normalizeAccounts(value.capture?.followers),
         following: normalizeAccounts(value.capture?.following),
@@ -187,8 +189,16 @@
           following: safeText(value.capture?.capturedAt?.following) || null,
         },
         complete: {
-          followers: value.capture?.complete?.followers === true,
-          following: value.capture?.complete?.following === true,
+          followers: !migratedFromUnsafeDialogFallback
+            && value.capture?.verified?.followers === true
+            && value.capture?.complete?.followers === true,
+          following: !migratedFromUnsafeDialogFallback
+            && value.capture?.verified?.following === true
+            && value.capture?.complete?.following === true,
+        },
+        verified: {
+          followers: !migratedFromUnsafeDialogFallback && value.capture?.verified?.followers === true,
+          following: !migratedFromUnsafeDialogFallback && value.capture?.verified?.following === true,
         },
       },
       queue: normalizeQueue(value.queue?.queue?.length ? value.queue : legacyQueue),
@@ -265,21 +275,26 @@
     return state.queue.queue.find((item) => ACTIONABLE_STATUSES.has(item.status)) || null;
   }
 
+  function verifiedCapture(listType) {
+    return state.capture.verified?.[listType] === true ? state.capture[listType] : [];
+  }
+
   function compareCapture() {
-    const followerNames = new Set(state.capture.followers.map((account) => account.username));
-    const followingNames = new Set(state.capture.following.map((account) => account.username));
+    const followers = verifiedCapture('followers');
+    const following = verifiedCapture('following');
+    const followerNames = new Set(followers.map((account) => account.username));
+    const followingNames = new Set(following.map((account) => account.username));
     return {
-      mutuals: state.capture.following.filter((account) => followerNames.has(account.username)),
-      iDoNotFollowBack: state.capture.followers.filter((account) => !followingNames.has(account.username)),
-      notFollowingMeBack: state.capture.following.filter((account) => !followerNames.has(account.username)),
+      mutuals: following.filter((account) => followerNames.has(account.username)),
+      iDoNotFollowBack: followers.filter((account) => !followingNames.has(account.username)),
+      notFollowingMeBack: following.filter((account) => !followerNames.has(account.username)),
     };
   }
 
-  function captureVisibleAccounts() {
-    const roots = [
-      ...document.querySelectorAll('div[role="dialog"]'),
-      document.querySelector('main'),
-    ].filter(Boolean);
+  function captureVisibleAccounts(expectedListType = '') {
+    const listContext = openFollowerListContext();
+    if (!listContext || listContext.listType !== expectedListType) return [];
+    const roots = [listContext.dialog];
     const accounts = new Map();
     for (const root of roots) {
       for (const anchor of root.querySelectorAll('a[href^="/"]')) {
@@ -790,10 +805,12 @@
     const grid = query('[data-role="tool-grid"]');
     grid.replaceChildren();
     const comparison = compareCapture();
+    const verifiedFollowers = verifiedCapture('followers');
+    const verifiedFollowing = verifiedCapture('following');
     const item = currentQueueItem();
     const liveBadge = liveAuthorized() ? 'live unlocked' : 'live locked';
     const tools = [
-      ['checker', 'Follower checker', `${state.capture.followers.length} followers · ${state.capture.following.length} following · ${comparison.notFollowingMeBack.length} not following back`, 'read only'],
+      ['checker', 'Follower checker', `${verifiedFollowers.length} followers · ${verifiedFollowing.length} following · ${comparison.notFollowingMeBack.length} not following back`, 'read only'],
       ['account', 'Follow / Unfollow', item ? `${item.action} @${item.account.username} is next` : 'Import a reviewed manual queue', liveBadge],
       ['messages', 'DM Unsend', state.dmTarget ? `Reviewed message ${state.dmTarget.messageId} loaded` : 'Visible evidence and exact-message review', liveBadge],
     ];
@@ -816,17 +833,20 @@
   }
 
   function renderChecker() {
-    setText('followers-count', state.capture.followers.length);
-    setText('following-count', state.capture.following.length);
+    const verifiedFollowers = verifiedCapture('followers');
+    const verifiedFollowing = verifiedCapture('following');
+    const comparisonReady = verifiedFollowers.length > 0 && verifiedFollowing.length > 0;
+    setText('followers-count', verifiedFollowers.length);
+    setText('following-count', verifiedFollowing.length);
     const comparison = compareCapture();
     const result = query('[data-role="comparison"]');
     result.replaceChildren();
     const title = document.createElement('h2');
-    title.textContent = state.capture.followers.length && state.capture.following.length
+    title.textContent = comparisonReady
       ? 'Rendered-row comparison'
       : 'Capture both lists';
     const detail = document.createElement('p');
-    detail.textContent = state.capture.followers.length && state.capture.following.length
+    detail.textContent = comparisonReady
       ? `${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following me back · ${comparison.iDoNotFollowBack.length} I don't follow back.`
       : 'Open your Followers list and choose Scan full list, then do the same for Following.';
     result.append(title, detail);
@@ -834,7 +854,9 @@
     // A scan that stopped early would otherwise be read as the whole list, and
     // every number below it would quietly be wrong.
     const partial = ['followers', 'following']
-      .filter((type) => state.capture[type].length && state.capture.complete?.[type] !== true);
+      .filter((type) => state.capture.verified?.[type] === true
+        && state.capture[type].length
+        && state.capture.complete?.[type] !== true);
     if (partial.length) {
       const warning = document.createElement('p');
       warning.className = 'notice';
@@ -842,7 +864,16 @@
       result.append(warning);
     }
 
-    if (state.capture.followers.length && state.capture.following.length) {
+    const unverified = ['followers', 'following']
+      .filter((type) => state.capture[type].length && state.capture.verified?.[type] !== true);
+    if (unverified.length) {
+      const warning = document.createElement('p');
+      warning.className = 'notice';
+      warning.textContent = `Saved ${unverified.join(' and ')} rows were captured before exact dialog verification. They remain available under Advanced for export, but cannot drive comparisons or runs until rescanned.`;
+      result.append(warning);
+    }
+
+    if (comparisonReady) {
       const actions = document.createElement('div');
       actions.className = 'toolbar';
       const button = document.createElement('button');
@@ -854,6 +885,7 @@
         kind: 'insta-aio-comparison',
         generatedAt: nowIso(),
         complete: state.capture.complete || {},
+        verified: state.capture.verified || {},
         mutuals: comparison.mutuals,
         notFollowingMeBack: comparison.notFollowingMeBack,
         iDoNotFollowBack: comparison.iDoNotFollowBack,
@@ -1438,19 +1470,32 @@
   // session on every render, and naming exactly one useful next action, removes
   // the guesswork. This only describes state; it never unlocks anything.
 
+  function followerListTypeFromText(value) {
+    const label = String(value || '')
+      .normalize('NFKC')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLocaleLowerCase();
+    if (/^followers(?:\s|$)/.test(label)) return 'followers';
+    if (/^following(?:\s|$)/.test(label)) return 'following';
+    return '';
+  }
+
   function openFollowerListContext() {
     for (const dialog of document.querySelectorAll('[role="dialog"]')) {
       const heading = [...dialog.querySelectorAll('[role="heading"], h1, h2')]
         .map(visibleText)
         .find(Boolean);
       const firstLine = visibleText(dialog).split(/\r?\n/).map((line) => line.trim()).find(Boolean);
-      const label = [dialog.getAttribute('aria-label'), heading, firstLine]
-        .filter(Boolean)
-        .join(' ')
-        .normalize('NFKC')
-        .toLocaleLowerCase();
-      if (/(^|\s)followers(\s|$)/.test(label)) return { dialog, listType: 'followers', label: 'Followers' };
-      if (/(^|\s)following(\s|$)/.test(label)) return { dialog, listType: 'following', label: 'Following' };
+      const observedTypes = new Set(
+        [dialog.getAttribute('aria-label'), heading, firstLine]
+          .map(followerListTypeFromText)
+          .filter(Boolean),
+      );
+      if (observedTypes.size !== 1) continue;
+      const [observed] = observedTypes;
+      if (observed === 'followers') return { dialog, listType: 'followers', label: 'Followers' };
+      if (observed === 'following') return { dialog, listType: 'following', label: 'Following' };
     }
     return null;
   }
@@ -1543,6 +1588,7 @@
   function scanState(listType) {
     const count = state.capture[listType].length;
     if (!count) return 'todo';
+    if (state.capture.verified?.[listType] !== true) return 'partial';
     return state.capture.complete?.[listType] === true ? 'done' : 'partial';
   }
 
@@ -1551,10 +1597,12 @@
     for (const listType of ['following', 'followers']) {
       const step = query(`.step[data-step="${listType}"]`);
       const status = scanState(listType);
+      const verified = state.capture.verified?.[listType] === true;
       if (step) step.dataset.state = status;
       const count = state.capture[listType].length;
       setText(`step-${listType}`,
         status === 'todo' ? 'Not scanned yet'
+          : !verified ? `${count} stored — rescan required`
           : status === 'done' ? `${count} found — complete`
             : `${count} found — did not reach the end`);
       const button = query(`[data-action="scan-${listType}"]`);
@@ -1562,7 +1610,7 @@
       if (button) button.textContent = `${status === 'todo' ? 'Scan' : 'Rescan'} ${listLabel}`;
     }
     const compareStep = query('.step[data-step="compare"]');
-    const both = state.capture.following.length && state.capture.followers.length;
+    const both = verifiedCapture('following').length && verifiedCapture('followers').length;
     const complete = scanState('following') === 'done' && scanState('followers') === 'done';
     if (compareStep) compareStep.dataset.state = both ? (complete ? 'done' : 'partial') : 'todo';
     setText('step-compare', both
@@ -1641,13 +1689,14 @@
         .filter(Boolean),
       'i-do-not-follow-back': () => names(comparison.iDoNotFollowBack),
       'not-following-me-back': () => names(comparison.notFollowingMeBack),
-      'scanned-followers': () => names(state.capture.followers),
-      'scanned-following': () => names(state.capture.following),
+      'scanned-followers': () => names(verifiedCapture('followers')),
+      'scanned-following': () => names(verifiedCapture('following')),
     };
     const pool = (pools[source] || pools['current-profile'])();
     let eligible = pool;
-    if (source !== 'current-profile' && action === 'follow' && state.capture.following.length) {
-      const already = new Set(names(state.capture.following));
+    const verifiedFollowing = verifiedCapture('following');
+    if (source !== 'current-profile' && action === 'follow' && verifiedFollowing.length) {
+      const already = new Set(names(verifiedFollowing));
       eligible = eligible.filter((username) => !already.has(username));
     }
     const unique = [...new Set(eligible)];
@@ -1804,21 +1853,26 @@
     'scan-list': async () => {
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
       status(`Scanning the open ${listType} list. Keep the dialog open.`);
-      const outcome = await engine.collectAccountList();
+      const outcome = await engine.collectAccountList({ listType });
       if (sessionStop(outcome)) {
         status(`Stopped: ${sessionStop(outcome)}.`);
         return;
       }
       const accounts = outcome?.accounts || [];
+      if (outcome?.listType !== listType) {
+        status(`No verified ${listType} dialog was open. Open that exact list and scan again.`);
+        return;
+      }
       if (!accounts.length) {
         status(`No rows were readable. Open your ${listType} list first.`);
         return;
       }
-      const merged = new Map(state.capture[listType].map((a) => [a.username, a]));
+      const merged = new Map(verifiedCapture(listType).map((a) => [a.username, a]));
       for (const account of accounts) merged.set(account.username, account);
       state.capture[listType] = normalizeAccounts([...merged.values()]);
       state.capture.capturedAt[listType] = nowIso();
       state.capture.complete = { ...(state.capture.complete || {}), [listType]: outcome.complete === true };
+      state.capture.verified = { ...(state.capture.verified || {}), [listType]: true };
       saveState();
       renderAll();
       status(
@@ -1896,12 +1950,18 @@
     'reset-layout': () => savePreferences({ ...preferencesDefaults(), open: true, view: preferences.view }),
     capture: () => {
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
-      const visible = captureVisibleAccounts();
-      const accounts = new Map(state.capture[listType].map((account) => [account.username, account]));
+      const visible = captureVisibleAccounts(listType);
+      if (!visible.length) {
+        status(`No verified ${listType} rows were readable. Open that exact list first.`);
+        return;
+      }
+      const accounts = new Map(verifiedCapture(listType).map((account) => [account.username, account]));
       const before = accounts.size;
       for (const account of visible) accounts.set(account.username, account);
       state.capture[listType] = normalizeAccounts([...accounts.values()]);
       state.capture.capturedAt[listType] = nowIso();
+      state.capture.complete = { ...(state.capture.complete || {}), [listType]: false };
+      state.capture.verified = { ...(state.capture.verified || {}), [listType]: true };
       saveState();
       status(`Captured ${visible.length} rendered ${listType} rows; ${state.capture[listType].length - before} were new.`);
     },
@@ -1917,6 +1977,7 @@
         kind: 'insta-aio-visible-list',
         listType,
         capturedAt: state.capture.capturedAt[listType] || nowIso(),
+        verifiedDialog: state.capture.verified?.[listType] === true,
         [listType]: state.capture[listType],
         note: 'Only rows rendered in Instagram were captured. Scroll manually and capture again to merge more rows.',
       });

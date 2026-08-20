@@ -352,20 +352,25 @@
           fixturePreferences,
       } : {}),
       ...(fixtureMode === 'qa-following-repeat' ? {
-        instaAioOverlayCaptureDraftV1: {
-          schemaVersion: 1,
-          kind: 'insta-aio-visible-list',
-          listType: 'following',
-          capturedAt: '2026-07-31T07:00:00.000Z',
+        instaAioOverlayCaptureWorkspaceV2: {
+          schemaVersion: 3,
+          kind: 'insta-aio-visible-checker-workspace',
+          followers: [],
           following: [
             { username: 'alpha.friend', displayName: '', source: 'extension-visible-dom' },
             { username: 'older_account', displayName: '', source: 'extension-visible-dom' },
           ],
+          capturedAt: {
+            followers: null,
+            following: '2026-07-31T07:00:00.000Z',
+          },
+          complete: { followers: false, following: false },
+          verified: { followers: false, following: true },
         },
       } : {}),
       ...(fixtureMode === 'qa-checker-results' ? {
         instaAioOverlayCaptureWorkspaceV2: {
-          schemaVersion: 2,
+          schemaVersion: 3,
           kind: 'insta-aio-visible-checker-workspace',
           followers: [
             { username: 'follower_only', displayName: 'Follower Only' },
@@ -381,6 +386,7 @@
             following: '2026-07-31T07:05:00.000Z',
           },
           complete: { followers: true, following: true },
+          verified: { followers: true, following: true },
         },
       } : {}),
       instaAioOverlayManualQueueV1: {
