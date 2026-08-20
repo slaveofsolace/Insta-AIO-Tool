@@ -134,7 +134,7 @@
 
   function captureWorkspaceDefaults() {
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       kind: 'insta-aio-visible-checker-workspace',
       followers: [],
       following: [],
@@ -170,12 +170,16 @@
 
   function normalizeCaptureWorkspace(value, normalizeUsername) {
     const source = value && typeof value === 'object' ? value : {};
-    const migratedFromUnsafeDialogFallback = Number(source.schemaVersion) < 3;
+    // Schema 4 is the first capture format whose `complete` flag is backed by
+    // both an exact list dialog and the profile's observable row total. Keep
+    // older rows available for export, but quarantine their confidence until
+    // a fresh exact-dialog scan replaces them.
+    const requiresCountReconciledRescan = Number(source.schemaVersion) < 4;
     const capturedAt = source.capturedAt && typeof source.capturedAt === 'object'
       ? source.capturedAt
       : {};
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       kind: 'insta-aio-visible-checker-workspace',
       followers: normalizeCaptureAccounts(source.followers, normalizeUsername),
       following: normalizeCaptureAccounts(source.following, normalizeUsername),
@@ -184,16 +188,16 @@
         following: safeText(capturedAt.following) || null,
       },
       complete: {
-        followers: !migratedFromUnsafeDialogFallback
+        followers: !requiresCountReconciledRescan
           && source.verified?.followers === true
           && source.complete?.followers === true,
-        following: !migratedFromUnsafeDialogFallback
+        following: !requiresCountReconciledRescan
           && source.verified?.following === true
           && source.complete?.following === true,
       },
       verified: {
-        followers: !migratedFromUnsafeDialogFallback && source.verified?.followers === true,
-        following: !migratedFromUnsafeDialogFallback && source.verified?.following === true,
+        followers: !requiresCountReconciledRescan && source.verified?.followers === true,
+        following: !requiresCountReconciledRescan && source.verified?.following === true,
       },
     };
   }

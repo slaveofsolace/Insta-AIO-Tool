@@ -249,7 +249,7 @@ test('follower checker migrates the legacy draft and compares both rendered list
   }, normalizeUsername);
   assert.equal(migrated.source, 'v1');
   assert.equal(migrated.shouldPersist, true);
-  assert.equal(migrated.workspace.schemaVersion, 3);
+  assert.equal(migrated.workspace.schemaVersion, 4);
   assert.equal(migrated.workspace.verified.following, false);
   assert.equal(migrated.workspace.complete.following, false);
   assert.deepEqual(
@@ -266,7 +266,7 @@ test('follower checker migrates the legacy draft and compares both rendered list
   assert.equal(shared.compareCaptureWorkspace(migrated.workspace).notFollowingMeBack.length, 0);
   const workspace = shared.normalizeCaptureWorkspace({
     ...migrated.workspace,
-    schemaVersion: 3,
+    schemaVersion: 4,
     followers: [{ username: 'mutual' }, { username: 'follower_only' }],
     verified: { followers: true, following: true },
   }, normalizeUsername);
@@ -289,6 +289,38 @@ test('follower checker migrates the legacy draft and compares both rendered list
   assert.equal(exported.followers.length, 2);
   assert.equal(exported.verifiedDialog, true);
   assert.equal('following' in exported, false);
+});
+
+test('schema 3 list confidence is quarantined until a count-reconciled rescan', () => {
+  const { shared } = loadModules();
+  const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
+  const migrated = shared.normalizeCaptureWorkspace({
+    schemaVersion: 3,
+    kind: 'insta-aio-visible-checker-workspace',
+    followers: [],
+    following: [{ username: 'alpha' }, { username: 'beta' }],
+    capturedAt: { followers: null, following: '2026-08-20T00:00:00.000Z' },
+    complete: { followers: false, following: true },
+    verified: { followers: false, following: true },
+  }, normalizeUsername);
+
+  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.following.length, 2, 'stored rows remain available locally');
+  assert.equal(migrated.verified.following, false);
+  assert.equal(migrated.complete.following, false);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(migrated, 'following'))),
+    [],
+  );
+
+  const rescanned = shared.normalizeCaptureWorkspace({
+    ...migrated,
+    schemaVersion: 4,
+    complete: { followers: false, following: true },
+    verified: { followers: false, following: true },
+  }, normalizeUsername);
+  assert.equal(rescanned.verified.following, true);
+  assert.equal(rescanned.complete.following, true);
 });
 
 test('follower comparison filters stay local, bounded, and category-specific', () => {

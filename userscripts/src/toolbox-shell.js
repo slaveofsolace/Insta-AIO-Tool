@@ -79,7 +79,7 @@
 
   function stateDefaults() {
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       capture: {
         followers: [],
         following: [],
@@ -178,9 +178,12 @@
     const defaults = stateDefaults();
     const legacyQueue = GM_getValue(LEGACY_QUEUE_KEY, null);
     const value = source && typeof source === 'object' ? source : defaults;
-    const migratedFromUnsafeDialogFallback = Number(value.schemaVersion) < 3;
+    // Schema 4 is the first state whose capture completeness is reconciled
+    // against the exact visible profile total. Preserve older rows locally for
+    // export, but do not let their stale confidence drive comparisons or runs.
+    const requiresCountReconciledRescan = Number(value.schemaVersion) < 4;
     return {
-      schemaVersion: 3,
+      schemaVersion: 4,
       capture: {
         followers: normalizeAccounts(value.capture?.followers),
         following: normalizeAccounts(value.capture?.following),
@@ -189,16 +192,16 @@
           following: safeText(value.capture?.capturedAt?.following) || null,
         },
         complete: {
-          followers: !migratedFromUnsafeDialogFallback
+          followers: !requiresCountReconciledRescan
             && value.capture?.verified?.followers === true
             && value.capture?.complete?.followers === true,
-          following: !migratedFromUnsafeDialogFallback
+          following: !requiresCountReconciledRescan
             && value.capture?.verified?.following === true
             && value.capture?.complete?.following === true,
         },
         verified: {
-          followers: !migratedFromUnsafeDialogFallback && value.capture?.verified?.followers === true,
-          following: !migratedFromUnsafeDialogFallback && value.capture?.verified?.following === true,
+          followers: !requiresCountReconciledRescan && value.capture?.verified?.followers === true,
+          following: !requiresCountReconciledRescan && value.capture?.verified?.following === true,
         },
       },
       queue: normalizeQueue(value.queue?.queue?.length ? value.queue : legacyQueue),

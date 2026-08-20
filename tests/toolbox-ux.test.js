@@ -62,7 +62,8 @@ test('the checker is a sequence that reports completeness per list', () => {
 });
 
 test('legacy checker rows are quarantined until an exact list dialog is rescanned', () => {
-  assert.match(shell, /const migratedFromUnsafeDialogFallback = Number\(value\.schemaVersion\) < 3/);
+  assert.match(shell, /const requiresCountReconciledRescan = Number\(value\.schemaVersion\) < 4/);
+  assert.match(shell, /schemaVersion: 4/);
   assert.match(shell, /verified: \{ followers: false, following: false \}/);
   assert.match(shell, /'scanned-followers': \(\) => names\(verifiedCapture\('followers'\)\)/);
   assert.match(shell, /'scanned-following': \(\) => names\(verifiedCapture\('following'\)\)/);

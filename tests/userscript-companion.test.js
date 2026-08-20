@@ -182,6 +182,7 @@ test('DM evidence and saved Unsend candidates stay bound to the active conversat
 
 test('the follower checker remembers whether a scan actually finished', () => {
   // A partial scan that forgets it was partial would silently under-report.
+  assert.match(shell, /const requiresCountReconciledRescan = Number\(value\.schemaVersion\) < 4/);
   assert.match(shell, /complete: \{ followers: false, following: false \}/);
   assert.match(shell, /verified: \{ followers: false, following: false \}/);
   assert.match(shell, /value\.capture\?\.verified\?\.followers === true[\s\S]{0,100}?value\.capture\?\.complete\?\.followers === true/);
