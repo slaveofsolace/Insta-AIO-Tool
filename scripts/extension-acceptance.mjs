@@ -814,6 +814,24 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.match(account.result, /Exact no-click check passed/);
 
   await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    shadow.querySelector('[data-action="queue-complete"]').click();
+    shadow.querySelector('[data-action="account-dry-run"]').click();
+  })()`, true);
+  const currentProfile = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
+    return {
+      clicks: globalThis.fixtureProfileClickCount,
+      current: shadow.querySelector('[data-role="queue-current"]')?.textContent,
+      result: shadow.querySelector('[data-role="account-result"]')?.textContent,
+    };
+  })()`, true);
+  assert.equal(currentProfile.clicks, 0);
+  assert.match(currentProfile.current, /No queue item loaded/);
+  assert.match(currentProfile.result, /Exact no-click check passed/);
+  assert.match(currentProfile.result, /Observed @demo_creator as following without clicking/);
+
+  await webContents.executeJavaScript(`(() => {
     globalThis.fixtureSetMessages();
   })()`, true);
   await waitForPageValue(

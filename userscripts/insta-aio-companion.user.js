@@ -3168,24 +3168,27 @@
     const item = currentQueueItem();
     const observation = inspectProfile();
     const expectedRelationship = item?.action === 'follow' ? 'not-following' : 'following';
-    const exact = Boolean(
-      item
-      && observation.ok
-      && observation.username === item.account.username
-      && observation.relationship === expectedRelationship,
-    );
+    const exact = item
+      ? Boolean(
+        observation.ok
+        && observation.username === item.account.username
+        && observation.relationship === expectedRelationship
+      )
+      : observation.ok === true;
     state.accountCheck = {
       checkedAt: nowIso(),
       exact,
       noClick: true,
-      target: item?.account?.username || null,
+      target: item?.account?.username || observation.username || null,
       action: item?.action || null,
       observation,
-      result: !item
-        ? 'Import a manual queue first.'
-        : exact
+      result: item
+        ? exact
           ? `Resolved ${item.action} for @${item.account.username} without clicking.`
-          : observation.reason || `Open @${item.account.username} on the expected relationship state.`,
+          : observation.reason || `Open @${item.account.username} on the expected relationship state.`
+        : observation.ok
+          ? `Observed @${observation.username} as ${observation.relationship.replace('-', ' ')} without clicking.`
+          : observation.reason || 'Open an Instagram profile first.',
     };
     state.history.unshift({ kind: 'account-dry-run', ...state.accountCheck });
     state.history = state.history.slice(0, 20);
@@ -3726,7 +3729,10 @@
     const resultTitle = document.createElement('h3');
     resultTitle.textContent = state.accountCheck?.exact ? 'Exact no-click check passed' : 'No-click check';
     const resultDetail = document.createElement('p');
-    resultDetail.textContent = state.accountCheck?.result || 'Open the exact queued profile, then run the check.';
+    resultDetail.textContent = state.accountCheck?.result
+      || (item
+        ? 'Open the exact queued profile, then run the check.'
+        : 'Open an Instagram profile, then inspect it without clicking.');
     result.append(resultTitle, resultDetail);
     renderAccountRunPrimary();
   }
