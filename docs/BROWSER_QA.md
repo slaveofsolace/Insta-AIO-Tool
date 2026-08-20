@@ -98,13 +98,13 @@ not alter production extension permissions.
 
 ## Overlay-specific QA
 
-The Instagram overlay has a separate 40-scenario harness that
+The Instagram overlay has a separate 42-scenario harness that
 loads the production-built content-script graph and checks state semantics,
 geometry, target intersection, responsive presentations, accessibility-tree
 names, and bounded performance before comparing screenshots. Its commands are
 `pnpm run qa:overlay:update` and `pnpm run qa:overlay:check`.
 
-All 40 Windows scenarios passed their semantic, geometry, collision,
+All 42 Windows scenarios passed their semantic, geometry, collision,
 accessibility-tree, and performance checks. The translucent, layout, and
 live-lock states were inspected at full resolution; the reviewed baseline reproduced through
 `qa:overlay:check`, and the non-updating Windows check is wired into CI. That is
@@ -115,11 +115,12 @@ matrix, evidence layout, measured results, and manual acceptance limits.
 
 ## Design judgment
 
-The PWA retains its existing industrial workspace direction: dense information
-hierarchy, rigid panels, a dark neutral base, one acid-lime action signal, and
-functional status colors. The review did not justify a new scaffold or visual
-theme. Changes were limited to rendering correctness, truthful state copy,
-focus behavior, and cache delivery.
+The PWA now leads with a task-oriented three-tool overview instead of a uniform
+metric-card wall. A warm neutral workspace, dark navigation rail, restrained
+rose action signal, and compact status strip align it with the in-page tools
+while preserving every existing page and local data function. The review also
+covered rendering correctness, truthful state copy, focus behavior, and cache
+delivery.
 
 ## Remaining target-environment acceptance
 
