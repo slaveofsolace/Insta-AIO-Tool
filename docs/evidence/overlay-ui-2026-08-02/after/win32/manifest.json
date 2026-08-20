@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-20T08:43:14.160Z",
+  "capturedAt": "2026-08-20T18:19:33.761Z",
   "platform": "win32",
   "builtExtensionVersion": "0.11.0",
   "screenshots": [
@@ -2000,7 +2000,7 @@
     },
     {
       "id": "queue-locked",
-      "sha256": "971079bea44e92b112c67cd301668aa22a46e2766c8cd23b0b6953321adc26a5",
+      "sha256": "674a12a6a99975e83ea00cb82cc72e17ffc451f7a9bc2fb179f3e6e8b86cbb5d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5814,7 +5814,7 @@
     },
     {
       "id": "queue-dark-desktop",
-      "sha256": "f2a4d8a82480208bb600d9ee40e08a105f17d7ddbdaea7f084f755a090158937",
+      "sha256": "07b048920f8ec96107108f5ab15895ee9914abbbc072e2167d4c39a7b9b79cb3",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6938,7 +6938,7 @@
     },
     {
       "id": "queue-mobile-portrait-dark",
-      "sha256": "6f2e253480474c884b9bb91ab07d9e23678b8cbf8386fa19a178dfc221712b15",
+      "sha256": "413397fad4228d24e3d90bc1feb48ae09167a6eee1ca0445a12279df9435deca",
       "scenario": {
         "after": null,
         "captureListType": null,
