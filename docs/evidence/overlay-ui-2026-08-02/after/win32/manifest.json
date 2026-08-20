@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-11T21:06:46.460Z",
+  "capturedAt": "2026-08-20T08:19:33.967Z",
   "platform": "win32",
   "builtExtensionVersion": "0.10.6",
   "screenshots": [
     {
       "id": "first-run-walkthrough",
-      "sha256": "8690c1ff41611660dd41098d3d059955642e4437f6711d920bf973037dc8a098",
+      "sha256": "5ab5ca0924db59e30dcd83b224f77db69e567b88afdb42871eb7c3c0e88df620",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -260,7 +260,7 @@
     },
     {
       "id": "toolbox-floating-translucent",
-      "sha256": "95c0357fb0bab44ca912928a9763558a7bed1188b2435f36bc8504fd5e4c8133",
+      "sha256": "d2e8b9cbcf6102e263dd7b90407a893b9cc3985e0dae954b193770c3ea005394",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -471,9 +471,9 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(255, 255, 255)",
+              "backgroundColor": "rgb(0, 0, 0)",
               "color": "rgb(16, 16, 16)",
-              "textContrast": 19.028110547666497,
+              "textContrast": 1.1036303340467677,
               "textFillColor": "rgb(16, 16, 16)",
               "text": "",
               "tone": null,
@@ -538,7 +538,7 @@
     },
     {
       "id": "profile-not-following-no-match",
-      "sha256": "5523031cc74145c12cfb3969c7752c26b5245a497cd95d3ed3324ded4345a488",
+      "sha256": "46f961c265ce2f7e0d9f951c25c6b508f1996736de32bfc2e42b5d99b41f5a83",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -738,7 +738,7 @@
     },
     {
       "id": "profile-following-queue-match",
-      "sha256": "d98f5110866fe9e94ec99719b48db143e1864fb4fabb878425e0180f3f6c2e11",
+      "sha256": "213dfb34f663889117569ed86fed7273f3ca9a2f422c1db3ea07958c472ee98f",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -938,7 +938,7 @@
     },
     {
       "id": "profile-ambiguous-safe-stop",
-      "sha256": "b5360eab698bf60c0f0d486448a0ee2cf5da77c2b57e62409ece0a4bd5c1a1f2",
+      "sha256": "c2444086ac74f3952b74b28145a2a401556a3cd17559aa13335c01d85566d565",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -1137,7 +1137,7 @@
     },
     {
       "id": "followers-first-capture",
-      "sha256": "1a37986cd7108f18643638e318302c3c7c17c9d4cec349120dad21f5fdd89485",
+      "sha256": "b57ef04e48373408638455f409f849a5b26c6a1278ad5d9fc3fb6f73e98908a7",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "followers",
@@ -1420,7 +1420,7 @@
     },
     {
       "id": "following-repeated-capture",
-      "sha256": "bc8ab0649ed4427fdf3e1cc4935b226c9bdd4d8aa0aab840a57e2b672ec26d21",
+      "sha256": "6dfe1e1845412c7adcc3c6a034eca2d80d73e851460b5b63e78e2b619ea53116",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "following",
@@ -1703,7 +1703,7 @@
     },
     {
       "id": "checker-filtered-results",
-      "sha256": "b26fcb604bf23ba1277eec50a58622f0ea307c8f958f80f88124c5074b81a5af",
+      "sha256": "6e7bed7d0655e893902d4954f92b8741384317204a89cb84639d6cd6584171f6",
       "scenario": {
         "after": "filter-checker-results",
         "captureListType": null,
@@ -2000,7 +2000,7 @@
     },
     {
       "id": "queue-locked",
-      "sha256": "536a87aac8034e2658559545b6bee58c9b0d78154a7008066195f2bbf980963b",
+      "sha256": "df0451be3877bf3c231eda98e776ed673efab920934e968df8c14e67b52eb29c",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2294,7 +2294,7 @@
     },
     {
       "id": "queue-exact-target-ready",
-      "sha256": "c374db63d20603304c1d1de260f5436bd54960bbba1323aa8b33a17da1e9f53d",
+      "sha256": "c6be24c9c7de5855a7550f5dd9135a3478222d93a053ba38b2088ead343cf4a9",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2600,7 +2600,7 @@
     },
     {
       "id": "queue-armed-countdown",
-      "sha256": "0d4f8f467f09f6df826834eeddba104da6bed96a014e1d166e4a2c96d882b74e",
+      "sha256": "dd23ce110670342ed97a189721b855bcecfcb09784f660b0a96c640b7312f821",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2807,7 +2807,7 @@
     },
     {
       "id": "queue-arm-expired",
-      "sha256": "91100bcc65b8c08d722eadcb3865ff93a5fa5a669f93f7f3c8542812a8ebcc69",
+      "sha256": "0a2f08ed8697ca8f8e30c77acecdae99016ae5630b06731eb76ccd0e2b42eabc",
       "scenario": {
         "after": "wait-account-expired",
         "captureListType": null,
@@ -3134,7 +3134,7 @@
     },
     {
       "id": "messages-evidence-only",
-      "sha256": "44cca097a7219bca08fa4699ed7265e81d5e8efa6d6e14ef2d74591b120442e4",
+      "sha256": "aace9d26c6dce81f3f4f5ec5ffe79662197f0ff43132ebd323e8d7594e4e5dd9",
       "scenario": {
         "after": "inspect-messages",
         "captureListType": null,
@@ -3412,7 +3412,7 @@
     },
     {
       "id": "messages-exact-target-ready",
-      "sha256": "6493708cf6c81c516dc0ac450a8ea3d88153ed6fb3f9d3f4466f222af102e540",
+      "sha256": "612cedc3f307754612473438c348f546a7c76f5ec64798abc008f6837332a5ab",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3698,7 +3698,7 @@
     },
     {
       "id": "messages-wrong-conversation",
-      "sha256": "c9391b41df04f3dc228eeac2010ecee3d963fc5fe363699e81b5a1bb2295b4a3",
+      "sha256": "f19095263b7a052c57f97c85960db0ff926d54cadb2226c8034d56ebb40bca4f",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3984,7 +3984,7 @@
     },
     {
       "id": "messages-armed-countdown",
-      "sha256": "1b70eeb7ab244882a8362b02df1baf835e567069c5dd9f6b8c4c11953b7dbaae",
+      "sha256": "426e1b23b334c2777728bfef57be7210879c598601e62d7c5959203f8861a0e0",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4210,7 +4210,7 @@
     },
     {
       "id": "workspace-unpaired",
-      "sha256": "a9541d6cae2de34835ab8a8a0c544befb9e76b1913e2bec713b0398d808567df",
+      "sha256": "8e34367066a4e381a2eae6a4e49cfa62e06b04d4068adf4fc9f8026c2d36903c",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4460,7 +4460,7 @@
     },
     {
       "id": "workspace-read-only",
-      "sha256": "9d918dcf9c45cda4e5d6ce18c02c8fbb6aeb877dae8ad61c47cf96512182c1f9",
+      "sha256": "3f1c812c6d41d804ade11fcaba16d737dcba725ac48261167055fb948394cf29",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4690,7 +4690,7 @@
     },
     {
       "id": "workspace-action-permission",
-      "sha256": "8ebf8587d8f6d554fb967750444a4941106c1c4b2bb60982218e9ecfb5d58080",
+      "sha256": "9d57ffc577a59cf05987c3b6283e0705818513ecf5923f7bdf3c62a54c0078cb",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4920,7 +4920,7 @@
     },
     {
       "id": "native-dialog-coexistence",
-      "sha256": "b53e14ca45c8ec8de4b29df8eb0cf4f01a4dc62dfc4c91dfe993202f2f2dc6a8",
+      "sha256": "b3516d8001b4dfbee4c55a23bd272b365b7719a126a39cc79a7d980ed6ef7206",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5082,7 +5082,7 @@
     },
     {
       "id": "session-expired",
-      "sha256": "83c88a0607f92841edd4d8e73120f2baf251fe32941a68772c59fe2890faf6e8",
+      "sha256": "417050b43096d6b08b8d5c74b0ec07b9dcba14b468ae434acb35df2ecfb24175",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5273,7 +5273,7 @@
     },
     {
       "id": "session-challenge",
-      "sha256": "04ba1dc54618d0d2a6355e6c72e94a502a71abf556b01503a1260d21369c4b08",
+      "sha256": "b7440f27787d18d2f35f6c8bed2f96e4f07a29489a44a60683e5aff6488eabd6",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5464,7 +5464,7 @@
     },
     {
       "id": "session-rate-limited",
-      "sha256": "60df634cae6659c277e324a41efad741c358be1e96dd184bfc89d6392fd2653a",
+      "sha256": "87c3aca508fd4801014504ec1dafa4bb805f60ea4e4352866af148f4cd7f5d29",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5655,7 +5655,7 @@
     },
     {
       "id": "profile-dark-desktop",
-      "sha256": "2b3f5f3cc7bfc06a4cec2a87a4086726648b739cb64d2a4b54740c1120f0f658",
+      "sha256": "c48d1568f6046bf3fd378b6ac9043d1b1066b99539e3d71c373dd8b0680dfb8d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5829,7 +5829,7 @@
     },
     {
       "id": "queue-dark-desktop",
-      "sha256": "26e099fbf385bfb734c9e9f3c6cb996f4bd6339a6f58ed835c4ebb3815e19dfa",
+      "sha256": "52bfdccd8ccc14988728af1fa1fdd651383cf3c4e08676c9323390689fffe220",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6043,7 +6043,7 @@
     },
     {
       "id": "profile-short-laptop",
-      "sha256": "d20f34bf0ae28cb13a93d80ad49262a23f28f91d3539f40e012c86dcadb18b6b",
+      "sha256": "86bdc8f7fc82d5ab4a13a4b7031b4a30d801a5a255380298a47568e8892ec862",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6217,7 +6217,7 @@
     },
     {
       "id": "queue-short-laptop-dark",
-      "sha256": "7cb963b2ed59b4278e306231419ed376ce891129b41ad0b0b1a56c7f8edb1609",
+      "sha256": "b072ae7cc4880c4c5ed2b2e7ff61c939910c20f98fdb0ac1acfa9aae8e76ceda",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6431,7 +6431,7 @@
     },
     {
       "id": "profile-narrow-tablet",
-      "sha256": "80d34d7dc1930e57ecfe96b021f270aed1cfb7e87f5eeb3494c888dfbe3bd7b5",
+      "sha256": "804e1bf0cb192693468e418dba71226e53b90e0ed049286f6459024ea2748b27",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6605,7 +6605,7 @@
     },
     {
       "id": "messages-narrow-tablet-dark",
-      "sha256": "7a86c447b2b308445bd2b3fbbb8ab50f9c25eef7d9f4cf4b3614969cde0bfe97",
+      "sha256": "bc13ef6daad3f1dc9779ef4ed15760a19d62b87c17abbe0d26bf425b91ce9bcd",
       "scenario": {
         "after": "inspect-messages",
         "captureListType": null,
@@ -6799,7 +6799,7 @@
     },
     {
       "id": "profile-mobile-portrait",
-      "sha256": "052f45c94c8f9cf3bdf3c4981ca8b08269b5803c8dea4ea203a03c34f471b247",
+      "sha256": "53a81dc5e5295afb844cad980dec8a7602be17a9fec9f0683e10adff03ec3c49",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6968,7 +6968,7 @@
     },
     {
       "id": "queue-mobile-portrait-dark",
-      "sha256": "b06e5aa44941921250f5df1597c3f34bcae228cfd767e6f168aa03d87203359f",
+      "sha256": "35130faf484244ab944f7330af234b0fc5008578600b9ba1d2808e771cf5b006",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7177,7 +7177,7 @@
     },
     {
       "id": "profile-mobile-landscape",
-      "sha256": "ce7c475ac16415ac3ffebcb4962a252e70fe17472a51b55391ebc3bd0cae18c3",
+      "sha256": "5ecaf6031e36beb9089991a4227a079a19d992fcdddf80408b459dc62e4abed1",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7351,7 +7351,7 @@
     },
     {
       "id": "queue-mobile-landscape-dark",
-      "sha256": "265dc3f7e4f1c637efec1a53ed32083fb4b5215ca258fe25769b4cf51497b27a",
+      "sha256": "ac734e7360a19ba76e1cac044890ac25634405ae8526ba196916dff114d179bf",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7565,7 +7565,7 @@
     },
     {
       "id": "profile-zoom-200-light",
-      "sha256": "93cfa028775bdbebe9e7b67f96b9bcd1d385758aca7a22ea5e34f033461d661b",
+      "sha256": "0daa1aa54af9cf94a05e8030788f4869f1fefcba5aa25f17be3fbd2d55ddf3fd",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7739,7 +7739,7 @@
     },
     {
       "id": "profile-zoom-200-dark",
-      "sha256": "3471f4df76352abd96365433df46e7a705206032c94b73fae2ed9ed0d194deb2",
+      "sha256": "eefa98032ce20b02e0f37812bdab05ab3c0291640ad41be044cfdc76bafce8a6",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7913,7 +7913,7 @@
     },
     {
       "id": "queue-zoom-200-light",
-      "sha256": "4374b83a0898d2f1e65f0d110e23bbca82be9fb17a9dfb449c5c040bd437e1b6",
+      "sha256": "18b1d0ee38970b56d5ae0b87257becfc9f85c54b61505dff08cb0fd18ef576de",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8134,7 +8134,7 @@
     },
     {
       "id": "queue-zoom-200-dark",
-      "sha256": "bdb3f5e43053b0e44590a05ae5b03b8287137ef9e861be324c52427f3d9ac4b3",
+      "sha256": "dd6c725122d149e1f5e500ceac0a3a424bfe606da2a82b7ecaf472516762259e",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8382,7 +8382,7 @@
     },
     {
       "id": "profile-forced-colors",
-      "sha256": "bcab80f354994d73228c59b3c125f8bc5d4f68a27356687a77f84732a56af89e",
+      "sha256": "79337a5c2f8f76eaaf062b43bcc5115fbae76ce1b8d560c0cedfd80311e8311d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8556,7 +8556,7 @@
     },
     {
       "id": "queue-forced-colors",
-      "sha256": "6f9ce54536561e238718fd93406965d654d54e6f1b999bf4ad81bc2fbcd2aff9",
+      "sha256": "1b7f7a6be6d409f62f8524b81e7a1d11ec117a6fea630977681a54b5fe38ee57",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8770,7 +8770,7 @@
     },
     {
       "id": "collapsed-desktop",
-      "sha256": "3e99be61f4d2c479e83730ae2c3a612e50adebcc13438de496e0212ff5dae8bd",
+      "sha256": "718f1ed38aad937fb60af5022f211ff5cf70617ec452f6cd1ede92501d378112",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8876,7 +8876,7 @@
     },
     {
       "id": "collapsed-mobile",
-      "sha256": "1449e05c9ec5848e278233f1f35076f3f9dbc5c1523197c2e76747ffe93bee50",
+      "sha256": "5f3d5e393393a4ae1d9c5d870de82fcc1c8cf4a6ff1d5f758d0e303788785780",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8982,7 +8982,7 @@
     },
     {
       "id": "queue-run-review",
-      "sha256": "71c1266bd6ab99657153af0ddac592dc557ab5237a556cacd7c258687c97af1d",
+      "sha256": "697ae6911db7cc9e803e359223179920bf6ea6855a52257112b34fd1a3bcfc94",
       "scenario": {
         "after": "bot-review",
         "captureListType": null,
@@ -9047,7 +9047,7 @@
           }
         ],
         "metrics": {
-          "activeElementSection": null,
+          "activeElementSection": "queue",
           "adaptiveDock": null,
           "adaptiveWidth": null,
           "bodyWidth": 1425,
@@ -9344,13 +9344,13 @@
     }
   ],
   "performance": {
-    "collapsedTaskMs": 3.7030000000000003,
-    "openTaskMs": 2.236,
+    "collapsedTaskMs": 4.328,
+    "openTaskMs": 2.3160000000000003,
     "queue": {
-      "durationMs": 27.9000000001397,
+      "durationMs": 30.300000000279397,
       "renderedItems": 1,
       "totalOverlayNodes": 384
     },
-    "routeTransitionMs": 85.20000000018626
+    "routeTransitionMs": 94.70000000018626
   }
 }

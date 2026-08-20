@@ -72,6 +72,10 @@ mkdirSync(actualRoot, { recursive: true });
 writeFileSync(runnerLogPath, '', 'utf8');
 app.disableHardwareAcceleration();
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
+// Windows hosts can choose different LCD subpixel rasterization for the same
+// glyph. Force grayscale text so reviewed screenshots remain byte-stable
+// across local Windows and hosted Windows runners.
+app.commandLine.appendSwitch('disable-lcd-text');
 app.setPath('userData', userDataRoot);
 app.on('window-all-closed', () => {});
 
