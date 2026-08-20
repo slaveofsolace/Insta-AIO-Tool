@@ -82,12 +82,24 @@ function createLazyList({
   };
 }
 
-function createHarness(list, { includeDialog = true, main = null } = {}) {
+function createHarness(list, {
+  includeDialog = true,
+  main = null,
+  profileCount = null,
+  profileListType = 'followers',
+} = {}) {
+  const profileCountLink = {
+    textContent: `${profileCount} ${profileListType}`,
+    getAttribute: (name) => (name === 'href' ? '#' : null),
+  };
   const document = {
     body: { innerText: '' },
     querySelector: (selector) => (selector === 'main' ? main : null),
     querySelectorAll(selector) {
       if (selector === '[role="dialog"]') return includeDialog ? [list.dialog] : [];
+      if (selector === 'a[role="link"], a[href="#"]') {
+        return Number.isSafeInteger(profileCount) ? [profileCountLink] : [];
+      }
       return [];
     },
   };
@@ -204,6 +216,22 @@ test('full-list scan reports an incomplete list rather than claiming completenes
   assert.equal(scanned.reason, 'list-truncated');
   assert.ok(scanned.accounts.length < 500);
   assert.ok(scanned.accounts.length > 25);
+});
+
+test('full-list scan stays incomplete when the exact profile total exceeds readable rows', async () => {
+  const list = createLazyList({ total: 115, pageSize: 25 });
+  const inspector = createHarness(list, { profileCount: 116 });
+
+  const scanned = await inspector.collectAccountList({
+    maxScrolls: 400,
+    settleMs: 0,
+    listType: 'followers',
+  });
+  assert.equal(scanned.accounts.length, 115);
+  assert.equal(scanned.observedCount, 115);
+  assert.equal(scanned.expectedCount, 116);
+  assert.equal(scanned.complete, false);
+  assert.equal(scanned.reason, 'list-count-mismatch');
 });
 
 test('full-list scan stops and reports when Instagram interrupts the session', async () => {

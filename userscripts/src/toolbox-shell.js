@@ -1618,7 +1618,7 @@
       : 'Scan both lists first');
   }
 
-  function showScanProgress(listType, found, complete) {
+  function showScanProgress(listType, found, complete, settled = false) {
     const panel = query('[data-role="scan-progress"]');
     if (!panel) return;
     panel.hidden = false;
@@ -1627,7 +1627,9 @@
     if (fill) fill.style.width = complete ? '100%' : `${Math.min(95, 5 + (found % 95))}%`;
     setText('scan-detail', complete
       ? `Scanned ${found} ${listType} — complete.`
-      : `Scanning ${listType}… ${found} found so far.`);
+      : settled
+        ? `Scanned ${found} ${listType} — incomplete.`
+        : `Scanning ${listType}… ${found} found so far.`);
   }
 
   async function scanInto(listType) {
@@ -1636,7 +1638,7 @@
     showScanProgress(listType, 0, false);
     await actions['scan-list']();
     const found = state.capture[listType].length;
-    showScanProgress(listType, found, state.capture.complete?.[listType] === true);
+    showScanProgress(listType, found, state.capture.complete?.[listType] === true, true);
     renderAll();
   }
 
@@ -1875,8 +1877,16 @@
       state.capture.verified = { ...(state.capture.verified || {}), [listType]: true };
       saveState();
       renderAll();
+      const mismatch = outcome?.reason === 'list-count-mismatch'
+        && Number.isSafeInteger(outcome.expectedCount);
       status(
-        `Scanned ${accounts.length} ${listType} rows.${outcome.complete ? '' : ' The list did not reach its end, so some may be missing.'}`,
+        `Scanned ${accounts.length} ${listType} rows.${outcome.complete
+          ? ''
+          : mismatch
+            ? ` Instagram reports ${outcome.expectedCount}, so this capture stays incomplete.`
+            : outcome?.reason === 'list-count-changed'
+              ? ' The profile count changed during the scan, so this capture stays incomplete.'
+              : ' The list did not reach its end, so some may be missing.'}`,
       );
     },
     'scan-sent': async () => {

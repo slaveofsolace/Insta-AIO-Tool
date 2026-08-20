@@ -66,10 +66,14 @@ the authenticated Instagram session.
    requires the exact requested list dialog, quarantines earlier captures, and
    replaces quarantined rows on the first verified rescan instead of promoting
    them into a trusted comparison or action source.
+8. A later authenticated Following scan reached the rendered list boundary with
+   one fewer unique row than Instagram's exact profile total. Current source
+   records the observable total before and after the scan and keeps the capture
+   incomplete when the total changes or does not match the readable rows.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,
 `tests/static-asset-policy.test.js`, and `tests/browser-qa-harness.test.js`. The
-complete repository suite passes 229 of 229 tests.
+complete repository suite passes 230 of 230 tests.
 
 ## Representative screenshots
 

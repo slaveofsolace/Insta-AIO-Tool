@@ -247,7 +247,9 @@
     );
   }
 
-  async function mergeAccounts(runtime, listType, accounts, { complete, label }) {
+  async function mergeAccounts(runtime, listType, accounts, {
+    complete, expectedCount, label, reason,
+  }) {
     const { inspector, model, status } = runtime;
     const workspace = model.capture || shared.captureWorkspaceDefaults();
     const existing = shared.verifiedCaptureAccounts(workspace, listType);
@@ -271,8 +273,15 @@
     };
     await runtime.persistCapture(model.capture);
     render(runtime);
+    const mismatch = reason === 'list-count-mismatch' && Number.isSafeInteger(expectedCount);
     status(
-      `${label} ${accounts.length} row${accounts.length === 1 ? '' : 's'}; ${model.capture[listType].length} unique in the ${listType} draft.${complete ? '' : ' The list did not reach its end — scroll further or rerun.'}`,
+      `${label} ${accounts.length} row${accounts.length === 1 ? '' : 's'}; ${model.capture[listType].length} unique in the ${listType} draft.${complete
+        ? ''
+        : mismatch
+          ? ` Instagram reports ${expectedCount}, so this capture stays incomplete.`
+          : reason === 'list-count-changed'
+            ? ' The profile count changed during the scan, so this capture stays incomplete.'
+            : ' The list did not reach its end — scroll further or rerun.'}`,
       complete ? 'good' : 'warning',
     );
   }
@@ -306,7 +315,9 @@
     }
     await mergeAccounts(runtime, listType, accounts, {
       complete: outcome.complete === true,
+      expectedCount: outcome.expectedCount,
       label: 'Scanned',
+      reason: outcome.reason,
     });
   }
 

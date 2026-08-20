@@ -983,6 +983,31 @@
     return null;
   }
 
+  function exactProfileListCount(listType) {
+    if (listType !== 'followers' && listType !== 'following') return null;
+    for (const link of document.querySelectorAll('a[role="link"], a[href="#"]')) {
+      const values = [
+        link.getAttribute('title'),
+        visibleText(link),
+      ];
+      for (const value of values) {
+        const label = String(value || '')
+          .normalize('NFKC')
+          .replace(/[\u00a0\u202f]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+        const match = label.match(/^([0-9][0-9., ]*)\s+(followers|following)$/);
+        if (!match || match[2] !== listType) continue;
+        const digits = match[1].replace(/\D/g, '');
+        if (!digits) continue;
+        const count = Number(digits);
+        if (Number.isSafeInteger(count)) return count;
+      }
+    }
+    return null;
+  }
+
   function sleep(ms) {
     return new Promise((resolve) => { setTimeout(resolve, ms); });
   }
@@ -1001,6 +1026,8 @@
     if (!root) {
       return { ...session, accounts: [], complete: false, reason: 'open-a-followers-or-following-list' };
     }
+    const observedListType = listContext?.listType || expectedListType;
+    const expectedCountAtStart = exactProfileListCount(observedListType);
 
     const accounts = new Map();
     const harvest = () => {
@@ -1064,14 +1091,31 @@
       }
     }
 
+    const expectedCountAtEnd = exactProfileListCount(observedListType);
+    const expectedCount = expectedCountAtEnd ?? expectedCountAtStart;
+    const countChanged = Number.isSafeInteger(expectedCountAtStart)
+      && Number.isSafeInteger(expectedCountAtEnd)
+      && expectedCountAtStart !== expectedCountAtEnd;
+    const countMismatch = Number.isSafeInteger(expectedCount)
+      && accounts.size !== expectedCount;
+    if (countChanged || countMismatch) complete = false;
+
     return {
       ...session,
       accounts: [...accounts.values()]
         .sort((left, right) => left.username.localeCompare(right.username)),
       complete,
       listType: listContext?.listType || null,
+      expectedCount,
+      observedCount: accounts.size,
       capturedAt: new Date().toISOString(),
-      reason: complete ? 'list-complete' : 'list-truncated',
+      reason: countChanged
+        ? 'list-count-changed'
+        : countMismatch
+          ? 'list-count-mismatch'
+          : complete
+            ? 'list-complete'
+            : 'list-truncated',
     };
   }
 

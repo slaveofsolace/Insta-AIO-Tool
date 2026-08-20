@@ -56,6 +56,9 @@ test('the checker is a sequence that reports completeness per list', () => {
   // A partial scan must say so on the step and on the comparison.
   assert.match(shell, /did not reach the end/);
   assert.match(shell, /\(partial\)/);
+  assert.match(shell, /Scanned \$\{found\} \$\{listType\} — incomplete\./);
+  assert.match(shell, /outcome\?\.reason === 'list-count-mismatch'/);
+  assert.match(shell, /Instagram reports \$\{outcome\.expectedCount\}, so this capture stays incomplete/);
 });
 
 test('legacy checker rows are quarantined until an exact list dialog is rescanned', () => {

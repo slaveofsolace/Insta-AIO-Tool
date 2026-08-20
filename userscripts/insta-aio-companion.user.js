@@ -2504,6 +2504,31 @@
     return null;
   }
 
+  function exactProfileListCount(listType) {
+    if (listType !== 'followers' && listType !== 'following') return null;
+    for (const link of document.querySelectorAll('a[role="link"], a[href="#"]')) {
+      const values = [
+        link.getAttribute('title'),
+        visibleText(link),
+      ];
+      for (const value of values) {
+        const label = String(value || '')
+          .normalize('NFKC')
+          .replace(/[\u00a0\u202f]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+        const match = label.match(/^([0-9][0-9., ]*)\s+(followers|following)$/);
+        if (!match || match[2] !== listType) continue;
+        const digits = match[1].replace(/\D/g, '');
+        if (!digits) continue;
+        const count = Number(digits);
+        if (Number.isSafeInteger(count)) return count;
+      }
+    }
+    return null;
+  }
+
   function sleep(ms) {
     return new Promise((resolve) => { setTimeout(resolve, ms); });
   }
@@ -2522,6 +2547,8 @@
     if (!root) {
       return { ...session, accounts: [], complete: false, reason: 'open-a-followers-or-following-list' };
     }
+    const observedListType = listContext?.listType || expectedListType;
+    const expectedCountAtStart = exactProfileListCount(observedListType);
 
     const accounts = new Map();
     const harvest = () => {
@@ -2585,14 +2612,31 @@
       }
     }
 
+    const expectedCountAtEnd = exactProfileListCount(observedListType);
+    const expectedCount = expectedCountAtEnd ?? expectedCountAtStart;
+    const countChanged = Number.isSafeInteger(expectedCountAtStart)
+      && Number.isSafeInteger(expectedCountAtEnd)
+      && expectedCountAtStart !== expectedCountAtEnd;
+    const countMismatch = Number.isSafeInteger(expectedCount)
+      && accounts.size !== expectedCount;
+    if (countChanged || countMismatch) complete = false;
+
     return {
       ...session,
       accounts: [...accounts.values()]
         .sort((left, right) => left.username.localeCompare(right.username)),
       complete,
       listType: listContext?.listType || null,
+      expectedCount,
+      observedCount: accounts.size,
       capturedAt: new Date().toISOString(),
-      reason: complete ? 'list-complete' : 'list-truncated',
+      reason: countChanged
+        ? 'list-count-changed'
+        : countMismatch
+          ? 'list-count-mismatch'
+          : complete
+            ? 'list-complete'
+            : 'list-truncated',
     };
   }
 
@@ -4484,7 +4528,7 @@
       : 'Scan both lists first');
   }
 
-  function showScanProgress(listType, found, complete) {
+  function showScanProgress(listType, found, complete, settled = false) {
     const panel = query('[data-role="scan-progress"]');
     if (!panel) return;
     panel.hidden = false;
@@ -4493,7 +4537,9 @@
     if (fill) fill.style.width = complete ? '100%' : `${Math.min(95, 5 + (found % 95))}%`;
     setText('scan-detail', complete
       ? `Scanned ${found} ${listType} — complete.`
-      : `Scanning ${listType}… ${found} found so far.`);
+      : settled
+        ? `Scanned ${found} ${listType} — incomplete.`
+        : `Scanning ${listType}… ${found} found so far.`);
   }
 
   async function scanInto(listType) {
@@ -4502,7 +4548,7 @@
     showScanProgress(listType, 0, false);
     await actions['scan-list']();
     const found = state.capture[listType].length;
-    showScanProgress(listType, found, state.capture.complete?.[listType] === true);
+    showScanProgress(listType, found, state.capture.complete?.[listType] === true, true);
     renderAll();
   }
 
@@ -4741,8 +4787,16 @@
       state.capture.verified = { ...(state.capture.verified || {}), [listType]: true };
       saveState();
       renderAll();
+      const mismatch = outcome?.reason === 'list-count-mismatch'
+        && Number.isSafeInteger(outcome.expectedCount);
       status(
-        `Scanned ${accounts.length} ${listType} rows.${outcome.complete ? '' : ' The list did not reach its end, so some may be missing.'}`,
+        `Scanned ${accounts.length} ${listType} rows.${outcome.complete
+          ? ''
+          : mismatch
+            ? ` Instagram reports ${outcome.expectedCount}, so this capture stays incomplete.`
+            : outcome?.reason === 'list-count-changed'
+              ? ' The profile count changed during the scan, so this capture stays incomplete.'
+              : ' The list did not reach its end, so some may be missing.'}`,
       );
     },
     'scan-sent': async () => {

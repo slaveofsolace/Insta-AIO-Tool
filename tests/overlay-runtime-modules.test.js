@@ -261,6 +261,8 @@ test('follower checker migrates the legacy draft and compares both rendered list
     2,
     'both full and visible rescans must replace quarantined rows instead of promoting them',
   );
+  assert.match(captureViewSource, /reason === 'list-count-mismatch'/);
+  assert.match(captureViewSource, /Instagram reports \$\{expectedCount\}, so this capture stays incomplete/);
   assert.equal(shared.compareCaptureWorkspace(migrated.workspace).notFollowingMeBack.length, 0);
   const workspace = shared.normalizeCaptureWorkspace({
     ...migrated.workspace,
