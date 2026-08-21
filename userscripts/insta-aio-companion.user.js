@@ -1264,6 +1264,7 @@
     const runner = globalThis.InstaAioDmThreadUnsender;
     const liveAuthority = globalThis.InstaAioUserscriptLiveAuthority;
     let reviewedPreview = null;
+    let emptyPreview = false;
     const query = (selector) => shadow.querySelector(selector);
     const setText = (role, value) => {
       const element = query(`[data-role="${role}"]`);
@@ -1364,6 +1365,7 @@
     if (scanButton) scanButton.textContent = 'Check conversation';
     const executeButton = query('[data-action="run-unsend"]');
     const planPanel = query('[data-role="unsend-plan"]');
+    if (planPanel) planPanel.hidden = false;
     const countField = query('[data-role="unsend-count"]')?.closest('.field');
     const renderScope = () => {
       if (countField) countField.hidden = (query('[data-role="unsend-scope"]')?.value || 'all') === 'all';
@@ -1390,8 +1392,15 @@
         results.append(item);
       }
       if (executeButton) {
-        executeButton.textContent = running ? 'Stop unsending' : 'Review Unsend plan';
-        executeButton.disabled = next.status === 'stopping' || (!running && !reviewedPreview);
+        executeButton.textContent = running
+          ? 'Stop unsending'
+          : reviewedPreview
+            ? 'Unsend messages'
+            : emptyPreview
+              ? 'No sent messages eligible'
+              : 'Check conversation first';
+        executeButton.disabled = next.status === 'stopping'
+          || (!running && (!reviewedPreview || reviewedPreview.eligibleCount < 1));
       }
       setText('status', next.message);
     }
@@ -1417,14 +1426,26 @@
       }
       if (action === 'scan-sent') {
         reviewedPreview = null;
-        if (planPanel) planPanel.hidden = true;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Checking conversation…';
+          executeButton.disabled = true;
+        }
         const result = await runner.inspectAll();
         if (!result.ready) {
+          if (executeButton) executeButton.textContent = 'Check conversation first';
           setText('status', result.reason);
           return;
         }
-        reviewedPreview = result.complete ? result : null;
-        if (planPanel) planPanel.hidden = !result.complete || result.eligibleCount < 1;
+        reviewedPreview = result.complete && result.eligibleCount > 0 ? result : null;
+        emptyPreview = result.complete && result.eligibleCount < 1;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) executeButton.textContent = reviewedPreview
+          ? 'Unsend messages'
+          : emptyPreview
+            ? 'No sent messages eligible'
+            : 'Check conversation first';
         if (executeButton) executeButton.disabled = !result.complete || result.eligibleCount < 1;
         const summary = query('[data-role="dm-summary"]');
         if (summary) summary.hidden = false;
@@ -1437,14 +1458,19 @@
           : `${result.reason} Nothing was changed.`);
         return;
       }
-      if (!liveAuthority?.canStart?.()) {
-        setText('status', 'Live actions are locked. Open toolbox preferences and enable the 15-minute live window first.');
+      if (!liveAuthority?.canStart?.() && !liveAuthority?.enable?.()) {
+        setText('status', 'Another live action is already active. Stop it before starting Unsend.');
         return;
       }
       const inspection = runner.inspect();
       if (!reviewedPreview || !inspection.ready || inspection.threadId !== reviewedPreview.threadId) {
         reviewedPreview = null;
-        if (planPanel) planPanel.hidden = true;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Check conversation first';
+          executeButton.disabled = true;
+        }
         setText('status', inspection.reason || 'The conversation changed. Check it again before reviewing an Unsend plan.');
         return;
       }
@@ -1496,7 +1522,8 @@
         return;
       }
       reviewedPreview = null;
-      if (planPanel) planPanel.hidden = true;
+      emptyPreview = false;
+      if (planPanel) planPanel.hidden = false;
       await runner.start({
         plan,
         minDelayMs: reservation.minDelayMs,
@@ -2929,7 +2956,6 @@
   const HEIGHT_MAX = 1_100;
   const INSET = 8;
   const LIVE_AUTHORIZATION_MS = 15 * 60 * 1_000;
-  const LIVE_AUTHORIZATION_PHRASE = 'ENABLE LIVE ACTIONS';
 
   if (document.getElementById(EXTENSION_ROOT_ID) || document.getElementById(ROOT_ID)) return;
 
@@ -3610,7 +3636,7 @@
         <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend.</strong> Resolve this conversation and its eligible sent-message count before reviewing any permanent action.</p><div class="toolbar"><button class="button primary big" type="button" data-action="scan-sent">Check conversation</button></div>
           <div class="card" data-role="dm-summary" hidden><strong data-role="dm-summary-title"></strong><span data-role="dm-summary-detail"></span></div>
           <details class="settings-inline"><summary>Other message tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div></details><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
-          <div data-role="unsend-plan" hidden><div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">All eligible sent messages</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div><div class="field"><label for="aio-unsend-count">Number of messages</label><input id="aio-unsend-count" type="number" min="1" max="250" value="1" data-role="unsend-count"></div><div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-live-action>Review Unsend plan</button></div><p class="notice">Only messages you sent are eligible. The exact thread, scope, finite count, digest, and expiry are revalidated before the first message menu opens.</p></div></section>
+          <div data-role="unsend-plan"><div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">All eligible sent messages</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div><div class="field"><label for="aio-unsend-count">Number of messages</label><input id="aio-unsend-count" type="number" min="1" max="250" value="1" data-role="unsend-count"></div><div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-role="unsend-primary" disabled>Check conversation first</button></div><p class="notice">Only messages you sent are eligible. The exact thread, scope, finite count, digest, and expiry are revalidated before the first message menu opens.</p></div></section>
       </div>
       <div class="run-panel" data-role="run-panel" hidden><div class="run-head"><strong data-role="run-title"></strong><button class="button danger" type="button" data-action="stop-run" data-role="stop-run">Stop</button></div><div class="run-bar"><span data-role="run-fill"></span></div><p class="lead" data-role="run-detail"></p><ul class="list" data-role="run-results"></ul></div>
       <footer class="footer" role="status" aria-live="polite"><span data-role="status">Ready. No Instagram control has been used.</span><strong>Local only</strong></footer>
@@ -4064,9 +4090,11 @@
       renderAll();
       return false;
     }
-    status('Live actions are locked. Open preferences and enable the 15-minute live window first.');
-    renderAll();
-    return false;
+    // Starting an already-reviewed action is itself an explicit request to use
+    // the temporary live window. Avoid a second, unrelated phrase ceremony;
+    // the exact action still receives its own target-bound confirmation below.
+    setLiveActionsUnlocked(true);
+    return newLiveRunAuthorized();
   }
 
   function stopForExpiredAuthorization() {
@@ -4123,20 +4151,9 @@
       return;
     }
 
-    // A typed phrase prevents an accidental checkbox or synthetic pointer event
-    // from granting destructive authority. This tab-only window is never saved
-    // as a general preference; only an already-confirmed account run carries its
-    // expiry across the profile navigations that the run itself causes.
-    const answer = globalThis.prompt(
-      `Type ${LIVE_AUTHORIZATION_PHRASE} to unlock Follow, Unfollow, and Unsend for 15 minutes.`,
-      '',
-    );
-    if (answer !== LIVE_AUTHORIZATION_PHRASE) {
-      liveActionsUnlockedUntil = 0;
-      renderAll();
-      status('Live actions stayed locked. The authorization phrase did not match.');
-      return;
-    }
+    // This tab-only window is never saved as a general preference. Exact
+    // Follow, Unfollow, and Unsend runs still require their target-bound review
+    // and irreversible-action confirmation before any Instagram control runs.
     liveActionsUnlockedUntil = Date.now() + LIVE_AUTHORIZATION_MS;
     scheduleLiveAuthorizationExpiry();
     renderAll();
@@ -4631,7 +4648,6 @@
     if (!button) return;
     if (accountRunDraft) {
       button.dataset.action = 'run-accounts';
-      button.dataset.liveAction = '';
       button.textContent = `Start ${accountRunDraft.action} run`;
       button.classList.add('danger');
       button.classList.remove('primary');
@@ -4639,7 +4655,6 @@
       setText('account-run-summary', `Reviewed: ${preview}${accountRunDraft.items.length > 3 ? `, +${accountRunDraft.items.length - 3} more` : ''}. Every profile is rechecked before action.`);
     } else {
       button.dataset.action = 'review-accounts';
-      delete button.dataset.liveAction;
       button.disabled = false;
       button.textContent = 'Review run';
       button.classList.add('primary');
@@ -4835,10 +4850,9 @@
       const current = accountRunPlan();
       if (!accountRunDraft || accountRunDraft.signature !== current.signature) {
         clearAccountRunDraft();
-        status('Targets changed. Review the run again before unlocking live actions.');
+        status('Targets changed. Review the run again before starting.');
         return;
       }
-      if (!requireNewRunAuthorization()) return;
       if (!confirmRun(
         `${accountRunDraft.action === 'follow' ? 'Follow' : 'Unfollow'} ${accountRunDraft.items.length} reviewed account${accountRunDraft.items.length === 1 ? '' : 's'}?\n\n`
         + 'This tab will move between profiles and the run continues across page loads. It changes your account.',
@@ -5127,6 +5141,11 @@
       canStart: () => newLiveRunAuthorized()
         && state.run?.status !== 'running'
         && !externalLiveRunActive,
+      enable: () => {
+        if (state.run?.status === 'running' || externalLiveRunActive) return false;
+        setLiveActionsUnlocked(true);
+        return newLiveRunAuthorized();
+      },
       expiresAt: () => (newLiveRunAuthorized() ? liveActionsUnlockedUntil : 0),
       reserveUnsendPlan,
       setExternalRunActive: (active) => {

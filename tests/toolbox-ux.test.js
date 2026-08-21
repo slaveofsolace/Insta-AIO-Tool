@@ -121,10 +121,13 @@ test('a run shows its targets and skip reasons before it starts', () => {
   assert.match(shell, /renderRunReview\(plan\.items, plan\)/);
   assert.match(shell, /data-action="review-accounts"/);
   assert.match(shell, /duplicate or already-followed/);
-  // Review is read-only; live authority is checked only after the frozen
-  // preview still matches the current fields.
+  // Review is read-only. The action-specific confirmation happens before the
+  // run opens its temporary live window.
   const runBody = shell.slice(shell.indexOf("'run-accounts': async"), shell.indexOf("'run-unsend': ()"));
-  assert.ok(runBody.indexOf('accountRunDraft.signature !== current.signature') < runBody.indexOf('requireNewRunAuthorization()'));
+  assert.ok(runBody.indexOf('accountRunDraft.signature !== current.signature') < runBody.indexOf('confirmRun('));
+  assert.ok(runBody.indexOf('confirmRun(') < runBody.indexOf('startAccountRun('));
+  const startBody = shell.slice(shell.indexOf('async function startAccountRun'), shell.indexOf('function confirmRun'));
+  assert.ok(startBody.indexOf('requireNewRunAuthorization()') < startBody.indexOf("status: 'running'"));
 });
 
 test('the open exact profile is the direct bounded Follow or Unfollow source', () => {
@@ -141,8 +144,14 @@ test('read-only conversation resolution precedes the count-specific Unsend plan'
   const checkButton = generated.match(/<button[^>]*class="button primary big"[^>]*data-action="scan-sent"[^>]*>/);
   assert.ok(checkButton, 'the read-only conversation check must be the visible primary action');
   assert.doesNotMatch(checkButton[0], /\shidden(?![-\w])/);
-  assert.match(generated, /data-role="unsend-plan" hidden/);
-  assert.match(generated, /data-action="run-unsend"[^>]*>Review Unsend plan/);
+  const plan = generated.match(/<div[^>]*data-role="unsend-plan"[^>]*>/);
+  assert.ok(plan, 'the DM action area must always be visible');
+  assert.doesNotMatch(plan[0], /\shidden(?![-\w])/);
+  assert.match(generated, /data-action="run-unsend"[^>]*disabled[^>]*>Check conversation first/);
+  assert.match(labels, /'Unsend messages'/);
+  assert.match(labels, /'No sent messages eligible'/);
+  assert.match(labels, /reviewedPreview = result\.complete && result\.eligibleCount > 0 \? result : null/);
+  assert.match(labels, /if \(planPanel\) planPanel\.hidden = false/);
   assert.match(labels, /const result = await runner\.inspectAll\(\)/);
   assert.match(labels, /runner\.createPlan\(\{/);
   assert.match(labels, /phrase = `UNSEND \$\{limit\} \$\{plan\.reviewedDigest\}`/);
@@ -157,6 +166,14 @@ test('read-only conversation resolution precedes the count-specific Unsend plan'
   assert.match(shell, /so nothing will be touched/);
   // A partial read is never reported as full coverage.
   assert.match(shell, /there may be more further back/);
+});
+
+test('temporary live access is one click and never asks for a global phrase', () => {
+  assert.doesNotMatch(shell, /ENABLE LIVE ACTIONS|LIVE_AUTHORIZATION_PHRASE/);
+  assert.doesNotMatch(shell, /Type .*unlock Follow, Unfollow, and Unsend/);
+  assert.match(shell, /function setLiveActionsUnlocked\(enabled\)/);
+  assert.match(shell, /setLiveActionsUnlocked\(true\);[\s\S]*?return newLiveRunAuthorized\(\)/);
+  assert.match(labels, /!liveAuthority\?\.canStart\?\.\(\) && !liveAuthority\?\.enable\?\.\(\)/);
 });
 
 test('the tablist keeps one selected tab and moves with the arrow keys', () => {

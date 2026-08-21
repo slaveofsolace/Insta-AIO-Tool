@@ -249,7 +249,9 @@ test('extension message view uses the shared runner and Instagram design tokens'
   assert.match(messagesSource, /threadId: preview\.threadId/);
   assert.match(messagesSource, /eligibleCount: preview\.eligibleCount/);
   assert.match(messagesSource, /phrase = `UNSEND \$\{limit\} \$\{plan\.reviewedDigest\}`/);
-  assert.match(messagesSource, /Review Unsend plan/);
+  assert.match(messagesSource, /Unsend messages/);
+  assert.match(messagesSource, /Check conversation first/);
+  assert.match(messagesSource, /No sent messages eligible/);
   assert.match(messagesSource, /--ig-primary-background/);
   assert.match(messagesSource, /--ig-primary-button/);
   assert.match(messagesSource, /prefers-reduced-motion/);

@@ -1089,6 +1089,7 @@
     const runner = globalThis.InstaAioDmThreadUnsender;
     const liveAuthority = globalThis.InstaAioUserscriptLiveAuthority;
     let reviewedPreview = null;
+    let emptyPreview = false;
     const query = (selector) => shadow.querySelector(selector);
     const setText = (role, value) => {
       const element = query(`[data-role="${role}"]`);
@@ -1189,6 +1190,7 @@
     if (scanButton) scanButton.textContent = 'Check conversation';
     const executeButton = query('[data-action="run-unsend"]');
     const planPanel = query('[data-role="unsend-plan"]');
+    if (planPanel) planPanel.hidden = false;
     const countField = query('[data-role="unsend-count"]')?.closest('.field');
     const renderScope = () => {
       if (countField) countField.hidden = (query('[data-role="unsend-scope"]')?.value || 'all') === 'all';
@@ -1215,8 +1217,15 @@
         results.append(item);
       }
       if (executeButton) {
-        executeButton.textContent = running ? 'Stop unsending' : 'Review Unsend plan';
-        executeButton.disabled = next.status === 'stopping' || (!running && !reviewedPreview);
+        executeButton.textContent = running
+          ? 'Stop unsending'
+          : reviewedPreview
+            ? 'Unsend messages'
+            : emptyPreview
+              ? 'No sent messages eligible'
+              : 'Check conversation first';
+        executeButton.disabled = next.status === 'stopping'
+          || (!running && (!reviewedPreview || reviewedPreview.eligibleCount < 1));
       }
       setText('status', next.message);
     }
@@ -1242,14 +1251,26 @@
       }
       if (action === 'scan-sent') {
         reviewedPreview = null;
-        if (planPanel) planPanel.hidden = true;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Checking conversation…';
+          executeButton.disabled = true;
+        }
         const result = await runner.inspectAll();
         if (!result.ready) {
+          if (executeButton) executeButton.textContent = 'Check conversation first';
           setText('status', result.reason);
           return;
         }
-        reviewedPreview = result.complete ? result : null;
-        if (planPanel) planPanel.hidden = !result.complete || result.eligibleCount < 1;
+        reviewedPreview = result.complete && result.eligibleCount > 0 ? result : null;
+        emptyPreview = result.complete && result.eligibleCount < 1;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) executeButton.textContent = reviewedPreview
+          ? 'Unsend messages'
+          : emptyPreview
+            ? 'No sent messages eligible'
+            : 'Check conversation first';
         if (executeButton) executeButton.disabled = !result.complete || result.eligibleCount < 1;
         const summary = query('[data-role="dm-summary"]');
         if (summary) summary.hidden = false;
@@ -1262,14 +1283,19 @@
           : `${result.reason} Nothing was changed.`);
         return;
       }
-      if (!liveAuthority?.canStart?.()) {
-        setText('status', 'Live actions are locked. Open toolbox preferences and enable the 15-minute live window first.');
+      if (!liveAuthority?.canStart?.() && !liveAuthority?.enable?.()) {
+        setText('status', 'Another live action is already active. Stop it before starting Unsend.');
         return;
       }
       const inspection = runner.inspect();
       if (!reviewedPreview || !inspection.ready || inspection.threadId !== reviewedPreview.threadId) {
         reviewedPreview = null;
-        if (planPanel) planPanel.hidden = true;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Check conversation first';
+          executeButton.disabled = true;
+        }
         setText('status', inspection.reason || 'The conversation changed. Check it again before reviewing an Unsend plan.');
         return;
       }
@@ -1321,7 +1347,8 @@
         return;
       }
       reviewedPreview = null;
-      if (planPanel) planPanel.hidden = true;
+      emptyPreview = false;
+      if (planPanel) planPanel.hidden = false;
       await runner.start({
         plan,
         minDelayMs: reservation.minDelayMs,

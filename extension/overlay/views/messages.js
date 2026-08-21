@@ -287,7 +287,7 @@
     const scope = runtime.query('[data-ia-role="unsend-scope"]')?.value || 'all';
     const countField = runtime.query('[data-ia-role="unsend-count"]')?.closest('.ia-field');
     if (disclosure) disclosure.hidden = false;
-    if (plan) plan.hidden = active || !preview || preview.eligibleCount < 1;
+    if (plan) plan.hidden = false;
     if (countField) countField.hidden = scope === 'all';
     if (eligible) eligible.textContent = preview
       ? `${preview.eligibleCount} sent message${preview.eligibleCount === 1 ? '' : 's'} eligible`
@@ -320,7 +320,11 @@
     if (button) {
       button.textContent = active
         ? 'Stop unsending'
-        : 'Review Unsend plan';
+        : preview
+          ? 'Unsend messages'
+          : checked?.complete && checked.eligibleCount < 1
+            ? 'No sent messages eligible'
+            : 'Check conversation first';
       button.disabled = state.status === 'stopping' || !preview || preview.eligibleCount < 1;
     }
     if (progress) {
@@ -369,7 +373,7 @@
     if (state) state.dataset.tone = conversationReady ? 'good' : 'neutral';
     setText('message-state-title', conversationReady ? 'Conversation ready' : 'Open a conversation');
     setText('message-state-detail', conversationReady
-      ? 'Read visible evidence or check the full conversation. Unsend controls stay hidden until the eligible count is resolved.'
+      ? 'Read visible evidence or check the full conversation. Unsend stays unavailable until the eligible count is resolved.'
       : 'Choose a conversation before using message tools.');
 
     for (const fragment of fragments) {

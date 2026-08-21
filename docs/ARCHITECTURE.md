@@ -164,9 +164,9 @@ explicitly selects the userscript manager's isolated DOM sandbox.
 
 The injected toolbox exposes the follower scanner and comparison, no-click
 profile/message checks, paced Follow/Unfollow, and thread-wide DM Unsend. Live
-controls start disabled. A typed `ENABLE LIVE ACTIONS` phrase opens a
-non-persistent 15-minute window; a separate confirmation is still required for
-each run. The expiry is stored only on an already-confirmed account run so the
+execution starts off. Starting an already-reviewed action or using the one-click
+switch opens a non-persistent 15-minute window; the exact target-bound
+confirmation is still required for each run. The expiry is stored only on an already-confirmed account run so the
 run can cross its own profile navigations. Resumable account state is held in
 manager-provided tab storage (`GM_getTab`/`GM_saveTab`), never in the shared GM
 value record; without those APIs, account batches fail closed. DM runs are

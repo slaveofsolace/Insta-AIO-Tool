@@ -113,8 +113,8 @@ test('sidecar guides list capture, reviews account targets, and keeps one DM pri
   assert.match(overlay, /data-ia-role="bot-review-list"/);
   assert.match(overlay, /class="ia-primary-action" data-ia-role="unsend-disclosure"/);
   assert.match(overlay, /data-ia-action="scan-sent-dms">Check conversation/);
-  assert.match(overlay, /data-ia-role="unsend-plan" hidden/);
-  assert.match(overlay, /data-ia-action="mass-unsend" disabled>Review Unsend plan/);
+  assert.match(overlay, /data-ia-role="unsend-plan">/);
+  assert.match(overlay, /data-ia-action="mass-unsend" disabled>Check conversation first/);
   assert.match(overlay, /Advanced: raw captures and export/);
   assert.match(overlay, /aria-labelledby="ia-bot-composer-title"/);
   assert.match(overlay, /<summary>Visible evidence<\/summary>/);

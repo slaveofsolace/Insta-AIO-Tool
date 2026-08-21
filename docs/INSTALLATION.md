@@ -55,10 +55,11 @@ confirmation sequence. The finite plan is reserved against the daily Unsend
 allowance and uses the saved delay range. Incomplete or capped checks cannot
 create a live plan. This cannot be undone.
 
-**Unlocking live controls** — open the gear menu, select **Enable live actions
-for 15 minutes**, and type `ENABLE LIVE ACTIONS`. This only enables the buttons;
-it does not click Instagram. Starting a run still requires a separate
-confirmation. The authorization is checked before every later item and expiry
+**Unlocking live controls** — start an already-reviewed action, or open the gear
+menu and select **Enable live actions for 15 minutes**. The temporary window opens
+with one click; there is no unrelated global phrase. This does not click
+Instagram. Starting a run still requires its exact target-bound confirmation.
+The authorization is checked before every later item and expiry
 stops the run. Scanning, comparison, evidence reading, and no-click checks work
 without unlocking.
 

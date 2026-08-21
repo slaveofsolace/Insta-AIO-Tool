@@ -65,9 +65,9 @@ the exact thread, scope (`all`, `newest`, or `oldest`), eligible count, digest,
 and 15-minute expiry. Its count-specific typed phrase and final confirmation are
 revalidated before the first message menu opens. The runner accepts only the
 one newly surfaced menu and confirmation control for the message it just opened. The
-userscript likewise starts with every destructive control disabled and requires
-`ENABLE LIVE ACTIONS` for a tab-scoped 15-minute window before any run can be
-confirmed. Account batches carry only that expiry across the profile navigation
+userscript likewise starts with live execution off. Selecting an already-reviewed
+destructive action opens a tab-scoped 15-minute window without a second phrase;
+the exact run still requires its target-bound confirmation. Account batches carry only that expiry across the profile navigation
 they cause, using the userscript manager's tab-local storage; an expired window
 stops before another action.
 
@@ -290,9 +290,10 @@ cannot inherit a running batch. Tampermonkey is the supported manager; on a
 manager without those tab APIs, follower scanning, comparison, and no-click
 checks remain available but account batch execution stays disabled.
 
-Live controls are visible but disabled on every page load. Open the gear menu,
-select **Enable live actions for 15 minutes**, and type `ENABLE LIVE ACTIONS` to
-unlock them. Each destructive run then asks for a separate confirmation. The
+Live execution is off on every page load. Start an already-reviewed action to
+open the temporary 15-minute window, or use the one-click switch in the gear
+menu. There is no general authorization phrase. Each destructive run still asks
+for its exact target-bound confirmation. The
 authorization expires during a run and is checked before every later item;
 account navigation retains only the already-confirmed run and its expiry in the
 same manager tab. Thread-wide Unsend separately binds its arm to the current

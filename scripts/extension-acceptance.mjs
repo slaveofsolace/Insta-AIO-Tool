@@ -400,7 +400,7 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
     })()`,
     'thread-wide Unsend no-click preview',
   );
-  assert.equal(dmPreview.button, 'Review Unsend plan');
+  assert.equal(dmPreview.button, 'Unsend messages');
   assert.equal(dmPreview.disabled, false);
   assert.match(dmPreview.eligible, /^\d+ sent messages? eligible$/);
   assert.equal(dmPreview.clicks, 0, 'checking the conversation opens no Instagram control');
@@ -607,6 +607,10 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
         disabled: shadow.querySelector('[data-action="review-accounts"]')?.disabled,
         live: shadow.querySelector('[data-action="review-accounts"]')?.hasAttribute('data-live-action'),
       },
+      unsendControl: {
+        disabled: shadow.querySelector('[data-action="run-unsend"]')?.disabled,
+        label: shadow.querySelector('[data-action="run-unsend"]')?.textContent.trim(),
+      },
       destructiveDisabled: [...shadow.querySelectorAll('[data-live-action]')]
         .map((control) => control.disabled),
       hasContextStrip: Boolean(shadow.querySelector('[data-role="context"]')),
@@ -646,8 +650,9 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.match(initial.resize, /Resize toolbox/);
   assert.match(initial.mode, /live actions locked/i);
   assert.deepEqual(initial.liveToggle, { checked: false, disabled: false });
-  assert.deepEqual(initial.destructiveDisabled, [true]);
+  assert.deepEqual(initial.destructiveDisabled, []);
   assert.deepEqual(initial.reviewControl, { disabled: false, live: false });
+  assert.deepEqual(initial.unsendControl, { disabled: true, label: 'Check conversation first' });
   assert.equal(initial.introHidden, false);
   assert.deepEqual(initial.context, {
     title: 'Following list open',
@@ -659,9 +664,10 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.deepEqual(initial.liveControls, [true, true, true, true, true, true]);
   assert.deepEqual(initial.checkerScanLabels, ['Scan Following', 'Scan Followers']);
   assert.equal(initial.hasContextStrip, true);
-  // The destructive plan stays hidden until the check-first flow has resolved
+  // The action area stays visible so the workflow is discoverable, but its
+  // destructive button remains disabled until the check-first flow resolves
   // the exact conversation and eligible sent-message count.
-  assert.equal(initial.unsendPlanHidden, true);
+  assert.equal(initial.unsendPlanHidden, false);
   assert.deepEqual(initial.engineExecutors, ['function', 'function']);
 
   const darkTheme = await webContents.executeJavaScript(`new Promise((resolve) => {
@@ -736,7 +742,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   await webContents.executeJavaScript(`globalThis.fixtureSetList('following')`, true);
 
   const unlocked = await webContents.executeJavaScript(`(() => {
-    globalThis.prompt = () => 'ENABLE LIVE ACTIONS';
+    globalThis.prompt = () => { throw new Error('global phrase prompt must not be used'); };
     const shadow = document.querySelector('#insta-aio-userscript-root').shadowRoot;
     const toggle = shadow.querySelector('[data-role="live-actions"]');
     toggle.checked = true;
@@ -749,7 +755,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     };
   })()`, true);
   assert.match(unlocked.mode, /live actions unlocked/i);
-  assert.deepEqual(unlocked.destructiveDisabled, [false]);
+  assert.deepEqual(unlocked.destructiveDisabled, []);
   assert.equal(unlocked.clicks, 0, 'unlocking authority performs no Instagram action');
 
   const relocked = await webContents.executeJavaScript(`(() => {
@@ -765,7 +771,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     };
   })()`, true);
   assert.match(relocked.mode, /live actions locked/i);
-  assert.deepEqual(relocked.destructiveDisabled, [true]);
+  assert.deepEqual(relocked.destructiveDisabled, []);
   assert.equal(relocked.clicks, 0, 'relocking authority performs no Instagram action');
 
   await webContents.executeJavaScript(`(() => {

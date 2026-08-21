@@ -74,9 +74,9 @@ test('the userscript can review the current exact profile as a one-item run', ()
 test('live mutation controls are locked by default and authorization expires during a run', () => {
   assert.match(source, /Userscript mode · live actions locked/);
   assert.match(source, /data-role="live-actions"/);
-  assert.match(source, /data-live-action/);
   assert.match(shell, /LIVE_AUTHORIZATION_MS = 15 \* 60 \* 1_000/);
-  assert.match(shell, /LIVE_AUTHORIZATION_PHRASE = 'ENABLE LIVE ACTIONS'/);
+  assert.doesNotMatch(shell, /ENABLE LIVE ACTIONS|LIVE_AUTHORIZATION_PHRASE/);
+  assert.match(shell, /setLiveActionsUnlocked\(true\);[\s\S]*?return newLiveRunAuthorized\(\)/);
   assert.match(shell, /let liveActionsUnlockedUntil = 0/);
   assert.match(shell, /function requireNewRunAuthorization\(\)/);
   assert.match(shell, /authorizationExpiresAt: liveActionsUnlockedUntil/);
@@ -85,6 +85,7 @@ test('live mutation controls are locked by default and authorization expires dur
   assert.match(shell, /if \(!runAuthorizationValid\(run\)\)/);
   assert.match(shell, /The run stopped before another Instagram action/);
   assert.match(shell, /InstaAioUserscriptLiveAuthority/);
+  assert.match(shell, /enable: \(\) => \{/);
   assert.match(source, /A fresh, count-specific reviewed plan is required before Unsend can start/);
   assert.match(source, /currentEligibleCount !== plan\.eligibleCount/);
   assert.doesNotMatch(shell, /live actions enabled/);
