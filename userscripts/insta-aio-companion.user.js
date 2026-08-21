@@ -3548,7 +3548,7 @@
       .context[data-tone="warning"] .context-dot { background: var(--aio-warning, #b26a00); }
       .context[data-tone="blocked"] .context-dot { background: var(--aio-danger, #8c1d1d); }
       .context-copy { min-width: 0; }
-      .context-copy strong { display: block; color: currentColor !important; font-size: 13px; }
+      .context-copy strong { display: block; color: var(--aio-text, #1b211c) !important; font-size: 13px; }
       .context-copy span { display: block; color: var(--aio-text-muted, #687068) !important; font-size: 12px; overflow-wrap: break-word; word-break: normal; }
       .context-cta { white-space: nowrap; }
       .intro { padding: 14px; border-bottom: 1px solid var(--aio-line, #d8ddd4); }
