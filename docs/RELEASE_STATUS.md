@@ -67,13 +67,15 @@ The repository includes checks for:
   replacement of captures made by older fallback logic;
 - exact profile-total reconciliation, so a stable scroll boundary cannot be
   called complete when Instagram reports a different row count;
+- bounded DM-history convergence that ignores reversible DOM virtualization
+  churn while preserving the maximum proven eligible sent-message count;
 - capture-confidence migration to schema 4, which preserves older local rows
   for export while requiring a new count-reconciled scan before comparison or
   reviewed-run use;
 - PWA and overlay screenshot baselines;
 - desktop package smoke tests in CI.
 
-The final local Windows matrix currently passes **232/232 tests**, nine PWA
+The final local Windows matrix currently passes **234/234 tests**, nine PWA
 screenshots, 42 overlay states, isolated extension/userscript fixture
 acceptance, and disposable-Chrome extension/PWA pairing. The Windows 0.11.0
 installer builds successfully and is intentionally unsigned.

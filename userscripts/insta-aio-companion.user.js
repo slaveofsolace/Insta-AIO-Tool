@@ -249,6 +249,7 @@
   const DEFAULT_MAX_FAILURES = 5;
   const MIN_USABLE_VISIBLE_PX = 24;
   const MAX_HOVER_DEPTH = 8;
+  const MAX_HISTORY_CHECK_MS = 90_000;
   const MAX_SCAN_PASSES = 3;
   const MAX_PLAN_MESSAGES = 5_000;
   const PLAN_SCOPES = new Set(['all', 'newest', 'oldest']);
@@ -257,6 +258,7 @@
   let activeController = null;
   let currentState = Object.freeze({
     status: 'idle',
+    operation: null,
     processed: 0,
     failed: 0,
     consecutiveFailures: 0,
@@ -834,25 +836,41 @@
     ]).catch(() => {});
   }
 
+  function advanceHistoryProgress(progress, height, rowCount) {
+    const nextHeight = Math.max(0, Number(height) || 0);
+    const nextRows = Math.max(0, Math.floor(Number(rowCount) || 0));
+    return {
+      grew: nextHeight > progress.maxHeight || nextRows > progress.maxRows,
+      maxHeight: Math.max(progress.maxHeight, nextHeight),
+      maxRows: Math.max(progress.maxRows, nextRows),
+    };
+  }
+
   async function loadAllHistory(context, signal) {
     const { root, scroller } = context;
     if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) {
-      return { complete: true, pagesChecked: 0 };
+      return { complete: true, eligibleCount: candidateRows(scroller || root).length, pagesChecked: 0 };
     }
     const reversed = reversedLayout(scroller);
+    const startedAt = Date.now();
     let quietRounds = 0;
     let topNudgeUsed = false;
     let pagesChecked = 0;
+    let progress = advanceHistoryProgress(
+      { maxHeight: 0, maxRows: 0 },
+      scroller.scrollHeight,
+      candidateRows(scroller).length,
+    );
     // Instagram pauses between pages on a long thread, so a few quiet rounds
     // does not mean the history ended. Giving up after three left most of a
     // long conversation unloaded, which is the same impatience the follower
     // scan had.
-    for (let page = 0; page < 600 && quietRounds < 10; page += 1) {
+    for (let page = 0;
+      page < 600 && quietRounds < 10 && Date.now() - startedAt < MAX_HISTORY_CHECK_MS;
+      page += 1) {
       pagesChecked = page + 1;
       const stop = sessionStop(context.threadId);
       if (stop) throw new Error(stop);
-      const beforeHeight = scroller.scrollHeight;
-      const beforeRows = candidateRows(scroller).length;
       const target = oldestOffset(scroller, reversed);
       if (Math.abs(scroller.scrollTop - target) > 5) {
         scroller.scrollTop = target;
@@ -875,7 +893,12 @@
       }
       await delay(500, signal);
       await waitForLoader(root, signal);
-      const grew = scroller.scrollHeight > beforeHeight || candidateRows(scroller).length > beforeRows;
+      progress = advanceHistoryProgress(
+        progress,
+        scroller.scrollHeight,
+        candidateRows(scroller).length,
+      );
+      const { grew } = progress;
       quietRounds = grew ? 0 : quietRounds + 1;
       if (grew) topNudgeUsed = false;
       publish({
@@ -891,8 +914,14 @@
     scroller.scrollTop = oldestOffset(scroller, reversed);
     dispatch(scroller, new Event('scroll', { bubbles: true }));
     await delay(100, signal);
+    progress = advanceHistoryProgress(
+      progress,
+      scroller.scrollHeight,
+      candidateRows(scroller).length,
+    );
     return {
       complete: quietRounds >= 10,
+      eligibleCount: progress.maxRows,
       pagesChecked,
     };
   }
@@ -964,6 +993,7 @@
     activeController = controller;
     publish({
       status: 'preparing',
+      operation: 'check',
       processed: 0,
       failed: 0,
       message: 'Checking the full conversation without opening a message menu…',
@@ -973,7 +1003,7 @@
     });
     try {
       const history = await loadAllHistory(context, controller.signal);
-      const resolvedCount = candidateRows(context.scroller).length;
+      const resolvedCount = history.eligibleCount;
       const capped = resolvedCount > MAX_PLAN_MESSAGES;
       const eligibleCount = Math.min(MAX_PLAN_MESSAGES, resolvedCount);
       const complete = history.complete && !capped;
@@ -1059,6 +1089,7 @@
 
     publish({
       status: 'preparing',
+      operation: 'unsend',
       processed: 0,
       failed: 0,
       consecutiveFailures: 0,
@@ -1071,7 +1102,7 @@
 
     try {
       const history = await loadAllHistory(context, signal);
-      const resolvedCount = candidateRows(context.scroller).length;
+      const resolvedCount = history.eligibleCount;
       if (!history.complete || resolvedCount > MAX_PLAN_MESSAGES) {
         throw new Error('The full conversation could not be revalidated within the bounded history check.');
       }
@@ -1231,6 +1262,7 @@
   if (globalThis.__instaAioTestHooks === true) {
     publicApi.__test = Object.freeze({
       deepestMessageContainer,
+      advanceHistoryProgress,
       hasMessageContent,
       isVisible,
       nextSentRow,
@@ -1378,9 +1410,12 @@
 
     function renderRun(next) {
       const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
+      const readOnlyCheck = next.operation === 'check';
       const panel = query('[data-role="run-panel"]');
       if (panel) panel.hidden = !running && !['completed', 'error', 'stopped'].includes(next.status);
-      setText('run-title', running ? 'DM Unsend in progress' : 'DM Unsend');
+      setText('run-title', running
+        ? readOnlyCheck ? 'Checking conversation' : 'DM Unsend in progress'
+        : readOnlyCheck ? 'Conversation check' : 'DM Unsend');
       setText('run-detail', next.message);
       const fill = query('[data-role="run-fill"]');
       if (fill) fill.style.width = running ? `${Math.min(94, 12 + (next.processed * 4))}%` : '100%';
@@ -1388,18 +1423,25 @@
       if (results) {
         results.replaceChildren();
         const item = document.createElement('li');
-        item.textContent = `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
+        item.textContent = readOnlyCheck
+          ? 'Read-only check · nothing changed'
+          : `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
         results.append(item);
+      }
+      const stopButton = query('[data-role="stop-run"]');
+      if (stopButton) {
+        stopButton.hidden = !running;
+        stopButton.disabled = !next.canStop;
       }
       if (executeButton) {
         executeButton.textContent = running
-          ? 'Stop unsending'
+          ? readOnlyCheck ? 'Checking conversation…' : 'Stop unsending'
           : reviewedPreview
             ? 'Unsend messages'
             : emptyPreview
               ? 'No sent messages eligible'
               : 'Check conversation first';
-        executeButton.disabled = next.status === 'stopping'
+        executeButton.disabled = readOnlyCheck || next.status === 'stopping'
           || (!running && (!reviewedPreview || reviewedPreview.eligibleCount < 1));
       }
       setText('status', next.message);
@@ -1407,7 +1449,7 @@
 
     runner.subscribe((next) => {
       const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
-      liveAuthority?.setExternalRunActive?.(running);
+      liveAuthority?.setExternalRunActive?.(running, next.operation);
       renderRun(next);
     });
 
@@ -3712,7 +3754,9 @@
     if (modeLabel) {
       modeLabel.dataset.live = liveAvailable ? 'unlocked' : 'locked';
       modeLabel.textContent = externalLiveRunActive
-        ? `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
+        ? externalRunOperation === 'check'
+          ? 'Userscript mode · read-only conversation check'
+          : `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
         : activeRunAuthorized
         ? `Userscript mode · active run authorized ${authorizationRemainingMinutes(state.run.authorizationExpiresAt)}m`
         : newRunUnlocked
@@ -3728,7 +3772,9 @@
     setText(
       'live-status',
       externalLiveRunActive
-        ? 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
+        ? externalRunOperation === 'check'
+          ? 'A read-only conversation check is active. Nothing can be removed.'
+          : 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
         : activeRunAuthorized
         ? 'A reviewed batch is active. Use Stop to revoke its remaining authorization.'
         : newRunUnlocked
@@ -4065,6 +4111,7 @@
   let liveActionsUnlockedUntil = 0;
   let liveAuthorizationTimer = null;
   let externalLiveRunActive = false;
+  let externalRunOperation = null;
   let accountRunDraft = null;
 
   function authorizationRemainingMinutes(expiresAt) {
@@ -4086,7 +4133,9 @@
   function requireNewRunAuthorization() {
     if (newLiveRunAuthorized() && !externalLiveRunActive) return true;
     if (externalLiveRunActive) {
-      status('Thread-wide Unsend is already running. Stop it before starting another live action.');
+      status(externalRunOperation === 'check'
+        ? 'A read-only conversation check is running. Stop it before starting a live action.'
+        : 'Thread-wide Unsend is already running. Stop it before starting another live action.');
       renderAll();
       return false;
     }
@@ -4116,7 +4165,7 @@
     liveAuthorizationTimer = setTimeout(() => {
       liveActionsUnlockedUntil = 0;
       liveAuthorizationTimer = null;
-      if (externalLiveRunActive) {
+      if (externalLiveRunActive && externalRunOperation === 'unsend') {
         globalThis.InstaAioDmThreadUnsender?.stop?.();
         renderAll();
         status('Live authorization expired. Thread-wide Unsend is stopping before another message.');
@@ -4136,7 +4185,7 @@
       liveActionsUnlockedUntil = 0;
       if (liveAuthorizationTimer) clearTimeout(liveAuthorizationTimer);
       liveAuthorizationTimer = null;
-      if (externalLiveRunActive) {
+      if (externalLiveRunActive && externalRunOperation === 'unsend') {
         globalThis.InstaAioDmThreadUnsender?.stop?.();
         renderAll();
         status('Live actions locked. Thread-wide Unsend is stopping.');
@@ -5148,8 +5197,9 @@
       },
       expiresAt: () => (newLiveRunAuthorized() ? liveActionsUnlockedUntil : 0),
       reserveUnsendPlan,
-      setExternalRunActive: (active) => {
+      setExternalRunActive: (active, operation = null) => {
         externalLiveRunActive = active === true;
+        externalRunOperation = externalLiveRunActive ? operation : null;
         renderAll();
       },
     }),

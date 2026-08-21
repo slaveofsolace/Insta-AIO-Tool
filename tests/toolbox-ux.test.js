@@ -153,6 +153,11 @@ test('read-only conversation resolution precedes the count-specific Unsend plan'
   assert.match(labels, /reviewedPreview = result\.complete && result\.eligibleCount > 0 \? result : null/);
   assert.match(labels, /if \(planPanel\) planPanel\.hidden = false/);
   assert.match(labels, /const result = await runner\.inspectAll\(\)/);
+  assert.match(labels, /operation: 'check'/);
+  assert.match(labels, /readOnlyCheck\s*\?\s*'Read-only check · nothing changed'/);
+  assert.match(labels, /stopButton\.hidden = !running/);
+  assert.match(shell, /Userscript mode · read-only conversation check/);
+  assert.match(shell, /setExternalRunActive: \(active, operation = null\)/);
   assert.match(labels, /runner\.createPlan\(\{/);
   assert.match(labels, /phrase = `UNSEND \$\{limit\} \$\{plan\.reviewedDigest\}`/);
   assert.match(labels, /The eligible count is revalidated before any message menu opens/);
@@ -174,6 +179,14 @@ test('temporary live access is one click and never asks for a global phrase', ()
   assert.match(shell, /function setLiveActionsUnlocked\(enabled\)/);
   assert.match(shell, /setLiveActionsUnlocked\(true\);[\s\S]*?return newLiveRunAuthorized\(\)/);
   assert.match(labels, /!liveAuthority\?\.canStart\?\.\(\) && !liveAuthority\?\.enable\?\.\(\)/);
+});
+
+test('the extension keeps Stop available and labels read-only checks truthfully', async () => {
+  const messages = await readFile(new URL('../extension/overlay/views/messages.js', import.meta.url), 'utf8');
+  assert.match(messages, /const readOnlyCheck = state\.operation === 'check'/);
+  assert.match(messages, /readOnlyCheck \? 'Stop check' : 'Stop unsending'/);
+  assert.match(messages, /button\.disabled = active\s*\? !state\.canStop/);
+  assert.match(messages, /readOnlyCheck\s*\?\s*'Read-only check · nothing changed'/);
 });
 
 test('the tablist keeps one selected tab and moves with the arrow keys', () => {

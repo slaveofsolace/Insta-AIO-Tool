@@ -133,6 +133,28 @@ test('column-reverse detection matches Instagram thread paging', () => {
   assert.equal(runner.__test.reversedLayout(normal), true);
 });
 
+test('virtualized sent rows cannot keep resetting history completeness', () => {
+  const runner = loadRunner();
+  let progress = { maxHeight: 3_041, maxRows: 4 };
+  progress = runner.__test.advanceHistoryProgress(progress, 3_041, 7);
+  assert.equal(progress.grew, true);
+  assert.equal(progress.maxRows, 7);
+
+  // Current Instagram can alternate between four and seven structurally
+  // provable sent rows while the same oldest-boundary DOM is stationary.
+  // Falling back to four and returning to seven is virtualization churn, not
+  // another history page.
+  progress = runner.__test.advanceHistoryProgress(progress, 3_041, 4);
+  assert.equal(progress.grew, false);
+  progress = runner.__test.advanceHistoryProgress(progress, 3_041, 7);
+  assert.equal(progress.grew, false);
+
+  progress = runner.__test.advanceHistoryProgress(progress, 3_400, 8);
+  assert.equal(progress.grew, true);
+  assert.equal(progress.maxHeight, 3_400);
+  assert.equal(progress.maxRows, 8);
+});
+
 test('the next comfortably visible message row is not repositioned before hover', async () => {
   const runner = loadRunner();
   const documentElement = { parentElement: null };
@@ -260,6 +282,8 @@ test('extension message view uses the shared runner and Instagram design tokens'
   assert.match(labelsSource, /context\.threadId !== expectedThreadId/);
   assert.match(labelsSource, /currentEligibleCount !== plan\.eligibleCount/);
   assert.match(labelsSource, /complete: quietRounds >= 10/);
+  assert.match(labelsSource, /resolvedCount = history\.eligibleCount/);
+  assert.match(labelsSource, /MAX_HISTORY_CHECK_MS = 90_000/);
   assert.match(labelsSource, /More than \$\{MAX_PLAN_MESSAGES\} eligible sent messages were found/);
   assert.match(messagesSource, /preview\.complete === true/);
   assert.match(messagesSource, /kind: 'insta-aio-reserve-thread-unsend'/);
@@ -302,6 +326,8 @@ test('history is loaded to the top and the run then works down from there', () =
   // read as the end of the conversation.
   assert.match(body, /quietRounds < 10/);
   assert.match(body, /page < 600/);
+  assert.match(body, /Date\.now\(\) - startedAt < MAX_HISTORY_CHECK_MS/);
+  assert.match(body, /advanceHistoryProgress/);
   assert.match(body, /let topNudgeUsed = false/);
   assert.match(body, /!topNudgeUsed && quietRounds >= 2/);
 });

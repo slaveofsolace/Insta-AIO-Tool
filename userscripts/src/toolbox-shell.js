@@ -775,7 +775,9 @@
     if (modeLabel) {
       modeLabel.dataset.live = liveAvailable ? 'unlocked' : 'locked';
       modeLabel.textContent = externalLiveRunActive
-        ? `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
+        ? externalRunOperation === 'check'
+          ? 'Userscript mode · read-only conversation check'
+          : `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
         : activeRunAuthorized
         ? `Userscript mode · active run authorized ${authorizationRemainingMinutes(state.run.authorizationExpiresAt)}m`
         : newRunUnlocked
@@ -791,7 +793,9 @@
     setText(
       'live-status',
       externalLiveRunActive
-        ? 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
+        ? externalRunOperation === 'check'
+          ? 'A read-only conversation check is active. Nothing can be removed.'
+          : 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
         : activeRunAuthorized
         ? 'A reviewed batch is active. Use Stop to revoke its remaining authorization.'
         : newRunUnlocked
@@ -1128,6 +1132,7 @@
   let liveActionsUnlockedUntil = 0;
   let liveAuthorizationTimer = null;
   let externalLiveRunActive = false;
+  let externalRunOperation = null;
   let accountRunDraft = null;
 
   function authorizationRemainingMinutes(expiresAt) {
@@ -1149,7 +1154,9 @@
   function requireNewRunAuthorization() {
     if (newLiveRunAuthorized() && !externalLiveRunActive) return true;
     if (externalLiveRunActive) {
-      status('Thread-wide Unsend is already running. Stop it before starting another live action.');
+      status(externalRunOperation === 'check'
+        ? 'A read-only conversation check is running. Stop it before starting a live action.'
+        : 'Thread-wide Unsend is already running. Stop it before starting another live action.');
       renderAll();
       return false;
     }
@@ -1179,7 +1186,7 @@
     liveAuthorizationTimer = setTimeout(() => {
       liveActionsUnlockedUntil = 0;
       liveAuthorizationTimer = null;
-      if (externalLiveRunActive) {
+      if (externalLiveRunActive && externalRunOperation === 'unsend') {
         globalThis.InstaAioDmThreadUnsender?.stop?.();
         renderAll();
         status('Live authorization expired. Thread-wide Unsend is stopping before another message.');
@@ -1199,7 +1206,7 @@
       liveActionsUnlockedUntil = 0;
       if (liveAuthorizationTimer) clearTimeout(liveAuthorizationTimer);
       liveAuthorizationTimer = null;
-      if (externalLiveRunActive) {
+      if (externalLiveRunActive && externalRunOperation === 'unsend') {
         globalThis.InstaAioDmThreadUnsender?.stop?.();
         renderAll();
         status('Live actions locked. Thread-wide Unsend is stopping.');
@@ -2211,8 +2218,9 @@
       },
       expiresAt: () => (newLiveRunAuthorized() ? liveActionsUnlockedUntil : 0),
       reserveUnsendPlan,
-      setExternalRunActive: (active) => {
+      setExternalRunActive: (active, operation = null) => {
         externalLiveRunActive = active === true;
+        externalRunOperation = externalLiveRunActive ? operation : null;
         renderAll();
       },
     }),

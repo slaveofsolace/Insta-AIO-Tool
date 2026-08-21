@@ -277,6 +277,7 @@
     const button = runtime.query('[data-ia-action="mass-unsend"]');
     const progress = disclosure?.querySelector('.ia-direct-unsend-progress');
     const active = ['preparing', 'running', 'waiting', 'stopping'].includes(state.status);
+    const readOnlyCheck = state.operation === 'check';
     const preview = currentPreview(runtime);
     const checked = runtime.model.dmThreadPreview?.ready
       && runtime.model.dmThreadPreview.threadId === activeConversationId()
@@ -296,7 +297,7 @@
         : 'Check this conversation to resolve the eligible count';
     if (badge) {
       badge.textContent = active
-        ? `${state.processed} unsent`
+        ? readOnlyCheck ? 'checking' : `${state.processed} unsent`
         : state.status === 'completed'
           ? 'complete'
           : preview
@@ -319,20 +320,26 @@
     }
     if (button) {
       button.textContent = active
-        ? 'Stop unsending'
+        ? readOnlyCheck ? 'Stop check' : 'Stop unsending'
         : preview
           ? 'Unsend messages'
           : checked?.complete && checked.eligibleCount < 1
             ? 'No sent messages eligible'
             : 'Check conversation first';
-      button.disabled = state.status === 'stopping' || !preview || preview.eligibleCount < 1;
+      button.disabled = active
+        ? !state.canStop
+        : !preview || preview.eligibleCount < 1;
     }
     if (progress) {
       progress.hidden = !active && !['completed', 'stopped', 'error'].includes(state.status);
       const title = progress.querySelector('[data-ia-role="thread-unsend-progress-title"]');
       const copy = progress.querySelector('[data-ia-role="thread-unsend-progress-detail"]');
-      if (title) title.textContent = active ? 'Working in this conversation' : 'Last run';
-      if (copy) copy.textContent = `${state.processed} unsent${state.failed ? ` · ${state.failed} failed attempt${state.failed === 1 ? '' : 's'}` : ''}`;
+      if (title) title.textContent = active
+        ? readOnlyCheck ? 'Checking conversation' : 'Working in this conversation'
+        : readOnlyCheck ? 'Conversation check' : 'Last run';
+      if (copy) copy.textContent = readOnlyCheck
+        ? 'Read-only check · nothing changed'
+        : `${state.processed} unsent${state.failed ? ` · ${state.failed} failed attempt${state.failed === 1 ? '' : 's'}` : ''}`;
     }
     runtime.setText('message-identity-detail', 'The bulk thread runner identifies sent rows from Instagram’s rendered conversation layout. Exact message ID, timestamp, digest, conversation, and sent-by-me ownership must all match for an imported one-message job. Visible text alone cannot authorize removal.');
   }
