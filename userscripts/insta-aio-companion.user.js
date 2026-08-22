@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta AIO Instagram Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-AIO-Tool
-// @version      0.10.6
+// @version      0.11.0
 // @description  Follower checker, follow/unfollow review, and DM tools in a movable Instagram-style panel.
 // @homepageURL  https://github.com/slaveofsolace/Insta-AIO-Tool
 // @supportURL   https://github.com/slaveofsolace/Insta-AIO-Tool/issues
@@ -244,17 +244,21 @@
 
   const ACTIVE_ATTRIBUTE = 'data-insta-aio-unsend-active';
   const DONE_ATTRIBUTE = 'data-insta-aio-unsent';
-  const DEFAULT_MIN_DELAY_MS = 1_000;
-  const DEFAULT_MAX_DELAY_MS = 2_000;
+  const DEFAULT_MIN_DELAY_MS = 4_000;
+  const DEFAULT_MAX_DELAY_MS = 11_000;
   const DEFAULT_MAX_FAILURES = 5;
   const MIN_USABLE_VISIBLE_PX = 24;
   const MAX_HOVER_DEPTH = 8;
+  const MAX_HISTORY_CHECK_MS = 90_000;
   const MAX_SCAN_PASSES = 3;
+  const MAX_PLAN_MESSAGES = 5_000;
+  const PLAN_SCOPES = new Set(['all', 'newest', 'oldest']);
   const listeners = new Set();
 
   let activeController = null;
   let currentState = Object.freeze({
     status: 'idle',
+    operation: null,
     processed: 0,
     failed: 0,
     consecutiveFailures: 0,
@@ -303,9 +307,53 @@
   }
 
   function randomDelay(minimum, maximum) {
-    const min = Math.max(1_000, Number(minimum) || DEFAULT_MIN_DELAY_MS);
+    const min = Math.max(1_500, Number(minimum) || DEFAULT_MIN_DELAY_MS);
     const max = Math.max(min, Number(maximum) || DEFAULT_MAX_DELAY_MS);
     return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  function digestText(value) {
+    let hash = 0x811c9dc5;
+    const text = String(value || '');
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function planDigest({ threadId, scope, limit, eligibleCount, expiresAt }) {
+    return digestText(JSON.stringify({
+      threadId: String(threadId || ''),
+      scope: String(scope || ''),
+      limit: Number(limit),
+      eligibleCount: Number(eligibleCount),
+      expiresAt: Number(expiresAt),
+    }));
+  }
+
+  function createPlan(value = {}) {
+    const threadId = String(value.threadId || '').trim();
+    const scope = PLAN_SCOPES.has(value.scope) ? value.scope : 'all';
+    const eligibleCount = Math.min(
+      MAX_PLAN_MESSAGES,
+      Math.max(0, Math.floor(Number(value.eligibleCount) || 0)),
+    );
+    const requestedLimit = Math.floor(Number(value.limit));
+    const limit = scope === 'all'
+      ? eligibleCount
+      : Math.min(eligibleCount, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 1));
+    const expiresAt = Math.floor(Number(value.expiresAt) || 0);
+    if (!threadId || eligibleCount < 1 || limit < 1 || expiresAt <= Date.now()) return null;
+    const plan = { threadId, scope, limit, eligibleCount, expiresAt };
+    return Object.freeze({ ...plan, reviewedDigest: planDigest(plan) });
+  }
+
+  function validatePlan(value) {
+    const normalized = createPlan(value);
+    return normalized && normalized.reviewedDigest === String(value?.reviewedDigest || '')
+      ? normalized
+      : null;
   }
 
   function visibleText(element) {
@@ -487,8 +535,13 @@
       .filter((row) => sentByCurrentUser(row, row.ownerDocument.defaultView));
   }
 
-  function firstVisibleCandidate(scroller) {
-    const rows = candidateRows(scroller).reverse();
+  function orderedCandidates(scroller, order = 'oldest') {
+    const rows = candidateRows(scroller);
+    return order === 'newest' ? rows : rows.reverse();
+  }
+
+  function firstVisibleCandidate(scroller, order = 'oldest') {
+    const rows = orderedCandidates(scroller, order);
     return rows.find(isVisible) || null;
   }
 
@@ -783,21 +836,41 @@
     ]).catch(() => {});
   }
 
+  function advanceHistoryProgress(progress, height, rowCount) {
+    const nextHeight = Math.max(0, Number(height) || 0);
+    const nextRows = Math.max(0, Math.floor(Number(rowCount) || 0));
+    return {
+      grew: nextHeight > progress.maxHeight || nextRows > progress.maxRows,
+      maxHeight: Math.max(progress.maxHeight, nextHeight),
+      maxRows: Math.max(progress.maxRows, nextRows),
+    };
+  }
+
   async function loadAllHistory(context, signal) {
     const { root, scroller } = context;
-    if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
+    if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) {
+      return { complete: true, eligibleCount: candidateRows(scroller || root).length, pagesChecked: 0 };
+    }
     const reversed = reversedLayout(scroller);
+    const startedAt = Date.now();
     let quietRounds = 0;
     let topNudgeUsed = false;
+    let pagesChecked = 0;
+    let progress = advanceHistoryProgress(
+      { maxHeight: 0, maxRows: 0 },
+      scroller.scrollHeight,
+      candidateRows(scroller).length,
+    );
     // Instagram pauses between pages on a long thread, so a few quiet rounds
     // does not mean the history ended. Giving up after three left most of a
     // long conversation unloaded, which is the same impatience the follower
     // scan had.
-    for (let page = 0; page < 600 && quietRounds < 10; page += 1) {
+    for (let page = 0;
+      page < 600 && quietRounds < 10 && Date.now() - startedAt < MAX_HISTORY_CHECK_MS;
+      page += 1) {
+      pagesChecked = page + 1;
       const stop = sessionStop(context.threadId);
       if (stop) throw new Error(stop);
-      const beforeHeight = scroller.scrollHeight;
-      const beforeRows = candidateRows(scroller).length;
       const target = oldestOffset(scroller, reversed);
       if (Math.abs(scroller.scrollTop - target) > 5) {
         scroller.scrollTop = target;
@@ -820,7 +893,12 @@
       }
       await delay(500, signal);
       await waitForLoader(root, signal);
-      const grew = scroller.scrollHeight > beforeHeight || candidateRows(scroller).length > beforeRows;
+      progress = advanceHistoryProgress(
+        progress,
+        scroller.scrollHeight,
+        candidateRows(scroller).length,
+      );
+      const { grew } = progress;
       quietRounds = grew ? 0 : quietRounds + 1;
       if (grew) topNudgeUsed = false;
       publish({
@@ -836,6 +914,16 @@
     scroller.scrollTop = oldestOffset(scroller, reversed);
     dispatch(scroller, new Event('scroll', { bubbles: true }));
     await delay(100, signal);
+    progress = advanceHistoryProgress(
+      progress,
+      scroller.scrollHeight,
+      candidateRows(scroller).length,
+    );
+    return {
+      complete: quietRounds >= 10,
+      eligibleCount: progress.maxRows,
+      pagesChecked,
+    };
   }
 
   function rowNeedsReposition(row, scroller) {
@@ -856,29 +944,31 @@
     return isVisible(row);
   }
 
-  async function nextSentRow(context, signal) {
+  async function nextSentRow(context, signal, order = 'oldest') {
     const { scroller } = context;
     // Leave a comfortably visible row in place. Re-centering every message made
     // the processing phase continually fight the thread position. Partially
     // clipped rows are still exposed before hover so their menu affordance is
     // reachable on other platforms and font stacks.
-    const visible = firstVisibleCandidate(scroller);
+    const visible = firstVisibleCandidate(scroller, order);
     if (visible) {
       if (await exposeRow(visible, scroller, signal)) return visible;
     }
 
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
       if (signal.aborted) return null;
-      const [row] = candidateRows(scroller).reverse();
+      const [row] = orderedCandidates(scroller, order);
       if (row) {
         if (await exposeRow(row, scroller, signal)) return row;
         // Still hidden: hand it back anyway on the final pass so a row that
         // simply cannot be scrolled into view is attempted rather than skipped.
         if (pass === MAX_SCAN_PASSES - 1) return row;
       }
-      // Nothing left here; page toward older history and look again.
+      // Nothing actionable is visible here; return to the reviewed edge.
       const reversed = reversedLayout(scroller);
-      scroller.scrollTop = oldestOffset(scroller, reversed);
+      scroller.scrollTop = order === 'newest'
+        ? newestOffset(scroller, reversed)
+        : oldestOffset(scroller, reversed);
       dispatch(scroller, new Event('scroll', { bubbles: true }));
       await delay(120, signal);
     }
@@ -893,13 +983,78 @@
     return (text || 'Sent message').slice(0, 90);
   }
 
+  async function inspectAll() {
+    if (activeController && !activeController.signal.aborted) {
+      return { ready: false, reason: 'Another message check or run is already active.' };
+    }
+    const context = threadContext();
+    if (!context.ok) return { ready: false, reason: context.reason };
+    const controller = new AbortController();
+    activeController = controller;
+    publish({
+      status: 'preparing',
+      operation: 'check',
+      processed: 0,
+      failed: 0,
+      message: 'Checking the full conversation without opening a message menu…',
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      canStop: true,
+    });
+    try {
+      const history = await loadAllHistory(context, controller.signal);
+      const resolvedCount = history.eligibleCount;
+      const capped = resolvedCount > MAX_PLAN_MESSAGES;
+      const eligibleCount = Math.min(MAX_PLAN_MESSAGES, resolvedCount);
+      const complete = history.complete && !capped;
+      const result = Object.freeze({
+        ready: true,
+        threadId: context.threadId,
+        eligibleCount,
+        complete,
+        capped,
+        pagesChecked: history.pagesChecked,
+        reason: complete
+          ? 'Full conversation check complete.'
+          : capped
+            ? `More than ${MAX_PLAN_MESSAGES} eligible sent messages were found. No destructive plan was created.`
+            : 'The bounded history check reached its page limit before completeness could be proven.',
+        checkedAt: new Date().toISOString(),
+      });
+      publish({
+        status: 'reviewed',
+        message: complete
+          ? `${eligibleCount} sent message${eligibleCount === 1 ? '' : 's'} eligible in this conversation. Nothing was changed.`
+          : `${result.reason} Nothing was changed.`,
+        current: null,
+        canStop: false,
+        finishedAt: result.checkedAt,
+      });
+      return result;
+    } catch (error) {
+      const reason = error?.name === 'AbortError' || controller.signal.aborted
+        ? 'Conversation check stopped. Nothing was changed.'
+        : error.message || 'The conversation could not be checked.';
+      publish({
+        status: error?.name === 'AbortError' || controller.signal.aborted ? 'stopped' : 'error',
+        message: reason,
+        current: null,
+        canStop: false,
+        finishedAt: new Date().toISOString(),
+      });
+      return { ready: false, reason };
+    } finally {
+      if (activeController === controller) activeController = null;
+    }
+  }
+
   async function start(options = {}) {
     if (activeController && !activeController.signal.aborted) return snapshot();
-    const authorizationExpiresAt = Number(options.authorizationExpiresAt);
-    if (!(authorizationExpiresAt > Date.now())) {
+    const plan = validatePlan(options.plan);
+    if (!plan) {
       publish({
         status: 'error',
-        message: 'Live authorization is required before thread-wide Unsend can start.',
+        message: 'A fresh, count-specific reviewed plan is required before Unsend can start.',
         canStop: false,
         finishedAt: new Date().toISOString(),
       });
@@ -910,7 +1065,7 @@
       publish({ status: 'error', message: context.reason, canStop: false, finishedAt: new Date().toISOString() });
       return snapshot();
     }
-    const expectedThreadId = String(options.expectedThreadId || '').trim();
+    const expectedThreadId = plan.threadId;
     if (!expectedThreadId || context.threadId !== expectedThreadId) {
       publish({
         status: 'error',
@@ -925,9 +1080,8 @@
     activeController = controller;
     const signal = controller.signal;
     const maxFailures = Math.max(1, Math.min(10, Number(options.maxConsecutiveFailures) || DEFAULT_MAX_FAILURES));
-    const maxMessages = Number.isFinite(Number(options.maxMessages))
-      ? Math.max(1, Number(options.maxMessages))
-      : Number.POSITIVE_INFINITY;
+    const authorizationExpiresAt = plan.expiresAt;
+    const maxMessages = plan.limit;
     let processed = 0;
     let failed = 0;
     let consecutiveFailures = 0;
@@ -935,6 +1089,7 @@
 
     publish({
       status: 'preparing',
+      operation: 'unsend',
       processed: 0,
       failed: 0,
       consecutiveFailures: 0,
@@ -946,14 +1101,32 @@
     });
 
     try {
-      await loadAllHistory(context, signal);
+      const history = await loadAllHistory(context, signal);
+      const resolvedCount = history.eligibleCount;
+      if (!history.complete || resolvedCount > MAX_PLAN_MESSAGES) {
+        throw new Error('The full conversation could not be revalidated within the bounded history check.');
+      }
+      const currentEligibleCount = resolvedCount;
+      if (currentEligibleCount !== plan.eligibleCount) {
+        throw new Error('The eligible sent-message count changed after review. Check the conversation again.');
+      }
+      if (plan.scope === 'newest') {
+        const reversed = reversedLayout(context.scroller);
+        context.scroller.scrollTop = newestOffset(context.scroller, reversed);
+        dispatch(context.scroller, new Event('scroll', { bubbles: true }));
+        await delay(100, signal);
+      }
       while (!signal.aborted && processed < maxMessages && consecutiveFailures < maxFailures) {
         if (authorizationExpiresAt <= Date.now()) {
           throw new Error('Live authorization expired before the next message.');
         }
         const stop = sessionStop(expectedThreadId);
         if (stop) throw new Error(stop);
-        const row = await nextSentRow(context, signal);
+        const row = await nextSentRow(
+          context,
+          signal,
+          plan.scope === 'newest' ? 'newest' : 'oldest',
+        );
         if (!row) break;
         const label = preview(row);
         const elapsed = Date.now() - lastUnsendAt;
@@ -1085,10 +1258,11 @@
     };
   }
 
-  const publicApi = { inspect, snapshot, start, stop, subscribe };
+  const publicApi = { createPlan, inspect, inspectAll, snapshot, start, stop, subscribe };
   if (globalThis.__instaAioTestHooks === true) {
     publicApi.__test = Object.freeze({
       deepestMessageContainer,
+      advanceHistoryProgress,
       hasMessageContent,
       isVisible,
       nextSentRow,
@@ -1121,6 +1295,8 @@
     const shadow = host.shadowRoot;
     const runner = globalThis.InstaAioDmThreadUnsender;
     const liveAuthority = globalThis.InstaAioUserscriptLiveAuthority;
+    let reviewedPreview = null;
+    let emptyPreview = false;
     const query = (selector) => shadow.querySelector(selector);
     const setText = (role, value) => {
       const element = query(`[data-role="${role}"]`);
@@ -1175,10 +1351,15 @@
         transition: filter 140ms ease, transform 140ms ease, opacity 140ms ease !important;
       }
       .button:hover, .file:hover { filter: brightness(.97); }
-      .button.primary, .button.danger {
+      .button.primary {
         border-color: var(--aio-accent) !important;
         background: var(--aio-accent) !important;
         color: var(--aio-on-accent) !important;
+      }
+      .button.danger {
+        border-color: var(--aio-danger, #c9362b) !important;
+        background: var(--aio-danger, #c9362b) !important;
+        color: #fff !important;
       }
       .launcher {
         border-color: var(--aio-line) !important;
@@ -1210,18 +1391,18 @@
     const nowLead = query('[data-panel="now"] .lead');
     if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
     const messageLead = query('[data-panel="messages"] .lead');
-    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Load older history once, then remove your sent messages from the oldest loaded message forward.';
+    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Resolve this conversation and its eligible sent-message count before reviewing any permanent action.';
 
     const scanButton = query('[data-action="scan-sent"]');
     if (scanButton) scanButton.textContent = 'Check conversation';
-    const primary = query('[data-action="unsend-all"]');
-    if (primary) primary.textContent = 'Unsend all DMs';
-    const legacyRun = query('[data-action="run-unsend"]')?.closest('.toolbar');
-    if (legacyRun) legacyRun.hidden = true;
-    for (const role of ['unsend-scope', 'unsend-count']) {
-      const field = query(`[data-role="${role}"]`)?.closest('.field');
-      if (field) field.hidden = true;
-    }
+    const executeButton = query('[data-action="run-unsend"]');
+    const planPanel = query('[data-role="unsend-plan"]');
+    if (planPanel) planPanel.hidden = false;
+    const countField = query('[data-role="unsend-count"]')?.closest('.field');
+    const renderScope = () => {
+      if (countField) countField.hidden = (query('[data-role="unsend-scope"]')?.value || 'all') === 'all';
+    };
+    renderScope();
     const messageNotice = query('[data-panel="messages"] .notice');
     if (messageNotice) {
       messageNotice.textContent = 'Only messages sent by this account are processed. You can stop at any time. Unsending is permanent.';
@@ -1229,9 +1410,12 @@
 
     function renderRun(next) {
       const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
+      const readOnlyCheck = next.operation === 'check';
       const panel = query('[data-role="run-panel"]');
       if (panel) panel.hidden = !running && !['completed', 'error', 'stopped'].includes(next.status);
-      setText('run-title', running ? 'DM Unsend in progress' : 'DM Unsend');
+      setText('run-title', running
+        ? readOnlyCheck ? 'Checking conversation' : 'DM Unsend in progress'
+        : readOnlyCheck ? 'Conversation check' : 'DM Unsend');
       setText('run-detail', next.message);
       const fill = query('[data-role="run-fill"]');
       if (fill) fill.style.width = running ? `${Math.min(94, 12 + (next.processed * 4))}%` : '100%';
@@ -1239,20 +1423,33 @@
       if (results) {
         results.replaceChildren();
         const item = document.createElement('li');
-        item.textContent = `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
+        item.textContent = readOnlyCheck
+          ? 'Read-only check · nothing changed'
+          : `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
         results.append(item);
       }
-      if (primary) {
-        primary.textContent = running ? 'Stop unsending' : 'Unsend all DMs';
-        primary.classList.toggle('danger', running);
-        if (running) primary.disabled = false;
+      const stopButton = query('[data-role="stop-run"]');
+      if (stopButton) {
+        stopButton.hidden = !running;
+        stopButton.disabled = !next.canStop;
+      }
+      if (executeButton) {
+        executeButton.textContent = running
+          ? readOnlyCheck ? 'Checking conversation…' : 'Stop unsending'
+          : reviewedPreview
+            ? 'Unsend messages'
+            : emptyPreview
+              ? 'No sent messages eligible'
+              : 'Check conversation first';
+        executeButton.disabled = readOnlyCheck || next.status === 'stopping'
+          || (!running && (!reviewedPreview || reviewedPreview.eligibleCount < 1));
       }
       setText('status', next.message);
     }
 
     runner.subscribe((next) => {
       const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
-      liveAuthority?.setExternalRunActive?.(running);
+      liveAuthority?.setExternalRunActive?.(running, next.operation);
       renderRun(next);
     });
 
@@ -1260,47 +1457,125 @@
       const target = event.target.closest?.('[data-action]');
       if (!target) return;
       const action = target.dataset.action;
-      if (!['unsend-all', 'scan-sent', 'run-unsend', 'stop-run'].includes(action)) return;
+      if (!['scan-sent', 'run-unsend', 'stop-run'].includes(action)) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
 
-      if (action === 'stop-run' || (action === 'unsend-all' && runner.snapshot().canStop)) {
+      if (action === 'stop-run' || (action === 'run-unsend' && runner.snapshot().canStop)) {
         runner.stop();
         return;
       }
-      if (action === 'scan-sent' || action === 'run-unsend') {
-        const result = runner.inspect();
-        setText('status', result.ready
-          ? `${result.visibleSent} sent message${result.visibleSent === 1 ? '' : 's'} visible now. Unsend all will load the full conversation first.`
-          : result.reason);
+      if (action === 'scan-sent') {
+        reviewedPreview = null;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Checking conversation…';
+          executeButton.disabled = true;
+        }
+        const result = await runner.inspectAll();
+        if (!result.ready) {
+          if (executeButton) executeButton.textContent = 'Check conversation first';
+          setText('status', result.reason);
+          return;
+        }
+        reviewedPreview = result.complete && result.eligibleCount > 0 ? result : null;
+        emptyPreview = result.complete && result.eligibleCount < 1;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) executeButton.textContent = reviewedPreview
+          ? 'Unsend messages'
+          : emptyPreview
+            ? 'No sent messages eligible'
+            : 'Check conversation first';
+        if (executeButton) executeButton.disabled = !result.complete || result.eligibleCount < 1;
+        const summary = query('[data-role="dm-summary"]');
+        if (summary) summary.hidden = false;
+        setText('dm-summary-title', `Thread ${result.threadId}`);
+        setText('dm-summary-detail', result.complete
+          ? `${result.eligibleCount} sent message${result.eligibleCount === 1 ? '' : 's'} eligible · read-only check complete`
+          : `${result.eligibleCount} found · completeness not proven · destructive plan locked`);
+        setText('status', result.complete
+          ? `${result.eligibleCount} sent message${result.eligibleCount === 1 ? '' : 's'} eligible. Nothing was changed.`
+          : `${result.reason} Nothing was changed.`);
         return;
       }
-      if (!liveAuthority?.canStart?.()) {
-        setText('status', 'Live actions are locked. Open toolbox preferences and enable the 15-minute live window first.');
+      if (!liveAuthority?.canStart?.() && !liveAuthority?.enable?.()) {
+        setText('status', 'Another live action is already active. Stop it before starting Unsend.');
         return;
       }
-      const result = runner.inspect();
-      if (!result.ready) {
-        setText('status', result.reason);
+      const inspection = runner.inspect();
+      if (!reviewedPreview || !inspection.ready || inspection.threadId !== reviewedPreview.threadId) {
+        reviewedPreview = null;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Check conversation first';
+          executeButton.disabled = true;
+        }
+        setText('status', inspection.reason || 'The conversation changed. Check it again before reviewing an Unsend plan.');
+        return;
+      }
+      const scope = query('[data-role="unsend-scope"]')?.value || 'all';
+      const requested = Math.max(1, Math.floor(Number(query('[data-role="unsend-count"]')?.value) || 1));
+      const limit = scope === 'all'
+        ? reviewedPreview.eligibleCount
+        : Math.min(reviewedPreview.eligibleCount, requested);
+      const plan = runner.createPlan({
+        threadId: reviewedPreview.threadId,
+        scope,
+        limit,
+        eligibleCount: reviewedPreview.eligibleCount,
+        expiresAt: liveAuthority.expiresAt(),
+      });
+      if (!plan) {
+        setText('status', 'The live window or conversation review expired. Check the conversation again.');
+        return;
+      }
+      const scopeLabel = scope === 'all'
+        ? 'all eligible sent messages'
+        : `${scope} ${limit} sent message${limit === 1 ? '' : 's'}`;
+      const phrase = `UNSEND ${limit} ${plan.reviewedDigest}`;
+      // eslint-disable-next-line no-alert
+      const entered = globalThis.prompt(
+        `Type this count-specific phrase to continue for thread ${plan.threadId}:\n\n${phrase}`,
+        '',
+      );
+      if (entered == null) {
+        setText('status', 'Cancelled. Nothing was changed.');
+        return;
+      }
+      if (String(entered).trim() !== phrase) {
+        setText('status', 'Unsend stayed locked because the count-specific phrase did not match.');
         return;
       }
       // eslint-disable-next-line no-alert
       const confirmed = globalThis.confirm(
-        'Unsend every message you sent in this conversation?\n\n'
-        + 'Older history will load once, then removal works forward from the oldest loaded sent message. This is permanent and cannot be undone.',
+        `Permanently unsend ${scopeLabel} from thread ${plan.threadId}?\n\n`
+        + `Reviewed digest: ${plan.reviewedDigest}. The eligible count is revalidated before any message menu opens.`,
       );
       if (!confirmed) {
         setText('status', 'Cancelled. Nothing was changed.');
         return;
       }
+      const reservation = liveAuthority.reserveUnsendPlan?.(plan);
+      if (!reservation?.ok) {
+        setText('status', `${reservation?.reason || 'The reviewed plan could not be reserved.'} Nothing was changed.`);
+        return;
+      }
+      reviewedPreview = null;
+      emptyPreview = false;
+      if (planPanel) planPanel.hidden = false;
       await runner.start({
-        authorizationExpiresAt: liveAuthority.expiresAt(),
-        expectedThreadId: result.threadId,
-        minDelayMs: 1_000,
-        maxDelayMs: 2_000,
+        plan,
+        minDelayMs: reservation.minDelayMs,
+        maxDelayMs: reservation.maxDelayMs,
       });
     }, true);
+
+    shadow.addEventListener('change', (event) => {
+      if (event.target.matches?.('[data-role="unsend-scope"]')) renderScope();
+    });
   }
 
   function findRoot() {
@@ -1350,6 +1625,12 @@
     "[aria-label*='opciones']",
     "[aria-label*='options']",
   ]);
+  const INSTAGRAM_WEB_ORIGIN = 'https://www.instagram.com';
+  const INSTAGRAM_WEB_APP_ID = '936619743392459';
+  const RELATIONSHIP_PAGE_SIZE = 50;
+  const RELATIONSHIP_MAX_PAGES = 1_000;
+  const RELATIONSHIP_MAX_ACCOUNTS = 25_000;
+  const RELATIONSHIP_MAX_DURATION_MS = 20 * 60 * 1_000;
 
   function normalizeUsername(value) {
     const username = String(value || '')
@@ -1362,6 +1643,300 @@
     return /^[a-z0-9._]{1,30}$/i.test(username) && !RESERVED.has(username)
       ? username
       : '';
+  }
+
+  function detectAuthenticatedUsername() {
+    const candidates = new Set();
+    const anchors = [
+      ...document.querySelectorAll('a[href]'),
+    ];
+    for (const anchor of anchors) {
+      const labels = [
+        anchor.getAttribute?.('aria-label'),
+        ...[...anchor.querySelectorAll?.('[aria-label], img[alt]') || []]
+          .flatMap((element) => [element.getAttribute?.('aria-label'), element.getAttribute?.('alt')]),
+      ]
+        .map((value) => String(value || '').normalize('NFKC').toLowerCase())
+        .filter(Boolean);
+      if (!labels.some((label) => label === 'profile' || label.includes('profile picture'))) continue;
+      const username = normalizeUsername(anchor.getAttribute?.('href'));
+      if (username) candidates.add(username);
+    }
+    return candidates.size === 1 ? [...candidates][0] : '';
+  }
+
+  function relationshipError(code, message) {
+    const error = new Error(message);
+    error.code = code;
+    return error;
+  }
+
+  function assertRelationshipRunActive(signal, startedAt, now, maxDurationMs) {
+    if (signal?.aborted) throw relationshipError('stopped', 'Follower check stopped.');
+    if (now() - startedAt > maxDurationMs) {
+      throw relationshipError('time-limit', 'The follower check reached its 20-minute read limit.');
+    }
+    const session = inspectSession();
+    if (session.sessionExpired) throw relationshipError('session-expired', 'Instagram requires a fresh login.');
+    if (session.challenge) throw relationshipError('challenge', 'Instagram opened a security challenge.');
+    if (session.actionBlocked) throw relationshipError('action-blocked', 'Instagram restricted activity.');
+    if (session.rateLimited) throw relationshipError('rate-limited', 'Instagram asked this session to wait.');
+  }
+
+  function relationshipDelay(ms, signal, setTimer = setTimeout, clearTimer = clearTimeout) {
+    if (!ms) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted) {
+        reject(relationshipError('stopped', 'Follower check stopped.'));
+        return;
+      }
+      let timer = null;
+      const stop = () => {
+        if (timer !== null) clearTimer(timer);
+        signal?.removeEventListener?.('abort', stop);
+        reject(relationshipError('stopped', 'Follower check stopped.'));
+      };
+      timer = setTimer(() => {
+        signal?.removeEventListener?.('abort', stop);
+        resolve();
+      }, ms);
+      signal?.addEventListener?.('abort', stop, { once: true });
+    });
+  }
+
+  function relationshipRunDeadline(sourceSignal, maxDurationMs, setTimer, clearTimer) {
+    const controller = new AbortController();
+    let timedOut = false;
+    const stop = () => controller.abort();
+    if (sourceSignal?.aborted) stop();
+    else sourceSignal?.addEventListener?.('abort', stop, { once: true });
+    const timer = setTimer(() => {
+      timedOut = true;
+      controller.abort();
+    }, maxDurationMs);
+    return Object.freeze({
+      cleanup() {
+        clearTimer(timer);
+        sourceSignal?.removeEventListener?.('abort', stop);
+      },
+      signal: controller.signal,
+      timedOut: () => timedOut,
+    });
+  }
+
+  function relationshipResponseStop(data) {
+    const message = String(data?.message || data?.error_type || '').toLowerCase();
+    if (message.includes('challenge') || message.includes('checkpoint')) return 'challenge';
+    if (message.includes('login') || message.includes('not logged')) return 'session-expired';
+    if (message.includes('wait a few minutes') || message.includes('rate limit')) return 'rate-limited';
+    if (message.includes('feedback_required') || message.includes('restrict certain activity')) return 'action-blocked';
+    return '';
+  }
+
+  async function fetchInstagramRelationshipJson(url, {
+    fetchImpl,
+    signal,
+  }) {
+    let response;
+    try {
+      response = await fetchImpl(url.href, {
+        credentials: 'include',
+        headers: { 'X-IG-App-ID': INSTAGRAM_WEB_APP_ID },
+        method: 'GET',
+        signal,
+      });
+    } catch (error) {
+      if (signal?.aborted || error?.name === 'AbortError') {
+        throw relationshipError('stopped', 'Follower check stopped.');
+      }
+      throw relationshipError('network-error', 'Instagram follower data could not be reached from this tab.');
+    }
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      throw relationshipError('invalid-response', 'Instagram returned an unreadable follower response.');
+    }
+    const responseStop = relationshipResponseStop(data);
+    if (response.status === 429 || responseStop === 'rate-limited') {
+      throw relationshipError('rate-limited', 'Instagram asked this session to wait before loading more accounts.');
+    }
+    if (response.status === 401 || responseStop === 'session-expired') {
+      throw relationshipError('session-expired', 'Instagram requires a fresh login.');
+    }
+    if (responseStop === 'challenge') {
+      throw relationshipError('challenge', 'Instagram opened a security challenge.');
+    }
+    if (responseStop === 'action-blocked') {
+      throw relationshipError('action-blocked', 'Instagram restricted activity.');
+    }
+    if (!response.ok || data?.status === 'fail') {
+      throw relationshipError('request-failed', `Instagram could not load this follower page (HTTP ${response.status || 'error'}).`);
+    }
+    return data;
+  }
+
+  async function resolveRelationshipUserId(username, options) {
+    const url = new URL('/api/v1/web/search/topsearch/', INSTAGRAM_WEB_ORIGIN);
+    url.searchParams.set('context', 'blended');
+    url.searchParams.set('query', username);
+    url.searchParams.set('include_reel', 'false');
+    const data = await fetchInstagramRelationshipJson(url, options);
+    const exact = (Array.isArray(data?.users) ? data.users : [])
+      .map((entry) => entry?.user)
+      .find((user) => normalizeUsername(user?.username) === username);
+    const userId = String(exact?.pk || '').trim();
+    if (!/^\d+$/.test(userId)) {
+      throw relationshipError('username-not-found', `Instagram could not resolve @${username}.`);
+    }
+    return userId;
+  }
+
+  async function fetchRelationshipList(listType, userId, username, {
+    fetchImpl,
+    maxAccounts,
+    maxDurationMs,
+    maxPages,
+    now,
+    onProgress,
+    random,
+    signal,
+    sleepImpl,
+    startedAt,
+  }) {
+    const accounts = new Map();
+    const seenTokens = new Set();
+    let nextMaxId = '';
+    let pages = 0;
+    while (pages < maxPages && accounts.size < maxAccounts) {
+      assertRelationshipRunActive(signal, startedAt, now, maxDurationMs);
+      const url = new URL(`/api/v1/friendships/${userId}/${listType}/`, INSTAGRAM_WEB_ORIGIN);
+      url.searchParams.set('count', String(RELATIONSHIP_PAGE_SIZE));
+      if (nextMaxId) url.searchParams.set('max_id', nextMaxId);
+      const data = await fetchInstagramRelationshipJson(url, { fetchImpl, signal });
+      if (!Array.isArray(data?.users)) {
+        throw relationshipError('invalid-response', `Instagram returned an invalid ${listType} page.`);
+      }
+      pages += 1;
+      for (const user of data.users) {
+        const accountUsername = normalizeUsername(user?.username);
+        if (!accountUsername) continue;
+        accounts.set(accountUsername, {
+          username: accountUsername,
+          profileUrl: `${INSTAGRAM_WEB_ORIGIN}/${accountUsername}/`,
+          displayName: String(user?.full_name || '').trim().slice(0, 160),
+          source: 'authenticated-instagram-web',
+        });
+        if (accounts.size >= maxAccounts) break;
+      }
+      onProgress?.(Object.freeze({
+        found: accounts.size,
+        listType,
+        pages,
+        phase: 'loading',
+        username,
+      }));
+      const candidateToken = data.next_max_id;
+      if (candidateToken === undefined || candidateToken === null || candidateToken === '') {
+        return {
+          accounts: [...accounts.values()].sort((left, right) => left.username.localeCompare(right.username)),
+          complete: true,
+          pages,
+          reason: 'pagination-complete',
+        };
+      }
+      nextMaxId = String(candidateToken);
+      if (!nextMaxId || nextMaxId.length > 500 || seenTokens.has(nextMaxId)) {
+        throw relationshipError('invalid-pagination', `Instagram returned an unsafe ${listType} pagination token.`);
+      }
+      seenTokens.add(nextMaxId);
+      const delayMs = Math.floor(800 + (Math.max(0, Math.min(0.999999, random())) * 700));
+      await sleepImpl(delayMs, signal);
+    }
+    return {
+      accounts: [...accounts.values()].sort((left, right) => left.username.localeCompare(right.username)),
+      complete: false,
+      pages,
+      reason: accounts.size >= maxAccounts ? 'account-limit' : 'page-limit',
+    };
+  }
+
+  async function fetchFollowerComparison({
+    clearTimer = clearTimeout,
+    fetchImpl = globalThis.fetch?.bind(globalThis),
+    maxAccounts = RELATIONSHIP_MAX_ACCOUNTS,
+    maxDurationMs = RELATIONSHIP_MAX_DURATION_MS,
+    maxPages = RELATIONSHIP_MAX_PAGES,
+    now = Date.now,
+    onProgress = null,
+    random = Math.random,
+    signal = null,
+    sleepImpl = relationshipDelay,
+    setTimer = setTimeout,
+    username: requestedUsername,
+  } = {}) {
+    const username = normalizeUsername(requestedUsername);
+    if (!username) throw relationshipError('invalid-username', 'Enter a valid Instagram username.');
+    const pageOrigin = String(location?.origin || '');
+    if (pageOrigin !== INSTAGRAM_WEB_ORIGIN) {
+      throw relationshipError('wrong-origin', 'Open instagram.com before running the follower check.');
+    }
+    if (typeof fetchImpl !== 'function') {
+      throw relationshipError('fetch-unavailable', 'This browser context cannot load Instagram follower data.');
+    }
+    const boundedPages = Math.max(1, Math.min(RELATIONSHIP_MAX_PAGES, Math.trunc(Number(maxPages) || 0)));
+    const boundedAccounts = Math.max(1, Math.min(RELATIONSHIP_MAX_ACCOUNTS, Math.trunc(Number(maxAccounts) || 0)));
+    const boundedDuration = Math.max(1_000, Math.min(RELATIONSHIP_MAX_DURATION_MS, Math.trunc(Number(maxDurationMs) || 0)));
+    const deadline = relationshipRunDeadline(signal, boundedDuration, setTimer, clearTimer);
+    const runSignal = deadline.signal;
+    try {
+      const startedAt = now();
+      assertRelationshipRunActive(runSignal, startedAt, now, boundedDuration);
+      onProgress?.(Object.freeze({ found: 0, listType: null, pages: 0, phase: 'resolving', username }));
+      const common = {
+        fetchImpl,
+        maxAccounts: boundedAccounts,
+        maxDurationMs: boundedDuration,
+        maxPages: boundedPages,
+        now,
+        onProgress,
+        random,
+        signal: runSignal,
+        sleepImpl,
+        startedAt,
+      };
+      const userId = await resolveRelationshipUserId(username, { fetchImpl, signal: runSignal });
+      const followers = await fetchRelationshipList('followers', userId, username, common);
+      const following = await fetchRelationshipList('following', userId, username, common);
+      assertRelationshipRunActive(runSignal, startedAt, now, boundedDuration);
+      const capturedAt = new Date(now()).toISOString();
+      const result = Object.freeze({
+        capturedAt,
+        complete: Object.freeze({ followers: followers.complete, following: following.complete }),
+        followers: Object.freeze(followers.accounts),
+        following: Object.freeze(following.accounts),
+        pages: Object.freeze({ followers: followers.pages, following: following.pages }),
+        reasons: Object.freeze({ followers: followers.reason, following: following.reason }),
+        source: 'authenticated-instagram-web',
+        userId,
+        username,
+      });
+      onProgress?.(Object.freeze({
+        found: result.followers.length + result.following.length,
+        listType: null,
+        pages: result.pages.followers + result.pages.following,
+        phase: 'complete',
+        username,
+      }));
+      return result;
+    } catch (error) {
+      if (deadline.timedOut() && error?.code === 'stopped') {
+        throw relationshipError('time-limit', 'The follower check reached its 20-minute read limit.');
+      }
+      throw error;
+    } finally {
+      deadline.cleanup();
+    }
   }
 
   function visibleText(element) {
@@ -2228,11 +2803,9 @@
     return { result: 'unfollowed', relationship: completion.relationship };
   }
 
-  function captureVisibleAccounts() {
-    const roots = [
-      ...document.querySelectorAll('[role="dialog"]'),
-      document.querySelector('main'),
-    ].filter(Boolean);
+  function captureVisibleAccounts(expectedListType = '') {
+    const listContext = accountListDialog(expectedListType);
+    const roots = listContext ? [listContext.dialog] : [];
     const accounts = new Map();
     for (const root of roots) {
       for (const anchor of root.querySelectorAll('a[href^="/"]')) {
@@ -2263,12 +2836,66 @@
     return best?.element || null;
   }
 
-  function accountListRoot() {
-    const dialogs = visibleDialogs();
-    for (const dialog of dialogs) {
-      if (scrollableWithin(dialog)) return dialog;
+  function accountListTypeFromText(value) {
+    const label = String(value || '')
+      .normalize('NFKC')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+    if (/^followers(?:\s|$)/.test(label)) return 'followers';
+    if (/^following(?:\s|$)/.test(label)) return 'following';
+    return '';
+  }
+
+  function accountListDialog(expectedListType = '') {
+    const expected = expectedListType === 'followers' || expectedListType === 'following'
+      ? expectedListType
+      : '';
+    for (const dialog of visibleDialogs()) {
+      const heading = [...dialog.querySelectorAll('[role="heading"], h1, h2')]
+        .map((element) => visibleText(element))
+        .find(Boolean);
+      const firstLine = visibleText(dialog)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find(Boolean);
+      const observedTypes = new Set(
+        [dialog.getAttribute('aria-label'), heading, firstLine]
+          .map(accountListTypeFromText)
+          .filter(Boolean),
+      );
+      if (observedTypes.size !== 1) continue;
+      const [observed] = observedTypes;
+      if (observed && (!expected || observed === expected)) {
+        return { dialog, listType: observed };
+      }
     }
-    return dialogs[0] || document.querySelector('main');
+    return null;
+  }
+
+  function exactProfileListCount(listType) {
+    if (listType !== 'followers' && listType !== 'following') return null;
+    for (const link of document.querySelectorAll('a[role="link"], a[href="#"]')) {
+      const values = [
+        link.getAttribute('title'),
+        visibleText(link),
+      ];
+      for (const value of values) {
+        const label = String(value || '')
+          .normalize('NFKC')
+          .replace(/[\u00a0\u202f]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+        const match = label.match(/^([0-9][0-9., ]*)\s+(followers|following)$/);
+        if (!match || match[2] !== listType) continue;
+        const digits = match[1].replace(/\D/g, '');
+        if (!digits) continue;
+        const count = Number(digits);
+        if (Number.isSafeInteger(count)) return count;
+      }
+    }
+    return null;
   }
 
   function sleep(ms) {
@@ -2277,16 +2904,20 @@
 
   // Scrolls the open followers/following dialog to enumerate the full list.
   // Read-only: it only scrolls an already-open list and reads rendered rows.
-  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500 } = {}) {
+  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500, listType = '' } = {}) {
     const session = inspectSession();
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, accounts: [], complete: false, reason: 'session-stop' };
     }
-    const root = accountListRoot();
+    const expectedListType = listType === 'followers' || listType === 'following' ? listType : '';
+    const listContext = accountListDialog(expectedListType);
+    const root = listContext?.dialog || null;
     const scroller = scrollableWithin(root);
     if (!root) {
       return { ...session, accounts: [], complete: false, reason: 'open-a-followers-or-following-list' };
     }
+    const observedListType = listContext?.listType || expectedListType;
+    const expectedCountAtStart = exactProfileListCount(observedListType);
 
     const accounts = new Map();
     const harvest = () => {
@@ -2350,13 +2981,31 @@
       }
     }
 
+    const expectedCountAtEnd = exactProfileListCount(observedListType);
+    const expectedCount = expectedCountAtEnd ?? expectedCountAtStart;
+    const countChanged = Number.isSafeInteger(expectedCountAtStart)
+      && Number.isSafeInteger(expectedCountAtEnd)
+      && expectedCountAtStart !== expectedCountAtEnd;
+    const countMismatch = Number.isSafeInteger(expectedCount)
+      && accounts.size !== expectedCount;
+    if (countChanged || countMismatch) complete = false;
+
     return {
       ...session,
       accounts: [...accounts.values()]
         .sort((left, right) => left.username.localeCompare(right.username)),
       complete,
+      listType: listContext?.listType || null,
+      expectedCount,
+      observedCount: accounts.size,
       capturedAt: new Date().toISOString(),
-      reason: complete ? 'list-complete' : 'list-truncated',
+      reason: countChanged
+        ? 'list-count-changed'
+        : countMismatch
+          ? 'list-count-mismatch'
+          : complete
+            ? 'list-complete'
+            : 'list-truncated',
     };
   }
 
@@ -2557,7 +3206,9 @@
   globalThis.InstaAioInstagramInspector = Object.freeze({
     captureVisibleAccounts,
     collectAccountList,
+    detectAuthenticatedUsername,
     enumerateSentDms,
+    fetchFollowerComparison,
     inspectPageContext,
     inspectProfile,
     inspectReviewedDmItem,
@@ -2649,7 +3300,12 @@
   const HEIGHT_MAX = 1_100;
   const INSET = 8;
   const LIVE_AUTHORIZATION_MS = 15 * 60 * 1_000;
-  const LIVE_AUTHORIZATION_PHRASE = 'ENABLE LIVE ACTIONS';
+  const CAPTURE_ACCOUNT_SOURCES = new Set([
+    'authenticated-instagram-web',
+    'extension-scrolled-dom',
+    'extension-visible-dom',
+    'tampermonkey-visible-dom',
+  ]);
 
   if (document.getElementById(EXTENSION_ROOT_ID) || document.getElementById(ROOT_ID)) return;
 
@@ -2677,14 +3333,16 @@
 
   function normalizeAccounts(value) {
     const accounts = new Map();
-    for (const candidate of (Array.isArray(value) ? value : []).slice(0, 2_000)) {
+    for (const candidate of (Array.isArray(value) ? value : []).slice(0, 25_000)) {
       const username = normalizeUsername(candidate?.username || candidate?.profileUrl || candidate);
       if (!username) continue;
       accounts.set(username, {
         username,
         profileUrl: `https://www.instagram.com/${username}/`,
         displayName: safeText(candidate?.displayName),
-        source: 'tampermonkey-visible-dom',
+        source: CAPTURE_ACCOUNT_SOURCES.has(candidate?.source)
+          ? candidate.source
+          : 'tampermonkey-visible-dom',
       });
     }
     return [...accounts.values()].sort((left, right) => left.username.localeCompare(right.username));
@@ -2709,12 +3367,15 @@
 
   function stateDefaults() {
     return {
-      schemaVersion: 2,
+      schemaVersion: 5,
       capture: {
+        subjectUsername: '',
         followers: [],
         following: [],
         capturedAt: { followers: null, following: null },
         complete: { followers: false, following: false },
+        verified: { followers: false, following: false },
+        source: { followers: '', following: '' },
       },
       queue: { queue: [], importedAt: null },
       accountCheck: null,
@@ -2807,9 +3468,14 @@
     const defaults = stateDefaults();
     const legacyQueue = GM_getValue(LEGACY_QUEUE_KEY, null);
     const value = source && typeof source === 'object' ? source : defaults;
+    // Schema 4 is the first state whose capture completeness is reconciled
+    // against an exact list read. Schema 5 records whether that read used
+    // bounded authenticated pagination or the list-dialog fallback.
+    const requiresCountReconciledRescan = Number(value.schemaVersion) < 4;
     return {
-      schemaVersion: 2,
+      schemaVersion: 5,
       capture: {
+        subjectUsername: normalizeUsername(value.capture?.subjectUsername),
         followers: normalizeAccounts(value.capture?.followers),
         following: normalizeAccounts(value.capture?.following),
         capturedAt: {
@@ -2817,8 +3483,24 @@
           following: safeText(value.capture?.capturedAt?.following) || null,
         },
         complete: {
-          followers: value.capture?.complete?.followers === true,
-          following: value.capture?.complete?.following === true,
+          followers: !requiresCountReconciledRescan
+            && value.capture?.verified?.followers === true
+            && value.capture?.complete?.followers === true,
+          following: !requiresCountReconciledRescan
+            && value.capture?.verified?.following === true
+            && value.capture?.complete?.following === true,
+        },
+        verified: {
+          followers: !requiresCountReconciledRescan && value.capture?.verified?.followers === true,
+          following: !requiresCountReconciledRescan && value.capture?.verified?.following === true,
+        },
+        source: {
+          followers: ['authenticated-web', 'list-dialog'].includes(value.capture?.source?.followers)
+            ? value.capture.source.followers
+            : '',
+          following: ['authenticated-web', 'list-dialog'].includes(value.capture?.source?.following)
+            ? value.capture.source.following
+            : '',
         },
       },
       queue: normalizeQueue(value.queue?.queue?.length ? value.queue : legacyQueue),
@@ -2895,21 +3577,26 @@
     return state.queue.queue.find((item) => ACTIONABLE_STATUSES.has(item.status)) || null;
   }
 
+  function verifiedCapture(listType) {
+    return state.capture.verified?.[listType] === true ? state.capture[listType] : [];
+  }
+
   function compareCapture() {
-    const followerNames = new Set(state.capture.followers.map((account) => account.username));
-    const followingNames = new Set(state.capture.following.map((account) => account.username));
+    const followers = verifiedCapture('followers');
+    const following = verifiedCapture('following');
+    const followerNames = new Set(followers.map((account) => account.username));
+    const followingNames = new Set(following.map((account) => account.username));
     return {
-      mutuals: state.capture.following.filter((account) => followerNames.has(account.username)),
-      iDoNotFollowBack: state.capture.followers.filter((account) => !followingNames.has(account.username)),
-      notFollowingMeBack: state.capture.following.filter((account) => !followerNames.has(account.username)),
+      mutuals: following.filter((account) => followerNames.has(account.username)),
+      iDoNotFollowBack: followers.filter((account) => !followingNames.has(account.username)),
+      notFollowingMeBack: following.filter((account) => !followerNames.has(account.username)),
     };
   }
 
-  function captureVisibleAccounts() {
-    const roots = [
-      ...document.querySelectorAll('div[role="dialog"]'),
-      document.querySelector('main'),
-    ].filter(Boolean);
+  function captureVisibleAccounts(expectedListType = '') {
+    const listContext = openFollowerListContext();
+    if (!listContext || listContext.listType !== expectedListType) return [];
+    const roots = [listContext.dialog];
     const accounts = new Map();
     for (const root of roots) {
       for (const anchor of root.querySelectorAll('a[href^="/"]')) {
@@ -2962,24 +3649,27 @@
     const item = currentQueueItem();
     const observation = inspectProfile();
     const expectedRelationship = item?.action === 'follow' ? 'not-following' : 'following';
-    const exact = Boolean(
-      item
-      && observation.ok
-      && observation.username === item.account.username
-      && observation.relationship === expectedRelationship,
-    );
+    const exact = item
+      ? Boolean(
+        observation.ok
+        && observation.username === item.account.username
+        && observation.relationship === expectedRelationship
+      )
+      : observation.ok === true;
     state.accountCheck = {
       checkedAt: nowIso(),
       exact,
       noClick: true,
-      target: item?.account?.username || null,
+      target: item?.account?.username || observation.username || null,
       action: item?.action || null,
       observation,
-      result: !item
-        ? 'Import a manual queue first.'
-        : exact
+      result: item
+        ? exact
           ? `Resolved ${item.action} for @${item.account.username} without clicking.`
-          : observation.reason || `Open @${item.account.username} on the expected relationship state.`,
+          : observation.reason || `Open @${item.account.username} on the expected relationship state.`
+        : observation.ok
+          ? `Observed @${observation.username} as ${observation.relationship.replace('-', ' ')} without clicking.`
+          : observation.reason || 'Open an Instagram profile first.',
     };
     state.history.unshift({ kind: 'account-dry-run', ...state.accountCheck });
     state.history = state.history.slice(0, 20);
@@ -3133,7 +3823,7 @@
       .header { cursor: grab; }
       .header:active { cursor: grabbing; }
       .header button, .header select, .header summary, .header input { cursor: default; }
-      .header h1 { margin: 0; font-size: 17px; line-height: 1.15; }
+      .header h1 { margin: 0; overflow-wrap: break-word; word-break: normal; font-size: 17px; line-height: 1.15; }
       .header p { margin: 2px 0 0; color: var(--aio-text-muted, #667067); font-size: 11px; }
       .mode { display: inline-flex; margin-top: 4px; border: 1px solid var(--aio-warning, #8b6a20); border-radius: 999px; padding: 2px 7px; color: var(--aio-warning, #72520d); font-size: 10px; font-weight: 750; }
       .tabs { display: grid; grid-template-columns: repeat(3,minmax(44px,1fr)); border-bottom: 1px solid var(--aio-line, #d8ddd4); background: color-mix(in srgb, var(--aio-bg-sunken, #eef1ec) var(--aio-alpha-strong), transparent); }
@@ -3149,7 +3839,7 @@
       .tool em { color: var(--aio-accent, #347844); font-size: 10px; font-style: normal; font-weight: 800; text-transform: uppercase; }
       .card { margin-bottom: 10px; border: 1px solid var(--aio-line, #d8ddd4); border-radius: 10px; padding: 12px; background: color-mix(in srgb, var(--aio-bg-raised, #fff) var(--aio-alpha-strong), transparent); }
       .card h2, .card h3 { margin: 0 0 6px; font-size: 15px; }
-      .card p { margin: 4px 0 0; color: var(--aio-text-muted, #687068); font-size: 12px; overflow-wrap: anywhere; }
+      .card p { margin: 4px 0 0; color: var(--aio-text-muted, #687068); font-size: 12px; overflow-wrap: break-word; word-break: normal; }
       .metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 10px 0; }
       .metric { border: 1px solid var(--aio-line, #d8ddd4); border-radius: 9px; padding: 10px; background: color-mix(in srgb, var(--aio-bg-raised, #fff) var(--aio-alpha-strong), transparent); }
       .metric span, .metric strong { display: block; }
@@ -3170,7 +3860,7 @@
       .file { position: relative; overflow: hidden; }
       .file input { position: absolute; inset: 0; opacity: 0; }
       .list { margin: 10px 0 0; padding: 0; border-top: 1px solid var(--aio-line, #d8ddd4); list-style: none; }
-      .list li { padding: 8px 0; border-bottom: 1px solid var(--aio-line, #d8ddd4); overflow-wrap: anywhere; font-size: 12px; }
+      .list li { padding: 8px 0; border-bottom: 1px solid var(--aio-line, #d8ddd4); overflow-wrap: break-word; word-break: normal; font-size: 12px; }
       .list small { display: block; margin-top: 2px; color: var(--aio-text-muted, #687068); }
       .notice { padding: 10px; border-left: 4px solid var(--aio-warning, #ad7823); background: var(--aio-bg-sunken, #fff4d6); color: var(--aio-text, #62490f); font-size: 12px; }
       details.settings { position: relative; }
@@ -3179,8 +3869,8 @@
       .settings-panel { position: absolute; z-index: 5; top: 48px; right: 0; width: min(250px, calc(100vw - 32px)); max-height: var(--aio-settings-max-height); overflow: auto; padding: 12px; border: 1px solid var(--aio-line, #cfd5cc); border-radius: 10px; background: color-mix(in srgb, var(--aio-bg-raised, #fff) 97%, transparent); color: var(--aio-text, #1b211c); box-shadow: var(--aio-shadow-panel, 0 16px 46px rgba(0,0,0,.2)); }
       .range-row { display:grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items:center; }
       .footer { padding-right: 46px; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--aio-line, #d8ddd4); background: color-mix(in srgb, var(--aio-bg, #fff) var(--aio-alpha-strong), transparent); color: var(--aio-text-muted, #687068); font-size: 11px; }
-      .resize { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; z-index: 5; border: 0; background: transparent; cursor: nwse-resize; touch-action: none; }
-      .resize::before { content:""; position:absolute; right:8px; bottom:8px; width:12px; height:12px; border-right:2px solid var(--aio-text-muted, #687068); border-bottom:2px solid var(--aio-text-muted, #687068); }
+      .resize { position: absolute; right: 4px; bottom: 4px; display: flex; width: 76px; height: 44px; z-index: 5; align-items: center; justify-content: flex-start; border: 1px solid var(--aio-line, #d8ddd4); border-radius: 9px; padding: 0 24px 0 9px; background: var(--aio-bg-raised, #fff); color: var(--aio-text-muted, #687068); cursor: nwse-resize; touch-action: none; font-size: 11px; font-weight: 700; }
+      .resize::before { content:""; position:absolute; right:7px; bottom:7px; width:9px; height:9px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; }
       button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, .file:focus-within { outline: 3px solid var(--aio-focus, #168cff); outline-offset: 2px; }
       @media (max-width: 600px) { .panel { top:auto; right:0; bottom:0; left:0; width:100%; height:min(78dvh,720px); border-radius:14px 14px 0 0; } .handle,.resize { display:none; } .header { grid-template-columns:minmax(0,1fr) auto; } }
       @media (prefers-reduced-motion: reduce) { * { scroll-behavior:auto !important; } }
@@ -3222,7 +3912,7 @@
       .context[data-tone="blocked"] .context-dot { background: var(--aio-danger, #8c1d1d); }
       .context-copy { min-width: 0; }
       .context-copy strong { display: block; color: var(--aio-text, #1b211c) !important; font-size: 13px; }
-      .context-copy span { display: block; color: var(--aio-text-muted, #687068) !important; font-size: 12px; overflow-wrap: anywhere; }
+      .context-copy span { display: block; color: var(--aio-text-muted, #687068) !important; font-size: 12px; overflow-wrap: break-word; word-break: normal; }
       .context-cta { white-space: nowrap; }
       .intro { padding: 14px; border-bottom: 1px solid var(--aio-line, #d8ddd4); }
       .intro h2 { margin: 0 0 8px; font-size: 15px; }
@@ -3230,7 +3920,7 @@
       .intro-note { margin: 0 0 8px; color: var(--aio-text-muted, #687068); font-size: 12px; }
       .run-panel { padding: 10px 12px; border-top: 1px solid var(--aio-line, #d8ddd4); background: color-mix(in srgb, var(--aio-bg, #fff) var(--aio-alpha-strong), transparent); }
       .run-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-      .run-head strong { font-size: 12px; overflow-wrap: anywhere; }
+      .run-head strong { font-size: 12px; overflow-wrap: break-word; word-break: normal; }
       .run-bar { overflow: hidden; height: 5px; margin: 8px 0 6px; border-radius: 999px; background: var(--aio-line, #d8ddd4); }
       .run-bar span { display: block; width: 0%; height: 100%; border-radius: 999px; background: var(--aio-accent, #1c6b3c); transition: width var(--aio-motion-base, 180ms) var(--aio-ease, ease); }
       .run-panel .list { max-height: 118px; overflow-y: auto; }
@@ -3260,13 +3950,9 @@
               </div>
               <strong>Layout</strong>
               <div class="field"><label for="aio-opacity">Surface transparency</label><div class="range-row"><input id="aio-opacity" type="range" min="55" max="100" value="88" data-preference="opacity"><output data-role="opacity-output">88%</output></div></div>
+              <div class="field"><label>Size presets</label><div class="toolbar"><button class="button quiet" type="button" data-action="layout-compact">Compact</button><button class="button quiet" type="button" data-action="layout-tall">Tall</button><button class="button quiet" type="button" data-action="layout-wide">Wide</button></div></div>
               <button class="button quiet" type="button" data-action="reset-layout">Reset position and size</button>
-              <strong>Pacing</strong>
-              <div class="field"><label for="aio-limit-actions">Follow/unfollow per day</label><input id="aio-limit-actions" type="number" min="1" max="400" data-role="limit-actions"></div>
-              <div class="field"><label for="aio-limit-unsends">Unsends per day</label><input id="aio-limit-unsends" type="number" min="1" max="300" data-role="limit-unsends"></div>
-              <div class="field"><label for="aio-limit-min">Min delay (seconds)</label><input id="aio-limit-min" type="number" min="2" max="600" data-role="limit-min"></div>
-              <div class="field"><label for="aio-limit-max">Max delay (seconds)</label><input id="aio-limit-max" type="number" min="2" max="900" data-role="limit-max"></div>
-              <button class="button quiet" type="button" data-action="save-limits">Save pacing</button>
+              <details class="settings-inline"><summary>Advanced controls</summary><strong>Pacing and limits</strong><div class="field"><label for="aio-limit-actions">Follow/unfollow per day</label><input id="aio-limit-actions" type="number" min="1" max="400" data-role="limit-actions"></div><div class="field"><label for="aio-limit-unsends">Unsends per day</label><input id="aio-limit-unsends" type="number" min="1" max="300" data-role="limit-unsends"></div><div class="field"><label for="aio-limit-min">Min delay (seconds)</label><input id="aio-limit-min" type="number" min="2" max="600" data-role="limit-min"></div><div class="field"><label for="aio-limit-max">Max delay (seconds)</label><input id="aio-limit-max" type="number" min="2" max="900" data-role="limit-max"></div><button class="button quiet" type="button" data-action="save-limits">Save pacing</button></details>
               <p class="lead">Drag the header handle or lower corner. Arrow keys work on both.</p>
             </div>
           </details>
@@ -3290,38 +3976,30 @@
         <div class="toolbar"><button class="button primary" type="button" data-action="intro-done">Start with the checker</button></div>
       </section>
       <nav class="tabs" role="tablist" aria-label="Insta AIO userscript tools">
-        <button id="aio-tab-checker" class="tab" type="button" role="tab" data-view="checker" aria-controls="aio-panel-checker" aria-selected="true" tabindex="0">Checker</button>
-        <button id="aio-tab-account" class="tab" type="button" role="tab" data-view="account" aria-controls="aio-panel-account" aria-selected="false" tabindex="-1">Follow</button>
-        <button id="aio-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="aio-panel-messages" aria-selected="false" tabindex="-1">Unsend</button>
+        <button id="aio-tab-checker" class="tab" type="button" role="tab" data-view="checker" aria-controls="aio-panel-checker" aria-selected="true" tabindex="0">Follower checker</button>
+        <button id="aio-tab-account" class="tab" type="button" role="tab" data-view="account" aria-controls="aio-panel-account" aria-selected="false" tabindex="-1">Follow / Unfollow</button>
+        <button id="aio-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="aio-panel-messages" aria-selected="false" tabindex="-1">DM Unsend</button>
       </nav>
       <div class="scroll">
-        <section id="aio-panel-checker" class="view" role="tabpanel" aria-labelledby="aio-tab-checker" data-panel="checker" hidden><ol class="steps" data-role="checker-steps">
-            <li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan Following</strong><span data-role="step-following">Not scanned yet</span></div><button class="button" type="button" data-action="scan-following">Scan Following</button></li>
-            <li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan Followers</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button" type="button" data-action="scan-followers">Scan Followers</button></li>
-            <li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li>
-          </ol>
+        <section id="aio-panel-checker" class="view" role="tabpanel" aria-labelledby="aio-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="aio-checker-account-title"><h2 id="aio-checker-account-title">Check an account</h2><p>Uses the Instagram session already open in this tab. This is read only.</p><div class="field"><label for="aio-checker-username">Instagram username</label><input id="aio-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check Followers + Following</button></div><p class="lead">Loads paginated relationship data from Instagram, compares it on this device, and never follows, unfollows, sends, unsends, or opens account controls.</p></section>
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar"><span data-role="scan-fill"></span></div><p class="lead" data-role="scan-detail"></p></div>
           <div class="field"><label for="aio-filter">Filter results</label><input id="aio-filter" type="search" placeholder="Search a username" data-role="result-filter"></div>
-          <details class="settings-inline"><summary>More</summary><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows only</button><button class="button quiet" type="button" data-action="download-list">Download a raw list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="aio-list-type">Raw list to use</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details><div class="card" data-role="comparison"></div><ul class="list" data-role="capture-list"></ul></section>
-        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Import the PWA manual queue, open one target, and verify the exact profile state without clicking.</p><div class="card" data-role="queue-current"></div>
-          <details class="settings-inline"><summary>Single account tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="open-profile">Open exact profile</button><button class="button quiet" type="button" data-action="account-dry-run">Run no-click check</button><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
-          <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
+          <div class="card" data-role="comparison"></div><details class="settings-inline"><summary>Advanced: list-dialog fallback and export</summary><p class="lead">If Instagram rejects the account check, open your own Following or Followers dialog and use the matching fallback scan. Starting a fallback scan clears authenticated results first so accounts from different profiles cannot mix.</p><ol class="steps" data-role="checker-steps"><li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan open Following dialog</strong><span data-role="step-following">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-following">Scan Following</button></li><li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan open Followers dialog</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-followers">Scan Followers</button></li><li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li></ol><ul class="list" data-role="capture-list"></ul><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows only</button><button class="button quiet" type="button" data-action="download-list">Download a raw list</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="aio-list-type">Raw list to use</label><select id="aio-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details></section>
+        <section id="aio-panel-account" class="view" role="tabpanel" aria-labelledby="aio-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow review.</strong> Inspect the profile already open, or choose a bounded reviewed list. Nothing clicks during review.</p><div class="card" data-role="queue-current"></div>
+          <div class="toolbar"><button class="button primary" type="button" data-action="account-dry-run">Inspect exact profile</button><button class="button quiet" type="button" data-action="open-profile">Open exact profile</button></div><details class="settings-inline"><summary>Advanced: queue state and files</summary><div class="toolbar"><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
+          <div class="field"><label for="aio-bot-source">Targets</label><select id="aio-bot-source" data-role="bot-source"><option value="current-profile">Current exact profile</option><option value="not-following-me-back">Not following me back</option><option value="i-do-not-follow-back">I don't follow back</option><option value="scanned-followers">Last scanned Followers list</option><option value="scanned-following">Last scanned Following list</option><option value="queue">Imported queue</option></select></div>
           <div class="field"><label for="aio-bot-action">Action</label><select id="aio-bot-action" data-role="bot-action"><option value="unfollow">Unfollow</option><option value="follow">Follow</option></select></div>
           <div class="field"><label for="aio-bot-count">How many this run</label><input id="aio-bot-count" type="number" min="1" max="250" value="20" data-role="bot-count"></div>
           <p class="lead" data-role="account-run-summary">Choose a source, action, and bounded amount, then review the exact targets.</p><div class="toolbar"><button class="button primary big" type="button" data-action="review-accounts" data-role="account-run-primary">Review run</button></div><div class="review" data-role="run-review" hidden><strong data-role="review-title"></strong><ul class="list list--compact" data-role="review-list"></ul><p class="lead" data-role="review-skips"></p></div>
           <p class="notice">To grow from someone else's audience, open their profile, scan their Followers in the checker, then run with <strong>Last scanned Followers list</strong>. Accounts you already follow are skipped automatically. The run stops itself on any rate limit, security check, or block.</p></section>
-        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend review.</strong> Read visible evidence or import one reviewed DM job and resolve its exact sent-message identity without opening a menu.</p><div class="toolbar"><button class="button primary big" type="button" data-action="unsend-all" data-live-action data-role="unsend-primary">Unsend all DMs</button></div>
-          <div class="toolbar"><button class="button quiet" type="button" data-action="scan-sent">Check first, without removing anything</button></div>
+        <section id="aio-panel-messages" class="view" role="tabpanel" aria-labelledby="aio-tab-messages" data-panel="messages" hidden><p class="lead"><strong>DM Unsend.</strong> Resolve this conversation and its eligible sent-message count before reviewing any permanent action.</p><div class="toolbar"><button class="button primary big" type="button" data-action="scan-sent">Check conversation</button></div>
           <div class="card" data-role="dm-summary" hidden><strong data-role="dm-summary-title"></strong><span data-role="dm-summary-detail"></span></div>
           <details class="settings-inline"><summary>Other message tools</summary><div class="toolbar"><button class="button quiet" type="button" data-action="read-messages">Read visible thread</button><label class="file quiet">Import reviewed DM job<input type="file" accept=".json,application/json" data-file="dm"></label><button class="button quiet" type="button" data-action="dm-dry-run">No-click exact check</button></div></details><div class="card" data-role="dm-result"></div><ul class="list" data-role="message-list"></ul>
-          <div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">Every sent message found</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div>
-          <div class="field"><label for="aio-unsend-count">How many</label><input id="aio-unsend-count" type="number" min="1" max="250" value="20" data-role="unsend-count"></div>
-          <div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-live-action>Unsend selected</button></div>
-          <p class="notice">Only messages you sent are eligible. Each is re-checked by id, time, and content immediately before removal. Unsending cannot be undone.</p></section>
+          <div data-role="unsend-plan"><div class="field"><label for="aio-unsend-scope">Scope</label><select id="aio-unsend-scope" data-role="unsend-scope"><option value="all">All eligible sent messages</option><option value="newest">Newest N</option><option value="oldest">Oldest N</option></select></div><div class="field"><label for="aio-unsend-count">Number of messages</label><input id="aio-unsend-count" type="number" min="1" max="250" value="1" data-role="unsend-count"></div><div class="toolbar"><button class="button danger" type="button" data-action="run-unsend" data-role="unsend-primary" disabled>Check conversation first</button></div><p class="notice">Only messages you sent are eligible. The exact thread, scope, finite count, digest, and expiry are revalidated before the first message menu opens.</p></div></section>
       </div>
       <div class="run-panel" data-role="run-panel" hidden><div class="run-head"><strong data-role="run-title"></strong><button class="button danger" type="button" data-action="stop-run" data-role="stop-run">Stop</button></div><div class="run-bar"><span data-role="run-fill"></span></div><p class="lead" data-role="run-detail"></p><ul class="list" data-role="run-results"></ul></div>
       <footer class="footer" role="status" aria-live="polite"><span data-role="status">Ready. No Instagram control has been used.</span><strong>Local only</strong></footer>
-      <button class="resize" type="button" data-role="resize" aria-label="Resize toolbox; use arrow keys for precise sizing" title="Drag to resize"></button>
+      <button class="resize" type="button" data-role="resize" aria-label="Resize toolbox; use arrow keys for precise sizing" title="Drag to resize">Resize</button>
     </aside>`;
 
   const query = (selector) => shadow.querySelector(selector);
@@ -3393,7 +4071,9 @@
     if (modeLabel) {
       modeLabel.dataset.live = liveAvailable ? 'unlocked' : 'locked';
       modeLabel.textContent = externalLiveRunActive
-        ? `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
+        ? externalRunOperation === 'check'
+          ? 'Userscript mode · read-only conversation check'
+          : `Userscript mode · thread Unsend authorized ${authorizationRemainingMinutes(liveActionsUnlockedUntil)}m`
         : activeRunAuthorized
         ? `Userscript mode · active run authorized ${authorizationRemainingMinutes(state.run.authorizationExpiresAt)}m`
         : newRunUnlocked
@@ -3409,7 +4089,9 @@
     setText(
       'live-status',
       externalLiveRunActive
-        ? 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
+        ? externalRunOperation === 'check'
+          ? 'A read-only conversation check is active. Nothing can be removed.'
+          : 'Thread-wide Unsend is active. Use Stop to revoke its remaining authorization.'
         : activeRunAuthorized
         ? 'A reviewed batch is active. Use Stop to revoke its remaining authorization.'
         : newRunUnlocked
@@ -3425,10 +4107,12 @@
     const grid = query('[data-role="tool-grid"]');
     grid.replaceChildren();
     const comparison = compareCapture();
+    const verifiedFollowers = verifiedCapture('followers');
+    const verifiedFollowing = verifiedCapture('following');
     const item = currentQueueItem();
     const liveBadge = liveAuthorized() ? 'live unlocked' : 'live locked';
     const tools = [
-      ['checker', 'Follower checker', `${state.capture.followers.length} followers · ${state.capture.following.length} following · ${comparison.notFollowingMeBack.length} not following back`, 'read only'],
+      ['checker', 'Follower checker', `${verifiedFollowers.length} followers · ${verifiedFollowing.length} following · ${comparison.notFollowingMeBack.length} not following back`, 'read only'],
       ['account', 'Follow / Unfollow', item ? `${item.action} @${item.account.username} is next` : 'Import a reviewed manual queue', liveBadge],
       ['messages', 'DM Unsend', state.dmTarget ? `Reviewed message ${state.dmTarget.messageId} loaded` : 'Visible evidence and exact-message review', liveBadge],
     ];
@@ -3451,25 +4135,47 @@
   }
 
   function renderChecker() {
-    setText('followers-count', state.capture.followers.length);
-    setText('following-count', state.capture.following.length);
+    const verifiedFollowers = verifiedCapture('followers');
+    const verifiedFollowing = verifiedCapture('following');
+    const comparisonReady = state.capture.verified?.followers === true
+      && state.capture.verified?.following === true;
+    const authenticatedCheck = state.capture.source?.followers === 'authenticated-web'
+      && state.capture.source?.following === 'authenticated-web';
+    const usernameInput = query('[data-role="checker-username"]');
+    if (usernameInput && document.activeElement !== usernameInput && !usernameInput.value) {
+      usernameInput.value = state.capture.subjectUsername
+        || engine?.detectAuthenticatedUsername?.()
+        || '';
+    }
+    const runButton = query('[data-role="checker-run"]');
+    if (runButton) {
+      runButton.textContent = relationshipController
+        ? 'Stop follower check'
+        : 'Check Followers + Following';
+      runButton.classList.toggle('danger', Boolean(relationshipController));
+      runButton.classList.toggle('primary', !relationshipController);
+    }
+    setText('followers-count', verifiedFollowers.length);
+    setText('following-count', verifiedFollowing.length);
     const comparison = compareCapture();
     const result = query('[data-role="comparison"]');
     result.replaceChildren();
     const title = document.createElement('h2');
-    title.textContent = state.capture.followers.length && state.capture.following.length
-      ? 'Rendered-row comparison'
-      : 'Capture both lists';
+    title.textContent = comparisonReady
+      ? authenticatedCheck ? `Account comparison${state.capture.subjectUsername ? ` · @${state.capture.subjectUsername}` : ''}` : 'List-dialog comparison'
+      : 'No comparison loaded';
     const detail = document.createElement('p');
-    detail.textContent = state.capture.followers.length && state.capture.following.length
-      ? `${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following me back · ${comparison.iDoNotFollowBack.length} I don't follow back.`
-      : 'Open your Followers list and choose Scan full list, then do the same for Following.';
+    detail.textContent = comparisonReady
+      ? `${verifiedFollowers.length} followers · ${verifiedFollowing.length} following · ${comparison.mutuals.length} mutual · ${comparison.notFollowingMeBack.length} not following me back · ${comparison.iDoNotFollowBack.length} I don't follow back.`
+      : 'Confirm your username above, then load Followers and Following in one read-only check.';
     result.append(title, detail);
 
     // A scan that stopped early would otherwise be read as the whole list, and
     // every number below it would quietly be wrong.
     const partial = ['followers', 'following']
-      .filter((type) => state.capture[type].length && state.capture.complete?.[type] !== true);
+      .filter((type) => state.capture.verified?.[type] === true
+        && state.capture[type].length
+        && state.capture.complete?.[type] !== true);
     if (partial.length) {
       const warning = document.createElement('p');
       warning.className = 'notice';
@@ -3477,7 +4183,16 @@
       result.append(warning);
     }
 
-    if (state.capture.followers.length && state.capture.following.length) {
+    const unverified = ['followers', 'following']
+      .filter((type) => state.capture[type].length && state.capture.verified?.[type] !== true);
+    if (unverified.length) {
+      const warning = document.createElement('p');
+      warning.className = 'notice';
+      warning.textContent = `Saved ${unverified.join(' and ')} rows were captured before exact dialog verification. They remain available under Advanced for export, but cannot drive comparisons or runs until rescanned.`;
+      result.append(warning);
+    }
+
+    if (comparisonReady) {
       const actions = document.createElement('div');
       actions.className = 'toolbar';
       const button = document.createElement('button');
@@ -3488,7 +4203,10 @@
         schemaVersion: 1,
         kind: 'insta-aio-comparison',
         generatedAt: nowIso(),
+        subjectUsername: state.capture.subjectUsername || '',
+        source: state.capture.source || {},
         complete: state.capture.complete || {},
+        verified: state.capture.verified || {},
         mutuals: comparison.mutuals,
         notFollowingMeBack: comparison.notFollowingMeBack,
         iDoNotFollowBack: comparison.iDoNotFollowBack,
@@ -3528,7 +4246,10 @@
     const resultTitle = document.createElement('h3');
     resultTitle.textContent = state.accountCheck?.exact ? 'Exact no-click check passed' : 'No-click check';
     const resultDetail = document.createElement('p');
-    resultDetail.textContent = state.accountCheck?.result || 'Open the exact queued profile, then run the check.';
+    resultDetail.textContent = state.accountCheck?.result
+      || (item
+        ? 'Open the exact queued profile, then run the check.'
+        : 'Open an Instagram profile, then inspect it without clicking.');
     result.append(resultTitle, resultDetail);
     renderAccountRunPrimary();
   }
@@ -3726,7 +4447,9 @@
   let liveActionsUnlockedUntil = 0;
   let liveAuthorizationTimer = null;
   let externalLiveRunActive = false;
+  let externalRunOperation = null;
   let accountRunDraft = null;
+  let relationshipController = null;
 
   function authorizationRemainingMinutes(expiresAt) {
     return Math.max(1, Math.ceil((Number(expiresAt) - Date.now()) / 60_000));
@@ -3747,13 +4470,17 @@
   function requireNewRunAuthorization() {
     if (newLiveRunAuthorized() && !externalLiveRunActive) return true;
     if (externalLiveRunActive) {
-      status('Thread-wide Unsend is already running. Stop it before starting another live action.');
+      status(externalRunOperation === 'check'
+        ? 'A read-only conversation check is running. Stop it before starting a live action.'
+        : 'Thread-wide Unsend is already running. Stop it before starting another live action.');
       renderAll();
       return false;
     }
-    status('Live actions are locked. Open preferences and enable the 15-minute live window first.');
-    renderAll();
-    return false;
+    // Starting an already-reviewed action is itself an explicit request to use
+    // the temporary live window. Avoid a second, unrelated phrase ceremony;
+    // the exact action still receives its own target-bound confirmation below.
+    setLiveActionsUnlocked(true);
+    return newLiveRunAuthorized();
   }
 
   function stopForExpiredAuthorization() {
@@ -3775,7 +4502,7 @@
     liveAuthorizationTimer = setTimeout(() => {
       liveActionsUnlockedUntil = 0;
       liveAuthorizationTimer = null;
-      if (externalLiveRunActive) {
+      if (externalLiveRunActive && externalRunOperation === 'unsend') {
         globalThis.InstaAioDmThreadUnsender?.stop?.();
         renderAll();
         status('Live authorization expired. Thread-wide Unsend is stopping before another message.');
@@ -3795,7 +4522,7 @@
       liveActionsUnlockedUntil = 0;
       if (liveAuthorizationTimer) clearTimeout(liveAuthorizationTimer);
       liveAuthorizationTimer = null;
-      if (externalLiveRunActive) {
+      if (externalLiveRunActive && externalRunOperation === 'unsend') {
         globalThis.InstaAioDmThreadUnsender?.stop?.();
         renderAll();
         status('Live actions locked. Thread-wide Unsend is stopping.');
@@ -3810,20 +4537,9 @@
       return;
     }
 
-    // A typed phrase prevents an accidental checkbox or synthetic pointer event
-    // from granting destructive authority. This tab-only window is never saved
-    // as a general preference; only an already-confirmed account run carries its
-    // expiry across the profile navigations that the run itself causes.
-    const answer = globalThis.prompt(
-      `Type ${LIVE_AUTHORIZATION_PHRASE} to unlock Follow, Unfollow, and Unsend for 15 minutes.`,
-      '',
-    );
-    if (answer !== LIVE_AUTHORIZATION_PHRASE) {
-      liveActionsUnlockedUntil = 0;
-      renderAll();
-      status('Live actions stayed locked. The authorization phrase did not match.');
-      return;
-    }
+    // This tab-only window is never saved as a general preference. Exact
+    // Follow, Unfollow, and Unsend runs still require their target-bound review
+    // and irreversible-action confirmation before any Instagram control runs.
     liveActionsUnlockedUntil = Date.now() + LIVE_AUTHORIZATION_MS;
     scheduleLiveAuthorizationExpiry();
     renderAll();
@@ -3862,6 +4578,41 @@
     ledger[kind] = Number(ledger[kind] || 0) + 1;
     state.ledger = ledger;
     saveState();
+  }
+
+  function reserveUnsendPlan(plan) {
+    const count = Number(plan?.limit);
+    const reviewedDigest = String(plan?.reviewedDigest || '');
+    const bounds = limits();
+    if (
+      !newLiveRunAuthorized()
+      || !Number.isInteger(count)
+      || count < 1
+      || !/^[0-9a-f]{8}$/.test(reviewedDigest)
+      || Number(plan?.expiresAt) <= Date.now()
+    ) return { ok: false, reason: 'The live window or reviewed plan expired.' };
+    const current = state.ledger?.day === today()
+      ? state.ledger
+      : { day: today(), actions: 0, unsends: 0 };
+    if (current.lastUnsendPlanDigest === reviewedDigest) {
+      return { ok: false, reason: 'This reviewed Unsend plan was already reserved.' };
+    }
+    const remaining = Math.max(0, bounds.dailyUnsends - Number(current.unsends || 0));
+    if (count > remaining) {
+      return {
+        ok: false,
+        reason: `Only ${remaining} of ${bounds.dailyUnsends} daily Unsends remain.`,
+      };
+    }
+    current.unsends = Number(current.unsends || 0) + count;
+    current.lastUnsendPlanDigest = reviewedDigest;
+    state.ledger = current;
+    saveState();
+    return {
+      ok: true,
+      minDelayMs: bounds.minDelayMs,
+      maxDelayMs: Math.max(bounds.minDelayMs, bounds.maxDelayMs),
+    };
   }
 
   function sleep(ms) {
@@ -3917,59 +4668,12 @@
     return { status: 'completed', reason: String(result.result), fatal: false };
   }
 
-  async function runOneUnsend(message) {
-    const observation = engine.inspectReviewedDmItem({
-      conversationId: message.conversationId,
-      contentDigest: message.contentDigest,
-      messageId: message.messageId,
-      sentByMe: true,
-      timestamp: message.timestamp,
-    });
-    const stop = sessionStop(observation);
-    if (stop) return { status: 'stopped', reason: stop, fatal: true };
-    if (
-      observation?.messageId !== String(message.messageId)
-      || Number(observation?.timestamp) !== Number(message.timestamp)
-      || observation?.contentDigest !== message.contentDigest
-      || observation?.sentByMe !== true
-      || observation?.exactIdentityAvailable !== true
-      || observation?.ownershipAvailable !== true
-      || observation?.ambiguous
-      || observation?.unexpectedUi
-      || !observation?.resolutionToken
-    ) {
-      return {
-        status: 'skipped',
-        reason: observation?.reason || 'could not re-identify this message',
-        fatal: false,
-      };
-    }
-    const result = await engine.performReviewedDmUnsend({
-      conversationId: String(message.conversationId),
-      contentDigest: message.contentDigest,
-      messageId: String(message.messageId),
-      resolutionToken: observation.resolutionToken,
-      sentByMe: true,
-      timestamp: Number(message.timestamp),
-    });
-    const resultStop = sessionStop(result);
-    if (resultStop) return { status: 'stopped', reason: resultStop, fatal: true };
-    if (result?.result !== 'unsent') {
-      return { status: 'failed', reason: result?.reason || 'not confirmed', fatal: false };
-    }
-    recordAction('unsends');
-    return { status: 'completed', reason: 'unsent', fatal: false };
-  }
-
   // An account run has to visit each target's profile, and navigating tears this
   // script down and reloads it. So an account run is persisted with its
   // remaining queue and picked up again on the next page load: one profile per
   // load. That is safe because every item is independently re-resolved on
   // arrival and still has to pass the exact-target checks before anything
   // happens — resuming never inherits trust from the previous page.
-  //
-  // DM runs stay in-memory: they act inside one already-open conversation and
-  // never navigate, so a reload means the thread they were driving is gone.
   function resumableAccountRun() {
     const run = state.run;
     if (!run || run.kind !== 'account' || run.status !== 'running') return null;
@@ -4070,96 +4774,6 @@
     await continueAccountRun();
   }
 
-  async function runBatch({ kind, action, items }) {
-    if (!requireNewRunAuthorization()) return;
-    if (state.run?.status === 'running') {
-      status('A run is already going. Stop it first.');
-      return;
-    }
-    const bounds = limits();
-    const cap = kind === 'dm' ? bounds.dailyUnsends : bounds.dailyActions;
-    const already = usedToday(kind === 'dm' ? 'unsends' : 'actions');
-    const allowance = Math.max(0, cap - already);
-    if (!allowance) {
-      status(`Daily limit reached (${cap}). Raise it in preferences or continue tomorrow.`);
-      return;
-    }
-    const queued = items.slice(0, allowance);
-    batchAbort = false;
-    setRun({
-      status: 'running',
-      kind,
-      action,
-      total: queued.length,
-      completed: 0,
-      skipped: 0,
-      failed: 0,
-      current: '',
-      stopReason: null,
-      authorizationExpiresAt: liveActionsUnlockedUntil,
-      results: [],
-    });
-
-    for (let index = 0; index < queued.length; index += 1) {
-      if (batchAbort) break;
-      if (!runAuthorizationValid()) {
-        stopForExpiredAuthorization();
-        return;
-      }
-      const item = queued[index];
-      const label = kind === 'dm' ? (item.preview || item.messageId) : `@${item.username}`;
-      setRun({ current: label });
-
-      let outcome;
-      try {
-        outcome = kind === 'dm'
-          ? await runOneUnsend(item)
-          : await runOneAccount(item.username, action);
-      } catch (error) {
-        outcome = { status: 'failed', reason: error.message, fatal: false };
-      }
-
-      const run = state.run || {};
-      const results = [{
-        label,
-        status: outcome.status,
-        reason: outcome.reason,
-      }, ...(run.results || [])].slice(0, 40);
-      const patch = { results };
-      if (outcome.status === 'completed') patch.completed = (run.completed || 0) + 1;
-      else if (outcome.status === 'skipped') patch.skipped = (run.skipped || 0) + 1;
-      else patch.failed = (run.failed || 0) + 1;
-      setRun(patch);
-
-      if (outcome.fatal) {
-        setRun({ status: 'stopped', stopReason: outcome.reason, current: '' });
-        status(`Stopped: ${outcome.reason}. Nothing further was attempted.`);
-        return;
-      }
-
-      if (index < queued.length - 1) {
-        let wait = bounds.minDelayMs
-          + Math.floor(Math.random() * (Math.max(bounds.maxDelayMs, bounds.minDelayMs) - bounds.minDelayMs + 1));
-        if ((index + 1) % REST_EVERY === 0) wait += REST_MS;
-        setRun({ nextAt: Date.now() + wait });
-        await sleep(wait);
-      }
-    }
-
-    const run = state.run || {};
-    setRun({
-      status: batchAbort ? 'aborted' : 'completed',
-      stopReason: batchAbort ? 'stopped by you' : null,
-      current: '',
-      nextAt: null,
-    });
-    status(
-      batchAbort
-        ? 'Run stopped. Nothing further was attempted.'
-        : `Run finished: ${run.completed || 0} done, ${run.skipped || 0} skipped, ${run.failed || 0} failed.`,
-    );
-  }
-
   function confirmRun(message) {
     // eslint-disable-next-line no-alert
     return globalThis.confirm(message);
@@ -4172,19 +4786,32 @@
   // session on every render, and naming exactly one useful next action, removes
   // the guesswork. This only describes state; it never unlocks anything.
 
+  function followerListTypeFromText(value) {
+    const label = String(value || '')
+      .normalize('NFKC')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLocaleLowerCase();
+    if (/^followers(?:\s|$)/.test(label)) return 'followers';
+    if (/^following(?:\s|$)/.test(label)) return 'following';
+    return '';
+  }
+
   function openFollowerListContext() {
     for (const dialog of document.querySelectorAll('[role="dialog"]')) {
       const heading = [...dialog.querySelectorAll('[role="heading"], h1, h2')]
         .map(visibleText)
         .find(Boolean);
       const firstLine = visibleText(dialog).split(/\r?\n/).map((line) => line.trim()).find(Boolean);
-      const label = [dialog.getAttribute('aria-label'), heading, firstLine]
-        .filter(Boolean)
-        .join(' ')
-        .normalize('NFKC')
-        .toLocaleLowerCase();
-      if (/(^|\s)followers(\s|$)/.test(label)) return { dialog, listType: 'followers', label: 'Followers' };
-      if (/(^|\s)following(\s|$)/.test(label)) return { dialog, listType: 'following', label: 'Following' };
+      const observedTypes = new Set(
+        [dialog.getAttribute('aria-label'), heading, firstLine]
+          .map(followerListTypeFromText)
+          .filter(Boolean),
+      );
+      if (observedTypes.size !== 1) continue;
+      const [observed] = observedTypes;
+      if (observed === 'followers') return { dialog, listType: 'followers', label: 'Followers' };
+      if (observed === 'following') return { dialog, listType: 'following', label: 'Following' };
     }
     return null;
   }
@@ -4233,8 +4860,8 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Open this account’s Followers or Following to scan them.',
-        view: 'checker',
+        detail: 'Inspect this exact profile, or open its Followers or Following to scan a list.',
+        view: 'account',
       };
     }
     return {
@@ -4277,6 +4904,7 @@
   function scanState(listType) {
     const count = state.capture[listType].length;
     if (!count) return 'todo';
+    if (state.capture.verified?.[listType] !== true) return 'partial';
     return state.capture.complete?.[listType] === true ? 'done' : 'partial';
   }
 
@@ -4285,10 +4913,12 @@
     for (const listType of ['following', 'followers']) {
       const step = query(`.step[data-step="${listType}"]`);
       const status = scanState(listType);
+      const verified = state.capture.verified?.[listType] === true;
       if (step) step.dataset.state = status;
       const count = state.capture[listType].length;
       setText(`step-${listType}`,
         status === 'todo' ? 'Not scanned yet'
+          : !verified ? `${count} stored — rescan required`
           : status === 'done' ? `${count} found — complete`
             : `${count} found — did not reach the end`);
       const button = query(`[data-action="scan-${listType}"]`);
@@ -4296,7 +4926,7 @@
       if (button) button.textContent = `${status === 'todo' ? 'Scan' : 'Rescan'} ${listLabel}`;
     }
     const compareStep = query('.step[data-step="compare"]');
-    const both = state.capture.following.length && state.capture.followers.length;
+    const both = verifiedCapture('following').length && verifiedCapture('followers').length;
     const complete = scanState('following') === 'done' && scanState('followers') === 'done';
     if (compareStep) compareStep.dataset.state = both ? (complete ? 'done' : 'partial') : 'todo';
     setText('step-compare', both
@@ -4304,7 +4934,7 @@
       : 'Scan both lists first');
   }
 
-  function showScanProgress(listType, found, complete) {
+  function showScanProgress(listType, found, complete, settled = false) {
     const panel = query('[data-role="scan-progress"]');
     if (!panel) return;
     panel.hidden = false;
@@ -4313,7 +4943,9 @@
     if (fill) fill.style.width = complete ? '100%' : `${Math.min(95, 5 + (found % 95))}%`;
     setText('scan-detail', complete
       ? `Scanned ${found} ${listType} — complete.`
-      : `Scanning ${listType}… ${found} found so far.`);
+      : settled
+        ? `Scanned ${found} ${listType} — incomplete.`
+        : `Scanning ${listType}… ${found} found so far.`);
   }
 
   async function scanInto(listType) {
@@ -4322,8 +4954,78 @@
     showScanProgress(listType, 0, false);
     await actions['scan-list']();
     const found = state.capture[listType].length;
-    showScanProgress(listType, found, state.capture.complete?.[listType] === true);
+    showScanProgress(listType, found, state.capture.complete?.[listType] === true, true);
     renderAll();
+  }
+
+  async function checkAccountRelationships() {
+    if (relationshipController) {
+      relationshipController.abort();
+      status('Stopping the follower check. Saved comparison data was not changed.');
+      return;
+    }
+    if (typeof engine?.fetchFollowerComparison !== 'function') {
+      status('Reload Instagram to activate the current follower checker engine.');
+      return;
+    }
+    const input = query('[data-role="checker-username"]');
+    const username = engine.normalizeUsername(input?.value)
+      || engine.detectAuthenticatedUsername?.()
+      || '';
+    if (!username) {
+      status('Enter the Instagram username whose Followers and Following should be checked.');
+      input?.focus();
+      return;
+    }
+    if (input) input.value = username;
+    const controller = new AbortController();
+    relationshipController = controller;
+    renderAll();
+    const progressPanel = query('[data-role="scan-progress"]');
+    if (progressPanel) progressPanel.hidden = false;
+    setText('scan-detail', `Finding the exact @${username} account…`);
+    try {
+      const result = await engine.fetchFollowerComparison({
+        username,
+        signal: controller.signal,
+        onProgress(progress) {
+          if (relationshipController !== controller) return;
+          if (progress.phase === 'resolving') {
+            setText('scan-detail', `Finding the exact @${username} account…`);
+            return;
+          }
+          if (progress.listType) showScanProgress(progress.listType, progress.found, false);
+        },
+      });
+      const previousCapture = state.capture;
+      const nextCapture = {
+        ...stateDefaults().capture,
+        subjectUsername: result.username,
+        followers: normalizeAccounts(result.followers),
+        following: normalizeAccounts(result.following),
+        capturedAt: { followers: result.capturedAt, following: result.capturedAt },
+        complete: { ...result.complete },
+        verified: { followers: true, following: true },
+        source: { followers: 'authenticated-web', following: 'authenticated-web' },
+      };
+      state.capture = nextCapture;
+      try {
+        saveState();
+      } catch (error) {
+        state.capture = previousCapture;
+        throw error;
+      }
+      status(
+        `Checked @${result.username}: ${result.followers.length} followers and ${result.following.length} following.${result.complete.followers && result.complete.following ? '' : ' A bounded read limit was reached, so the comparison is marked partial.'}`,
+      );
+    } catch (error) {
+      status(error?.code === 'stopped'
+        ? 'Follower check stopped. The previous saved comparison is unchanged.'
+        : `Follower check stopped: ${error?.message || 'Instagram did not return readable relationship data.'}`);
+    } finally {
+      if (relationshipController === controller) relationshipController = null;
+      renderAll();
+    }
   }
 
 
@@ -4359,24 +5061,30 @@
 
   function accountRunPlan() {
     const action = query('[data-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
-    const source = query('[data-role="bot-source"]')?.value || 'not-following-me-back';
-    const count = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
+    const source = query('[data-role="bot-source"]')?.value || 'current-profile';
+    const requestedCount = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
+    const count = source === 'current-profile' ? 1 : requestedCount;
     const comparison = compareCapture();
     const names = (list) => (list || []).map((entry) => entry.username || entry).filter(Boolean);
     const pools = {
+      'current-profile': () => {
+        const username = engine.normalizeUsername?.(location.pathname) || '';
+        return username ? [username] : [];
+      },
       queue: () => (state.queue.queue || [])
         .filter((entry) => ACTIONABLE_STATUSES.has(entry.status))
         .map((entry) => entry.account?.username)
         .filter(Boolean),
       'i-do-not-follow-back': () => names(comparison.iDoNotFollowBack),
       'not-following-me-back': () => names(comparison.notFollowingMeBack),
-      'scanned-followers': () => names(state.capture.followers),
-      'scanned-following': () => names(state.capture.following),
+      'scanned-followers': () => names(verifiedCapture('followers')),
+      'scanned-following': () => names(verifiedCapture('following')),
     };
-    const pool = (pools[source] || pools['not-following-me-back'])();
+    const pool = (pools[source] || pools['current-profile'])();
     let eligible = pool;
-    if (action === 'follow' && state.capture.following.length) {
-      const already = new Set(names(state.capture.following));
+    const verifiedFollowing = verifiedCapture('following');
+    if (source !== 'current-profile' && action === 'follow' && verifiedFollowing.length) {
+      const already = new Set(names(verifiedFollowing));
       eligible = eligible.filter((username) => !already.has(username));
     }
     const unique = [...new Set(eligible)];
@@ -4396,7 +5104,6 @@
     if (!button) return;
     if (accountRunDraft) {
       button.dataset.action = 'run-accounts';
-      button.dataset.liveAction = '';
       button.textContent = `Start ${accountRunDraft.action} run`;
       button.classList.add('danger');
       button.classList.remove('primary');
@@ -4404,7 +5111,6 @@
       setText('account-run-summary', `Reviewed: ${preview}${accountRunDraft.items.length > 3 ? `, +${accountRunDraft.items.length - 3} more` : ''}. Every profile is rechecked before action.`);
     } else {
       button.dataset.action = 'review-accounts';
-      delete button.dataset.liveAction;
       button.disabled = false;
       button.textContent = 'Review run';
       button.classList.add('primary');
@@ -4424,7 +5130,9 @@
     if (!plan.items.length) {
       clearAccountRunDraft();
       status(
-        plan.source.startsWith('scanned')
+        plan.source === 'current-profile'
+          ? 'Open one Instagram profile first. No target was reviewed.'
+          : plan.source.startsWith('scanned')
           ? 'That list is empty. Open the list you want and scan it in the checker first.'
           : 'No targets. Scan both lists in the checker first, or import a queue.',
       );
@@ -4500,6 +5208,7 @@
   }
 
   const actions = {
+    'check-account-relationships': () => checkAccountRelationships(),
     'scan-following': () => scanInto('following'),
     'scan-followers': () => scanInto('followers'),
     'intro-done': () => {
@@ -4531,25 +5240,44 @@
     'scan-list': async () => {
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
       status(`Scanning the open ${listType} list. Keep the dialog open.`);
-      const outcome = await engine.collectAccountList();
+      const outcome = await engine.collectAccountList({ listType });
       if (sessionStop(outcome)) {
         status(`Stopped: ${sessionStop(outcome)}.`);
         return;
       }
       const accounts = outcome?.accounts || [];
+      if (outcome?.listType !== listType) {
+        status(`No verified ${listType} dialog was open. Open that exact list and scan again.`);
+        return;
+      }
       if (!accounts.length) {
         status(`No rows were readable. Open your ${listType} list first.`);
         return;
       }
-      const merged = new Map(state.capture[listType].map((a) => [a.username, a]));
+      if (state.capture.source?.followers === 'authenticated-web'
+        || state.capture.source?.following === 'authenticated-web') {
+        state.capture = stateDefaults().capture;
+      }
+      const merged = new Map(verifiedCapture(listType).map((a) => [a.username, a]));
       for (const account of accounts) merged.set(account.username, account);
       state.capture[listType] = normalizeAccounts([...merged.values()]);
       state.capture.capturedAt[listType] = nowIso();
       state.capture.complete = { ...(state.capture.complete || {}), [listType]: outcome.complete === true };
+      state.capture.verified = { ...(state.capture.verified || {}), [listType]: true };
+      state.capture.source = { ...(state.capture.source || {}), [listType]: 'list-dialog' };
+      state.capture.subjectUsername = '';
       saveState();
       renderAll();
+      const mismatch = outcome?.reason === 'list-count-mismatch'
+        && Number.isSafeInteger(outcome.expectedCount);
       status(
-        `Scanned ${accounts.length} ${listType} rows.${outcome.complete ? '' : ' The list did not reach its end, so some may be missing.'}`,
+        `Scanned ${accounts.length} ${listType} rows.${outcome.complete
+          ? ''
+          : mismatch
+            ? ` Instagram reports ${outcome.expectedCount}, so this capture stays incomplete.`
+            : outcome?.reason === 'list-count-changed'
+              ? ' The profile count changed during the scan, so this capture stays incomplete.'
+              : ' The list did not reach its end, so some may be missing.'}`,
       );
     },
     'scan-sent': async () => {
@@ -4585,10 +5313,9 @@
       const current = accountRunPlan();
       if (!accountRunDraft || accountRunDraft.signature !== current.signature) {
         clearAccountRunDraft();
-        status('Targets changed. Review the run again before unlocking live actions.');
+        status('Targets changed. Review the run again before starting.');
         return;
       }
-      if (!requireNewRunAuthorization()) return;
       if (!confirmRun(
         `${accountRunDraft.action === 'follow' ? 'Follow' : 'Unfollow'} ${accountRunDraft.items.length} reviewed account${accountRunDraft.items.length === 1 ? '' : 's'}?\n\n`
         + 'This tab will move between profiles and the run continues across page loads. It changes your account.',
@@ -4597,75 +5324,11 @@
       clearAccountRunDraft();
       await startAccountRun({ action: approved.action, usernames: approved.items.map((item) => item.username) });
     },
-    // One button: find everything you sent in this thread, then remove it.
-    'unsend-all': async () => {
-      if (!requireNewRunAuthorization()) return;
-      if (state.run?.status === 'running') {
-        status('A run is already going. Stop it first.');
-        return;
-      }
-      status('Reading the whole conversation. This can take a while on a long thread.');
-      const outcome = await engine.enumerateSentDms({ limit: 5_000 });
-      const stop = sessionStop(outcome);
-      if (stop) {
-        status(`Stopped: ${stop}.`);
-        return;
-      }
-      const activeThreadId = currentDirectThreadId();
-      const scanMatchesThread = Boolean(
-        activeThreadId
-        && directThreadId(outcome?.conversationId) === activeThreadId,
-      );
-      const messages = scanMatchesThread
-        ? sentMessagesForThread(outcome?.messages, activeThreadId)
-        : [];
-      state.sentDms = messages;
-      state.sentDmsComplete = scanMatchesThread && outcome?.complete === true;
-      state.sentDmsChecked = true;
-      saveState();
-      renderAll();
-      if (!messages.length) {
-        status(
-          !activeThreadId || outcome?.reason === 'open-an-instagram-conversation'
-            ? 'Open a conversation first.'
-            : !scanMatchesThread
-              ? 'The conversation changed during the scan. Scan this conversation again.'
-              : 'No messages of yours could be identified exactly in this thread, so nothing was touched.',
-        );
-        return;
-      }
-      if (!confirmRun(
-        `Unsend all ${messages.length} message${messages.length === 1 ? '' : 's'} you sent in this conversation?\n\n`
-        + (outcome.complete ? '' : 'Note: the thread did not fully load, so there may be more.\n\n')
-        + 'This is permanent and cannot be undone.',
-      )) {
-        status('Cancelled. Nothing was unsent.');
-        return;
-      }
-      await runBatch({ kind: 'dm', items: messages });
-    },
-    'run-unsend': async () => {
-      if (!requireNewRunAuthorization()) return;
-      const activeThreadId = currentDirectThreadId();
-      if (!activeThreadId) {
-        status('Open an Instagram conversation first.');
-        return;
-      }
-      const found = sentMessagesForThread(state.sentDms, activeThreadId);
-      if (!found.length) {
-        status('Scan your sent messages in this conversation first.');
-        return;
-      }
-      const scope = query('[data-role="unsend-scope"]')?.value || 'all';
-      const count = clampNumber(query('[data-role="unsend-count"]')?.value, [1, 250], found.length);
-      let selected = found;
-      if (scope === 'newest') selected = found.slice(0, count);
-      if (scope === 'oldest') selected = found.slice(-count);
-      if (!confirmRun(
-        `Permanently unsend ${selected.length} message${selected.length === 1 ? '' : 's'}?\n\n`
-        + 'This cannot be undone.',
-      )) return;
-      await runBatch({ kind: 'dm', items: selected });
+    // The capture-phase shared runner owns this action. If that enhancement is
+    // unavailable, fail closed rather than falling back to a second mutation
+    // path with weaker review semantics.
+    'run-unsend': () => {
+      status('The reviewed DM runner is not ready. Reload Instagram; nothing was changed.');
     },
     'save-limits': () => {
       state.limits = {
@@ -4677,15 +5340,34 @@
       saveState();
       status('Pacing saved.');
     },
+    'layout-compact': () => savePreferences({ width: 360, height: 520, open: true }),
+    'layout-tall': () => savePreferences({
+      width: 430,
+      height: Math.min(820, Math.max(HEIGHT_MIN, innerHeight - (INSET * 2))),
+      open: true,
+    }),
+    'layout-wide': () => savePreferences({ width: 560, height: 680, open: true }),
     'reset-layout': () => savePreferences({ ...preferencesDefaults(), open: true, view: preferences.view }),
     capture: () => {
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
-      const visible = captureVisibleAccounts();
-      const accounts = new Map(state.capture[listType].map((account) => [account.username, account]));
+      const visible = captureVisibleAccounts(listType);
+      if (!visible.length) {
+        status(`No verified ${listType} rows were readable. Open that exact list first.`);
+        return;
+      }
+      if (state.capture.source?.followers === 'authenticated-web'
+        || state.capture.source?.following === 'authenticated-web') {
+        state.capture = stateDefaults().capture;
+      }
+      const accounts = new Map(verifiedCapture(listType).map((account) => [account.username, account]));
       const before = accounts.size;
       for (const account of visible) accounts.set(account.username, account);
       state.capture[listType] = normalizeAccounts([...accounts.values()]);
       state.capture.capturedAt[listType] = nowIso();
+      state.capture.complete = { ...(state.capture.complete || {}), [listType]: false };
+      state.capture.verified = { ...(state.capture.verified || {}), [listType]: true };
+      state.capture.source = { ...(state.capture.source || {}), [listType]: 'list-dialog' };
+      state.capture.subjectUsername = '';
       saveState();
       status(`Captured ${visible.length} rendered ${listType} rows; ${state.capture[listType].length - before} were new.`);
     },
@@ -4696,13 +5378,19 @@
     },
     'download-list': () => {
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
+      const method = state.capture.source?.[listType] || '';
       downloadJson(`insta-aio-visible-${listType}-${Date.now()}.json`, {
         schemaVersion: 1,
         kind: 'insta-aio-visible-list',
         listType,
         capturedAt: state.capture.capturedAt[listType] || nowIso(),
+        subjectUsername: state.capture.subjectUsername || '',
+        verificationMethod: method,
+        verifiedDialog: state.capture.verified?.[listType] === true && method !== 'authenticated-web',
         [listType]: state.capture[listType],
-        note: 'Only rows rendered in Instagram were captured. Scroll manually and capture again to merge more rows.',
+        note: method === 'authenticated-web'
+          ? 'Read from bounded authenticated Instagram pagination. No follow, unfollow, message, or click action was performed.'
+          : 'Only rows rendered in Instagram were captured. Scroll manually and capture again to merge more rows.',
       });
     },
     'export-queue': () => downloadJson(`insta-aio-companion-state-${Date.now()}.json`, {
@@ -4927,9 +5615,16 @@
       canStart: () => newLiveRunAuthorized()
         && state.run?.status !== 'running'
         && !externalLiveRunActive,
+      enable: () => {
+        if (state.run?.status === 'running' || externalLiveRunActive) return false;
+        setLiveActionsUnlocked(true);
+        return newLiveRunAuthorized();
+      },
       expiresAt: () => (newLiveRunAuthorized() ? liveActionsUnlockedUntil : 0),
-      setExternalRunActive: (active) => {
+      reserveUnsendPlan,
+      setExternalRunActive: (active, operation = null) => {
         externalLiveRunActive = active === true;
+        externalRunOperation = externalLiveRunActive ? operation : null;
         renderAll();
       },
     }),

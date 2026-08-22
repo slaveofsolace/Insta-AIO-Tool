@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-11T21:06:46.465Z",
+  "capturedAt": "2026-08-22T15:16:07.106Z",
   "platform": "win32",
   "source": {
     "current": "docs/evidence/overlay-ui-2026-08-02/after/win32"
@@ -9,7 +9,7 @@
     {
       "area": "shell",
       "before": "Default-open, visually dominant field desk",
-      "after": "Fresh collapsed launcher; standard open share 24.28%",
+      "after": "Fresh collapsed launcher; standard open share 29.39%",
       "status": "MEASURED"
     },
     {
@@ -62,14 +62,14 @@
     }
   ],
   "performance": {
-    "collapsedTaskMs": 3.7030000000000003,
-    "openTaskMs": 2.236,
+    "collapsedTaskMs": 3.6380000000000003,
+    "openTaskMs": 1.906999999999999,
     "queue": {
-      "durationMs": 27.9000000001397,
+      "durationMs": 25,
       "renderedItems": 1,
-      "totalOverlayNodes": 384
+      "totalOverlayNodes": 399
     },
-    "routeTransitionMs": 85.20000000018626
+    "routeTransitionMs": 92.79999999701977
   },
   "limitations": [
     "Platform screenshot hashes are not cross-platform visual proof.",

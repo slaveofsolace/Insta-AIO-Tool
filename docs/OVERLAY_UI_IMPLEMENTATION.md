@@ -128,10 +128,11 @@ saved. Capture and queue contracts remain V1 and import-compatible.
 
 Overlay views do not own Instagram selectors or synthetic event sequences. They
 can request or cancel one exact 90-second signed arm, request an exact phrase for
-a local account batch, or create a separate `UNSEND ALL DMS` tab arm. Execution
-remains in the audited background/content drivers. The thread runner itself
-requires a future authorization expiry and rechecks it before every message;
-the first unlock never opens a menu or removes anything.
+a local account batch, or create a finite thread plan after a complete no-click
+history check. Execution remains in the audited background/content drivers. The
+thread runner binds that plan to the exact thread, scope, eligible count, digest,
+and future expiry; it revalidates completeness and count before the first menu
+and rechecks expiry before every message.
 
 Local account execution requires a review signature over the selected source,
 action, limit, and exact target list. Editing any of those inputs discards the

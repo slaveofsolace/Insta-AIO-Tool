@@ -36,6 +36,13 @@ Insta AIO Tool:
   extension-side reservations, one-use DOM-token consumption, structurally
   bound interactive menu/dialog controls, and same-thread exact-removal proof
   with stable identity coverage
+- Permits a local thread-wide Unsend only after a no-click full-history check
+  proves a finite eligible count, followed by an exact thread/scope/count/
+  digest/expiry plan, a count-specific typed phrase, and a final confirmation.
+  The count and full-history completeness are revalidated before the first
+  message menu opens; the finite plan is reserved against a persistent daily
+  allowance and uses bounded pacing; capped or incomplete checks cannot create
+  a live plan
 - Requires reviewed job digests and explicit confirmations
 - Uses transactional duplicate and finite-limit enforcement, including restored state
 - Safe-stops on uncertain browser state
@@ -52,11 +59,19 @@ The project does not support:
 - Challenge or CAPTCHA bypass
 - Proxy rotation
 - Browser fingerprint spoofing
-- Private endpoint reverse engineering
+- Arbitrary endpoint discovery or mutation-capable private endpoint clients
 - Unreviewed destructive execution
 - Attempts to evade Instagram restrictions
 
 Reports requesting or depending on those behaviors will not be implemented.
+
+The follower checker is the narrow exception for authenticated web reads. It
+uses a fixed allowlist of the exact search, Followers, and Following GET routes
+reviewed from the supplied legacy checker, a fixed application header, bounded
+pagination, and browser-managed credentials. It does not read or export cookies,
+accept arbitrary routes, or expose a mutation method. Instagram can change or
+remove these unsupported web routes at any time; errors, challenges, blocks, and
+rate limits stop the read.
 
 The latest dependency and application-boundary review is documented in
 [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md).

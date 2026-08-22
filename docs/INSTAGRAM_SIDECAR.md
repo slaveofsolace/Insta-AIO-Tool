@@ -21,13 +21,19 @@ matches the next actionable manual-queue item.
 
 ### Capture
 
-The primary checker workflow is deliberately sequential: open Following and
-choose **Scan Following**, open Followers and choose **Scan Followers**, then
-choose **Compare**. Each scan scrolls only the currently open matching dialog
-until it reaches the end or a bounded safe stop. The manual visible-row capture,
-download, and reset controls remain under the secondary disclosure. Both paths
-merge normalized usernames into the selected local draft and report partial
-completion instead of silently under-counting. Once both lists exist, the
+The primary checker accepts or locally detects the username, resolves that exact
+account, and loads Followers then Following through fixed, authenticated
+Instagram GET routes. Pagination is bounded, paced by 800–1499 ms between pages,
+and stopped by session expiry, challenge, activity restriction, rate limit,
+invalid response, repeated token, page/account limit, user Stop, or the 20-minute
+deadline. A successful run atomically replaces both lists; a failed run does not
+overwrite the previous comparison.
+
+The exact-dialog auto-scroll scanner, manual visible-row capture, download, and
+reset controls remain under **Advanced**. Starting that fallback clears any
+authenticated result first, preventing rows from different subjects or methods
+from mixing. Both sources report partial completion instead of silently
+under-counting. Once both verified lists exist, the
 result browser switches among mutuals and both non-mutual groups and filters by
 captured username or display name. Filtering stays in memory and renders at
 most 100 matching rows at once.
@@ -109,17 +115,18 @@ the Messages gate only after the PWA's two confirmations. The sidecar enables
 arming only when the open thread resolves the exact sent-message identity; the
 background repeats that check before creating the 90-second arm.
 
-The primary **Unsend all DMs** card is an independent local thread tool. It
-starts `live locked`; the quieter **Check conversation** control refreshes
-read-only evidence. The first selection requests the exact `UNSEND ALL DMS`
-phrase and creates a 15-minute tab arm without opening a menu. A second selection
-shows the permanent-action confirmation. The source-audited runner then accepts
-only rows proven sent by the current account, follows the rendered menu/dialog
-sequence, paces attempts, and checks the authorization expiry before every next
-message. The history loader performs at most one bounded wake-up nudge for each
-newly loaded page instead of repeatedly scrolling an already settled thread.
-Expiry, Stop, session loss, challenge, block, rate limit, or repeated failure
-ends the run.
+The independent local thread tool starts with **Check conversation**. That
+no-click pass loads history without opening a message menu and must prove a
+complete finite eligible count before the plan controls appear. The operator
+chooses `all`, `newest N`, or `oldest N`, then reviews the exact thread, scope,
+count, digest, and 15-minute expiry. A count-specific typed phrase and final
+permanent-action confirmation are required. The source-audited runner
+revalidates completeness and count before the first menu, accepts only rows
+proven sent by the current account, follows the rendered menu/dialog sequence,
+reserves the finite plan against the daily Unsend allowance, uses the saved
+delay range, and checks expiry before every next message. Incomplete or capped
+checks, expiry, Stop, session loss, challenge, block, rate limit, or repeated
+failure end or prevent the run.
 
 ### Workspace
 

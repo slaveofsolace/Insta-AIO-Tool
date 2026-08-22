@@ -82,12 +82,24 @@ function createLazyList({
   };
 }
 
-function createHarness(list) {
+function createHarness(list, {
+  includeDialog = true,
+  main = null,
+  profileCount = null,
+  profileListType = 'followers',
+} = {}) {
+  const profileCountLink = {
+    textContent: `${profileCount} ${profileListType}`,
+    getAttribute: (name) => (name === 'href' ? '#' : null),
+  };
   const document = {
     body: { innerText: '' },
-    querySelector: (selector) => (selector === 'main' ? null : null),
+    querySelector: (selector) => (selector === 'main' ? main : null),
     querySelectorAll(selector) {
-      if (selector === '[role="dialog"]') return [list.dialog];
+      if (selector === '[role="dialog"]') return includeDialog ? [list.dialog] : [];
+      if (selector === 'a[role="link"], a[href="#"]') {
+        return Number.isSafeInteger(profileCount) ? [profileCountLink] : [];
+      }
       return [];
     },
   };
@@ -121,7 +133,7 @@ test('full-list scan pages through a lazy list instead of stopping at the first 
   const visibleOnly = inspector.captureVisibleAccounts();
   assert.equal(visibleOnly.length, 25, 'the visible-only capture sees just the first page');
 
-  const scanned = await inspector.collectAccountList({ maxScrolls: 400, settleMs: 0 });
+  const scanned = await inspector.collectAccountList({ maxScrolls: 400, settleMs: 0, listType: 'followers' });
   assert.equal(scanned.accounts.length, 250);
   assert.equal(scanned.complete, true);
   assert.equal(scanned.reason, 'list-complete');
@@ -129,6 +141,56 @@ test('full-list scan pages through a lazy list instead of stopping at the first 
   assert.equal(scanned.accounts.at(-1).username, 'user0249');
   // Every username is unique and normalised.
   assert.equal(new Set(scanned.accounts.map((a) => a.username)).size, 250);
+});
+
+test('full-list scan rejects profile suggestions when no account-list dialog is open', async () => {
+  const list = createLazyList({ total: 25, pageSize: 25 });
+  const main = {
+    querySelectorAll(selector) {
+      if (selector === 'a[href^="/"]') {
+        return [{
+          textContent: 'suggested_account',
+          getAttribute: (name) => (name === 'href' ? '/suggested_account/' : null),
+        }];
+      }
+      if (selector === 'div, ul, section') return [];
+      return [];
+    },
+    querySelector: () => null,
+  };
+  const inspector = createHarness(list, { includeDialog: false, main });
+
+  assert.equal(inspector.captureVisibleAccounts('following').length, 0);
+  const scanned = await inspector.collectAccountList({ maxScrolls: 400, settleMs: 0, listType: 'following' });
+  assert.equal(Array.isArray(scanned.accounts), true);
+  assert.equal(scanned.accounts.length, 0);
+  assert.equal(scanned.complete, false);
+  assert.equal(scanned.reason, 'open-a-followers-or-following-list');
+});
+
+test('full-list scan refuses a Followers dialog when Following was requested', async () => {
+  const list = createLazyList({ total: 25, pageSize: 25 });
+  const inspector = createHarness(list);
+
+  assert.equal(inspector.captureVisibleAccounts('following').length, 0);
+  const scanned = await inspector.collectAccountList({ maxScrolls: 400, settleMs: 0, listType: 'following' });
+  assert.equal(Array.isArray(scanned.accounts), true);
+  assert.equal(scanned.accounts.length, 0);
+  assert.equal(scanned.complete, false);
+  assert.equal(scanned.reason, 'open-a-followers-or-following-list');
+});
+
+test('full-list scan fails closed when dialog semantics conflict', async () => {
+  const list = createLazyList({ total: 25, pageSize: 25 });
+  list.dialog.getAttribute = (name) => (name === 'aria-label' ? 'Following' : null);
+  const inspector = createHarness(list);
+
+  assert.equal(inspector.captureVisibleAccounts('followers').length, 0);
+  assert.equal(inspector.captureVisibleAccounts('following').length, 0);
+  const scanned = await inspector.collectAccountList({ maxScrolls: 400, settleMs: 0, listType: 'followers' });
+  assert.equal(scanned.accounts.length, 0);
+  assert.equal(scanned.complete, false);
+  assert.equal(scanned.reason, 'open-a-followers-or-following-list');
 });
 
 test('full-list scan still advances when the list starts pinned at the bottom', async () => {
@@ -154,6 +216,22 @@ test('full-list scan reports an incomplete list rather than claiming completenes
   assert.equal(scanned.reason, 'list-truncated');
   assert.ok(scanned.accounts.length < 500);
   assert.ok(scanned.accounts.length > 25);
+});
+
+test('full-list scan stays incomplete when the exact profile total exceeds readable rows', async () => {
+  const list = createLazyList({ total: 115, pageSize: 25 });
+  const inspector = createHarness(list, { profileCount: 116 });
+
+  const scanned = await inspector.collectAccountList({
+    maxScrolls: 400,
+    settleMs: 0,
+    listType: 'followers',
+  });
+  assert.equal(scanned.accounts.length, 115);
+  assert.equal(scanned.observedCount, 115);
+  assert.equal(scanned.expectedCount, 116);
+  assert.equal(scanned.complete, false);
+  assert.equal(scanned.reason, 'list-count-mismatch');
 });
 
 test('full-list scan stops and reports when Instagram interrupts the session', async () => {

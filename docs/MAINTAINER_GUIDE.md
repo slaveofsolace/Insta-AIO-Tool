@@ -21,7 +21,9 @@
 - Reserve both the PWA ledger and the extension mirror before any destructive driver call.
 - Preserve every import disposition.
 - Keep state migrations additive.
-- Do not introduce credential collection, session export, bypass behavior, or private endpoint dependencies.
+- Do not introduce credential collection, session export, bypass behavior,
+  arbitrary endpoints, or mutation-capable private endpoint dependencies. The
+  follower checker exception is limited to its tested fixed Instagram GET-route allowlist.
 
 ## Change workflow
 

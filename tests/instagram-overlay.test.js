@@ -67,7 +67,7 @@ test('Instagram loads the inspector before the visible sidecar', () => {
     'overlay/views/workspace.js',
     'instagram-overlay.js',
   ]);
-  assert.equal(manifest.version, '0.10.6');
+  assert.equal(manifest.version, '0.11.0');
 });
 
 test('sidecar migrates the visible capture and manual queue workflow', () => {
@@ -103,17 +103,32 @@ test('sidecar exposes every tool family and accessibility controls', () => {
 });
 
 test('sidecar guides list capture, reviews account targets, and keeps one DM primary action', () => {
+  assert.match(overlay, /data-ia-role="checker-username"/);
+  assert.match(overlay, /data-ia-action="check-account-relationships"/);
+  assert.match(overlay, /Check Followers \+ Following/);
   assert.match(overlay, /data-list-type="following"/);
   assert.match(overlay, /data-list-type="followers"/);
   assert.match(overlay, /data-ia-role="compare-step-badge"/);
-  assert.match(overlay, /comparisonComplete \? 'Follower comparison complete' : 'Partial follower comparison ready'/);
+  assert.match(overlay, /comparisonComplete \? `Follower comparison complete/);
   assert.match(overlay, /data-ia-action="bot-review"/);
   assert.match(overlay, /function botPlan\(runtime\)/);
   assert.match(overlay, /reviewed\.signature !== current\.signature/);
   assert.match(overlay, /data-ia-role="bot-review-list"/);
   assert.match(overlay, /class="ia-primary-action" data-ia-role="unsend-disclosure"/);
-  assert.match(overlay, /data-ia-action="mass-unsend">Unlock Unsend all DMs/);
+  assert.match(overlay, /data-ia-action="scan-sent-dms">Check conversation/);
+  assert.match(overlay, /data-ia-role="unsend-plan">/);
+  assert.match(overlay, /data-ia-action="mass-unsend" disabled>Check conversation first/);
+  assert.match(overlay, /Advanced: list-dialog fallback and export/);
+  assert.match(overlay, /aria-labelledby="ia-bot-composer-title"/);
   assert.match(overlay, /<summary>Visible evidence<\/summary>/);
+});
+
+test('sidecar can review only the exact profile already open without an imported queue', () => {
+  assert.match(overlay, /<option value="current-profile">Current exact profile<\/option>/);
+  assert.match(overlay, /source === 'current-profile'/);
+  assert.match(overlay, /context\.pageKind === 'profile' && context\.username \? \[context\.username\] : \[\]/);
+  assert.match(overlay, /const requested = source === 'current-profile'\s+\? 1/);
+  assert.match(overlay, /Open one Instagram profile first\. No target was reviewed\./);
 });
 
 test('fresh installs explain all tools and follower comparisons can be filtered', () => {

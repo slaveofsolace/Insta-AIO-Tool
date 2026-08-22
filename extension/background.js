@@ -30,6 +30,7 @@ const MAX_REPLAY_NONCES = 512;
 const MAX_PENDING_JOBS = 50;
 const MAX_ACCOUNT_ACTION_LEDGER = 500;
 const MAX_DM_ACTION_LEDGER = 500;
+const MAX_THREAD_UNSEND_LEDGER = 100;
 const DEFAULT_DAILY_ACTION_LIMIT = 100;
 const DEFAULT_DAILY_DM_LIMIT = 50;
 // Ceilings the user cannot raise. Instagram penalises fast bulk activity, so the
@@ -41,6 +42,7 @@ const BATCH_ARM_TTL_MS = 30 * 60 * 1000;
 const DEFAULT_BATCH_MIN_DELAY_MS = 4_000;
 const DEFAULT_BATCH_MAX_DELAY_MS = 11_000;
 const MIN_ALLOWED_BATCH_DELAY_MS = 1_500;
+const THREAD_UNSEND_PLAN_TTL_MS = 15 * 60 * 1000;
 // After this many consecutive items the runner takes a longer cooldown.
 const BATCH_REST_EVERY = 20;
 const BATCH_REST_MS = 90_000;
@@ -89,6 +91,7 @@ async function loadBridgeState() {
     'pendingJobs',
     'accountActionLedger',
     'dmActionLedger',
+    'threadUnsendLedger',
     'pendingLiveIntent',
     'liveArm',
     'pendingDmIntent',
@@ -107,6 +110,9 @@ async function loadBridgeState() {
     dmActionLedger: Array.isArray(stored.dmActionLedger)
       ? stored.dmActionLedger
       : [],
+    threadUnsendLedger: Array.isArray(stored.threadUnsendLedger)
+      ? stored.threadUnsendLedger
+      : [],
     pendingLiveIntent: stored.pendingLiveIntent || null,
     liveArm: stored.liveArm || null,
     pendingDmIntent: stored.pendingDmIntent || null,
@@ -124,6 +130,7 @@ async function saveBridgeState(state) {
     pendingJobs: state.pendingJobs.slice(0, MAX_PENDING_JOBS),
     accountActionLedger: state.accountActionLedger.slice(0, MAX_ACCOUNT_ACTION_LEDGER),
     dmActionLedger: state.dmActionLedger.slice(0, MAX_DM_ACTION_LEDGER),
+    threadUnsendLedger: state.threadUnsendLedger.slice(0, MAX_THREAD_UNSEND_LEDGER),
     pendingLiveIntent: state.pendingLiveIntent || null,
     liveArm: state.liveArm || null,
     pendingDmIntent: state.pendingDmIntent || null,
@@ -204,6 +211,70 @@ function directThreadId(value) {
   const finalSegment = text.split('/').filter(Boolean).at(-1) || '';
   const exportMatch = finalSegment.match(/_([0-9]+)$/);
   return exportMatch?.[1] || (/^[0-9]+$/.test(finalSegment) ? finalSegment : null);
+}
+
+function validateThreadUnsendReservation(request, sender, now = Date.now()) {
+  const plan = request?.plan;
+  const threadId = String(plan?.threadId || '').trim();
+  const observedThreadId = directThreadId(sender?.tab?.url || sender?.url);
+  const count = Number(plan?.limit);
+  const expiresAt = Number(plan?.expiresAt);
+  const reviewedDigest = String(plan?.reviewedDigest || '');
+  if (
+    !/^[^/?#\\]{1,256}$/.test(threadId)
+    || threadId !== observedThreadId
+    || !Number.isInteger(count)
+    || count < 1
+    || count > 5_000
+    || !/^[0-9a-f]{8}$/.test(reviewedDigest)
+    || !Number.isFinite(expiresAt)
+    || expiresAt <= now
+    || expiresAt > now + THREAD_UNSEND_PLAN_TTL_MS
+  ) return { error: 'thread-unsend-plan-invalid' };
+  return { count, expiresAt, reviewedDigest, threadId };
+}
+
+async function reserveThreadUnsendPlan(request, sender, now = Date.now()) {
+  const plan = validateThreadUnsendReservation(request, sender, now);
+  if (plan.error) return plan;
+  const state = await loadBridgeState();
+  const day = accountActionDay(now);
+  const counted = new Set(['reserved', 'succeeded', 'uncertain']);
+  const duplicate = state.threadUnsendLedger.find((entry) => (
+    entry.day === day
+    && entry.threadId === plan.threadId
+    && entry.reviewedDigest === plan.reviewedDigest
+    && counted.has(entry.status)
+  ));
+  if (duplicate) return { error: 'thread-unsend-plan-already-reserved' };
+  const used = state.threadUnsendLedger
+    .filter((entry) => entry.day === day && counted.has(entry.status))
+    .reduce((total, entry) => total + Math.max(0, Number(entry.count) || 0), 0);
+  const limits = normalizeBatchLimits(state.batchLimits);
+  if (used + plan.count > limits.dailyDmLimit) {
+    return {
+      error: 'thread-unsend-daily-limit',
+      limit: limits.dailyDmLimit,
+      remaining: Math.max(0, limits.dailyDmLimit - used),
+      used,
+    };
+  }
+  const reservation = {
+    id: `thread-unsend-${now}-${plan.reviewedDigest}`,
+    day,
+    threadId: plan.threadId,
+    reviewedDigest: plan.reviewedDigest,
+    count: plan.count,
+    status: 'reserved',
+    reservedAt: new Date(now).toISOString(),
+    expiresAt: new Date(plan.expiresAt).toISOString(),
+  };
+  state.threadUnsendLedger.unshift(reservation);
+  await saveBridgeState(state);
+  return {
+    reservation: { ...reservation },
+    pacing: { minDelayMs: limits.minDelayMs, maxDelayMs: limits.maxDelayMs },
+  };
 }
 
 function validateReviewedJob(job, expectedKind) {
@@ -1700,6 +1771,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const operation = requestTail.then(() => updateBatchLimits(request));
     requestTail = operation.catch(() => {});
     operation.then(sendResponse).catch(() => sendResponse({ error: 'batch-limits-unavailable' }));
+    return true;
+  }
+  if (request?.kind === 'insta-aio-reserve-thread-unsend') {
+    if (!isInstagramSender(sender)) {
+      sendResponse({ error: 'instagram-origin-required' });
+      return false;
+    }
+    const operation = requestTail.then(() => reserveThreadUnsendPlan(request, sender));
+    requestTail = operation.catch(() => {});
+    operation.then(sendResponse).catch(() => sendResponse({ error: 'thread-unsend-reservation-unavailable' }));
     return true;
   }
   if (request?.kind !== 'insta-aio-bridge-request') return false;

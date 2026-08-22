@@ -28,7 +28,7 @@ async function loadBackground({ profileResponses, performResponses, stored }) {
 
   globalThis.chrome = {
     runtime: {
-      getManifest: () => ({ version: '0.10.6' }),
+      getManifest: () => ({ version: '0.11.0' }),
       onMessage: { addListener(listener) { runtimeListener = listener; } },
     },
     storage: {
@@ -102,6 +102,7 @@ function baseStored() {
     pendingJobs: [],
     accountActionLedger: [],
     dmActionLedger: [],
+    threadUnsendLedger: [],
     pendingLiveIntent: null,
     liveArm: null,
     pendingDmIntent: null,
@@ -117,6 +118,59 @@ function baseStored() {
     },
   };
 }
+
+test('thread-wide Unsend reserves its finite plan against the daily DM limit', async () => {
+  const stored = baseStored();
+  stored.batchLimits = {
+    dailyActionLimit: 50,
+    dailyDmLimit: 3,
+    minDelayMs: 1_500,
+    maxDelayMs: 2_200,
+  };
+  const { cleanup, deliver } = await loadBackground({
+    profileResponses: {},
+    performResponses: {},
+    stored,
+  });
+  const threadSender = {
+    url: 'https://www.instagram.com/direct/t/thread-123/',
+    tab: { id: 7, url: 'https://www.instagram.com/direct/t/thread-123/' },
+  };
+  const plan = {
+    threadId: 'thread-123',
+    scope: 'oldest',
+    limit: 2,
+    eligibleCount: 8,
+    reviewedDigest: 'a1b2c3d4',
+    expiresAt: Date.now() + 60_000,
+  };
+  try {
+    const reserved = await deliver({ kind: 'insta-aio-reserve-thread-unsend', plan }, threadSender);
+    assert.equal(reserved.error, undefined);
+    assert.deepEqual(reserved.pacing, { minDelayMs: 1_500, maxDelayMs: 2_200 });
+    assert.equal(stored.threadUnsendLedger.length, 1);
+    assert.equal(stored.threadUnsendLedger[0].count, 2);
+    assert.equal(stored.threadUnsendLedger[0].status, 'reserved');
+
+    const duplicate = await deliver({ kind: 'insta-aio-reserve-thread-unsend', plan }, threadSender);
+    assert.equal(duplicate.error, 'thread-unsend-plan-already-reserved');
+
+    const overLimit = await deliver({
+      kind: 'insta-aio-reserve-thread-unsend',
+      plan: { ...plan, reviewedDigest: 'd4c3b2a1' },
+    }, threadSender);
+    assert.equal(overLimit.error, 'thread-unsend-daily-limit');
+    assert.equal(overLimit.remaining, 1);
+
+    const wrongThread = await deliver({
+      kind: 'insta-aio-reserve-thread-unsend',
+      plan: { ...plan, threadId: 'thread-999', reviewedDigest: '11111111', limit: 1 },
+    }, threadSender);
+    assert.equal(wrongThread.error, 'thread-unsend-plan-invalid');
+  } finally {
+    await cleanup();
+  }
+});
 
 async function waitForRun(deliver, predicate, timeoutMs = 15_000) {
   const deadline = Date.now() + timeoutMs;

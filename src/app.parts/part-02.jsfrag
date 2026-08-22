@@ -239,7 +239,7 @@ function renderMessages() {
   return pageHead(
     'Messages',
     'View imported Instagram message data, filter messages you sent, and create a reviewed unsend plan.',
-    '<button class="primary" data-action="create-dm-preview">Create reviewed unsend preview</button><button data-action="pick-data-files">Import message JSON</button><button data-action="export-unsend-plan">Export simple plan</button>',
+    '<button class="primary" data-action="create-dm-preview">Create reviewed Unsend plan</button><button data-action="pick-data-files">Import message JSON</button><button data-action="export-unsend-plan">Export reviewed plan</button>',
   ) + `
     <section class="grid metrics">
       ${metric('All messages', state.messages.length)}
@@ -252,7 +252,7 @@ function renderMessages() {
       <section class="panel" aria-labelledby="dm-preview-heading">
         <div class="panel-head">
           <div>
-            <h2 id="dm-preview-heading">Reviewed DM unsend preview</h2>
+            <h2 id="dm-preview-heading">Reviewed DM Unsend plan</h2>
             <p>${latestDmJob.items.length} eligible sent message${latestDmJob.items.length === 1 ? '' : 's'} · ${latestDmJob.blockedItems.length} blocked · ${escapeHtml(latestDmJob.status)}</p>
           </div>
           <span class="badge ${latestDmJob.mode === 'live' ? 'failed' : 'protected'}">${escapeHtml(latestDmJob.mode)}</span>

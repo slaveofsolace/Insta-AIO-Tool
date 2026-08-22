@@ -18,6 +18,10 @@ const sources = Object.fromEntries(await Promise.all(moduleNames.map(async (name
   name,
   await readFile(new URL(`../extension/overlay/${name}.js`, import.meta.url), 'utf8'),
 ])));
+const captureViewSource = await readFile(
+  new URL('../extension/overlay/views/capture.js', import.meta.url),
+  'utf8',
+);
 
 function loadModules() {
   const context = vm.createContext({ console, Date, Intl });
@@ -245,10 +249,31 @@ test('follower checker migrates the legacy draft and compares both rendered list
   }, normalizeUsername);
   assert.equal(migrated.source, 'v1');
   assert.equal(migrated.shouldPersist, true);
+  assert.equal(migrated.workspace.schemaVersion, 5);
+  assert.equal(migrated.workspace.verified.following, false);
+  assert.equal(migrated.workspace.complete.following, false);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(migrated.workspace, 'following'))),
+    [],
+  );
+  assert.equal(
+    captureViewSource.match(/shared\.verifiedCaptureAccounts\(workspace, listType\)/g)?.length,
+    2,
+    'both full and visible rescans must replace quarantined rows instead of promoting them',
+  );
+  assert.match(captureViewSource, /reason === 'list-count-mismatch'/);
+  assert.match(captureViewSource, /Instagram reports \$\{expectedCount\}, so this capture stays incomplete/);
+  assert.equal(shared.compareCaptureWorkspace(migrated.workspace).notFollowingMeBack.length, 0);
   const workspace = shared.normalizeCaptureWorkspace({
     ...migrated.workspace,
+    schemaVersion: 4,
     followers: [{ username: 'mutual' }, { username: 'follower_only' }],
+    verified: { followers: true, following: true },
   }, normalizeUsername);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(workspace, 'following'))),
+    JSON.parse(JSON.stringify(workspace.following)),
+  );
   const comparison = shared.compareCaptureWorkspace(workspace);
   assert.deepEqual(JSON.parse(JSON.stringify(
     comparison.mutuals.map((item) => item.username),
@@ -262,7 +287,84 @@ test('follower checker migrates the legacy draft and compares both rendered list
   const exported = shared.captureRecord(workspace, 'followers', () => 'fallback');
   assert.equal(exported.kind, 'insta-aio-visible-list');
   assert.equal(exported.followers.length, 2);
+  assert.equal(exported.verifiedDialog, true);
   assert.equal('following' in exported, false);
+});
+
+test('schema 3 list confidence is quarantined until a count-reconciled rescan', () => {
+  const { shared } = loadModules();
+  const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
+  const migrated = shared.normalizeCaptureWorkspace({
+    schemaVersion: 3,
+    kind: 'insta-aio-visible-checker-workspace',
+    followers: [],
+    following: [{ username: 'alpha' }, { username: 'beta' }],
+    capturedAt: { followers: null, following: '2026-08-20T00:00:00.000Z' },
+    complete: { followers: false, following: true },
+    verified: { followers: false, following: true },
+  }, normalizeUsername);
+
+  assert.equal(migrated.schemaVersion, 5);
+  assert.equal(migrated.following.length, 2, 'stored rows remain available locally');
+  assert.equal(migrated.verified.following, false);
+  assert.equal(migrated.complete.following, false);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(migrated, 'following'))),
+    [],
+  );
+
+  const rescanned = shared.normalizeCaptureWorkspace({
+    ...migrated,
+    schemaVersion: 4,
+    complete: { followers: false, following: true },
+    verified: { followers: false, following: true },
+  }, normalizeUsername);
+  assert.equal(rescanned.verified.following, true);
+  assert.equal(rescanned.complete.following, true);
+});
+
+test('authenticated checker provenance is additive and supports an exact empty comparison', () => {
+  const { shared } = loadModules();
+  const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
+  const workspace = shared.normalizeCaptureWorkspace({
+    schemaVersion: 5,
+    kind: 'insta-aio-visible-checker-workspace',
+    subjectUsername: '@demo.creator',
+    followers: [],
+    following: [],
+    capturedAt: {
+      followers: '2026-08-22T00:00:00.000Z',
+      following: '2026-08-22T00:00:00.000Z',
+    },
+    complete: { followers: true, following: true },
+    verified: { followers: true, following: true },
+    source: { followers: 'authenticated-web', following: 'authenticated-web' },
+  }, normalizeUsername);
+
+  assert.equal(workspace.schemaVersion, 5);
+  assert.equal(workspace.subjectUsername, 'demo.creator');
+  assert.deepEqual(JSON.parse(JSON.stringify(workspace.source)), {
+    followers: 'authenticated-web',
+    following: 'authenticated-web',
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(shared.compareCaptureWorkspace(workspace))), {
+    mutuals: [],
+    iDoNotFollowBack: [],
+    notFollowingMeBack: [],
+  });
+  const exported = shared.captureRecord(workspace, 'followers');
+  assert.equal(exported.kind, 'insta-aio-visible-list', 'the established export kind stays compatible');
+  assert.equal(exported.subjectUsername, 'demo.creator');
+  assert.equal(exported.verificationMethod, 'authenticated-web');
+  assert.equal(exported.verifiedDialog, false);
+});
+
+test('authenticated checker publishes a comparison only after persistence succeeds', () => {
+  assert.match(
+    captureViewSource,
+    /await runtime\.persistCapture\(nextCapture\);\s*model\.capture = nextCapture;/,
+    'extension storage failures must leave the prior rendered comparison untouched',
+  );
 });
 
 test('follower comparison filters stay local, bounded, and category-specific', () => {

@@ -45,7 +45,9 @@ test('the bundle ships the extension engine itself rather than a second copy of 
 
 test('live Follow, Unfollow, and Unsend are available and go through the engine', () => {
   assert.match(shell, /engine\.performReviewedProfileAction\(/);
-  assert.match(shell, /engine\.performReviewedDmUnsend\(/);
+  assert.doesNotMatch(shell, /engine\.performReviewedDmUnsend\(/);
+  assert.match(source, /InstaAioDmThreadUnsender/);
+  assert.match(source, /await runner\.start\(\{/);
   assert.match(shell, /engine\.collectAccountList\(/);
   assert.match(shell, /engine\.enumerateSentDms\(/);
   assert.match(source, /data-action="review-accounts"/);
@@ -62,22 +64,30 @@ test('live Follow, Unfollow, and Unsend are available and go through the engine'
   assert.doesNotMatch(source, /intentionally unavailable in userscript mode/);
 });
 
+test('the userscript can review the current exact profile as a one-item run', () => {
+  assert.match(source, /<option value="current-profile">Current exact profile<\/option>/);
+  assert.match(shell, /const source = query\('\[data-role="bot-source"\]'\)\?\.value \|\| 'current-profile'/);
+  assert.match(shell, /const count = source === 'current-profile' \? 1 : requestedCount/);
+  assert.match(shell, /engine\.normalizeUsername\?\.\(location\.pathname\)/);
+});
+
 test('live mutation controls are locked by default and authorization expires during a run', () => {
   assert.match(source, /Userscript mode · live actions locked/);
   assert.match(source, /data-role="live-actions"/);
-  assert.match(source, /data-live-action/);
   assert.match(shell, /LIVE_AUTHORIZATION_MS = 15 \* 60 \* 1_000/);
-  assert.match(shell, /LIVE_AUTHORIZATION_PHRASE = 'ENABLE LIVE ACTIONS'/);
+  assert.doesNotMatch(shell, /ENABLE LIVE ACTIONS|LIVE_AUTHORIZATION_PHRASE/);
+  assert.match(shell, /setLiveActionsUnlocked\(true\);[\s\S]*?return newLiveRunAuthorized\(\)/);
   assert.match(shell, /let liveActionsUnlockedUntil = 0/);
   assert.match(shell, /function requireNewRunAuthorization\(\)/);
   assert.match(shell, /authorizationExpiresAt: liveActionsUnlockedUntil/);
   assert.match(shell, /normalizeResumableAccountRun\(tabState\?\.\[TAB_RUN_FIELD\]\)/);
   assert.match(shell, /GM_setValue\(STATE_KEY, \{ \.\.\.state, run: null \}\)/);
   assert.match(shell, /if \(!runAuthorizationValid\(run\)\)/);
-  assert.match(shell, /if \(!runAuthorizationValid\(\)\)/);
   assert.match(shell, /The run stopped before another Instagram action/);
   assert.match(shell, /InstaAioUserscriptLiveAuthority/);
-  assert.match(source, /Live authorization is required before thread-wide Unsend can start/);
+  assert.match(shell, /enable: \(\) => \{/);
+  assert.match(source, /A fresh, count-specific reviewed plan is required before Unsend can start/);
+  assert.match(source, /currentEligibleCount !== plan\.eligibleCount/);
   assert.doesNotMatch(shell, /live actions enabled/);
 });
 
@@ -90,11 +100,11 @@ test('every live action still has to clear the exact-target checks first', () =>
   assert.match(shell, /observation\?\.relationship !== expected/);
   assert.match(shell, /observation\?\.username !== username/);
 
-  assert.match(shell, /const observation = engine\.inspectReviewedDmItem\(/);
-  assert.match(shell, /observation\?\.contentDigest !== message\.contentDigest/);
-  assert.match(shell, /observation\?\.sentByMe !== true/);
-  assert.match(shell, /observation\?\.exactIdentityAvailable !== true/);
-  assert.match(shell, /observation\?\.ownershipAvailable !== true/);
+  assert.match(engine, /function inspectReviewedDmItem\(item\)/);
+  assert.match(engine, /dmContentDigest\(content\) === item\?\.contentDigest/);
+  assert.match(engine, /sentByMe !== true/);
+  assert.match(engine, /exactIdentityAvailable/);
+  assert.match(engine, /ownershipAvailable/);
 });
 
 test('a run stops itself on any Instagram interruption and can be aborted', () => {
@@ -104,20 +114,24 @@ test('a run stops itself on any Instagram interruption and can be aborted', () =
   assert.match(shell, /observation\?\.actionBlocked/);
   assert.match(shell, /observation\?\.sessionExpired/);
   assert.match(shell, /if \(outcome\.fatal\)/);
-  assert.match(shell, /if \(batchAbort\) break;/);
+  assert.match(source, /while \(!signal\.aborted && processed < maxMessages/);
+  assert.match(source, /activeController\.abort\('Stopped by user'\)/);
   assert.match(source, /data-action="stop-run"/);
 });
 
-test('runs are paced and bounded by a per-day allowance', () => {
+test('account runs use daily pacing while DM plans remain finite and paced', () => {
   assert.match(shell, /dailyActions: \[1, 400\]/);
   assert.match(shell, /dailyUnsends: \[1, 300\]/);
   assert.match(shell, /minDelayMs: \[1_500, 600_000\]/);
   assert.match(shell, /REST_EVERY = 20/);
   assert.match(shell, /Math\.random\(\)/);
-  assert.match(shell, /const allowance = Math\.max\(0, cap - already\);/);
-  // Destructive runs are confirmed before they start.
-  assert.match(shell, /Permanently unsend \$\{selected\.length\}/);
-  assert.match(shell, /This cannot be undone/);
+  assert.match(shell, /const allowance = Math\.max\(0, bounds\.dailyActions - usedToday\('actions'\)\)/);
+  assert.match(source, /const maxMessages = plan\.limit/);
+  assert.match(source, /randomDelay\(options\.minDelayMs, options\.maxDelayMs\)/);
+  assert.match(source, /Permanently unsend \$\{scopeLabel\}/);
+  assert.match(shell, /function reserveUnsendPlan\(plan\)/);
+  assert.match(shell, /bounds\.dailyUnsends - Number\(current\.unsends \|\| 0\)/);
+  assert.match(source, /liveAuthority\.reserveUnsendPlan\?\.\(plan\)/);
   // The allowance is spent against today's ledger, so a resumed run cannot
   // reset its own budget by reloading.
   assert.match(shell, /function usedToday\(kind\)/);
@@ -156,7 +170,8 @@ test('DM evidence and saved Unsend candidates stay bound to the active conversat
   assert.match(shell, /state\.dmCheck\?\.threadId === activeThreadId/);
   assert.match(shell, /directThreadId\(outcome\?\.conversationId\) === activeThreadId/);
   assert.match(shell, /state\.sentDmsComplete = scanMatchesThread && outcome\?\.complete === true/);
-  assert.match(shell, /const found = sentMessagesForThread\(state\.sentDms, activeThreadId\)/);
+  assert.match(source, /if \(!expectedThreadId \|\| context\.threadId !== expectedThreadId\)/);
+  assert.match(source, /currentEligibleCount !== plan\.eligibleCount/);
   assert.match(shell, /if \(currentHref !== lastLocationHref\)/);
   assert.match(shell, /lastLocationHref = currentHref;\s+state\.messageEvidence = null;/);
   assert.match(shell, /state\.dmCheck = null;\s+state\.sentDms = \[\];/);
@@ -168,14 +183,20 @@ test('DM evidence and saved Unsend candidates stay bound to the active conversat
 
 test('the follower checker remembers whether a scan actually finished', () => {
   // A partial scan that forgets it was partial would silently under-report.
+  assert.match(shell, /const requiresCountReconciledRescan = Number\(value\.schemaVersion\) < 4/);
   assert.match(shell, /complete: \{ followers: false, following: false \}/);
-  assert.match(shell, /followers: value\.capture\?\.complete\?\.followers === true/);
-  assert.match(shell, /following: value\.capture\?\.complete\?\.following === true/);
+  assert.match(shell, /verified: \{ followers: false, following: false \}/);
+  assert.match(shell, /value\.capture\?\.verified\?\.followers === true[\s\S]{0,100}?value\.capture\?\.complete\?\.followers === true/);
+  assert.match(shell, /value\.capture\?\.verified\?\.following === true[\s\S]{0,100}?value\.capture\?\.complete\?\.following === true/);
 });
 
-test('the toolbox keeps every byte local and never calls out', () => {
+test('the toolbox has no credential access or third-party connector and keeps follower reads Instagram-only', () => {
   assert.doesNotMatch(source, /GM_xmlhttpRequest|XMLHttpRequest|document\.cookie/);
   assert.doesNotMatch(source, /fetch\s*\(/);
+  assert.match(source, /const INSTAGRAM_WEB_ORIGIN = 'https:\/\/www\.instagram\.com'/);
+  assert.match(source, /\/api\/v1\/web\/search\/topsearch\//);
+  assert.match(source, /\/api\/v1\/friendships\/\$\{userId\}\/\$\{listType\}\//);
+  assert.match(source, /credentials: 'include'/);
   const metadataBlock = source.slice(0, source.indexOf('==/UserScript=='));
   assert.doesNotMatch(metadataBlock, /@connect/);
 });

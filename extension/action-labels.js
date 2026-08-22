@@ -69,17 +69,21 @@
 
   const ACTIVE_ATTRIBUTE = 'data-insta-aio-unsend-active';
   const DONE_ATTRIBUTE = 'data-insta-aio-unsent';
-  const DEFAULT_MIN_DELAY_MS = 1_000;
-  const DEFAULT_MAX_DELAY_MS = 2_000;
+  const DEFAULT_MIN_DELAY_MS = 4_000;
+  const DEFAULT_MAX_DELAY_MS = 11_000;
   const DEFAULT_MAX_FAILURES = 5;
   const MIN_USABLE_VISIBLE_PX = 24;
   const MAX_HOVER_DEPTH = 8;
+  const MAX_HISTORY_CHECK_MS = 90_000;
   const MAX_SCAN_PASSES = 3;
+  const MAX_PLAN_MESSAGES = 5_000;
+  const PLAN_SCOPES = new Set(['all', 'newest', 'oldest']);
   const listeners = new Set();
 
   let activeController = null;
   let currentState = Object.freeze({
     status: 'idle',
+    operation: null,
     processed: 0,
     failed: 0,
     consecutiveFailures: 0,
@@ -128,9 +132,53 @@
   }
 
   function randomDelay(minimum, maximum) {
-    const min = Math.max(1_000, Number(minimum) || DEFAULT_MIN_DELAY_MS);
+    const min = Math.max(1_500, Number(minimum) || DEFAULT_MIN_DELAY_MS);
     const max = Math.max(min, Number(maximum) || DEFAULT_MAX_DELAY_MS);
     return min + Math.floor(Math.random() * (max - min + 1));
+  }
+
+  function digestText(value) {
+    let hash = 0x811c9dc5;
+    const text = String(value || '');
+    for (let index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
+  function planDigest({ threadId, scope, limit, eligibleCount, expiresAt }) {
+    return digestText(JSON.stringify({
+      threadId: String(threadId || ''),
+      scope: String(scope || ''),
+      limit: Number(limit),
+      eligibleCount: Number(eligibleCount),
+      expiresAt: Number(expiresAt),
+    }));
+  }
+
+  function createPlan(value = {}) {
+    const threadId = String(value.threadId || '').trim();
+    const scope = PLAN_SCOPES.has(value.scope) ? value.scope : 'all';
+    const eligibleCount = Math.min(
+      MAX_PLAN_MESSAGES,
+      Math.max(0, Math.floor(Number(value.eligibleCount) || 0)),
+    );
+    const requestedLimit = Math.floor(Number(value.limit));
+    const limit = scope === 'all'
+      ? eligibleCount
+      : Math.min(eligibleCount, Math.max(1, Number.isFinite(requestedLimit) ? requestedLimit : 1));
+    const expiresAt = Math.floor(Number(value.expiresAt) || 0);
+    if (!threadId || eligibleCount < 1 || limit < 1 || expiresAt <= Date.now()) return null;
+    const plan = { threadId, scope, limit, eligibleCount, expiresAt };
+    return Object.freeze({ ...plan, reviewedDigest: planDigest(plan) });
+  }
+
+  function validatePlan(value) {
+    const normalized = createPlan(value);
+    return normalized && normalized.reviewedDigest === String(value?.reviewedDigest || '')
+      ? normalized
+      : null;
   }
 
   function visibleText(element) {
@@ -312,8 +360,13 @@
       .filter((row) => sentByCurrentUser(row, row.ownerDocument.defaultView));
   }
 
-  function firstVisibleCandidate(scroller) {
-    const rows = candidateRows(scroller).reverse();
+  function orderedCandidates(scroller, order = 'oldest') {
+    const rows = candidateRows(scroller);
+    return order === 'newest' ? rows : rows.reverse();
+  }
+
+  function firstVisibleCandidate(scroller, order = 'oldest') {
+    const rows = orderedCandidates(scroller, order);
     return rows.find(isVisible) || null;
   }
 
@@ -608,21 +661,41 @@
     ]).catch(() => {});
   }
 
+  function advanceHistoryProgress(progress, height, rowCount) {
+    const nextHeight = Math.max(0, Number(height) || 0);
+    const nextRows = Math.max(0, Math.floor(Number(rowCount) || 0));
+    return {
+      grew: nextHeight > progress.maxHeight || nextRows > progress.maxRows,
+      maxHeight: Math.max(progress.maxHeight, nextHeight),
+      maxRows: Math.max(progress.maxRows, nextRows),
+    };
+  }
+
   async function loadAllHistory(context, signal) {
     const { root, scroller } = context;
-    if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) return;
+    if (!scroller || scroller.scrollHeight <= scroller.clientHeight + 50) {
+      return { complete: true, eligibleCount: candidateRows(scroller || root).length, pagesChecked: 0 };
+    }
     const reversed = reversedLayout(scroller);
+    const startedAt = Date.now();
     let quietRounds = 0;
     let topNudgeUsed = false;
+    let pagesChecked = 0;
+    let progress = advanceHistoryProgress(
+      { maxHeight: 0, maxRows: 0 },
+      scroller.scrollHeight,
+      candidateRows(scroller).length,
+    );
     // Instagram pauses between pages on a long thread, so a few quiet rounds
     // does not mean the history ended. Giving up after three left most of a
     // long conversation unloaded, which is the same impatience the follower
     // scan had.
-    for (let page = 0; page < 600 && quietRounds < 10; page += 1) {
+    for (let page = 0;
+      page < 600 && quietRounds < 10 && Date.now() - startedAt < MAX_HISTORY_CHECK_MS;
+      page += 1) {
+      pagesChecked = page + 1;
       const stop = sessionStop(context.threadId);
       if (stop) throw new Error(stop);
-      const beforeHeight = scroller.scrollHeight;
-      const beforeRows = candidateRows(scroller).length;
       const target = oldestOffset(scroller, reversed);
       if (Math.abs(scroller.scrollTop - target) > 5) {
         scroller.scrollTop = target;
@@ -645,7 +718,12 @@
       }
       await delay(500, signal);
       await waitForLoader(root, signal);
-      const grew = scroller.scrollHeight > beforeHeight || candidateRows(scroller).length > beforeRows;
+      progress = advanceHistoryProgress(
+        progress,
+        scroller.scrollHeight,
+        candidateRows(scroller).length,
+      );
+      const { grew } = progress;
       quietRounds = grew ? 0 : quietRounds + 1;
       if (grew) topNudgeUsed = false;
       publish({
@@ -661,6 +739,16 @@
     scroller.scrollTop = oldestOffset(scroller, reversed);
     dispatch(scroller, new Event('scroll', { bubbles: true }));
     await delay(100, signal);
+    progress = advanceHistoryProgress(
+      progress,
+      scroller.scrollHeight,
+      candidateRows(scroller).length,
+    );
+    return {
+      complete: quietRounds >= 10,
+      eligibleCount: progress.maxRows,
+      pagesChecked,
+    };
   }
 
   function rowNeedsReposition(row, scroller) {
@@ -681,29 +769,31 @@
     return isVisible(row);
   }
 
-  async function nextSentRow(context, signal) {
+  async function nextSentRow(context, signal, order = 'oldest') {
     const { scroller } = context;
     // Leave a comfortably visible row in place. Re-centering every message made
     // the processing phase continually fight the thread position. Partially
     // clipped rows are still exposed before hover so their menu affordance is
     // reachable on other platforms and font stacks.
-    const visible = firstVisibleCandidate(scroller);
+    const visible = firstVisibleCandidate(scroller, order);
     if (visible) {
       if (await exposeRow(visible, scroller, signal)) return visible;
     }
 
     for (let pass = 0; pass < MAX_SCAN_PASSES; pass += 1) {
       if (signal.aborted) return null;
-      const [row] = candidateRows(scroller).reverse();
+      const [row] = orderedCandidates(scroller, order);
       if (row) {
         if (await exposeRow(row, scroller, signal)) return row;
         // Still hidden: hand it back anyway on the final pass so a row that
         // simply cannot be scrolled into view is attempted rather than skipped.
         if (pass === MAX_SCAN_PASSES - 1) return row;
       }
-      // Nothing left here; page toward older history and look again.
+      // Nothing actionable is visible here; return to the reviewed edge.
       const reversed = reversedLayout(scroller);
-      scroller.scrollTop = oldestOffset(scroller, reversed);
+      scroller.scrollTop = order === 'newest'
+        ? newestOffset(scroller, reversed)
+        : oldestOffset(scroller, reversed);
       dispatch(scroller, new Event('scroll', { bubbles: true }));
       await delay(120, signal);
     }
@@ -718,13 +808,78 @@
     return (text || 'Sent message').slice(0, 90);
   }
 
+  async function inspectAll() {
+    if (activeController && !activeController.signal.aborted) {
+      return { ready: false, reason: 'Another message check or run is already active.' };
+    }
+    const context = threadContext();
+    if (!context.ok) return { ready: false, reason: context.reason };
+    const controller = new AbortController();
+    activeController = controller;
+    publish({
+      status: 'preparing',
+      operation: 'check',
+      processed: 0,
+      failed: 0,
+      message: 'Checking the full conversation without opening a message menu…',
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      canStop: true,
+    });
+    try {
+      const history = await loadAllHistory(context, controller.signal);
+      const resolvedCount = history.eligibleCount;
+      const capped = resolvedCount > MAX_PLAN_MESSAGES;
+      const eligibleCount = Math.min(MAX_PLAN_MESSAGES, resolvedCount);
+      const complete = history.complete && !capped;
+      const result = Object.freeze({
+        ready: true,
+        threadId: context.threadId,
+        eligibleCount,
+        complete,
+        capped,
+        pagesChecked: history.pagesChecked,
+        reason: complete
+          ? 'Full conversation check complete.'
+          : capped
+            ? `More than ${MAX_PLAN_MESSAGES} eligible sent messages were found. No destructive plan was created.`
+            : 'The bounded history check reached its page limit before completeness could be proven.',
+        checkedAt: new Date().toISOString(),
+      });
+      publish({
+        status: 'reviewed',
+        message: complete
+          ? `${eligibleCount} sent message${eligibleCount === 1 ? '' : 's'} eligible in this conversation. Nothing was changed.`
+          : `${result.reason} Nothing was changed.`,
+        current: null,
+        canStop: false,
+        finishedAt: result.checkedAt,
+      });
+      return result;
+    } catch (error) {
+      const reason = error?.name === 'AbortError' || controller.signal.aborted
+        ? 'Conversation check stopped. Nothing was changed.'
+        : error.message || 'The conversation could not be checked.';
+      publish({
+        status: error?.name === 'AbortError' || controller.signal.aborted ? 'stopped' : 'error',
+        message: reason,
+        current: null,
+        canStop: false,
+        finishedAt: new Date().toISOString(),
+      });
+      return { ready: false, reason };
+    } finally {
+      if (activeController === controller) activeController = null;
+    }
+  }
+
   async function start(options = {}) {
     if (activeController && !activeController.signal.aborted) return snapshot();
-    const authorizationExpiresAt = Number(options.authorizationExpiresAt);
-    if (!(authorizationExpiresAt > Date.now())) {
+    const plan = validatePlan(options.plan);
+    if (!plan) {
       publish({
         status: 'error',
-        message: 'Live authorization is required before thread-wide Unsend can start.',
+        message: 'A fresh, count-specific reviewed plan is required before Unsend can start.',
         canStop: false,
         finishedAt: new Date().toISOString(),
       });
@@ -735,7 +890,7 @@
       publish({ status: 'error', message: context.reason, canStop: false, finishedAt: new Date().toISOString() });
       return snapshot();
     }
-    const expectedThreadId = String(options.expectedThreadId || '').trim();
+    const expectedThreadId = plan.threadId;
     if (!expectedThreadId || context.threadId !== expectedThreadId) {
       publish({
         status: 'error',
@@ -750,9 +905,8 @@
     activeController = controller;
     const signal = controller.signal;
     const maxFailures = Math.max(1, Math.min(10, Number(options.maxConsecutiveFailures) || DEFAULT_MAX_FAILURES));
-    const maxMessages = Number.isFinite(Number(options.maxMessages))
-      ? Math.max(1, Number(options.maxMessages))
-      : Number.POSITIVE_INFINITY;
+    const authorizationExpiresAt = plan.expiresAt;
+    const maxMessages = plan.limit;
     let processed = 0;
     let failed = 0;
     let consecutiveFailures = 0;
@@ -760,6 +914,7 @@
 
     publish({
       status: 'preparing',
+      operation: 'unsend',
       processed: 0,
       failed: 0,
       consecutiveFailures: 0,
@@ -771,14 +926,32 @@
     });
 
     try {
-      await loadAllHistory(context, signal);
+      const history = await loadAllHistory(context, signal);
+      const resolvedCount = history.eligibleCount;
+      if (!history.complete || resolvedCount > MAX_PLAN_MESSAGES) {
+        throw new Error('The full conversation could not be revalidated within the bounded history check.');
+      }
+      const currentEligibleCount = resolvedCount;
+      if (currentEligibleCount !== plan.eligibleCount) {
+        throw new Error('The eligible sent-message count changed after review. Check the conversation again.');
+      }
+      if (plan.scope === 'newest') {
+        const reversed = reversedLayout(context.scroller);
+        context.scroller.scrollTop = newestOffset(context.scroller, reversed);
+        dispatch(context.scroller, new Event('scroll', { bubbles: true }));
+        await delay(100, signal);
+      }
       while (!signal.aborted && processed < maxMessages && consecutiveFailures < maxFailures) {
         if (authorizationExpiresAt <= Date.now()) {
           throw new Error('Live authorization expired before the next message.');
         }
         const stop = sessionStop(expectedThreadId);
         if (stop) throw new Error(stop);
-        const row = await nextSentRow(context, signal);
+        const row = await nextSentRow(
+          context,
+          signal,
+          plan.scope === 'newest' ? 'newest' : 'oldest',
+        );
         if (!row) break;
         const label = preview(row);
         const elapsed = Date.now() - lastUnsendAt;
@@ -910,10 +1083,11 @@
     };
   }
 
-  const publicApi = { inspect, snapshot, start, stop, subscribe };
+  const publicApi = { createPlan, inspect, inspectAll, snapshot, start, stop, subscribe };
   if (globalThis.__instaAioTestHooks === true) {
     publicApi.__test = Object.freeze({
       deepestMessageContainer,
+      advanceHistoryProgress,
       hasMessageContent,
       isVisible,
       nextSentRow,
@@ -946,6 +1120,8 @@
     const shadow = host.shadowRoot;
     const runner = globalThis.InstaAioDmThreadUnsender;
     const liveAuthority = globalThis.InstaAioUserscriptLiveAuthority;
+    let reviewedPreview = null;
+    let emptyPreview = false;
     const query = (selector) => shadow.querySelector(selector);
     const setText = (role, value) => {
       const element = query(`[data-role="${role}"]`);
@@ -1000,10 +1176,15 @@
         transition: filter 140ms ease, transform 140ms ease, opacity 140ms ease !important;
       }
       .button:hover, .file:hover { filter: brightness(.97); }
-      .button.primary, .button.danger {
+      .button.primary {
         border-color: var(--aio-accent) !important;
         background: var(--aio-accent) !important;
         color: var(--aio-on-accent) !important;
+      }
+      .button.danger {
+        border-color: var(--aio-danger, #c9362b) !important;
+        background: var(--aio-danger, #c9362b) !important;
+        color: #fff !important;
       }
       .launcher {
         border-color: var(--aio-line) !important;
@@ -1035,18 +1216,18 @@
     const nowLead = query('[data-panel="now"] .lead');
     if (nowLead) nowLead.textContent = 'Choose a tool. Your lists and progress stay in this browser.';
     const messageLead = query('[data-panel="messages"] .lead');
-    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Load older history once, then remove your sent messages from the oldest loaded message forward.';
+    if (messageLead) messageLead.innerHTML = '<strong>DM Unsend.</strong> Resolve this conversation and its eligible sent-message count before reviewing any permanent action.';
 
     const scanButton = query('[data-action="scan-sent"]');
     if (scanButton) scanButton.textContent = 'Check conversation';
-    const primary = query('[data-action="unsend-all"]');
-    if (primary) primary.textContent = 'Unsend all DMs';
-    const legacyRun = query('[data-action="run-unsend"]')?.closest('.toolbar');
-    if (legacyRun) legacyRun.hidden = true;
-    for (const role of ['unsend-scope', 'unsend-count']) {
-      const field = query(`[data-role="${role}"]`)?.closest('.field');
-      if (field) field.hidden = true;
-    }
+    const executeButton = query('[data-action="run-unsend"]');
+    const planPanel = query('[data-role="unsend-plan"]');
+    if (planPanel) planPanel.hidden = false;
+    const countField = query('[data-role="unsend-count"]')?.closest('.field');
+    const renderScope = () => {
+      if (countField) countField.hidden = (query('[data-role="unsend-scope"]')?.value || 'all') === 'all';
+    };
+    renderScope();
     const messageNotice = query('[data-panel="messages"] .notice');
     if (messageNotice) {
       messageNotice.textContent = 'Only messages sent by this account are processed. You can stop at any time. Unsending is permanent.';
@@ -1054,9 +1235,12 @@
 
     function renderRun(next) {
       const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
+      const readOnlyCheck = next.operation === 'check';
       const panel = query('[data-role="run-panel"]');
       if (panel) panel.hidden = !running && !['completed', 'error', 'stopped'].includes(next.status);
-      setText('run-title', running ? 'DM Unsend in progress' : 'DM Unsend');
+      setText('run-title', running
+        ? readOnlyCheck ? 'Checking conversation' : 'DM Unsend in progress'
+        : readOnlyCheck ? 'Conversation check' : 'DM Unsend');
       setText('run-detail', next.message);
       const fill = query('[data-role="run-fill"]');
       if (fill) fill.style.width = running ? `${Math.min(94, 12 + (next.processed * 4))}%` : '100%';
@@ -1064,20 +1248,33 @@
       if (results) {
         results.replaceChildren();
         const item = document.createElement('li');
-        item.textContent = `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
+        item.textContent = readOnlyCheck
+          ? 'Read-only check · nothing changed'
+          : `${next.processed} unsent${next.failed ? ` · ${next.failed} failed attempt${next.failed === 1 ? '' : 's'}` : ''}`;
         results.append(item);
       }
-      if (primary) {
-        primary.textContent = running ? 'Stop unsending' : 'Unsend all DMs';
-        primary.classList.toggle('danger', running);
-        if (running) primary.disabled = false;
+      const stopButton = query('[data-role="stop-run"]');
+      if (stopButton) {
+        stopButton.hidden = !running;
+        stopButton.disabled = !next.canStop;
+      }
+      if (executeButton) {
+        executeButton.textContent = running
+          ? readOnlyCheck ? 'Checking conversation…' : 'Stop unsending'
+          : reviewedPreview
+            ? 'Unsend messages'
+            : emptyPreview
+              ? 'No sent messages eligible'
+              : 'Check conversation first';
+        executeButton.disabled = readOnlyCheck || next.status === 'stopping'
+          || (!running && (!reviewedPreview || reviewedPreview.eligibleCount < 1));
       }
       setText('status', next.message);
     }
 
     runner.subscribe((next) => {
       const running = ['preparing', 'running', 'waiting', 'stopping'].includes(next.status);
-      liveAuthority?.setExternalRunActive?.(running);
+      liveAuthority?.setExternalRunActive?.(running, next.operation);
       renderRun(next);
     });
 
@@ -1085,47 +1282,125 @@
       const target = event.target.closest?.('[data-action]');
       if (!target) return;
       const action = target.dataset.action;
-      if (!['unsend-all', 'scan-sent', 'run-unsend', 'stop-run'].includes(action)) return;
+      if (!['scan-sent', 'run-unsend', 'stop-run'].includes(action)) return;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
 
-      if (action === 'stop-run' || (action === 'unsend-all' && runner.snapshot().canStop)) {
+      if (action === 'stop-run' || (action === 'run-unsend' && runner.snapshot().canStop)) {
         runner.stop();
         return;
       }
-      if (action === 'scan-sent' || action === 'run-unsend') {
-        const result = runner.inspect();
-        setText('status', result.ready
-          ? `${result.visibleSent} sent message${result.visibleSent === 1 ? '' : 's'} visible now. Unsend all will load the full conversation first.`
-          : result.reason);
+      if (action === 'scan-sent') {
+        reviewedPreview = null;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Checking conversation…';
+          executeButton.disabled = true;
+        }
+        const result = await runner.inspectAll();
+        if (!result.ready) {
+          if (executeButton) executeButton.textContent = 'Check conversation first';
+          setText('status', result.reason);
+          return;
+        }
+        reviewedPreview = result.complete && result.eligibleCount > 0 ? result : null;
+        emptyPreview = result.complete && result.eligibleCount < 1;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) executeButton.textContent = reviewedPreview
+          ? 'Unsend messages'
+          : emptyPreview
+            ? 'No sent messages eligible'
+            : 'Check conversation first';
+        if (executeButton) executeButton.disabled = !result.complete || result.eligibleCount < 1;
+        const summary = query('[data-role="dm-summary"]');
+        if (summary) summary.hidden = false;
+        setText('dm-summary-title', `Thread ${result.threadId}`);
+        setText('dm-summary-detail', result.complete
+          ? `${result.eligibleCount} sent message${result.eligibleCount === 1 ? '' : 's'} eligible · read-only check complete`
+          : `${result.eligibleCount} found · completeness not proven · destructive plan locked`);
+        setText('status', result.complete
+          ? `${result.eligibleCount} sent message${result.eligibleCount === 1 ? '' : 's'} eligible. Nothing was changed.`
+          : `${result.reason} Nothing was changed.`);
         return;
       }
-      if (!liveAuthority?.canStart?.()) {
-        setText('status', 'Live actions are locked. Open toolbox preferences and enable the 15-minute live window first.');
+      if (!liveAuthority?.canStart?.() && !liveAuthority?.enable?.()) {
+        setText('status', 'Another live action is already active. Stop it before starting Unsend.');
         return;
       }
-      const result = runner.inspect();
-      if (!result.ready) {
-        setText('status', result.reason);
+      const inspection = runner.inspect();
+      if (!reviewedPreview || !inspection.ready || inspection.threadId !== reviewedPreview.threadId) {
+        reviewedPreview = null;
+        emptyPreview = false;
+        if (planPanel) planPanel.hidden = false;
+        if (executeButton) {
+          executeButton.textContent = 'Check conversation first';
+          executeButton.disabled = true;
+        }
+        setText('status', inspection.reason || 'The conversation changed. Check it again before reviewing an Unsend plan.');
+        return;
+      }
+      const scope = query('[data-role="unsend-scope"]')?.value || 'all';
+      const requested = Math.max(1, Math.floor(Number(query('[data-role="unsend-count"]')?.value) || 1));
+      const limit = scope === 'all'
+        ? reviewedPreview.eligibleCount
+        : Math.min(reviewedPreview.eligibleCount, requested);
+      const plan = runner.createPlan({
+        threadId: reviewedPreview.threadId,
+        scope,
+        limit,
+        eligibleCount: reviewedPreview.eligibleCount,
+        expiresAt: liveAuthority.expiresAt(),
+      });
+      if (!plan) {
+        setText('status', 'The live window or conversation review expired. Check the conversation again.');
+        return;
+      }
+      const scopeLabel = scope === 'all'
+        ? 'all eligible sent messages'
+        : `${scope} ${limit} sent message${limit === 1 ? '' : 's'}`;
+      const phrase = `UNSEND ${limit} ${plan.reviewedDigest}`;
+      // eslint-disable-next-line no-alert
+      const entered = globalThis.prompt(
+        `Type this count-specific phrase to continue for thread ${plan.threadId}:\n\n${phrase}`,
+        '',
+      );
+      if (entered == null) {
+        setText('status', 'Cancelled. Nothing was changed.');
+        return;
+      }
+      if (String(entered).trim() !== phrase) {
+        setText('status', 'Unsend stayed locked because the count-specific phrase did not match.');
         return;
       }
       // eslint-disable-next-line no-alert
       const confirmed = globalThis.confirm(
-        'Unsend every message you sent in this conversation?\n\n'
-        + 'Older history will load once, then removal works forward from the oldest loaded sent message. This is permanent and cannot be undone.',
+        `Permanently unsend ${scopeLabel} from thread ${plan.threadId}?\n\n`
+        + `Reviewed digest: ${plan.reviewedDigest}. The eligible count is revalidated before any message menu opens.`,
       );
       if (!confirmed) {
         setText('status', 'Cancelled. Nothing was changed.');
         return;
       }
+      const reservation = liveAuthority.reserveUnsendPlan?.(plan);
+      if (!reservation?.ok) {
+        setText('status', `${reservation?.reason || 'The reviewed plan could not be reserved.'} Nothing was changed.`);
+        return;
+      }
+      reviewedPreview = null;
+      emptyPreview = false;
+      if (planPanel) planPanel.hidden = false;
       await runner.start({
-        authorizationExpiresAt: liveAuthority.expiresAt(),
-        expectedThreadId: result.threadId,
-        minDelayMs: 1_000,
-        maxDelayMs: 2_000,
+        plan,
+        minDelayMs: reservation.minDelayMs,
+        maxDelayMs: reservation.maxDelayMs,
       });
     }, true);
+
+    shadow.addEventListener('change', (event) => {
+      if (event.target.matches?.('[data-role="unsend-scope"]')) renderScope();
+    });
   }
 
   function findRoot() {

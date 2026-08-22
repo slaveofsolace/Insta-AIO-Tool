@@ -295,6 +295,10 @@
   }
 
   function botTargets(runtime, source) {
+    if (source === 'current-profile') {
+      const context = runtime.model.context || {};
+      return context.pageKind === 'profile' && context.username ? [context.username] : [];
+    }
     if (source === 'queue') {
       return (runtime.model.manualQueue?.queue || runtime.model.manualQueue?.items || [])
         .filter((entry) => shared.ACTIONABLE_QUEUE_STATUSES.has(entry.status))
@@ -311,9 +315,11 @@
 
   function botPlan(runtime) {
     const { query } = runtime;
-    const source = query('[data-ia-role="bot-source"]')?.value || 'not-following-me-back';
+    const source = query('[data-ia-role="bot-source"]')?.value || 'current-profile';
     const action = query('[data-ia-role="bot-action"]')?.value === 'follow' ? 'follow' : 'unfollow';
-    const requested = Math.max(1, Math.min(250, Number(query('[data-ia-role="bot-count"]')?.value) || 20));
+    const requested = source === 'current-profile'
+      ? 1
+      : Math.max(1, Math.min(250, Number(query('[data-ia-role="bot-count"]')?.value) || 20));
     const pool = botTargets(runtime, source);
     const unique = [...new Set(pool)];
     const selected = unique.slice(0, requested);
@@ -384,7 +390,9 @@
     const draft = botPlan(runtime);
     if (!draft.selected.length) {
       runtime.status(
-        draft.source === 'queue'
+        draft.source === 'current-profile'
+          ? 'Open one Instagram profile first. No target was reviewed.'
+          : draft.source === 'queue'
           ? 'The manual queue has no pending accounts.'
           : 'Capture both Followers and Following in the checker first.',
         'error',

@@ -48,7 +48,14 @@
     'skipped',
     'removed',
   ]);
-  const MAX_CAPTURE_ACCOUNTS = 2_000;
+  const MAX_CAPTURE_ACCOUNTS = 25_000;
+  const CAPTURE_METHODS = new Set(['authenticated-web', 'list-dialog']);
+  const CAPTURE_ACCOUNT_SOURCES = new Set([
+    'authenticated-instagram-web',
+    'extension-scrolled-dom',
+    'extension-visible-dom',
+    'tampermonkey-visible-dom',
+  ]);
   const MAX_QUEUE_ITEMS = 2_000;
   const MAX_TEXT_LENGTH = 500;
   const COMPARISON_CATEGORIES = Object.freeze({
@@ -134,8 +141,9 @@
 
   function captureWorkspaceDefaults() {
     return {
-      schemaVersion: 2,
+      schemaVersion: 5,
       kind: 'insta-aio-visible-checker-workspace',
+      subjectUsername: '',
       followers: [],
       following: [],
       capturedAt: {
@@ -145,6 +153,14 @@
       complete: {
         followers: false,
         following: false,
+      },
+      verified: {
+        followers: false,
+        following: false,
+      },
+      source: {
+        followers: '',
+        following: '',
       },
     };
   }
@@ -158,7 +174,9 @@
         username,
         profileUrl: `https://www.instagram.com/${username}/`,
         displayName: safeText(candidate?.displayName),
-        source: 'extension-visible-dom',
+        source: CAPTURE_ACCOUNT_SOURCES.has(candidate?.source)
+          ? candidate.source
+          : 'extension-visible-dom',
       });
     }
     return [...accounts.values()].sort((left, right) => left.username.localeCompare(right.username));
@@ -166,12 +184,18 @@
 
   function normalizeCaptureWorkspace(value, normalizeUsername) {
     const source = value && typeof value === 'object' ? value : {};
+    // Schema 4 is the first capture format whose `complete` flag is backed by
+    // a reconciled exact-list read. Schema 5 additionally records whether that
+    // read came from bounded authenticated pagination or the list-dialog
+    // fallback. Keep older rows available for export without mixing subjects.
+    const requiresCountReconciledRescan = Number(source.schemaVersion) < 4;
     const capturedAt = source.capturedAt && typeof source.capturedAt === 'object'
       ? source.capturedAt
       : {};
     return {
-      schemaVersion: 2,
+      schemaVersion: 5,
       kind: 'insta-aio-visible-checker-workspace',
+      subjectUsername: normalizeUsername(source.subjectUsername),
       followers: normalizeCaptureAccounts(source.followers, normalizeUsername),
       following: normalizeCaptureAccounts(source.following, normalizeUsername),
       capturedAt: {
@@ -179,8 +203,20 @@
         following: safeText(capturedAt.following) || null,
       },
       complete: {
-        followers: source.complete?.followers === true,
-        following: source.complete?.following === true,
+        followers: !requiresCountReconciledRescan
+          && source.verified?.followers === true
+          && source.complete?.followers === true,
+        following: !requiresCountReconciledRescan
+          && source.verified?.following === true
+          && source.complete?.following === true,
+      },
+      verified: {
+        followers: !requiresCountReconciledRescan && source.verified?.followers === true,
+        following: !requiresCountReconciledRescan && source.verified?.following === true,
+      },
+      source: {
+        followers: CAPTURE_METHODS.has(source.source?.followers) ? source.source.followers : '',
+        following: CAPTURE_METHODS.has(source.source?.following) ? source.source.following : '',
       },
     };
   }
@@ -210,19 +246,34 @@
     const source = workspace && typeof workspace === 'object'
       ? workspace
       : captureWorkspaceDefaults();
+    const method = CAPTURE_METHODS.has(source.source?.[normalizedType])
+      ? source.source[normalizedType]
+      : '';
     return {
       schemaVersion: 1,
       kind: 'insta-aio-visible-list',
       listType: normalizedType,
       capturedAt: safeText(source.capturedAt?.[normalizedType]) || now(),
       [normalizedType]: Array.isArray(source[normalizedType]) ? source[normalizedType] : [],
-      note: 'Only rows rendered in Instagram were captured. Scroll the list manually and capture again to merge more rows.',
+      subjectUsername: safeText(source.subjectUsername),
+      verificationMethod: method,
+      verifiedDialog: source.verified?.[normalizedType] === true && method !== 'authenticated-web',
+      note: method === 'authenticated-web'
+        ? 'Read from bounded authenticated Instagram pagination. No follow, unfollow, message, or click action was performed.'
+        : 'Only rows rendered in Instagram were captured. Scroll the list manually and capture again to merge more rows.',
     };
   }
 
+  function verifiedCaptureAccounts(workspace, listType) {
+    const normalizedType = listType === 'followers' ? 'followers' : 'following';
+    return workspace?.verified?.[normalizedType] === true && Array.isArray(workspace?.[normalizedType])
+      ? workspace[normalizedType]
+      : [];
+  }
+
   function compareCaptureWorkspace(workspace) {
-    const followers = Array.isArray(workspace?.followers) ? workspace.followers : [];
-    const following = Array.isArray(workspace?.following) ? workspace.following : [];
+    const followers = verifiedCaptureAccounts(workspace, 'followers');
+    const following = verifiedCaptureAccounts(workspace, 'following');
     const followerNames = new Set(followers.map((account) => account.username));
     const followingNames = new Set(following.map((account) => account.username));
     return {
@@ -349,5 +400,6 @@
     safeText,
     sessionState,
     shortDate,
+    verifiedCaptureAccounts,
   });
 })();

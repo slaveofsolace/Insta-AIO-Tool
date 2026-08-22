@@ -97,7 +97,9 @@ The extension background worker serializes bridge requests and persists its repl
 
 The sidecar owns only browser-local field state:
 
-- A bounded visible-list capture draft using the existing `insta-aio-visible-list` contract
+- A bounded relationship-check workspace that atomically stores both lists,
+  subject username, completeness, and authenticated-web or list-dialog provenance
+- Backward-compatible `insta-aio-visible-list` exports for individual raw lists
 - An imported `insta-aio-manual-queue` and extension-local completion/skip updates
 - Read-only visible-message evidence plus conditional stable-identity DM dry runs
 - Sanitized pairing and recent dry-run summaries returned by the background worker
@@ -105,7 +107,7 @@ The sidecar owns only browser-local field state:
 - A sanitized pending exact-message intent and 90-second one-use DM arm
 - A versioned V3 visual preference record; fresh state is collapsed, V1/V2
   choices migrate, and bounded position, size, and opacity fields do not change
-  capture or queue contracts
+  existing capture-export or queue contracts
 
 The PWA remains the system of record for imports, snapshots, comparisons,
 protections, reviewed jobs, ledgers, and backups. The background worker never
@@ -158,15 +160,17 @@ exact native control, menu, or confirmation dialog.
 `scripts/build-userscript.mjs` produces one installable `.user.js` file from the
 extension's exact-label module, shared Instagram inspector/action engine, and a
 userscript-specific shell. It has no remote `@require`, `@resource`, `@connect`,
-or network request path. The shell stores follower/following drafts, queue state,
+third-party connector, or cloud path. The shared checker engine can issue only
+its fixed same-origin Instagram relationship GET requests with browser-managed
+credentials. The shell stores follower/following drafts, queue state,
 pacing limits, and layout preferences in userscript-local storage. The metadata
 explicitly selects the userscript manager's isolated DOM sandbox.
 
 The injected toolbox exposes the follower scanner and comparison, no-click
 profile/message checks, paced Follow/Unfollow, and thread-wide DM Unsend. Live
-controls start disabled. A typed `ENABLE LIVE ACTIONS` phrase opens a
-non-persistent 15-minute window; a separate confirmation is still required for
-each run. The expiry is stored only on an already-confirmed account run so the
+execution starts off. Starting an already-reviewed action or using the one-click
+switch opens a non-persistent 15-minute window; the exact target-bound
+confirmation is still required for each run. The expiry is stored only on an already-confirmed account run so the
 run can cross its own profile navigations. Resumable account state is held in
 manager-provided tab storage (`GM_getTab`/`GM_saveTab`), never in the shared GM
 value record; without those APIs, account batches fail closed. DM runs are

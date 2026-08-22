@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-11T21:06:46.460Z",
+  "capturedAt": "2026-08-22T15:16:07.100Z",
   "platform": "win32",
-  "builtExtensionVersion": "0.10.6",
+  "builtExtensionVersion": "0.11.0",
   "screenshots": [
     {
       "id": "first-run-walkthrough",
-      "sha256": "8690c1ff41611660dd41098d3d059955642e4437f6711d920bf973037dc8a098",
+      "sha256": "707c3c9ff2e148d0a5596bfc99050bd2e51155e8ad77d6db1d1c7c968d6baced",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -68,18 +68,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -95,20 +95,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -120,20 +120,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -200,32 +200,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -250,7 +250,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -260,7 +260,7 @@
     },
     {
       "id": "toolbox-floating-translucent",
-      "sha256": "95c0357fb0bab44ca912928a9763558a7bed1188b2435f36bc8504fd5e4c8133",
+      "sha256": "e6b3fa523054aeb60b3c901f79efe6a1550a07782277788b428fd38a1102c869",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -331,48 +331,48 @@
           "dock": "left",
           "footer": {
             "bottom": 771,
-            "height": 51.78125,
-            "left": 519,
+            "height": 69.171875,
+            "left": 595,
             "right": 909,
-            "top": 719.21875,
-            "width": 390
+            "top": 701.828125,
+            "width": 314
           },
           "header": {
-            "bottom": 172.765625,
-            "height": 99.765625,
-            "left": 519,
+            "bottom": 229.140625,
+            "height": 156.140625,
+            "left": 595,
             "right": 909,
             "top": 73,
-            "width": 390
+            "width": 314
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 144.375,
+                "bottom": 172.5625,
                 "height": 44,
                 "left": 809,
                 "right": 899,
-                "top": 100.375,
+                "top": 128.5625,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 220,
+              "client": 118,
               "rect": {
-                "bottom": 161.765625,
-                "height": 78.765625,
-                "left": 581,
+                "bottom": 218.140625,
+                "height": 135.140625,
+                "left": 683.0625,
                 "right": 801,
                 "top": 83,
-                "width": 220
+                "width": 117.9375
               },
-              "scroll": 220
+              "scroll": 118
             },
             "header": {
-              "client": 390,
-              "scroll": 390
+              "client": 314,
+              "scroll": 314
             }
           },
           "innerHeight": 900,
@@ -434,7 +434,7 @@
               "color": "rgb(38, 38, 38)",
               "textContrast": null,
               "textFillColor": "rgb(38, 38, 38)",
-              "text": "",
+              "text": "Move",
               "tone": null,
               "visible": true
             },
@@ -449,11 +449,11 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "backgroundColor": "rgb(255, 255, 255)",
               "color": "rgb(115, 115, 115)",
-              "textContrast": null,
+              "textContrast": 4.741667181590045,
               "textFillColor": "rgb(115, 115, 115)",
-              "text": "",
+              "text": "Resize",
               "tone": null,
               "visible": true
             },
@@ -488,32 +488,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -528,7 +528,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 315
+              "width": 239
             }
           ],
           "viewTitle": "Instagram tools",
@@ -538,7 +538,7 @@
     },
     {
       "id": "profile-not-following-no-match",
-      "sha256": "5523031cc74145c12cfb3969c7752c26b5245a497cd95d3ed3324ded4345a488",
+      "sha256": "1c4aeb6abbcbd7ca089348f93b048920e8df623d11fbac91ce08963408031a19",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -585,18 +585,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -612,20 +612,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -637,20 +637,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -688,32 +688,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -728,7 +728,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -738,7 +738,7 @@
     },
     {
       "id": "profile-following-queue-match",
-      "sha256": "d98f5110866fe9e94ec99719b48db143e1864fb4fabb878425e0180f3f6c2e11",
+      "sha256": "f0d21509f13d61ec5b1d00b435121db8ea034c9c4db582aaad1e69f5f7e8e1ad",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -785,18 +785,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -812,20 +812,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -837,20 +837,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -888,32 +888,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -928,7 +928,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -938,7 +938,7 @@
     },
     {
       "id": "profile-ambiguous-safe-stop",
-      "sha256": "b5360eab698bf60c0f0d486448a0ee2cf5da77c2b57e62409ece0a4bd5c1a1f2",
+      "sha256": "ce9c65d8cd0ab604842525eb56a294b7eaefa86e78d1f45068d941a5db24b831",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -984,18 +984,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -1011,20 +1011,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -1036,20 +1036,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -1087,32 +1087,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -1127,7 +1127,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -1137,7 +1137,7 @@
     },
     {
       "id": "followers-first-capture",
-      "sha256": "1a37986cd7108f18643638e318302c3c7c17c9d4cec349120dad21f5fdd89485",
+      "sha256": "1aa7e418b920ceba0b96810e7d42ecbd1dd455ec7de73cdd92b8462ed10c0b20",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "followers",
@@ -1195,49 +1195,49 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 883,
+            "bottom": 882.65625,
             "height": 51.78125,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
-            "top": 831.21875,
-            "width": 330
+            "top": 830.875,
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -1249,20 +1249,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -1345,32 +1345,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -1381,6 +1381,16 @@
               "height": 44,
               "label": "Collapse Insta AIO sidecar",
               "width": 44
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 272
+            },
+            {
+              "height": 44,
+              "label": "Check Followers + Following",
+              "width": 207.734375
             },
             {
               "height": 44,
@@ -1395,7 +1405,7 @@
             {
               "height": 44,
               "label": "FollowingFollowers",
-              "width": 283
+              "width": 302
             },
             {
               "height": 44,
@@ -1420,7 +1430,7 @@
     },
     {
       "id": "following-repeated-capture",
-      "sha256": "bc8ab0649ed4427fdf3e1cc4935b226c9bdd4d8aa0aab840a57e2b672ec26d21",
+      "sha256": "465c44c20fc4316373ab9383f5a5d6a41d60dab83a3abd67bfb9ac603e382630",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "following",
@@ -1478,49 +1488,49 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 883,
+            "bottom": 882.65625,
             "height": 51.78125,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
-            "top": 831.21875,
-            "width": 330
+            "top": 830.875,
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -1532,20 +1542,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -1628,32 +1638,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -1664,6 +1674,16 @@
               "height": 44,
               "label": "Collapse Insta AIO sidecar",
               "width": 44
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 272
+            },
+            {
+              "height": 44,
+              "label": "Check Followers + Following",
+              "width": 207.734375
             },
             {
               "height": 44,
@@ -1678,7 +1698,7 @@
             {
               "height": 44,
               "label": "FollowingFollowers",
-              "width": 283
+              "width": 302
             },
             {
               "height": 44,
@@ -1703,7 +1723,7 @@
     },
     {
       "id": "checker-filtered-results",
-      "sha256": "b26fcb604bf23ba1277eec50a58622f0ea307c8f958f80f88124c5074b81a5af",
+      "sha256": "0298f2ce4d5b416e2047aecb30aed2e10c1c1f170127a99e3c9f212b5408a6ef",
       "scenario": {
         "after": "filter-checker-results",
         "captureListType": null,
@@ -1764,47 +1784,47 @@
           "footer": {
             "bottom": 881,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 811.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
-            "bottom": 170.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 191.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 53,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 133.078125,
+                "bottom": 143.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 89.078125,
+                "top": 99.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 159.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 180.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 63,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -1815,7 +1835,7 @@
           "overflowing": [
             {
               "className": "ia-select",
-              "overflow": 18,
+              "overflow": 16,
               "role": "checker-category",
               "tagName": "SELECT"
             }
@@ -1823,20 +1843,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -1915,32 +1935,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -1954,28 +1974,388 @@
             },
             {
               "height": 44,
-              "label": "Scan",
-              "width": 55.6875
+              "label": "",
+              "width": 257
             },
             {
               "height": 44,
-              "label": "Scan",
-              "width": 55.6875
+              "label": "Check Followers + Following",
+              "width": 207.734375
             },
             {
               "height": 44,
               "label": "Not following me backI do not follow backMutual followers",
-              "width": 137.5
+              "width": 139.5
             },
             {
               "height": 44,
               "label": "",
-              "width": 137.5
+              "width": 139.5
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
             },
             {
               "height": 44,
               "label": "FollowingFollowers",
-              "width": 283
+              "width": 287
+            },
+            {
+              "height": 44,
+              "label": "Capture visible rows",
+              "width": 153.890625
+            },
+            {
+              "height": 44,
+              "label": "Download selected list",
+              "width": 168.875
+            },
+            {
+              "height": 44,
+              "label": "Clear checker",
+              "width": 110.609375
+            }
+          ],
+          "viewTitle": "Follower checker",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "checker-authenticated-read",
+      "sha256": "d765ee44a3e73302c635b5d9110f4a9cb3ca1a7aa000017e77c70022402a9a71",
+      "scenario": {
+        "after": "check-account-relationships",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "firstRun": true,
+        "layout": "docked",
+        "mode": "qa-checker-api",
+        "opacity": null,
+        "open": true,
+        "pairing": "action",
+        "panelHeight": null,
+        "panelWidth": null,
+        "position": null,
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "capture",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "attributes": {
+              "type": "button"
+            },
+            "equals": "Check Followers + Following",
+            "selector": "[data-ia-role=\"checker-run\"]"
+          },
+          {
+            "equals": "Follower comparison complete for @demo_creator",
+            "selector": "[data-ia-role=\"capture-state-title\"]"
+          },
+          {
+            "numberEquals": 2,
+            "selector": "[data-ia-role=\"followers-count\"]"
+          },
+          {
+            "numberEquals": 2,
+            "selector": "[data-ia-role=\"following-count\"]"
+          },
+          {
+            "includes": [
+              "Authenticated account comparison",
+              "Mutuals",
+              "Not following me back"
+            ],
+            "selector": "[data-ia-role=\"checker-result\"]"
+          },
+          {
+            "includes": [
+              "@following_only",
+              "Following Only"
+            ],
+            "selector": "[data-ia-role=\"checker-filtered-list\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "capture",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 883,
+            "height": 51.78125,
+            "left": 1076,
+            "right": 1410,
+            "top": 831.21875,
+            "width": 334
+          },
+          "header": {
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
+            "right": 1410,
+            "top": 55,
+            "width": 334
+          },
+          "headerSizing": {
+            "actions": {
+              "client": 90,
+              "rect": {
+                "bottom": 145.875,
+                "height": 44,
+                "left": 1310,
+                "right": 1400,
+                "top": 101.875,
+                "width": 90
+              },
+              "scroll": 90
+            },
+            "copy": {
+              "client": 138,
+              "rect": {
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
+                "right": 1302,
+                "top": 65,
+                "width": 137.9375
+              },
+              "scroll": 138
+            },
+            "header": {
+              "client": 334,
+              "scroll": 334
+            }
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "layout": "docked",
+          "launcher": null,
+          "opacity": "88%",
+          "overflowing": [
+            {
+              "className": "ia-select",
+              "overflow": 16,
+              "role": "checker-category",
+              "tagName": "SELECT"
+            }
+          ],
+          "panel": {
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
+            "right": 1411,
+            "top": 54,
+            "width": 460
+          },
+          "panelAreaShare": 0.29388888888888887,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
+            "right": 1411,
+            "top": 54,
+            "width": 460
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"checker-run\"]": {
+              "attributes": {
+                "class": "ia-button",
+                "type": "button",
+                "data-ia-action": "check-account-relationships",
+                "data-ia-role": "checker-run"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Check Followers + Following",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-state-title\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Follower comparison complete for @demo_creator",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"followers-count\"]": {
+              "attributes": {
+                "data-ia-role": "followers-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "2",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"following-count\"]": {
+              "attributes": {
+                "data-ia-role": "following-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "2",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-result\"]": {
+              "attributes": {
+                "class": "ia-checker-result",
+                "data-ia-role": "checker-result"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "color(srgb 0.980392 0.980392 0.980392 / 0.96)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Authenticated account comparisonMutuals1Not following me back1I don't follow back1",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-filtered-list\"]": {
+              "attributes": {
+                "class": "ia-list",
+                "data-ia-role": "checker-filtered-list"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "@following_onlyFollowing Only",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Checked @demo_creator: 2 followers and 2 following.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Toolbox",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Follower checker",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Follow / Unfollow",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "DM Unsend",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Move sidecar; use arrow keys for precise movement",
+              "width": 70.0625
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check Followers + Following",
+              "width": 207.734375
+            },
+            {
+              "height": 44,
+              "label": "Not following me backI do not follow backMutual followers",
+              "width": 139.5
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 139.5
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 287
             },
             {
               "height": 44,
@@ -2000,7 +2380,7 @@
     },
     {
       "id": "queue-locked",
-      "sha256": "536a87aac8034e2658559545b6bee58c9b0d78154a7008066195f2bbf980963b",
+      "sha256": "674a12a6a99975e83ea00cb82cc72e17ffc451f7a9bc2fb179f3e6e8b86cbb5d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2055,49 +2435,49 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 744.390625,
+            "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
-            "top": 675.21875,
-            "width": 330
+            "top": 813.828125,
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -2107,22 +2487,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 745.390625,
-            "height": 691.390625,
-            "left": 1031,
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.20272255979938272,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 745.390625,
-            "height": 691.390625,
-            "left": 1031,
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -2187,9 +2567,9 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm exact action",
               "tone": null,
@@ -2204,32 +2584,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -2263,18 +2643,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 298
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 257
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 298
+              "width": 257
             },
             {
               "height": 44,
               "label": "",
-              "width": 298
+              "width": 257
             },
             {
               "height": 44,
@@ -2294,7 +2674,7 @@
     },
     {
       "id": "queue-exact-target-ready",
-      "sha256": "c374db63d20603304c1d1de260f5436bd54960bbba1323aa8b33a17da1e9f53d",
+      "sha256": "50d06b0a28ce0d8eadcc0cfa615485453154ca6324dffbae3238856b15763b10",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2352,47 +2732,47 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -2404,20 +2784,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -2481,9 +2861,9 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm one unfollow",
               "tone": null,
@@ -2505,32 +2885,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -2569,18 +2949,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 283
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 257
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 283
+              "width": 257
             },
             {
               "height": 44,
               "label": "",
-              "width": 283
+              "width": 257
             },
             {
               "height": 44,
@@ -2600,7 +2980,7 @@
     },
     {
       "id": "queue-armed-countdown",
-      "sha256": "0d4f8f467f09f6df826834eeddba104da6bed96a014e1d166e4a2c96d882b74e",
+      "sha256": "dd23ce110670342ed97a189721b855bcecfcb09784f660b0a96c640b7312f821",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -2757,9 +3137,9 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "One action armed",
               "tone": null,
@@ -2807,7 +3187,7 @@
     },
     {
       "id": "queue-arm-expired",
-      "sha256": "91100bcc65b8c08d722eadcb3865ff93a5fa5a669f93f7f3c8542812a8ebcc69",
+      "sha256": "eae0ba0a612fd1bbcafd34cf0263503017a3459ab4bf7deda42daf8e62ee76c9",
       "scenario": {
         "after": "wait-account-expired",
         "captureListType": null,
@@ -2869,47 +3249,47 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -2921,20 +3301,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -3015,9 +3395,9 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm fresh unfollow",
               "tone": null,
@@ -3039,32 +3419,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -3103,18 +3483,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 283
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 257
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 283
+              "width": 257
             },
             {
               "height": 44,
               "label": "",
-              "width": 283
+              "width": 257
             },
             {
               "height": 44,
@@ -3134,7 +3514,7 @@
     },
     {
       "id": "messages-evidence-only",
-      "sha256": "44cca097a7219bca08fa4699ed7265e81d5e8efa6d6e14ef2d74591b120442e4",
+      "sha256": "51e4bfa4c0158147f844b55a69bb65b6565dbc65565b1fa05142734990da1f81",
       "scenario": {
         "after": "inspect-messages",
         "captureListType": null,
@@ -3169,8 +3549,8 @@
           },
           {
             "includes": [
-              "read visible evidence",
-              "Unsend all DMs"
+              "Read visible evidence",
+              "eligible count"
             ],
             "selector": "[data-ia-role=\"message-state-detail\"]"
           },
@@ -3182,28 +3562,28 @@
         ],
         "metrics": {
           "activeElementSection": "messages",
-          "adaptiveDock": null,
+          "adaptiveDock": "reviewed-target",
           "adaptiveWidth": null,
           "bodyWidth": 1440,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 1440,
-          "dock": "right",
+          "dock": "left",
           "footer": {
             "bottom": 883,
             "height": 51.78125,
-            "left": 1095,
-            "right": 1425,
+            "left": 139,
+            "right": 473,
             "top": 831.21875,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1095,
-            "right": 1425,
+            "left": 139,
+            "right": 473,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -3211,28 +3591,28 @@
               "rect": {
                 "bottom": 135.078125,
                 "height": 44,
-                "left": 1325,
-                "right": 1415,
+                "left": 373,
+                "right": 463,
                 "top": 91.078125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1157,
-                "right": 1317,
+                "left": 227.0625,
+                "right": 365,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -3244,20 +3624,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1046,
-            "right": 1426,
+            "left": 14,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1046,
-            "right": 1426,
+            "left": 14,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -3305,7 +3685,7 @@
               "color": "rgb(115, 115, 115)",
               "textContrast": null,
               "textFillColor": "rgb(115, 115, 115)",
-              "text": "You can read visible evidence or start Unsend all DMs.",
+              "text": "Read visible evidence or check the full conversation. Unsend stays unavailable until the eligible count is resolved.",
               "tone": null,
               "visible": true
             },
@@ -3342,32 +3722,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -3381,13 +3761,18 @@
             },
             {
               "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 253
+              "label": "Check conversation",
+              "width": 149.46875
             },
             {
               "height": 44,
-              "label": "Check conversation",
-              "width": 149.46875
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 257
             },
             {
               "height": 44,
@@ -3412,7 +3797,7 @@
     },
     {
       "id": "messages-exact-target-ready",
-      "sha256": "6493708cf6c81c516dc0ac450a8ea3d88153ed6fb3f9d3f4466f222af102e540",
+      "sha256": "41f52b612ab8d325d21060d3b0ab18c8bf760d3a10bd78c1b2e76aa6a9383393",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3470,18 +3855,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 63,
-            "right": 393,
+            "left": 139,
+            "right": 473,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 63,
-            "right": 393,
+            "left": 139,
+            "right": 473,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -3489,28 +3874,28 @@
               "rect": {
                 "bottom": 135.078125,
                 "height": 44,
-                "left": 293,
-                "right": 383,
+                "left": 373,
+                "right": 463,
                 "top": 91.078125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 125,
-                "right": 285,
+                "left": 227.0625,
+                "right": 365,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -3523,19 +3908,19 @@
             "bottom": 882,
             "height": 828,
             "left": 14,
-            "right": 394,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
             "left": 14,
-            "right": 394,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -3599,9 +3984,9 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm one Unsend",
               "tone": null,
@@ -3623,32 +4008,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -3662,13 +4047,18 @@
             },
             {
               "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 253
+              "label": "Check conversation",
+              "width": 149.46875
             },
             {
               "height": 44,
-              "label": "Check conversation",
-              "width": 149.46875
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 257
             },
             {
               "height": 44,
@@ -3698,7 +4088,7 @@
     },
     {
       "id": "messages-wrong-conversation",
-      "sha256": "c9391b41df04f3dc228eeac2010ecee3d963fc5fe363699e81b5a1bb2295b4a3",
+      "sha256": "41f52b612ab8d325d21060d3b0ab18c8bf760d3a10bd78c1b2e76aa6a9383393",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -3755,18 +4145,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 63,
-            "right": 393,
+            "left": 139,
+            "right": 473,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 63,
-            "right": 393,
+            "left": 139,
+            "right": 473,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -3774,28 +4164,28 @@
               "rect": {
                 "bottom": 135.078125,
                 "height": 44,
-                "left": 293,
-                "right": 383,
+                "left": 373,
+                "right": 463,
                 "top": 91.078125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 125,
-                "right": 285,
+                "left": 227.0625,
+                "right": 365,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -3808,19 +4198,19 @@
             "bottom": 882,
             "height": 828,
             "left": 14,
-            "right": 394,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
             "left": 14,
-            "right": 394,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -3885,9 +4275,9 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "Arm one Unsend",
               "tone": null,
@@ -3909,32 +4299,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -3948,13 +4338,18 @@
             },
             {
               "height": 44,
-              "label": "Unlock Unsend all DMs",
-              "width": 253
+              "label": "Check conversation",
+              "width": 149.46875
             },
             {
               "height": 44,
-              "label": "Check conversation",
-              "width": 149.46875
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 257
             },
             {
               "height": 44,
@@ -3984,7 +4379,7 @@
     },
     {
       "id": "messages-armed-countdown",
-      "sha256": "1b70eeb7ab244882a8362b02df1baf835e567069c5dd9f6b8c4c11953b7dbaae",
+      "sha256": "426e1b23b334c2777728bfef57be7210879c598601e62d7c5959203f8861a0e0",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4145,9 +4540,9 @@
               "disabled": true,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "One message armed",
               "tone": null,
@@ -4210,7 +4605,7 @@
     },
     {
       "id": "workspace-unpaired",
-      "sha256": "a9541d6cae2de34835ab8a8a0c544befb9e76b1913e2bec713b0398d808567df",
+      "sha256": "dd0a9a71715caded5238e24a5b9416b2b1afdd8b8229143d07506e9e13480656",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4268,18 +4663,18 @@
           "footer": {
             "bottom": 583.875,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 514.703125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 154.765625,
             "height": 99.765625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -4295,20 +4690,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 143.765625,
                 "height": 78.765625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -4320,20 +4715,20 @@
           "panel": {
             "bottom": 584.875,
             "height": 530.875,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.15565779320987655,
+          "panelAreaShare": 0.1884278549382716,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 584.875,
             "height": 530.875,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -4410,32 +4805,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -4460,7 +4855,7 @@
     },
     {
       "id": "workspace-read-only",
-      "sha256": "9d918dcf9c45cda4e5d6ce18c02c8fbb6aeb877dae8ad61c47cf96512182c1f9",
+      "sha256": "d9f7a4d02cd9957c7d3ee8852f29739bd57885ffd3095a6ae16ff709cf555ccd",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4512,18 +4907,18 @@
           "footer": {
             "bottom": 602.71875,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 533.546875,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 154.765625,
             "height": 99.765625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -4539,20 +4934,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 143.765625,
                 "height": 78.765625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -4564,20 +4959,20 @@
           "panel": {
             "bottom": 603.71875,
             "height": 549.71875,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.16118296682098765,
+          "panelAreaShare": 0.19511622299382717,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 603.71875,
             "height": 549.71875,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -4640,32 +5035,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -4690,7 +5085,7 @@
     },
     {
       "id": "workspace-action-permission",
-      "sha256": "8ebf8587d8f6d554fb967750444a4941106c1c4b2bb60982218e9ecfb5d58080",
+      "sha256": "3f2f1b1c6504a848475b9775014337dc627a544959c9c1e69a345e77600fd849",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4742,18 +5137,18 @@
           "footer": {
             "bottom": 602.71875,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 533.546875,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 154.765625,
             "height": 99.765625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -4769,20 +5164,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 143.765625,
                 "height": 78.765625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -4794,20 +5189,20 @@
           "panel": {
             "bottom": 603.71875,
             "height": 549.71875,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.16118296682098765,
+          "panelAreaShare": 0.19511622299382717,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 603.71875,
             "height": 549.71875,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -4870,32 +5265,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -4920,7 +5315,7 @@
     },
     {
       "id": "native-dialog-coexistence",
-      "sha256": "b53e14ca45c8ec8de4b29df8eb0cf4f01a4dc62dfc4c91dfe993202f2f2dc6a8",
+      "sha256": "b3516d8001b4dfbee4c55a23bd272b365b7719a126a39cc79a7d980ed6ef7206",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5082,7 +5477,7 @@
     },
     {
       "id": "session-expired",
-      "sha256": "83c88a0607f92841edd4d8e73120f2baf251fe32941a68772c59fe2890faf6e8",
+      "sha256": "66fd065d70cd344a9f8d5013981d2c6b1de49a66e6b3179272f14b377e739834",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5127,18 +5522,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -5154,20 +5549,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -5179,20 +5574,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -5223,32 +5618,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -5263,7 +5658,7 @@
             {
               "height": 44,
               "label": "Refresh page context",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -5273,7 +5668,7 @@
     },
     {
       "id": "session-challenge",
-      "sha256": "04ba1dc54618d0d2a6355e6c72e94a502a71abf556b01503a1260d21369c4b08",
+      "sha256": "7403e5e6685425d4fefd37fcb8a923e6d57003fb67be88844c8c9efe8262279c",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5318,18 +5713,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -5345,20 +5740,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -5370,20 +5765,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -5414,32 +5809,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -5454,7 +5849,7 @@
             {
               "height": 44,
               "label": "Refresh page context",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -5464,7 +5859,7 @@
     },
     {
       "id": "session-rate-limited",
-      "sha256": "60df634cae6659c277e324a41efad741c358be1e96dd184bfc89d6392fd2653a",
+      "sha256": "ae11cf25dd9fb1e1e3f09609cff8ce084df14d4d14cd0a0b4cf6223b12b987e2",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5509,18 +5904,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -5536,20 +5931,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -5561,20 +5956,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -5605,32 +6000,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -5645,7 +6040,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -5655,7 +6050,7 @@
     },
     {
       "id": "profile-dark-desktop",
-      "sha256": "2b3f5f3cc7bfc06a4cec2a87a4086726648b739cb64d2a4b54740c1120f0f658",
+      "sha256": "c92f1f88c68ade929c480c98a9822fc47252605d03e36de2e18b87287aaf16ed",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5692,18 +6087,18 @@
           "footer": {
             "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 813.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -5719,20 +6114,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 1142,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -5744,20 +6139,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -5779,32 +6174,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -5819,7 +6214,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -5829,7 +6224,7 @@
     },
     {
       "id": "queue-dark-desktop",
-      "sha256": "26e099fbf385bfb734c9e9f3c6cb996f4bd6339a6f58ed835c4ebb3815e19dfa",
+      "sha256": "07b048920f8ec96107108f5ab15895ee9914abbbc072e2167d4c39a7b9b79cb3",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5864,49 +6259,49 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 744.390625,
+            "bottom": 883,
             "height": 69.171875,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
-            "top": 675.21875,
-            "width": 330
+            "top": 813.828125,
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -5916,22 +6311,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 745.390625,
-            "height": 691.390625,
-            "left": 1031,
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.20272255979938272,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 745.390625,
-            "height": 691.390625,
-            "left": 1031,
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -5953,32 +6348,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -6012,18 +6407,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 298
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 257
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 298
+              "width": 257
             },
             {
               "height": 44,
               "label": "",
-              "width": 298
+              "width": 257
             },
             {
               "height": 44,
@@ -6043,7 +6438,7 @@
     },
     {
       "id": "profile-short-laptop",
-      "sha256": "d20f34bf0ae28cb13a93d80ad49262a23f28f91d3539f40e012c86dcadb18b6b",
+      "sha256": "0617efa111c7daa2964c4eebadc324853ed96cf27295205d09d0c85faf1ab853",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6070,28 +6465,28 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "now",
-          "adaptiveDock": null,
+          "adaptiveDock": "reviewed-target",
           "adaptiveWidth": null,
           "bodyWidth": 1265,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 1265,
-          "dock": "right",
+          "dock": "left",
           "footer": {
             "bottom": 703,
             "height": 69.171875,
-            "left": 920,
-            "right": 1250,
+            "left": 139,
+            "right": 473,
             "top": 633.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
             "bottom": 172.15625,
             "height": 117.15625,
-            "left": 920,
-            "right": 1250,
+            "left": 139,
+            "right": 473,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
@@ -6099,28 +6494,28 @@
               "rect": {
                 "bottom": 135.078125,
                 "height": 44,
-                "left": 1150,
-                "right": 1240,
+                "left": 373,
+                "right": 463,
                 "top": 91.078125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
                 "bottom": 161.15625,
                 "height": 96.15625,
-                "left": 982,
-                "right": 1142,
+                "left": 227.0625,
+                "right": 365,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 720,
@@ -6132,20 +6527,20 @@
           "panel": {
             "bottom": 702,
             "height": 648,
-            "left": 871,
-            "right": 1251,
+            "left": 14,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2671875,
+          "panelAreaShare": 0.3234375,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 702,
             "height": 648,
-            "left": 871,
-            "right": 1251,
+            "left": 14,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -6167,32 +6562,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -6207,7 +6602,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 259
             }
           ],
           "viewTitle": "Instagram tools",
@@ -6217,7 +6612,7 @@
     },
     {
       "id": "queue-short-laptop-dark",
-      "sha256": "7cb963b2ed59b4278e306231419ed376ce891129b41ad0b0b1a56c7f8edb1609",
+      "sha256": "2024e3a892afa15f52f581cb24e280443aa0bd795ae71a0fc92e92ebf6981e14",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6244,57 +6639,57 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "queue",
-          "adaptiveDock": null,
+          "adaptiveDock": "reviewed-target",
           "adaptiveWidth": null,
           "bodyWidth": 1265,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 1265,
-          "dock": "right",
+          "dock": "left",
           "footer": {
             "bottom": 703,
             "height": 69.171875,
-            "left": 920,
-            "right": 1250,
+            "left": 139,
+            "right": 473,
             "top": 633.828125,
-            "width": 330
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 920,
-            "right": 1250,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 139,
+            "right": 473,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
-                "left": 1150,
-                "right": 1240,
-                "top": 91.078125,
+                "left": 373,
+                "right": 463,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 982,
-                "right": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 227.0625,
+                "right": 365,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 720,
@@ -6306,20 +6701,20 @@
           "panel": {
             "bottom": 702,
             "height": 648,
-            "left": 871,
-            "right": 1251,
+            "left": 14,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2671875,
+          "panelAreaShare": 0.3234375,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 702,
             "height": 648,
-            "left": 871,
-            "right": 1251,
+            "left": 14,
+            "right": 474,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -6341,32 +6736,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -6400,18 +6795,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 283
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 257
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 283
+              "width": 257
             },
             {
               "height": 44,
               "label": "",
-              "width": 283
+              "width": 257
             },
             {
               "height": 44,
@@ -6431,7 +6826,7 @@
     },
     {
       "id": "profile-narrow-tablet",
-      "sha256": "80d34d7dc1930e57ecfe96b021f270aed1cfb7e87f5eeb3494c888dfbe3bd7b5",
+      "sha256": "c78f98dadb5b0461d3b4fc11aecca697a2ee6b7583b922af76a37925b3ee1f5d",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6458,57 +6853,57 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "now",
-          "adaptiveDock": "reviewed-target",
+          "adaptiveDock": null,
           "adaptiveWidth": null,
           "bodyWidth": 820,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 820,
-          "dock": "left",
+          "dock": "right",
           "footer": {
-            "bottom": 883,
-            "height": 69.171875,
-            "left": 63,
-            "right": 393,
-            "top": 813.828125,
-            "width": 330
+            "bottom": 840,
+            "height": 42,
+            "left": 1,
+            "right": 819,
+            "top": 798,
+            "width": 818
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 63,
-            "right": 393,
-            "top": 55,
-            "width": 330
+            "bottom": 281.375,
+            "height": 82.375,
+            "left": 1,
+            "right": 819,
+            "top": 199,
+            "width": 818
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 261.6875,
                 "height": 44,
-                "left": 293,
-                "right": 383,
-                "top": 91.078125,
+                "left": 719,
+                "right": 809,
+                "top": 217.6875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 700,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 125,
-                "right": 285,
-                "top": 65,
-                "width": 160
+                "bottom": 270.375,
+                "height": 61.375,
+                "left": 11,
+                "right": 711,
+                "top": 209,
+                "width": 700
               },
-              "scroll": 160
+              "scroll": 700
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 818,
+              "scroll": 818
             }
           },
           "innerHeight": 900,
@@ -6518,22 +6913,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 882,
-            "height": 828,
-            "left": 14,
-            "right": 394,
-            "top": 54,
-            "width": 380
+            "bottom": 900,
+            "height": 702,
+            "left": 0,
+            "right": 820,
+            "top": 198,
+            "width": 820
           },
-          "panelAreaShare": 0.42634146341463414,
+          "panelAreaShare": 0.78,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 882,
-            "height": 828,
-            "left": 14,
-            "right": 394,
-            "top": 54,
-            "width": 380
+            "bottom": 900,
+            "height": 702,
+            "left": 0,
+            "right": 820,
+            "top": 198,
+            "width": 820
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -6553,34 +6948,29 @@
           "theme": "light",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 52,
               "label": "Toolbox",
-              "width": 44
+              "width": 160.390625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follower checker",
-              "width": 44
+              "width": 160.40625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 160.390625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "DM Unsend",
-              "width": 44
+              "width": 160.40625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 160.390625
             },
             {
               "height": 44,
@@ -6595,7 +6985,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 743
             }
           ],
           "viewTitle": "Instagram tools",
@@ -6605,7 +6995,7 @@
     },
     {
       "id": "messages-narrow-tablet-dark",
-      "sha256": "7a86c447b2b308445bd2b3fbbb8ab50f9c25eef7d9f4cf4b3614969cde0bfe97",
+      "sha256": "83f455e1307c97e66fcf4c74891fc86ce04b335d77f0ab656fd025eac519c6af",
       "scenario": {
         "after": "inspect-messages",
         "captureListType": null,
@@ -6632,57 +7022,57 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "messages",
-          "adaptiveDock": "reviewed-target",
-          "adaptiveWidth": "reviewed-target",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
           "bodyWidth": 820,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 820,
-          "dock": "left",
+          "dock": "right",
           "footer": {
-            "bottom": 883,
-            "height": 69.171875,
-            "left": 63,
-            "right": 309,
-            "top": 813.828125,
-            "width": 246
+            "bottom": 840,
+            "height": 42,
+            "left": 1,
+            "right": 819,
+            "top": 798,
+            "width": 818
           },
           "header": {
-            "bottom": 263.3125,
-            "height": 208.3125,
-            "left": 63,
-            "right": 309,
-            "top": 55,
-            "width": 246
+            "bottom": 281.375,
+            "height": 82.375,
+            "left": 1,
+            "right": 819,
+            "top": 199,
+            "width": 818
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 180.65625,
+                "bottom": 261.6875,
                 "height": 44,
-                "left": 209,
-                "right": 299,
-                "top": 136.65625,
+                "left": 719,
+                "right": 809,
+                "top": 217.6875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 76,
+              "client": 700,
               "rect": {
-                "bottom": 252.3125,
-                "height": 187.3125,
-                "left": 125,
-                "right": 201,
-                "top": 65,
-                "width": 76
+                "bottom": 270.375,
+                "height": 61.375,
+                "left": 11,
+                "right": 711,
+                "top": 209,
+                "width": 700
               },
-              "scroll": 76
+              "scroll": 700
             },
             "header": {
-              "client": 246,
-              "scroll": 246
+              "client": 818,
+              "scroll": 818
             }
           },
           "innerHeight": 900,
@@ -6692,22 +7082,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 882,
-            "height": 828,
-            "left": 14,
-            "right": 310,
-            "top": 54,
-            "width": 296
+            "bottom": 900,
+            "height": 702,
+            "left": 0,
+            "right": 820,
+            "top": 198,
+            "width": 820
           },
-          "panelAreaShare": 0.3320975609756098,
+          "panelAreaShare": 0.78,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 882,
-            "height": 828,
-            "left": 14,
-            "right": 310,
-            "top": 54,
-            "width": 296
+            "bottom": 900,
+            "height": 702,
+            "left": 0,
+            "right": 820,
+            "top": 198,
+            "width": 820
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -6727,34 +7117,29 @@
           "theme": "dark",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 52,
               "label": "Toolbox",
-              "width": 44
+              "width": 160.390625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follower checker",
-              "width": 44
+              "width": 160.40625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 160.390625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "DM Unsend",
-              "width": 44
+              "width": 160.40625
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 160.390625
             },
             {
               "height": 44,
@@ -6767,14 +7152,19 @@
               "width": 44
             },
             {
-              "height": 56,
-              "label": "Unlock Unsend all DMs",
-              "width": 169
-            },
-            {
               "height": 44,
               "label": "Check conversation",
               "width": 149.46875
+            },
+            {
+              "height": 44,
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 741
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 741
             },
             {
               "height": 44,
@@ -6793,13 +7183,13 @@
             }
           ],
           "viewTitle": "DM Unsend",
-          "width": "compact"
+          "width": "standard"
         }
       }
     },
     {
       "id": "profile-mobile-portrait",
-      "sha256": "052f45c94c8f9cf3bdf3c4981ca8b08269b5803c8dea4ea203a03c34f471b247",
+      "sha256": "266ceab77e302bf30dd952f1092982bbf08c5cdc7798901331948361a37b60cc",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -6834,11 +7224,11 @@
           "documentWidth": 390,
           "dock": "right",
           "footer": {
-            "bottom": 792,
+            "bottom": 781,
             "height": 51.78125,
             "left": 1,
             "right": 389,
-            "top": 740.21875,
+            "top": 729.21875,
             "width": 388
           },
           "header": {
@@ -6921,27 +7311,27 @@
           "theme": "light",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 55,
               "label": "Toolbox",
               "width": 74.390625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "Follower checker",
               "width": 74.40625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "Follow / Unfollow",
               "width": 74.390625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "DM Unsend",
               "width": 74.40625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "Workspace",
               "width": 74.40625
             },
@@ -6968,7 +7358,7 @@
     },
     {
       "id": "queue-mobile-portrait-dark",
-      "sha256": "b06e5aa44941921250f5df1597c3f34bcae228cfd767e6f168aa03d87203359f",
+      "sha256": "413397fad4228d24e3d90bc1feb48ae09167a6eee1ca0445a12279df9435deca",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7003,11 +7393,11 @@
           "documentWidth": 390,
           "dock": "right",
           "footer": {
-            "bottom": 792,
+            "bottom": 781,
             "height": 51.78125,
             "left": 1,
             "right": 389,
-            "top": 740.21875,
+            "top": 729.21875,
             "width": 388
           },
           "header": {
@@ -7090,27 +7480,27 @@
           "theme": "dark",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 55,
               "label": "Toolbox",
               "width": 74.390625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "Follower checker",
               "width": 74.40625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "Follow / Unfollow",
               "width": 74.390625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "DM Unsend",
               "width": 74.40625
             },
             {
-              "height": 44,
+              "height": 55,
               "label": "Workspace",
               "width": 74.40625
             },
@@ -7146,18 +7536,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 341
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 311
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 341
+              "width": 311
             },
             {
               "height": 44,
               "label": "",
-              "width": 341
+              "width": 311
             },
             {
               "height": 44,
@@ -7177,7 +7567,7 @@
     },
     {
       "id": "profile-mobile-landscape",
-      "sha256": "ce7c475ac16415ac3ffebcb4962a252e70fe17472a51b55391ebc3bd0cae18c3",
+      "sha256": "f2324e450e2b60ed8f447480fad174576892ab82254984ff0459c4044d898dae",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7212,49 +7602,49 @@
           "documentWidth": 829,
           "dock": "left",
           "footer": {
-            "bottom": 383,
-            "height": 69.171875,
-            "left": 63,
-            "right": 393,
-            "top": 313.828125,
-            "width": 330
+            "bottom": 381,
+            "height": 86.5625,
+            "left": 125,
+            "right": 387,
+            "top": 294.4375,
+            "width": 262
           },
           "header": {
-            "bottom": 74,
-            "height": 65,
-            "left": 63,
-            "right": 393,
+            "bottom": 75,
+            "height": 66,
+            "left": 125,
+            "right": 387,
             "top": 9,
-            "width": 330
+            "width": 262
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 63,
+                "bottom": 63.5,
                 "height": 44,
-                "left": 293,
-                "right": 383,
-                "top": 19,
+                "left": 287,
+                "right": 377,
+                "top": 19.5,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 144,
               "rect": {
-                "bottom": 61.484375,
+                "bottom": 61.984375,
                 "height": 40.984375,
-                "left": 125,
-                "right": 285,
-                "top": 20.5,
-                "width": 160
+                "left": 135,
+                "right": 279,
+                "top": 21,
+                "width": 144
               },
-              "scroll": 160
+              "scroll": 144
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 262,
+              "scroll": 262
             }
           },
           "innerHeight": 390,
@@ -7266,8 +7656,8 @@
           "panel": {
             "bottom": 382,
             "height": 374,
-            "left": 14,
-            "right": 394,
+            "left": 8,
+            "right": 388,
             "top": 8,
             "width": 380
           },
@@ -7276,8 +7666,8 @@
           "presentation": {
             "bottom": 382,
             "height": 374,
-            "left": 14,
-            "right": 394,
+            "left": 8,
+            "right": 388,
             "top": 8,
             "width": 380
           },
@@ -7301,32 +7691,27 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
@@ -7339,9 +7724,9 @@
               "width": 44
             },
             {
-              "height": 44,
+              "height": 56,
               "label": "Refresh no-click inspection",
-              "width": 255
+              "width": 187
             }
           ],
           "viewTitle": "Instagram tools",
@@ -7351,7 +7736,7 @@
     },
     {
       "id": "queue-mobile-landscape-dark",
-      "sha256": "265dc3f7e4f1c637efec1a53ed32083fb4b5215ca258fe25769b4cf51497b27a",
+      "sha256": "8f67e235f6b5a8340c56728e20e8a85b7e33baecf651835cf5e4c908cd147c33",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7386,49 +7771,49 @@
           "documentWidth": 829,
           "dock": "left",
           "footer": {
-            "bottom": 383,
-            "height": 69.171875,
-            "left": 63,
-            "right": 393,
-            "top": 313.828125,
-            "width": 330
+            "bottom": 381,
+            "height": 86.5625,
+            "left": 125,
+            "right": 387,
+            "top": 294.4375,
+            "width": 262
           },
           "header": {
-            "bottom": 74,
-            "height": 65,
-            "left": 63,
-            "right": 393,
+            "bottom": 92.578125,
+            "height": 83.578125,
+            "left": 125,
+            "right": 387,
             "top": 9,
-            "width": 330
+            "width": 262
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 63,
+                "bottom": 72.28125,
                 "height": 44,
-                "left": 293,
-                "right": 383,
-                "top": 19,
+                "left": 287,
+                "right": 377,
+                "top": 28.28125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 144,
               "rect": {
-                "bottom": 61.484375,
-                "height": 40.984375,
-                "left": 125,
-                "right": 285,
-                "top": 20.5,
-                "width": 160
+                "bottom": 81.578125,
+                "height": 62.578125,
+                "left": 135,
+                "right": 279,
+                "top": 19,
+                "width": 144
               },
-              "scroll": 160
+              "scroll": 144
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 262,
+              "scroll": 262
             }
           },
           "innerHeight": 390,
@@ -7440,8 +7825,8 @@
           "panel": {
             "bottom": 382,
             "height": 374,
-            "left": 14,
-            "right": 394,
+            "left": 8,
+            "right": 388,
             "top": 8,
             "width": 380
           },
@@ -7450,8 +7835,8 @@
           "presentation": {
             "bottom": 382,
             "height": 374,
-            "left": 14,
-            "right": 394,
+            "left": 8,
+            "right": 388,
             "top": 8,
             "width": 380
           },
@@ -7475,32 +7860,27 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 103
             },
             {
               "height": 44,
@@ -7534,18 +7914,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 283
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 185
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 283
+              "width": 185
             },
             {
               "height": 44,
               "label": "",
-              "width": 283
+              "width": 185
             },
             {
               "height": 44,
@@ -7565,7 +7945,7 @@
     },
     {
       "id": "profile-zoom-200-light",
-      "sha256": "93cfa028775bdbebe9e7b67f96b9bcd1d385758aca7a22ea5e34f033461d661b",
+      "sha256": "9f4c26a8cdd60b8d0be0e7699e91ecd1b31e8568c6be2e4fb79c4f8cb04b1eb8",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7592,57 +7972,57 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "now",
-          "adaptiveDock": "reviewed-target",
-          "adaptiveWidth": "reviewed-target",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
           "bodyWidth": 713,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 712,
           "dock": "right",
           "footer": {
-            "bottom": 443,
-            "height": 86.59375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 356.40625,
-            "width": 246
+            "bottom": 390,
+            "height": 42,
+            "left": 1,
+            "right": 711.5,
+            "top": 348,
+            "width": 710.5
           },
           "header": {
-            "bottom": 109.984375,
-            "height": 100.984375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 9,
-            "width": 246
+            "bottom": 182.390625,
+            "height": 82.390625,
+            "left": 1,
+            "right": 711.5,
+            "top": 100,
+            "width": 710.5
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 80.9921875,
+                "bottom": 162.6953125,
                 "height": 44,
-                "left": 597.5,
-                "right": 687.5,
-                "top": 36.9921875,
+                "left": 611.5,
+                "right": 701.5,
+                "top": 118.6953125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 76,
+              "client": 593,
               "rect": {
-                "bottom": 98.984375,
-                "height": 79.984375,
-                "left": 513.5,
-                "right": 589.5,
-                "top": 19,
-                "width": 76
+                "bottom": 171.390625,
+                "height": 61.390625,
+                "left": 11,
+                "right": 603.5,
+                "top": 110,
+                "width": 592.5
               },
-              "scroll": 76
+              "scroll": 593
             },
             "header": {
-              "client": 246,
-              "scroll": 246
+              "client": 711,
+              "scroll": 711
             }
           },
           "innerHeight": 450,
@@ -7652,22 +8032,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
-          "panelAreaShare": 0.3964938271604938,
+          "panelAreaShare": 0.771875,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -7687,34 +8067,29 @@
           "theme": "light",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 52,
               "label": "Toolbox",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follower checker",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "DM Unsend",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 138.8984375
             },
             {
               "height": 44,
@@ -7727,19 +8102,19 @@
               "width": 44
             },
             {
-              "height": 56,
+              "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 178.5
+              "width": 643
             }
           ],
           "viewTitle": "Instagram tools",
-          "width": "compact"
+          "width": "standard"
         }
       }
     },
     {
       "id": "profile-zoom-200-dark",
-      "sha256": "3471f4df76352abd96365433df46e7a705206032c94b73fae2ed9ed0d194deb2",
+      "sha256": "5abafcf369b36c499e93fafa3cce5abdab91eee2236214491f31f08206331cb7",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7766,57 +8141,57 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "now",
-          "adaptiveDock": "reviewed-target",
-          "adaptiveWidth": "reviewed-target",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
           "bodyWidth": 713,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 712,
           "dock": "right",
           "footer": {
-            "bottom": 443,
-            "height": 86.59375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 356.40625,
-            "width": 246
+            "bottom": 390,
+            "height": 42,
+            "left": 1,
+            "right": 711.5,
+            "top": 348,
+            "width": 710.5
           },
           "header": {
-            "bottom": 109.984375,
-            "height": 100.984375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 9,
-            "width": 246
+            "bottom": 182.390625,
+            "height": 82.390625,
+            "left": 1,
+            "right": 711.5,
+            "top": 100,
+            "width": 710.5
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 80.9921875,
+                "bottom": 162.6953125,
                 "height": 44,
-                "left": 597.5,
-                "right": 687.5,
-                "top": 36.9921875,
+                "left": 611.5,
+                "right": 701.5,
+                "top": 118.6953125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 76,
+              "client": 593,
               "rect": {
-                "bottom": 98.984375,
-                "height": 79.984375,
-                "left": 513.5,
-                "right": 589.5,
-                "top": 19,
-                "width": 76
+                "bottom": 171.390625,
+                "height": 61.390625,
+                "left": 11,
+                "right": 603.5,
+                "top": 110,
+                "width": 592.5
               },
-              "scroll": 76
+              "scroll": 593
             },
             "header": {
-              "client": 246,
-              "scroll": 246
+              "client": 711,
+              "scroll": 711
             }
           },
           "innerHeight": 450,
@@ -7826,22 +8201,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
-          "panelAreaShare": 0.3964938271604938,
+          "panelAreaShare": 0.771875,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -7861,34 +8236,29 @@
           "theme": "dark",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 52,
               "label": "Toolbox",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follower checker",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "DM Unsend",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 138.8984375
             },
             {
               "height": 44,
@@ -7901,19 +8271,19 @@
               "width": 44
             },
             {
-              "height": 56,
+              "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 178.5
+              "width": 643
             }
           ],
           "viewTitle": "Instagram tools",
-          "width": "compact"
+          "width": "standard"
         }
       }
     },
     {
       "id": "queue-zoom-200-light",
-      "sha256": "4374b83a0898d2f1e65f0d110e23bbca82be9fb17a9dfb449c5c040bd437e1b6",
+      "sha256": "7412cf50e88ffdf98131d8e8b1c1b04418facc2881233c645e9f8259963e5dec",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -7940,57 +8310,57 @@
         "semantics": [],
         "metrics": {
           "activeElementSection": "queue",
-          "adaptiveDock": "reviewed-target",
-          "adaptiveWidth": "reviewed-target",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
           "bodyWidth": 713,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 712,
           "dock": "right",
           "footer": {
-            "bottom": 443,
-            "height": 86.59375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 356.40625,
-            "width": 246
+            "bottom": 390,
+            "height": 42,
+            "left": 1,
+            "right": 711.5,
+            "top": 348,
+            "width": 710.5
           },
           "header": {
-            "bottom": 109.984375,
-            "height": 100.984375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 9,
-            "width": 246
+            "bottom": 182.390625,
+            "height": 82.390625,
+            "left": 1,
+            "right": 711.5,
+            "top": 100,
+            "width": 710.5
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 80.9921875,
+                "bottom": 162.6953125,
                 "height": 44,
-                "left": 597.5,
-                "right": 687.5,
-                "top": 36.9921875,
+                "left": 611.5,
+                "right": 701.5,
+                "top": 118.6953125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 76,
+              "client": 593,
               "rect": {
-                "bottom": 98.984375,
-                "height": 79.984375,
-                "left": 513.5,
-                "right": 589.5,
-                "top": 19,
-                "width": 76
+                "bottom": 171.390625,
+                "height": 61.390625,
+                "left": 11,
+                "right": 603.5,
+                "top": 110,
+                "width": 592.5
               },
-              "scroll": 76
+              "scroll": 593
             },
             "header": {
-              "client": 246,
-              "scroll": 246
+              "client": 711,
+              "scroll": 711
             }
           },
           "innerHeight": 450,
@@ -7998,31 +8368,24 @@
           "layout": "docked",
           "launcher": null,
           "opacity": "88%",
-          "overflowing": [
-            {
-              "className": "ia-select",
-              "overflow": 42,
-              "role": "bot-source",
-              "tagName": "SELECT"
-            }
-          ],
+          "overflowing": [],
           "panel": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
-          "panelAreaShare": 0.3964938271604938,
+          "panelAreaShare": 0.771875,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -8042,34 +8405,29 @@
           "theme": "light",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 52,
               "label": "Toolbox",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follower checker",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "DM Unsend",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 138.8984375
             },
             {
               "height": 44,
@@ -8103,18 +8461,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 206.5
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 641
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 206.5
+              "width": 641
             },
             {
               "height": 44,
               "label": "",
-              "width": 206.5
+              "width": 641
             },
             {
               "height": 44,
@@ -8128,13 +8486,13 @@
             }
           ],
           "viewTitle": "Follow / Unfollow",
-          "width": "compact"
+          "width": "standard"
         }
       }
     },
     {
       "id": "queue-zoom-200-dark",
-      "sha256": "bdb3f5e43053b0e44590a05ae5b03b8287137ef9e861be324c52427f3d9ac4b3",
+      "sha256": "3c2c6a5bfc97eb8266783f4b1cf79943eea87d2f9a3a40d94a6546056de30a94",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8168,57 +8526,57 @@
         ],
         "metrics": {
           "activeElementSection": "queue",
-          "adaptiveDock": "reviewed-target",
-          "adaptiveWidth": "reviewed-target",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
           "bodyWidth": 713,
           "collision": "inactive",
           "collisionPlacement": null,
           "documentWidth": 712,
           "dock": "right",
           "footer": {
-            "bottom": 443,
-            "height": 86.59375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 356.40625,
-            "width": 246
+            "bottom": 390,
+            "height": 42,
+            "left": 1,
+            "right": 711.5,
+            "top": 348,
+            "width": 710.5
           },
           "header": {
-            "bottom": 109.984375,
-            "height": 100.984375,
-            "left": 451.5,
-            "right": 697.5,
-            "top": 9,
-            "width": 246
+            "bottom": 182.390625,
+            "height": 82.390625,
+            "left": 1,
+            "right": 711.5,
+            "top": 100,
+            "width": 710.5
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 80.9921875,
+                "bottom": 162.6953125,
                 "height": 44,
-                "left": 597.5,
-                "right": 687.5,
-                "top": 36.9921875,
+                "left": 611.5,
+                "right": 701.5,
+                "top": 118.6953125,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 76,
+              "client": 593,
               "rect": {
-                "bottom": 98.984375,
-                "height": 79.984375,
-                "left": 513.5,
-                "right": 589.5,
-                "top": 19,
-                "width": 76
+                "bottom": 171.390625,
+                "height": 61.390625,
+                "left": 11,
+                "right": 603.5,
+                "top": 110,
+                "width": 592.5
               },
-              "scroll": 76
+              "scroll": 593
             },
             "header": {
-              "client": 246,
-              "scroll": 246
+              "client": 711,
+              "scroll": 711
             }
           },
           "innerHeight": 450,
@@ -8226,31 +8584,24 @@
           "layout": "docked",
           "launcher": null,
           "opacity": "88%",
-          "overflowing": [
-            {
-              "className": "ia-select",
-              "overflow": 42,
-              "role": "bot-source",
-              "tagName": "SELECT"
-            }
-          ],
+          "overflowing": [],
           "panel": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
-          "panelAreaShare": 0.3964938271604938,
+          "panelAreaShare": 0.771875,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 442,
-            "height": 434,
-            "left": 402.5,
-            "right": 698.5,
-            "top": 8,
-            "width": 296
+            "bottom": 450,
+            "height": 351,
+            "left": 0,
+            "right": 712.5,
+            "top": 99,
+            "width": 712.5
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -8290,34 +8641,29 @@
           "theme": "dark",
           "touchTargets": [
             {
-              "height": 44,
+              "height": 52,
               "label": "Toolbox",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follower checker",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "DM Unsend",
-              "width": 44
+              "width": 138.8984375
             },
             {
-              "height": 44,
+              "height": 52,
               "label": "Workspace",
-              "width": 44
-            },
-            {
-              "height": 44,
-              "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 138.8984375
             },
             {
               "height": 44,
@@ -8351,18 +8697,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 206.5
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 641
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 206.5
+              "width": 641
             },
             {
               "height": 44,
               "label": "",
-              "width": 206.5
+              "width": 641
             },
             {
               "height": 44,
@@ -8376,13 +8722,13 @@
             }
           ],
           "viewTitle": "Follow / Unfollow",
-          "width": "compact"
+          "width": "standard"
         }
       }
     },
     {
       "id": "profile-forced-colors",
-      "sha256": "bcab80f354994d73228c59b3c125f8bc5d4f68a27356687a77f84732a56af89e",
+      "sha256": "0ed5922e0a0d0e4c99de27354aab0800ca489429f68d7477b4c7a9d1684a1a76",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8419,18 +8765,18 @@
           "footer": {
             "bottom": 884,
             "height": 69.171875,
-            "left": 1081,
+            "left": 1077,
             "right": 1409,
             "top": 814.828125,
-            "width": 328
+            "width": 332
           },
           "header": {
             "bottom": 173.15625,
             "height": 117.15625,
-            "left": 1081,
+            "left": 1077,
             "right": 1409,
             "top": 56,
-            "width": 328
+            "width": 332
           },
           "headerSizing": {
             "actions": {
@@ -8446,20 +8792,20 @@
               "scroll": 90
             },
             "copy": {
-              "client": 158,
+              "client": 136,
               "rect": {
                 "bottom": 162.15625,
                 "height": 96.15625,
-                "left": 1143,
+                "left": 1165.0625,
                 "right": 1301,
                 "top": 66,
-                "width": 158
+                "width": 135.9375
               },
-              "scroll": 158
+              "scroll": 136
             },
             "header": {
-              "client": 328,
-              "scroll": 328
+              "client": 332,
+              "scroll": 332
             }
           },
           "innerHeight": 900,
@@ -8471,20 +8817,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -8506,32 +8852,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -8546,7 +8892,7 @@
             {
               "height": 44,
               "label": "Refresh no-click inspection",
-              "width": 253
+              "width": 257
             }
           ],
           "viewTitle": "Instagram tools",
@@ -8556,7 +8902,7 @@
     },
     {
       "id": "queue-forced-colors",
-      "sha256": "6f9ce54536561e238718fd93406965d654d54e6f1b999bf4ad81bc2fbcd2aff9",
+      "sha256": "ff8fca21386d7c9aae8189fca5415b32d4ddb2e76b226d4381fdf4e97c79775b",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8591,49 +8937,49 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 745.390625,
+            "bottom": 884,
             "height": 69.171875,
-            "left": 1081,
+            "left": 1077,
             "right": 1409,
-            "top": 676.21875,
-            "width": 328
+            "top": 814.828125,
+            "width": 332
           },
           "header": {
-            "bottom": 173.15625,
-            "height": 117.15625,
-            "left": 1081,
+            "bottom": 194.75,
+            "height": 138.75,
+            "left": 1077,
             "right": 1409,
             "top": 56,
-            "width": 328
+            "width": 332
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 136.078125,
+                "bottom": 146.875,
                 "height": 44,
                 "left": 1309,
                 "right": 1399,
-                "top": 92.078125,
+                "top": 102.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 158,
+              "client": 136,
               "rect": {
-                "bottom": 162.15625,
-                "height": 96.15625,
-                "left": 1143,
+                "bottom": 183.75,
+                "height": 117.75,
+                "left": 1165.0625,
                 "right": 1301,
                 "top": 66,
-                "width": 158
+                "width": 135.9375
               },
-              "scroll": 158
+              "scroll": 136
             },
             "header": {
-              "client": 328,
-              "scroll": 328
+              "client": 332,
+              "scroll": 332
             }
           },
           "innerHeight": 900,
@@ -8643,22 +8989,22 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 747.390625,
-            "height": 693.390625,
-            "left": 1031,
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.20330897955246913,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 747.390625,
-            "height": 693.390625,
-            "left": 1031,
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -8680,32 +9026,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -8739,18 +9085,18 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 296
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 255
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 296
+              "width": 255
             },
             {
               "height": 44,
               "label": "",
-              "width": 296
+              "width": 255
             },
             {
               "height": 44,
@@ -8770,7 +9116,7 @@
     },
     {
       "id": "collapsed-desktop",
-      "sha256": "3e99be61f4d2c479e83730ae2c3a612e50adebcc13438de496e0212ff5dae8bd",
+      "sha256": "718f1ed38aad937fb60af5022f211ff5cf70617ec452f6cd1ede92501d378112",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8876,7 +9222,7 @@
     },
     {
       "id": "collapsed-mobile",
-      "sha256": "1449e05c9ec5848e278233f1f35076f3f9dbc5c1523197c2e76747ffe93bee50",
+      "sha256": "5f3d5e393393a4ae1d9c5d870de82fcc1c8cf4a6ff1d5f758d0e303788785780",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -8982,7 +9328,7 @@
     },
     {
       "id": "queue-run-review",
-      "sha256": "71c1266bd6ab99657153af0ddac592dc557ab5237a556cacd7c258687c97af1d",
+      "sha256": "046340ff2a91df79870987761c378e8e3808104364f4ab55812fe6b0a7c1dadb",
       "scenario": {
         "after": "bot-review",
         "captureListType": null,
@@ -9058,47 +9404,47 @@
           "footer": {
             "bottom": 883,
             "height": 51.78125,
-            "left": 1080,
+            "left": 1076,
             "right": 1410,
             "top": 831.21875,
-            "width": 330
+            "width": 334
           },
           "header": {
-            "bottom": 172.15625,
-            "height": 117.15625,
-            "left": 1080,
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
             "right": 1410,
             "top": 55,
-            "width": 330
+            "width": 334
           },
           "headerSizing": {
             "actions": {
               "client": 90,
               "rect": {
-                "bottom": 135.078125,
+                "bottom": 145.875,
                 "height": 44,
                 "left": 1310,
                 "right": 1400,
-                "top": 91.078125,
+                "top": 101.875,
                 "width": 90
               },
               "scroll": 90
             },
             "copy": {
-              "client": 160,
+              "client": 138,
               "rect": {
-                "bottom": 161.15625,
-                "height": 96.15625,
-                "left": 1142,
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
                 "right": 1302,
                 "top": 65,
-                "width": 160
+                "width": 137.9375
               },
-              "scroll": 160
+              "scroll": 138
             },
             "header": {
-              "client": 330,
-              "scroll": 330
+              "client": 334,
+              "scroll": 334
             }
           },
           "innerHeight": 900,
@@ -9110,20 +9456,20 @@
           "panel": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
-          "panelAreaShare": 0.2427777777777778,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
             "bottom": 882,
             "height": 828,
-            "left": 1031,
+            "left": 951,
             "right": 1411,
             "top": 54,
-            "width": 380
+            "width": 460
           },
           "presentationIntersectsTarget": false,
           "scrollerHorizontalOverflow": 0,
@@ -9237,9 +9583,9 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 149, 246)",
+              "backgroundColor": "rgb(173, 48, 37)",
               "color": "rgb(255, 255, 255)",
-              "textContrast": 3.1675437726105624,
+              "textContrast": 6.508918180944025,
               "textFillColor": "rgb(255, 255, 255)",
               "text": "Start unfollow run",
               "tone": null,
@@ -9254,32 +9600,32 @@
             {
               "height": 44,
               "label": "Toolbox",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follower checker",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Follow / Unfollow",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "DM Unsend",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Workspace",
-              "width": 44
+              "width": 111
             },
             {
               "height": 44,
               "label": "Move sidecar; use arrow keys for precise movement",
-              "width": 44
+              "width": 70.0625
             },
             {
               "height": 44,
@@ -9313,23 +9659,23 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
-              "width": 253
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
+              "width": 257
             },
             {
               "height": 44,
               "label": "UnfollowFollow",
-              "width": 253
+              "width": 257
             },
             {
               "height": 44,
               "label": "",
-              "width": 253
+              "width": 257
             },
             {
               "height": 44,
               "label": "Start unfollow run",
-              "width": 141.234375
+              "width": 257
             },
             {
               "height": 44,
@@ -9344,13 +9690,13 @@
     }
   ],
   "performance": {
-    "collapsedTaskMs": 3.7030000000000003,
-    "openTaskMs": 2.236,
+    "collapsedTaskMs": 3.6380000000000003,
+    "openTaskMs": 1.906999999999999,
     "queue": {
-      "durationMs": 27.9000000001397,
+      "durationMs": 25,
       "renderedItems": 1,
-      "totalOverlayNodes": 384
+      "totalOverlayNodes": 399
     },
-    "routeTransitionMs": 85.20000000018626
+    "routeTransitionMs": 92.79999999701977
   }
 }

@@ -232,7 +232,7 @@ Automated coverage includes:
 - reproduced them with the non-updating check and added the Windows CI gate;
 - passed deterministic assembly, the repository test suite, production extension
   fixture acceptance, real disposable-Chrome pairing, all nine PWA baselines,
-  the non-updating 42-state overlay check, the 10,000-message ZIP benchmark, and
+  the non-updating 43-state overlay check, the 10,000-message ZIP benchmark, and
   the production dependency audit; and
 - reviewed the diff and permission boundary: production extension permissions
   did not expand, target-aware adaptation creates no action token, the Chrome
