@@ -103,10 +103,13 @@ test('sidecar exposes every tool family and accessibility controls', () => {
 });
 
 test('sidecar guides list capture, reviews account targets, and keeps one DM primary action', () => {
+  assert.match(overlay, /data-ia-role="checker-username"/);
+  assert.match(overlay, /data-ia-action="check-account-relationships"/);
+  assert.match(overlay, /Check Followers \+ Following/);
   assert.match(overlay, /data-list-type="following"/);
   assert.match(overlay, /data-list-type="followers"/);
   assert.match(overlay, /data-ia-role="compare-step-badge"/);
-  assert.match(overlay, /comparisonComplete \? 'Follower comparison complete' : 'Partial follower comparison ready'/);
+  assert.match(overlay, /comparisonComplete \? `Follower comparison complete/);
   assert.match(overlay, /data-ia-action="bot-review"/);
   assert.match(overlay, /function botPlan\(runtime\)/);
   assert.match(overlay, /reviewed\.signature !== current\.signature/);
@@ -115,7 +118,7 @@ test('sidecar guides list capture, reviews account targets, and keeps one DM pri
   assert.match(overlay, /data-ia-action="scan-sent-dms">Check conversation/);
   assert.match(overlay, /data-ia-role="unsend-plan">/);
   assert.match(overlay, /data-ia-action="mass-unsend" disabled>Check conversation first/);
-  assert.match(overlay, /Advanced: raw captures and export/);
+  assert.match(overlay, /Advanced: list-dialog fallback and export/);
   assert.match(overlay, /aria-labelledby="ia-bot-composer-title"/);
   assert.match(overlay, /<summary>Visible evidence<\/summary>/);
 });

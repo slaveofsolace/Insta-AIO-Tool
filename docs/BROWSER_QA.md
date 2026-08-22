@@ -72,7 +72,7 @@ the authenticated Instagram session.
    incomplete when the total changes or does not match the readable rows.
 9. Reloading the corrected source exposed that the earlier false-complete result
    could remain trusted in local schema-3 state until the operator rescanned.
-   Schema 4 preserves those rows for local export but quarantines their verified
+   Schema 5 preserves those rows for local export but quarantines their verified
    and complete flags, so they cannot drive comparisons or reviewed run sources.
 
 Focused regressions live in `tests/app-shell-safety.test.js`,

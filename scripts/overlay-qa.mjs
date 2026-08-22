@@ -267,13 +267,29 @@ function scenarioUrl(baseUrl, scenario) {
 }
 
 async function applyAfterState(webContents, scenario) {
+  if (scenario.after === 'check-account-relationships') {
+    await webContents.executeJavaScript(`(() => {
+      const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
+      const username = shadow.querySelector('[data-ia-role="checker-username"]');
+      const control = shadow.querySelector('[data-ia-action="check-account-relationships"]');
+      if (!username || !control) throw new Error('Authenticated follower checker controls are missing.');
+      username.value = 'demo_creator';
+      username.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      control.click();
+    })()`, true);
+    await waitForValue(
+      webContents,
+      `document.querySelector('#insta-aio-sidecar-root').shadowRoot.querySelector('[data-ia-role="capture-state-title"]')?.textContent === 'Follower comparison complete for @demo_creator'`,
+      `${scenario.id}: authenticated follower comparison`,
+    );
+  }
   if (scenario.after === 'capture-visible' || scenario.after === 'inspect-messages') {
     const action = scenario.after;
     await webContents.executeJavaScript(`(() => {
       const shadow = document.querySelector('#insta-aio-sidecar-root').shadowRoot;
       const captureListType = ${JSON.stringify(scenario.captureListType)};
       if (${JSON.stringify(action)} === 'capture-visible' && captureListType) {
-        const listType = shadow.querySelector('[data-ia-role="manual-list-type"]');
+        const listType = shadow.querySelector('[data-ia-role="list-type"]');
         if (!listType) throw new Error('Capture list-type control is missing.');
         listType.value = captureListType;
         listType.dispatchEvent(new Event('change', { bubbles: true }));
@@ -768,7 +784,10 @@ async function performanceMetrics(webContents) {
   assert.ok(routeTransitionMs < 500, `route transition is ${routeTransitionMs.toFixed(2)}ms`);
   assert.ok(queueResult.durationMs < 1_000, `2,000-item queue update is ${queueResult.durationMs.toFixed(2)}ms`);
   assert.equal(queueResult.renderedItems, 1, '2,000-item queue update did not render one bounded current item');
-  assert.ok(queueResult.totalOverlayNodes < 400, '2,000-item queue created unbounded overlay DOM');
+  assert.ok(
+    queueResult.totalOverlayNodes < 400,
+    `2,000-item queue created ${queueResult.totalOverlayNodes} overlay nodes; expected fewer than 400`,
+  );
   return { collapsedTaskMs, openTaskMs, queue: queueResult, routeTransitionMs };
 }
 

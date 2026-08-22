@@ -122,7 +122,14 @@ The source is one dependency-free script designed for execution in an authentica
 
 ### Session and network behavior
 
-The script relies on the existing browser session, a fixed application header, private search and relationship routes, and pagination tokens. These behaviors were excluded.
+The script relies on the existing browser session, a fixed application header,
+private search and relationship GET routes, and pagination tokens. Version
+0.11.0's next-pass checker independently implements that narrow read flow after
+the operator supplied and requested it: exact username matching, a fixed
+Instagram-origin route allowlist, 50-row pages, bounded iteration, 800–1499 ms
+page pacing, stop support, schema validation, and immediate session/challenge/
+block/rate-limit stops. It never reads or exports the session and exposes no
+relationship mutation route. The older exact-dialog reader remains a fallback.
 
 ### Output contract
 
@@ -138,6 +145,9 @@ The result has no mutual list, stable IDs, source account, capture timestamp, or
 ### Migration and license boundary
 
 No explicit source license was identified, so its implementation was not copied.
+The current reader is an independent implementation of the supplied input/output
+behavior and exact route contract, with new bounds, validation, provenance, and
+UI integration.
 
 `src/migrations/follower-checker.js` independently:
 
@@ -146,6 +156,10 @@ No explicit source license was identified, so its implementation was not copied.
 - Preserves the values as a partial report
 - Reports invalid records and missing metadata
 - Prevents the report from creating a snapshot or queue action
+
+Authenticated results enter the existing checker workspace only after both
+lists finish. Schema 5 adds the subject username and per-list provenance without
+changing the legacy migration report or `insta-aio-visible-list` export kind.
 
 ## instagram-dm-unsender 0.7.2
 

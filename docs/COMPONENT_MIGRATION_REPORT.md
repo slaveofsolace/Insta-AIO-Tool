@@ -22,6 +22,13 @@ current-page inspection, sanitized bridge dry-run history, and read-only DM
 evidence. The userscript remains available as a fallback; it was not removed or
 replaced.
 
+The follower-checker runtime now also provides an independent, bounded client
+for the source's exact authenticated read behavior. It resolves one exact
+username, pages only the fixed Instagram Followers and Following GET routes,
+stores both lists atomically with schema-5 provenance, and retains the dialog
+reader as an Advanced fallback. This does not change legacy result migration:
+old two-array reports remain incomplete and non-actionable.
+
 The DM migration also adds a conditional exact-identity inspection boundary for
 signed reviewed dry runs. It reuses only the supplied source's read-only
 conversation-container and sent-layout observations, adds stable message ID,

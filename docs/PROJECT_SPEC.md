@@ -190,7 +190,8 @@ The desktop shell shall:
 - No imported-data upload
 - No proxy rotation or fingerprint spoofing
 - No challenge or CAPTCHA bypass
-- No private endpoint reverse engineering
+- No arbitrary endpoint discovery or mutation-capable private endpoint client;
+  the follower checker may use only its audited, fixed, read-only Instagram route allowlist
 - No unreviewed destructive actions
 
 ## Release gates

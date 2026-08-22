@@ -621,6 +621,7 @@
     'bot-review': () => queueView.botReview(runtime),
     'bot-start': () => queueView.botStart(runtime),
     'capture-visible': () => captureView.captureVisible(runtime),
+    'check-account-relationships': () => captureView.checkAccount(runtime),
     close: () => setOpen(false),
     'first-run-dismiss': () => completeFirstRun(),
     'first-run-start': () => completeFirstRun('capture'),

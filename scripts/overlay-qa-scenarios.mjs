@@ -156,6 +156,29 @@ const requiredStates = [
     ],
     targetSelector: null,
   }),
+  scenario('checker-authenticated-read', {
+    after: 'check-account-relationships',
+    mode: 'qa-checker-api',
+    section: 'capture',
+    semantics: [
+      semantic('[data-ia-role="checker-run"]', {
+        attributes: { type: 'button' },
+        equals: 'Check Followers + Following',
+      }),
+      semantic('[data-ia-role="capture-state-title"]', {
+        equals: 'Follower comparison complete for @demo_creator',
+      }),
+      semantic('[data-ia-role="followers-count"]', { numberEquals: 2 }),
+      semantic('[data-ia-role="following-count"]', { numberEquals: 2 }),
+      semantic('[data-ia-role="checker-result"]', {
+        includes: ['Authenticated account comparison', 'Mutuals', 'Not following me back'],
+      }),
+      semantic('[data-ia-role="checker-filtered-list"]', {
+        includes: ['@following_only', 'Following Only'],
+      }),
+    ],
+    targetSelector: null,
+  }),
   scenario('queue-locked', {
     mode: 'qa-queue-locked',
     section: 'queue',

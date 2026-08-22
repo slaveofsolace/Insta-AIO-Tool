@@ -49,15 +49,17 @@ No menu, confirmation, Follow, Unfollow, or Unsend control may be activated.
 2. Open the intended account profile. Confirm the profile context names the
    visible profile and offers only a no-click inspection until a reviewed run
    exists.
-3. Open **Following**. Confirm the toolbox says **Following list open** and the
-   contextual action is **Scan Following**.
-4. Run the scan. It may scroll the open list to read rows; it must not activate
-   an account relationship control. Record discovered, deduplicated, and
-   completion counts.
-5. Close that dialog, open **Followers**, and confirm **Followers list open**
-   with **Scan Followers**. Run the same read-only scan.
-6. Choose **Compare**. Confirm mutuals, not-following-me-back, and
-   I-do-not-follow-back filters work locally.
+3. Open **Follower checker**. Confirm the username is correct, or enter it, then
+   choose **Check Followers + Following**.
+4. Confirm progress moves through exact-account resolution, Followers pages,
+   and Following pages without opening a relationship control or dialog. Record
+   only sanitized counts and completion state.
+5. Confirm mutuals, not-following-me-back, and I-do-not-follow-back filters work
+   locally, including a zero-result group. Confirm Stop leaves the prior saved
+   comparison unchanged.
+6. Expand **Advanced: list-dialog fallback and export**. On a disposable test
+   capture, confirm a fallback scan clears authenticated results before storing
+   dialog rows, so usernames from different accounts cannot mix.
 7. Open an exact direct-message thread. Confirm the toolbox identifies the
    conversation route. Choose the quieter **Check conversation** action and
    confirm it opens no message menu and no confirmation dialog.
@@ -98,8 +100,10 @@ If the extension and PWA are part of the intended workflow:
 3. Confirm read permission and action permission are separate.
 4. Leave action permission and every live setting off.
 5. Run the pairing ping and one signed read-only inspection.
-6. Confirm no cookie, session token, password, or private endpoint data appears
-   in the PWA, bridge history, downloads, or logs.
+6. Confirm no cookie, session token, password, route token, or raw response data
+   appears in the PWA, bridge history, downloads, or logs. A raw-list export may
+   contain the checked username and relationship rows and must be handled as
+   private account data.
 
 ## 5. Separately authorized one-item live acceptance
 

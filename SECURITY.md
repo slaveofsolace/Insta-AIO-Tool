@@ -59,11 +59,19 @@ The project does not support:
 - Challenge or CAPTCHA bypass
 - Proxy rotation
 - Browser fingerprint spoofing
-- Private endpoint reverse engineering
+- Arbitrary endpoint discovery or mutation-capable private endpoint clients
 - Unreviewed destructive execution
 - Attempts to evade Instagram restrictions
 
 Reports requesting or depending on those behaviors will not be implemented.
+
+The follower checker is the narrow exception for authenticated web reads. It
+uses a fixed allowlist of the exact search, Followers, and Following GET routes
+reviewed from the supplied legacy checker, a fixed application header, bounded
+pagination, and browser-managed credentials. It does not read or export cookies,
+accept arbitrary routes, or expose a mutation method. Instagram can change or
+remove these unsupported web routes at any time; errors, challenges, blocks, and
+rate limits stop the read.
 
 The latest dependency and application-boundary review is documented in
 [`docs/SECURITY_REVIEW.md`](docs/SECURITY_REVIEW.md).

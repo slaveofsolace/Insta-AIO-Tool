@@ -4,6 +4,7 @@
   const modules = globalThis.__instaAioOverlayModules;
   const shared = modules?.shared;
   if (!shared || modules.captureView) return;
+  let relationshipController = null;
 
   function setState(runtime, title, detail, tone = 'neutral') {
     const state = runtime.query('[data-ia-role="capture-state"]');
@@ -78,6 +79,19 @@
     if (!list) return;
     list.replaceChildren();
     const workspace = model.capture || shared.captureWorkspaceDefaults();
+    const usernameInput = query('[data-ia-role="checker-username"]');
+    if (usernameInput && document.activeElement !== usernameInput && !usernameInput.value) {
+      usernameInput.value = workspace.subjectUsername
+        || runtime.inspector.detectAuthenticatedUsername?.()
+        || '';
+    }
+    const runButton = query('[data-ia-role="checker-run"]');
+    if (runButton) {
+      runButton.textContent = relationshipController
+        ? 'Stop follower check'
+        : 'Check Followers + Following';
+      runButton.classList.toggle('ia-button--danger', Boolean(relationshipController));
+    }
     const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
       ? 'followers'
       : 'following';
@@ -87,9 +101,7 @@
     const followersVerified = workspace.verified?.followers === true;
     const followingVerified = workspace.verified?.following === true;
     const selectedVerified = workspace.verified?.[listType] === true;
-    const comparisonReady = followersVerified && followingVerified
-      && workspace.followers.length > 0
-      && workspace.following.length > 0;
+    const comparisonReady = followersVerified && followingVerified;
     setText('followers-count', String(followersVerified ? workspace.followers.length : 0));
     setText('following-count', String(followingVerified ? workspace.following.length : 0));
     setText('capture-count', String(accounts.length));
@@ -118,19 +130,27 @@
       compareBadge.textContent = comparisonComplete ? 'complete' : comparisonReady ? 'partial' : 'waiting';
       compareBadge.dataset.tone = comparisonComplete ? 'good' : comparisonReady ? 'warning' : 'neutral';
     }
-    if (comparisonReady) {
+    const authenticatedCheck = workspace.source?.followers === 'authenticated-web'
+      && workspace.source?.following === 'authenticated-web';
+    if (relationshipController) {
       setState(
         runtime,
-        comparisonComplete ? 'Follower comparison complete' : 'Partial follower comparison ready',
-        `${comparison.mutuals.length} mutual; ${comparison.notFollowingMeBack.length} not following you back; ${comparison.iDoNotFollowBack.length} you do not follow back.`,
+        'Follower check running',
+        'Instagram relationship pages are being read. Use Stop follower check to cancel safely.',
+        'warning',
+      );
+    } else if (comparisonReady) {
+      setState(
+        runtime,
+        comparisonComplete ? `Follower comparison complete${workspace.subjectUsername ? ` for @${workspace.subjectUsername}` : ''}` : 'Partial follower comparison ready',
+        `${workspace.followers.length} followers; ${workspace.following.length} following; ${comparison.notFollowingMeBack.length} not following you back.`,
         comparisonComplete ? 'good' : 'warning',
       );
     } else {
-      const missing = followersVerified ? 'Following' : 'Followers';
       setState(
         runtime,
-        'Capture both Instagram lists',
-        `The ${missing} draft is still empty. Open that list, scroll manually, and capture its rendered rows.`,
+        'Ready for a read-only check',
+        'Confirm your Instagram username, then load Followers and Following.',
       );
     }
 
@@ -139,8 +159,8 @@
       checker.replaceChildren();
       const heading = document.createElement('h2');
       heading.textContent = comparisonReady
-        ? 'Rendered-row comparison'
-        : 'How the checker works';
+        ? authenticatedCheck ? 'Authenticated account comparison' : 'List-dialog comparison'
+        : 'No comparison loaded';
       checker.append(heading);
       if (comparisonReady) {
         const facts = document.createElement('dl');
@@ -159,7 +179,7 @@
       } else {
         const detail = document.createElement('p');
         detail.className = 'ia-note';
-        detail.textContent = 'Capture visible Followers, then visible Following. The overlay compares normalized usernames locally without private endpoints or console code.';
+        detail.textContent = 'Enter your username above. Insta AIO runs the paginated Instagram read on this page and compares normalized usernames locally.';
         checker.append(detail);
       }
     }
@@ -210,7 +230,7 @@
 
   async function captureVisible(runtime) {
     const { inspector, model, query, status } = runtime;
-    const listType = query('[data-ia-role="manual-list-type"]')?.value === 'followers'
+    const listType = query('[data-ia-role="list-type"]')?.value === 'followers'
       ? 'followers'
       : 'following';
     const source = query('[data-ia-role="list-type"]');
@@ -220,7 +240,11 @@
       status('No rendered account rows were found. Open or scroll the Instagram list and try again.', 'error');
       return;
     }
-    const workspace = model.capture || shared.captureWorkspaceDefaults();
+    const currentWorkspace = model.capture || shared.captureWorkspaceDefaults();
+    const workspace = currentWorkspace.source?.followers === 'authenticated-web'
+      || currentWorkspace.source?.following === 'authenticated-web'
+      ? shared.captureWorkspaceDefaults()
+      : currentWorkspace;
     const existing = shared.verifiedCaptureAccounts(workspace, listType);
     const accounts = new Map(existing.map((account) => [account.username, account]));
     const before = accounts.size;
@@ -232,6 +256,8 @@
       capturedAt: { ...workspace.capturedAt, [listType]: capturedAt },
       complete: { ...(workspace.complete || {}), [listType]: false },
       verified: { ...(workspace.verified || {}), [listType]: true },
+      source: { ...(workspace.source || {}), [listType]: 'list-dialog' },
+      subjectUsername: '',
     }, inspector.normalizeUsername);
     model.captureMeta = {
       listType,
@@ -251,7 +277,11 @@
     complete, expectedCount, label, reason,
   }) {
     const { inspector, model, status } = runtime;
-    const workspace = model.capture || shared.captureWorkspaceDefaults();
+    const currentWorkspace = model.capture || shared.captureWorkspaceDefaults();
+    const workspace = currentWorkspace.source?.followers === 'authenticated-web'
+      || currentWorkspace.source?.following === 'authenticated-web'
+      ? shared.captureWorkspaceDefaults()
+      : currentWorkspace;
     const existing = shared.verifiedCaptureAccounts(workspace, listType);
     const merged = new Map(existing.map((account) => [account.username, account]));
     const before = merged.size;
@@ -263,6 +293,8 @@
       capturedAt: { ...workspace.capturedAt, [listType]: capturedAt },
       complete: { ...(workspace.complete || {}), [listType]: complete === true },
       verified: { ...(workspace.verified || {}), [listType]: true },
+      source: { ...(workspace.source || {}), [listType]: 'list-dialog' },
+      subjectUsername: '',
     }, inspector.normalizeUsername);
     const added = model.capture[listType].length - before;
     model.captureMeta = {
@@ -321,7 +353,92 @@
     });
   }
 
+  async function checkAccount(runtime) {
+    const {
+      inspector, model, query, status,
+    } = runtime;
+    if (relationshipController) {
+      relationshipController.abort();
+      status('Stopping the follower check. Saved comparison data was not changed.', 'neutral');
+      return;
+    }
+    if (typeof inspector.fetchFollowerComparison !== 'function') {
+      status('This page is running an older checker engine. Reload Instagram and try again.', 'error');
+      return;
+    }
+    const input = query('[data-ia-role="checker-username"]');
+    const username = inspector.normalizeUsername(input?.value)
+      || inspector.detectAuthenticatedUsername?.()
+      || '';
+    if (!username) {
+      status('Enter the Instagram username whose Followers and Following should be checked.', 'error');
+      input?.focus();
+      return;
+    }
+    if (input) input.value = username;
+    const controller = new AbortController();
+    relationshipController = controller;
+    render(runtime);
+    setState(runtime, `Resolving @${username}`, 'No page controls are being opened or clicked.', 'warning');
+    try {
+      const result = await inspector.fetchFollowerComparison({
+        username,
+        signal: controller.signal,
+        onProgress(progress) {
+          if (relationshipController !== controller) return;
+          if (progress.phase === 'resolving') {
+            setState(runtime, `Resolving @${username}`, 'Finding the exact Instagram account.', 'warning');
+            return;
+          }
+          if (progress.listType) {
+            const label = progress.listType === 'followers' ? 'Followers' : 'Following';
+            setState(
+              runtime,
+              `Loading ${label} for @${username}`,
+              `${progress.found} unique accounts read across ${progress.pages} page${progress.pages === 1 ? '' : 's'}.`,
+              'warning',
+            );
+          }
+        },
+      });
+      const nextCapture = shared.normalizeCaptureWorkspace({
+        ...shared.captureWorkspaceDefaults(),
+        subjectUsername: result.username,
+        followers: result.followers,
+        following: result.following,
+        capturedAt: {
+          followers: result.capturedAt,
+          following: result.capturedAt,
+        },
+        complete: result.complete,
+        verified: { followers: true, following: true },
+        source: { followers: 'authenticated-web', following: 'authenticated-web' },
+      }, inspector.normalizeUsername);
+      // Persist the complete pair before publishing it to the rendered model.
+      // A storage/quota failure must leave the previous saved comparison visible.
+      await runtime.persistCapture(nextCapture);
+      model.capture = nextCapture;
+      model.captureMeta = null;
+      status(
+        `Checked @${result.username}: ${result.followers.length} followers and ${result.following.length} following.${result.complete.followers && result.complete.following ? '' : ' A bounded read limit was reached, so the comparison is marked partial.'}`,
+        result.complete.followers && result.complete.following ? 'good' : 'warning',
+      );
+    } catch (error) {
+      status(
+        error?.code === 'stopped'
+          ? 'Follower check stopped. The previous saved comparison is unchanged.'
+          : `Follower check stopped: ${error?.message || 'Instagram did not return readable relationship data.'}`,
+        error?.code === 'stopped' ? 'neutral' : 'error',
+      );
+    } finally {
+      if (relationshipController === controller) relationshipController = null;
+      render(runtime);
+    }
+  }
+
   async function reset(runtime) {
+    relationshipController?.abort();
+    relationshipController = null;
     runtime.model.capture = shared.captureWorkspaceDefaults();
     runtime.model.captureMeta = null;
     await runtime.persistCapture(null);
@@ -330,6 +447,6 @@
   }
 
   shared.install('captureView', {
-    captureVisible, render, reset, scanFullList,
+    captureVisible, checkAccount, render, reset, scanFullList,
   });
 })();

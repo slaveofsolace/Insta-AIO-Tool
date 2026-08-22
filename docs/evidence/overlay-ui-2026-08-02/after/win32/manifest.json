@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-08-20T18:19:33.761Z",
+  "capturedAt": "2026-08-22T15:16:07.100Z",
   "platform": "win32",
   "builtExtensionVersion": "0.11.0",
   "screenshots": [
@@ -471,9 +471,9 @@
               "disabled": false,
               "exists": true,
               "hidden": false,
-              "backgroundColor": "rgb(0, 0, 0)",
+              "backgroundColor": "rgb(255, 255, 255)",
               "color": "rgb(16, 16, 16)",
-              "textContrast": 1.1036303340467677,
+              "textContrast": 19.028110547666497,
               "textFillColor": "rgb(16, 16, 16)",
               "text": "",
               "tone": null,
@@ -1137,7 +1137,7 @@
     },
     {
       "id": "followers-first-capture",
-      "sha256": "a6935169d0745ccdbca15b130d3534880eb3f62a3cbceb2f1746345015641f7b",
+      "sha256": "1aa7e418b920ceba0b96810e7d42ecbd1dd455ec7de73cdd92b8462ed10c0b20",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "followers",
@@ -1195,11 +1195,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 877.65625,
+            "bottom": 882.65625,
             "height": 51.78125,
             "left": 1076,
             "right": 1410,
-            "top": 825.875,
+            "top": 830.875,
             "width": 334
           },
           "header": {
@@ -1247,18 +1247,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 878.65625,
-            "height": 824.65625,
+            "bottom": 882,
+            "height": 828,
             "left": 951,
             "right": 1411,
             "top": 54,
             "width": 460
           },
-          "panelAreaShare": 0.29270206404320986,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 878.65625,
-            "height": 824.65625,
+            "bottom": 882,
+            "height": 828,
             "left": 951,
             "right": 1411,
             "top": 54,
@@ -1384,6 +1384,16 @@
             },
             {
               "height": 44,
+              "label": "",
+              "width": 272
+            },
+            {
+              "height": 44,
+              "label": "Check Followers + Following",
+              "width": 207.734375
+            },
+            {
+              "height": 44,
               "label": "Scan",
               "width": 55.6875
             },
@@ -1420,7 +1430,7 @@
     },
     {
       "id": "following-repeated-capture",
-      "sha256": "3d622a38e70747e41c1c9294dc492d86b07e568445cd353accb020fb578aaade",
+      "sha256": "465c44c20fc4316373ab9383f5a5d6a41d60dab83a3abd67bfb9ac603e382630",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "following",
@@ -1478,11 +1488,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 877.65625,
+            "bottom": 882.65625,
             "height": 51.78125,
             "left": 1076,
             "right": 1410,
-            "top": 825.875,
+            "top": 830.875,
             "width": 334
           },
           "header": {
@@ -1530,18 +1540,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 878.65625,
-            "height": 824.65625,
+            "bottom": 882,
+            "height": 828,
             "left": 951,
             "right": 1411,
             "top": 54,
             "width": 460
           },
-          "panelAreaShare": 0.29270206404320986,
+          "panelAreaShare": 0.29388888888888887,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 878.65625,
-            "height": 824.65625,
+            "bottom": 882,
+            "height": 828,
             "left": 951,
             "right": 1411,
             "top": 54,
@@ -1667,6 +1677,16 @@
             },
             {
               "height": 44,
+              "label": "",
+              "width": 272
+            },
+            {
+              "height": 44,
+              "label": "Check Followers + Following",
+              "width": 207.734375
+            },
+            {
+              "height": 44,
               "label": "Scan",
               "width": 55.6875
             },
@@ -1703,7 +1723,7 @@
     },
     {
       "id": "checker-filtered-results",
-      "sha256": "8be13063184b59021b27e2fd0936c9f6d4c3cb1e30b01bc93206ba21ac7da39d",
+      "sha256": "0298f2ce4d5b416e2047aecb30aed2e10c1c1f170127a99e3c9f212b5408a6ef",
       "scenario": {
         "after": "filter-checker-results",
         "captureListType": null,
@@ -1954,13 +1974,13 @@
             },
             {
               "height": 44,
-              "label": "Scan",
-              "width": 55.6875
+              "label": "",
+              "width": 257
             },
             {
               "height": 44,
-              "label": "Scan",
-              "width": 55.6875
+              "label": "Check Followers + Following",
+              "width": 207.734375
             },
             {
               "height": 44,
@@ -1971,6 +1991,366 @@
               "height": 44,
               "label": "",
               "width": 139.5
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "FollowingFollowers",
+              "width": 287
+            },
+            {
+              "height": 44,
+              "label": "Capture visible rows",
+              "width": 153.890625
+            },
+            {
+              "height": 44,
+              "label": "Download selected list",
+              "width": 168.875
+            },
+            {
+              "height": 44,
+              "label": "Clear checker",
+              "width": 110.609375
+            }
+          ],
+          "viewTitle": "Follower checker",
+          "width": "standard"
+        }
+      }
+    },
+    {
+      "id": "checker-authenticated-read",
+      "sha256": "d765ee44a3e73302c635b5d9110f4a9cb3ca1a7aa000017e77c70022402a9a71",
+      "scenario": {
+        "after": "check-account-relationships",
+        "captureListType": null,
+        "density": "comfortable",
+        "dock": "right",
+        "forcedColors": false,
+        "firstRun": true,
+        "layout": "docked",
+        "mode": "qa-checker-api",
+        "opacity": null,
+        "open": true,
+        "pairing": "action",
+        "panelHeight": null,
+        "panelWidth": null,
+        "position": null,
+        "presentation": "panel",
+        "queue": "loaded",
+        "section": "capture",
+        "targetSelector": null,
+        "theme": "light",
+        "viewport": "desktop",
+        "width": "standard",
+        "zoom": 1,
+        "semantics": [
+          {
+            "attributes": {
+              "type": "button"
+            },
+            "equals": "Check Followers + Following",
+            "selector": "[data-ia-role=\"checker-run\"]"
+          },
+          {
+            "equals": "Follower comparison complete for @demo_creator",
+            "selector": "[data-ia-role=\"capture-state-title\"]"
+          },
+          {
+            "numberEquals": 2,
+            "selector": "[data-ia-role=\"followers-count\"]"
+          },
+          {
+            "numberEquals": 2,
+            "selector": "[data-ia-role=\"following-count\"]"
+          },
+          {
+            "includes": [
+              "Authenticated account comparison",
+              "Mutuals",
+              "Not following me back"
+            ],
+            "selector": "[data-ia-role=\"checker-result\"]"
+          },
+          {
+            "includes": [
+              "@following_only",
+              "Following Only"
+            ],
+            "selector": "[data-ia-role=\"checker-filtered-list\"]"
+          }
+        ],
+        "metrics": {
+          "activeElementSection": "capture",
+          "adaptiveDock": null,
+          "adaptiveWidth": null,
+          "bodyWidth": 1425,
+          "collision": "inactive",
+          "collisionPlacement": null,
+          "documentWidth": 1425,
+          "dock": "right",
+          "footer": {
+            "bottom": 883,
+            "height": 51.78125,
+            "left": 1076,
+            "right": 1410,
+            "top": 831.21875,
+            "width": 334
+          },
+          "header": {
+            "bottom": 193.75,
+            "height": 138.75,
+            "left": 1076,
+            "right": 1410,
+            "top": 55,
+            "width": 334
+          },
+          "headerSizing": {
+            "actions": {
+              "client": 90,
+              "rect": {
+                "bottom": 145.875,
+                "height": 44,
+                "left": 1310,
+                "right": 1400,
+                "top": 101.875,
+                "width": 90
+              },
+              "scroll": 90
+            },
+            "copy": {
+              "client": 138,
+              "rect": {
+                "bottom": 182.75,
+                "height": 117.75,
+                "left": 1164.0625,
+                "right": 1302,
+                "top": 65,
+                "width": 137.9375
+              },
+              "scroll": 138
+            },
+            "header": {
+              "client": 334,
+              "scroll": 334
+            }
+          },
+          "innerHeight": 900,
+          "innerWidth": 1440,
+          "layout": "docked",
+          "launcher": null,
+          "opacity": "88%",
+          "overflowing": [
+            {
+              "className": "ia-select",
+              "overflow": 16,
+              "role": "checker-category",
+              "tagName": "SELECT"
+            }
+          ],
+          "panel": {
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
+            "right": 1411,
+            "top": 54,
+            "width": 460
+          },
+          "panelAreaShare": 0.29388888888888887,
+          "panelHorizontalOverflow": 0,
+          "presentation": {
+            "bottom": 882,
+            "height": 828,
+            "left": 951,
+            "right": 1411,
+            "top": 54,
+            "width": 460
+          },
+          "presentationIntersectsTarget": false,
+          "scrollerHorizontalOverflow": 0,
+          "selectedHidden": false,
+          "selectedHorizontalOverflow": 0,
+          "semantics": {
+            "[data-ia-role=\"checker-run\"]": {
+              "attributes": {
+                "class": "ia-button",
+                "type": "button",
+                "data-ia-action": "check-account-relationships",
+                "data-ia-role": "checker-run"
+              },
+              "disabled": false,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgb(250, 250, 250)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": 14.498978405673947,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Check Followers + Following",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"capture-state-title\"]": {
+              "attributes": {
+                "data-ia-role": "capture-state-title"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Follower comparison complete for @demo_creator",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"followers-count\"]": {
+              "attributes": {
+                "data-ia-role": "followers-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "2",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"following-count\"]": {
+              "attributes": {
+                "data-ia-role": "following-count"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "2",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-result\"]": {
+              "attributes": {
+                "class": "ia-checker-result",
+                "data-ia-role": "checker-result"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "color(srgb 0.980392 0.980392 0.980392 / 0.96)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "Authenticated account comparisonMutuals1Not following me back1I don't follow back1",
+              "tone": null,
+              "visible": true
+            },
+            "[data-ia-role=\"checker-filtered-list\"]": {
+              "attributes": {
+                "class": "ia-list",
+                "data-ia-role": "checker-filtered-list"
+              },
+              "disabled": null,
+              "exists": true,
+              "hidden": false,
+              "backgroundColor": "rgba(0, 0, 0, 0)",
+              "color": "rgb(38, 38, 38)",
+              "textContrast": null,
+              "textFillColor": "rgb(38, 38, 38)",
+              "text": "@following_onlyFollowing Only",
+              "tone": null,
+              "visible": true
+            }
+          },
+          "status": "Ready. Checked @demo_creator: 2 followers and 2 following.Local only",
+          "strip": null,
+          "target": null,
+          "theme": "light",
+          "touchTargets": [
+            {
+              "height": 44,
+              "label": "Toolbox",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Follower checker",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Follow / Unfollow",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "DM Unsend",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Workspace",
+              "width": 111
+            },
+            {
+              "height": 44,
+              "label": "Move sidecar; use arrow keys for precise movement",
+              "width": 70.0625
+            },
+            {
+              "height": 44,
+              "label": "Overlay preferences",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "Collapse Insta AIO sidecar",
+              "width": 44
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check Followers + Following",
+              "width": 207.734375
+            },
+            {
+              "height": 44,
+              "label": "Not following me backI do not follow backMutual followers",
+              "width": 139.5
+            },
+            {
+              "height": 44,
+              "label": "",
+              "width": 139.5
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
+            },
+            {
+              "height": 44,
+              "label": "Scan",
+              "width": 55.6875
             },
             {
               "height": 44,
@@ -2263,7 +2643,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 257
             },
             {
@@ -2569,7 +2949,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 257
             },
             {
@@ -3103,7 +3483,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 257
             },
             {
@@ -3305,7 +3685,7 @@
               "color": "rgb(115, 115, 115)",
               "textContrast": null,
               "textFillColor": "rgb(115, 115, 115)",
-              "text": "Read visible evidence or check the full conversation. Unsend controls stay hidden until the eligible count is resolved.",
+              "text": "Read visible evidence or check the full conversation. Unsend stays unavailable until the eligible count is resolved.",
               "tone": null,
               "visible": true
             },
@@ -3383,6 +3763,16 @@
               "height": 44,
               "label": "Check conversation",
               "width": 149.46875
+            },
+            {
+              "height": 44,
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 257
             },
             {
               "height": 44,
@@ -3659,6 +4049,16 @@
               "height": 44,
               "label": "Check conversation",
               "width": 149.46875
+            },
+            {
+              "height": 44,
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 257
             },
             {
               "height": 44,
@@ -3940,6 +4340,16 @@
               "height": 44,
               "label": "Check conversation",
               "width": 149.46875
+            },
+            {
+              "height": 44,
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 257
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 257
             },
             {
               "height": 44,
@@ -5997,7 +6407,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 257
             },
             {
@@ -6385,7 +6795,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 257
             },
             {
@@ -6745,6 +7155,16 @@
               "height": 44,
               "label": "Check conversation",
               "width": 149.46875
+            },
+            {
+              "height": 44,
+              "label": "All eligible sent messagesNewest NOldest N",
+              "width": 741
+            },
+            {
+              "height": 44,
+              "label": "Check conversation first",
+              "width": 741
             },
             {
               "height": 44,
@@ -7116,7 +7536,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 311
             },
             {
@@ -7401,14 +7821,7 @@
           "layout": "docked",
           "launcher": null,
           "opacity": "88%",
-          "overflowing": [
-            {
-              "className": "ia-select",
-              "overflow": 64,
-              "role": "bot-source",
-              "tagName": "SELECT"
-            }
-          ],
+          "overflowing": [],
           "panel": {
             "bottom": 382,
             "height": 374,
@@ -7501,7 +7914,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 185
             },
             {
@@ -8048,7 +8461,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 641
             },
             {
@@ -8284,7 +8697,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 641
             },
             {
@@ -8672,7 +9085,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 255
             },
             {
@@ -9246,7 +9659,7 @@
             },
             {
               "height": 44,
-              "label": "Not following me back (from checker)I don't follow back (from checker)Manual queue",
+              "label": "Current exact profileNot following me back (from checker)I don't follow back (from checker)Manual queue",
               "width": 257
             },
             {
@@ -9277,13 +9690,13 @@
     }
   ],
   "performance": {
-    "collapsedTaskMs": 4.500000000000001,
-    "openTaskMs": 3.720000000000001,
+    "collapsedTaskMs": 3.6380000000000003,
+    "openTaskMs": 1.906999999999999,
     "queue": {
-      "durationMs": 27.799999999813735,
+      "durationMs": 25,
       "renderedItems": 1,
-      "totalOverlayNodes": 388
+      "totalOverlayNodes": 399
     },
-    "routeTransitionMs": 101.10000000009313
+    "routeTransitionMs": 92.79999999701977
   }
 }

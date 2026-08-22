@@ -21,13 +21,19 @@ matches the next actionable manual-queue item.
 
 ### Capture
 
-The primary checker workflow is deliberately sequential: open Following and
-choose **Scan Following**, open Followers and choose **Scan Followers**, then
-choose **Compare**. Each scan scrolls only the currently open matching dialog
-until it reaches the end or a bounded safe stop. The manual visible-row capture,
-download, and reset controls remain under the secondary disclosure. Both paths
-merge normalized usernames into the selected local draft and report partial
-completion instead of silently under-counting. Once both lists exist, the
+The primary checker accepts or locally detects the username, resolves that exact
+account, and loads Followers then Following through fixed, authenticated
+Instagram GET routes. Pagination is bounded, paced by 800–1499 ms between pages,
+and stopped by session expiry, challenge, activity restriction, rate limit,
+invalid response, repeated token, page/account limit, user Stop, or the 20-minute
+deadline. A successful run atomically replaces both lists; a failed run does not
+overwrite the previous comparison.
+
+The exact-dialog auto-scroll scanner, manual visible-row capture, download, and
+reset controls remain under **Advanced**. Starting that fallback clears any
+authenticated result first, preventing rows from different subjects or methods
+from mixing. Both sources report partial completion instead of silently
+under-counting. Once both verified lists exist, the
 result browser switches among mutuals and both non-mutual groups and filters by
 captured username or display name. Filtering stays in memory and renders at
 most 100 matching rows at once.

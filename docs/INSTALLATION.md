@@ -36,10 +36,11 @@ batch controls deliberately stay disabled unless those tab APIs are available.
 
 ### Using it
 
-**Follower checker** — open Following and choose **Scan Following**, then open
-Followers and choose **Scan Followers**. Each step scrolls only the open list and
-reads every rendered row. **Compare** becomes available once both lists exist and
-shows mutuals and both not-following-back groups locally.
+**Follower checker** — confirm the username and choose **Check Followers +
+Following**. The checker reads both paginated lists through the signed-in
+Instagram tab and compares them locally. It never opens a page control. If
+Instagram rejects that read, use the exact-dialog scanner under **Advanced:
+list-dialog fallback and export**.
 
 **Follow / Unfollow** — pick targets, action, and how many, then choose **Review
 run**. The exact targets, duplicates, and omissions are frozen for inspection;
@@ -151,11 +152,12 @@ use a fitted bottom sheet instead of an off-screen floating panel.
 
 No pairing is needed for these. Open the panel on Instagram and use:
 
-**Follower checker.** Open Following and choose **Scan Following**, then open
-Followers and choose **Scan Followers**. Each scan scrolls the open list and
-reads every row, so it is not limited to what is on screen. It reports a complete
-scan only when the list truly reaches its end; a partial scan says so rather than
-quietly under-counting. Choose **Compare** after both lists are present.
+**Follower checker.** Confirm the username and choose **Check Followers +
+Following**. The checker resolves the exact account and reads both paginated
+lists from Instagram without opening or clicking any relationship control. A
+successful run replaces both prior lists atomically. A stopped or failed run
+keeps the prior comparison. The Advanced exact-dialog fallback remains available
+if Instagram changes or rejects its authenticated read interface.
 
 **Follow / Unfollow.** Choose where the targets come from (either checker result
 or an imported queue), the action, and how many to run this time. Choose **Review

@@ -643,6 +643,38 @@
   </script>
   <script src="/extension/action-labels.js"></script>
   <script src="/extension/content-instagram.js"></script>
+  <script nonce="insta-aio-overlay-qa">
+    if (fixtureMode === 'qa-checker-api') {
+      const productionInspector = globalThis.InstaAioInstagramInspector;
+      globalThis.InstaAioInstagramInspector = Object.freeze({
+        ...productionInspector,
+        async fetchFollowerComparison({ onProgress, signal, username }) {
+          if (signal?.aborted) {
+            const error = new Error('Follower check stopped.');
+            error.code = 'stopped';
+            throw error;
+          }
+          const normalized = productionInspector.normalizeUsername(username);
+          onProgress?.({ found: 0, listType: null, pages: 0, phase: 'resolving', username: normalized });
+          onProgress?.({ found: 2, listType: 'followers', pages: 1, phase: 'loading', username: normalized });
+          onProgress?.({ found: 2, listType: 'following', pages: 1, phase: 'loading', username: normalized });
+          return {
+            capturedAt: new Date().toISOString(),
+            complete: { followers: true, following: true },
+            followers: [
+              { username: 'mutual.friend', displayName: 'Mutual Friend', source: 'authenticated-instagram-web' },
+              { username: 'follower_only', displayName: 'Follower Only', source: 'authenticated-instagram-web' },
+            ],
+            following: [
+              { username: 'mutual.friend', displayName: 'Mutual Friend', source: 'authenticated-instagram-web' },
+              { username: 'following_only', displayName: 'Following Only', source: 'authenticated-instagram-web' },
+            ],
+            username: normalized,
+          };
+        },
+      });
+    }
+  </script>
   <script src="/extension/overlay/shared.js"></script>
   <script src="/extension/overlay/preferences.js"></script>
   <script src="/extension/overlay/route-observer.js"></script>

@@ -63,7 +63,7 @@ test('the checker is a sequence that reports completeness per list', () => {
 
 test('legacy checker rows are quarantined until an exact list dialog is rescanned', () => {
   assert.match(shell, /const requiresCountReconciledRescan = Number\(value\.schemaVersion\) < 4/);
-  assert.match(shell, /schemaVersion: 4/);
+  assert.match(shell, /schemaVersion: 5/);
   assert.match(shell, /verified: \{ followers: false, following: false \}/);
   assert.match(shell, /'scanned-followers': \(\) => names\(verifiedCapture\('followers'\)\)/);
   assert.match(shell, /'scanned-following': \(\) => names\(verifiedCapture\('following'\)\)/);
@@ -83,6 +83,13 @@ test('the checker scan controls name the exact list they operate on', () => {
   assert.equal(followers?.[1], 'Scan Followers');
   assert.notEqual(following?.[1], followers?.[1]);
   assert.match(shell, /button\.textContent = `\$\{status === 'todo' \? 'Scan' : 'Rescan'\} \$\{listLabel\}`/);
+});
+
+test('userscript restores the previous checker comparison when local persistence fails', () => {
+  assert.match(
+    shell,
+    /const previousCapture = state\.capture;[\s\S]*?state\.capture = nextCapture;[\s\S]*?catch \(error\) \{\s*state\.capture = previousCapture;\s*throw error;/,
+  );
 });
 
 test('the userscript migrates the old opaque default while preserving explicit choices', () => {

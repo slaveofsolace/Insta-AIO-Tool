@@ -97,7 +97,9 @@ The extension background worker serializes bridge requests and persists its repl
 
 The sidecar owns only browser-local field state:
 
-- A bounded visible-list capture draft using the existing `insta-aio-visible-list` contract
+- A bounded relationship-check workspace that atomically stores both lists,
+  subject username, completeness, and authenticated-web or list-dialog provenance
+- Backward-compatible `insta-aio-visible-list` exports for individual raw lists
 - An imported `insta-aio-manual-queue` and extension-local completion/skip updates
 - Read-only visible-message evidence plus conditional stable-identity DM dry runs
 - Sanitized pairing and recent dry-run summaries returned by the background worker
@@ -105,7 +107,7 @@ The sidecar owns only browser-local field state:
 - A sanitized pending exact-message intent and 90-second one-use DM arm
 - A versioned V3 visual preference record; fresh state is collapsed, V1/V2
   choices migrate, and bounded position, size, and opacity fields do not change
-  capture or queue contracts
+  existing capture-export or queue contracts
 
 The PWA remains the system of record for imports, snapshots, comparisons,
 protections, reviewed jobs, ledgers, and backups. The background worker never
@@ -158,7 +160,9 @@ exact native control, menu, or confirmation dialog.
 `scripts/build-userscript.mjs` produces one installable `.user.js` file from the
 extension's exact-label module, shared Instagram inspector/action engine, and a
 userscript-specific shell. It has no remote `@require`, `@resource`, `@connect`,
-or network request path. The shell stores follower/following drafts, queue state,
+third-party connector, or cloud path. The shared checker engine can issue only
+its fixed same-origin Instagram relationship GET requests with browser-managed
+credentials. The shell stores follower/following drafts, queue state,
 pacing limits, and layout preferences in userscript-local storage. The metadata
 explicitly selects the userscript manager's isolated DOM sandbox.
 

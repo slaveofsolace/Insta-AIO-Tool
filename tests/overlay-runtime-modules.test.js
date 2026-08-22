@@ -249,7 +249,7 @@ test('follower checker migrates the legacy draft and compares both rendered list
   }, normalizeUsername);
   assert.equal(migrated.source, 'v1');
   assert.equal(migrated.shouldPersist, true);
-  assert.equal(migrated.workspace.schemaVersion, 4);
+  assert.equal(migrated.workspace.schemaVersion, 5);
   assert.equal(migrated.workspace.verified.following, false);
   assert.equal(migrated.workspace.complete.following, false);
   assert.deepEqual(
@@ -304,7 +304,7 @@ test('schema 3 list confidence is quarantined until a count-reconciled rescan', 
     verified: { followers: false, following: true },
   }, normalizeUsername);
 
-  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.schemaVersion, 5);
   assert.equal(migrated.following.length, 2, 'stored rows remain available locally');
   assert.equal(migrated.verified.following, false);
   assert.equal(migrated.complete.following, false);
@@ -321,6 +321,50 @@ test('schema 3 list confidence is quarantined until a count-reconciled rescan', 
   }, normalizeUsername);
   assert.equal(rescanned.verified.following, true);
   assert.equal(rescanned.complete.following, true);
+});
+
+test('authenticated checker provenance is additive and supports an exact empty comparison', () => {
+  const { shared } = loadModules();
+  const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
+  const workspace = shared.normalizeCaptureWorkspace({
+    schemaVersion: 5,
+    kind: 'insta-aio-visible-checker-workspace',
+    subjectUsername: '@demo.creator',
+    followers: [],
+    following: [],
+    capturedAt: {
+      followers: '2026-08-22T00:00:00.000Z',
+      following: '2026-08-22T00:00:00.000Z',
+    },
+    complete: { followers: true, following: true },
+    verified: { followers: true, following: true },
+    source: { followers: 'authenticated-web', following: 'authenticated-web' },
+  }, normalizeUsername);
+
+  assert.equal(workspace.schemaVersion, 5);
+  assert.equal(workspace.subjectUsername, 'demo.creator');
+  assert.deepEqual(JSON.parse(JSON.stringify(workspace.source)), {
+    followers: 'authenticated-web',
+    following: 'authenticated-web',
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(shared.compareCaptureWorkspace(workspace))), {
+    mutuals: [],
+    iDoNotFollowBack: [],
+    notFollowingMeBack: [],
+  });
+  const exported = shared.captureRecord(workspace, 'followers');
+  assert.equal(exported.kind, 'insta-aio-visible-list', 'the established export kind stays compatible');
+  assert.equal(exported.subjectUsername, 'demo.creator');
+  assert.equal(exported.verificationMethod, 'authenticated-web');
+  assert.equal(exported.verifiedDialog, false);
+});
+
+test('authenticated checker publishes a comparison only after persistence succeeds', () => {
+  assert.match(
+    captureViewSource,
+    /await runtime\.persistCapture\(nextCapture\);\s*model\.capture = nextCapture;/,
+    'extension storage failures must leave the prior rendered comparison untouched',
+  );
 });
 
 test('follower comparison filters stay local, bounded, and category-specific', () => {

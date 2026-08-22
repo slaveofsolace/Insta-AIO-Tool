@@ -6,9 +6,10 @@ Three Instagram tools in one place, running entirely on your own machine:
 - **Follow / Unfollow** — work through a list of accounts one at a time, or let the batch runner pace it for you.
 - **DM Unsend** — find the messages *you* sent in a conversation and remove them, one or many.
 
-Your data never leaves your machine. Nothing is uploaded, and there is no account
-or server to sign in to. Instagram exports you import stay in local browser
-storage until you choose to export a file.
+There is no Insta AIO account or hosted data service. Imported exports and saved
+results stay in local browser storage until you export them. The in-page follower
+checker makes read-only, same-origin requests to Instagram using the session
+already open in that tab; it never reads, stores, or exports the session value.
 
 ## Which version should I install?
 
@@ -86,7 +87,7 @@ identity coverage remains available. DOM resolution tokens are issued only by
 Web Crypto; if neither `randomUUID` nor `getRandomValues` produces entropy,
 inspection returns `secure-random-unavailable` and no capability is stored.
 
-The project does not implement proxy rotation, fingerprint spoofing, challenge bypass, CAPTCHA solving, private endpoint reverse engineering, or unreviewed destructive actions.
+The project does not implement proxy rotation, fingerprint spoofing, challenge bypass, CAPTCHA solving, arbitrary endpoint discovery, mutation-capable endpoint clients, or unreviewed destructive actions.
 
 Insta AIO Tool is an independent project and is not affiliated with or endorsed
 by Instagram or Meta. Operators are responsible for protecting imported data
@@ -199,7 +200,7 @@ the bounded default. On narrow screens it becomes a fitted bottom sheet. It
 provides:
 
 - Current-page session, profile, relationship, and queue-match inspection
-- Guided full-list Following and Followers scans, followed by an explicit local Compare step
+- One-step authenticated Followers + Following pagination with username autofill/input and a local comparison; list-dialog scanning remains an Advanced fallback
 - A review-first account queue that freezes the exact targets before Start becomes available
 - Sanitized history for signed account/DM dry runs and controlled one-item results received from the PWA
 - Instagram-side, 90-second one-use arms for a fresh signed one-item Follow, Unfollow, or exact sent-message Unsend intent
@@ -212,15 +213,14 @@ Press **Alt + Shift + I** to toggle the sidecar.
 
 The sidecar carries the three tools in one place, each on its own tab.
 
-**Follower checker.** Open your Following dialog and choose **Scan Following**,
-then open Followers and choose **Scan Followers**. Each scan auto-scrolls the
-open dialog and reads every row it renders, so it is not limited to the first
-screen. It reports `complete` only when the list actually reaches its end; a
-truncated scan says so instead of silently under-reporting. **Compare** stays
-disabled until both lists are present and then shows mutuals,
-not-following-me-back, and I-don't-follow-back counts computed locally. The
-result browser switches between those groups and filters captured usernames or
-display names without sending a request.
+**Follower checker.** Confirm the username and choose **Check Followers +
+Following**. The shared extension/userscript engine resolves that exact account,
+loads both paginated lists through Instagram's authenticated web interface, and
+replaces the prior comparison only after both reads finish. It sends no request
+outside `www.instagram.com`, never reads or exports cookies, and activates no
+page control. The result browser switches among mutuals and both non-mutual
+groups and filters locally. If Instagram changes or rejects the read interface,
+the Advanced section retains the older exact-dialog scanner as a fallback.
 
 **Follow / Unfollow bot.** In the Follow / Unfollow tab, pick a target source
 (either checker result or the manual queue), an action, and how many to run.
@@ -279,11 +279,13 @@ The handshake rotates the one-time code into a derived session secret. Messages 
 Install `userscripts/insta-aio-companion.user.js` in Tampermonkey.
 
 The generated script injects a movable, lower-right-resizable, translucent
-three-tab toolbox directly on `instagram.com`. It includes the full-list follower
-scanner and local comparison, queue and checker target sources for paced Follow
+three-tab toolbox directly on `instagram.com`. It includes the authenticated,
+paginated follower checker plus a list-dialog fallback and local comparison, queue and checker target sources for paced Follow
 or Unfollow runs, and the source-audited thread-wide DM Unsend runner. It uses the
 same exact-target Instagram engine as the extension and remains self-contained:
-no remote `@require`, network connector, credential access, or cloud storage.
+no remote `@require`, third-party network connector, credential access, or cloud
+storage. The checker sends only fixed read-only requests to `www.instagram.com`
+with browser-managed credentials; it cannot read or export those credentials.
 It explicitly requests the userscript manager's isolated DOM sandbox.
 Resumable account runs use `GM_getTab`/`GM_saveTab`, so another Instagram tab
 cannot inherit a running batch. Tampermonkey is the supported manager; on a
@@ -356,7 +358,7 @@ ignored `test-results`.
 The overlay-specific commands rebuild the production extension before loading
 its manifest-ordered content scripts in the deterministic Instagram fixture.
 Use `pnpm run qa:overlay:update` only for an intentional, manually reviewed
-baseline replacement. The 42-state Windows baseline includes fresh-install and
+baseline replacement. The 43-state Windows baseline includes fresh-install and
 filtered-checker evidence, plus a centered,
 resized 62%-opacity proof plus desktop, tablet, mobile, zoom, forced-colors,
 collision, locked-action, and review-before-start states. It has been reproduced by

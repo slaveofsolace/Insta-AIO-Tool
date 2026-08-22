@@ -7,8 +7,10 @@ Current version: **0.11.0**
 ### Follower checker
 
 - Imports Instagram relationship exports and supported legacy formats.
-- Captures Following and Followers lists from the in-page extension or
-  userscript, then compares them locally.
+- Resolves a user-entered or locally detected username and loads Followers and
+  Following through bounded, authenticated Instagram pagination.
+- Keeps the exact-dialog scanner as an Advanced fallback without mixing its
+  rows with authenticated results from another username.
 - Reports mutuals, accounts that do not follow back, and accounts the user does
   not follow back.
 - Filters any comparison group by captured username or display name, locally.
@@ -63,20 +65,22 @@ The repository includes checks for:
   stops;
 - extension permissions and signed pairing;
 - production content-script acceptance against synthetic Instagram fixtures;
-- exact Followers/Following dialog binding, including quarantine and clean
-  replacement of captures made by older fallback logic;
+- exact fixed-route Followers/Following pagination, username resolution,
+  request allowlisting, bounded stops, rate-limit handling, and atomic replacement;
+- exact Followers/Following dialog fallback binding, including quarantine and
+  clean replacement of captures made by older fallback logic;
 - exact profile-total reconciliation, so a stable scroll boundary cannot be
   called complete when Instagram reports a different row count;
 - bounded DM-history convergence that ignores reversible DOM virtualization
   churn while preserving the maximum proven eligible sent-message count;
-- capture-confidence migration to schema 4, which preserves older local rows
-  for export while requiring a new count-reconciled scan before comparison or
-  reviewed-run use;
+- capture-confidence migration to schema 5, which preserves older local rows,
+  records authenticated-web versus list-dialog provenance, and requires a new
+  reconciled scan before stale rows can drive comparisons or reviewed runs;
 - PWA and overlay screenshot baselines;
 - desktop package smoke tests in CI.
 
-The final local Windows matrix currently passes **234/234 tests**, nine PWA
-screenshots, 42 overlay states, isolated extension/userscript fixture
+The final local Windows matrix currently passes **244/244 tests**, nine PWA
+screenshots, 43 overlay states, isolated extension/userscript fixture
 acceptance, and disposable-Chrome extension/PWA pairing. The Windows 0.11.0
 installer builds successfully and is intentionally unsigned.
 
