@@ -2134,7 +2134,7 @@
   const INSTAGRAM_WEB_ORIGIN = 'https://www.instagram.com';
   const INSTAGRAM_WEB_APP_ID = '936619743392459';
   const INSTAGRAM_WEB_ASBD_ID = '129477';
-  const RELATIONSHIP_PAGE_SIZE = 12;
+  const RELATIONSHIP_PAGE_SIZE = 50;
   const RELATIONSHIP_MAX_PAGES = 1_000;
   const RELATIONSHIP_MAX_ACCOUNTS = 25_000;
   const RELATIONSHIP_MAX_DURATION_MS = 20 * 60 * 1_000;
@@ -2535,7 +2535,10 @@
       assertRelationshipRunActive(signal, startedAt, now, maxDurationMs);
       const url = new URL(`/api/v1/friendships/${userId}/${listType}/`, INSTAGRAM_WEB_ORIGIN);
       url.searchParams.set('count', String(RELATIONSHIP_PAGE_SIZE));
-      if (listType === 'followers') url.searchParams.set('search_surface', 'follow_list_page');
+      url.searchParams.set('search_surface', 'follow_list_page');
+      url.searchParams.set('query', '');
+      url.searchParams.set('enable_groups', 'true');
+      if (listType === 'following') url.searchParams.set('includes_hashtags', 'false');
       if (nextMaxId) url.searchParams.set('max_id', nextMaxId);
       const data = await fetchInstagramRelationshipJson(url, {
         clearTimer,

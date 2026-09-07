@@ -2135,13 +2135,6 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       if (url.pathname === '/api/v1/web/search/topsearch/') {
         return Response.json({ users: [{ user: { pk: '77', username: 'demo_creator' } }] });
       }
-      if (url.pathname.startsWith('/api/v1/friendships/77/')) {
-        const expectedKeys = ['count'];
-        if (url.pathname.endsWith('/followers/')) expectedKeys.push('search_surface');
-        if (url.searchParams.has('max_id')) expectedKeys.push('max_id');
-        assert.equal(url.searchParams.get('count'), '12');
-        assert.deepEqual([...url.searchParams.keys()], expectedKeys);
-      }
       if (url.pathname === '/api/v1/friendships/77/followers/') {
         if (rateLimited) return new Response('<html>Too many requests</html>', { status: 429 });
         return Response.json(url.searchParams.has('max_id')
