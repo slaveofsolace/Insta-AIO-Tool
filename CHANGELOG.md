@@ -2,6 +2,11 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Stop DM Unsend and pending message checks when the open conversation changes, including browsers without navigation events.
+- Cancel pending menu waits and release the run so another conversation can be used without refreshing.
+
 ## 3.1.3 - 2026-08-26
 
 ### Fixed

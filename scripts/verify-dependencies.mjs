@@ -49,8 +49,8 @@ for (const version of expectedVersions) {
 const patchedBuildDependencies = [
   {
     name: "fast-uri",
-    version: "3.1.5",
-    override: '"fast-uri@<3.1.5": 3.1.5',
+    version: "3.1.6",
+    override: '"fast-uri@<3.1.6": 3.1.6',
   },
   {
     name: "js-yaml",
@@ -84,5 +84,5 @@ for (const dependency of patchedBuildDependencies) {
 }
 
 console.log(
-  `Dependency verification passed: brace-expansion ${expectedVersions.join(", ")} enforce the CVE-2026-14257 length bound; fast-uri 3.1.5 and js-yaml 4.3.1 are patched.`,
+  `Dependency verification passed: brace-expansion ${expectedVersions.join(", ")} enforce the CVE-2026-14257 length bound; fast-uri 3.1.6 and js-yaml 4.3.1 are patched.`,
 );

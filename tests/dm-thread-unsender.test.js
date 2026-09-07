@@ -63,6 +63,87 @@ function loadOverlayModule(source, name, overrides = {}) {
   return { context, module: modules[name] };
 }
 
+test('thread changes cancel pending work even without Firefox navigation events', async () => {
+  const location = { pathname: '/direct/t/original/' };
+  let notify;
+  let disconnected = 0;
+  const runner = loadRunner({
+    location,
+    document: { documentElement: {}, querySelectorAll: () => [] },
+    MutationObserver: class {
+      constructor(callback) { notify = callback; }
+      observe() {}
+      disconnect() { disconnected += 1; }
+    },
+  });
+  const controller = new AbortController();
+  const cleanup = runner.__test.watchThread(controller, 'original');
+  notify();
+  assert.equal(controller.signal.aborted, false, 'ordinary DOM changes keep the run alive');
+  location.pathname = '/direct/t/other/';
+  notify();
+  assert.equal(controller.signal.aborted, true);
+  assert.match(controller.signal.reason, /Conversation changed/);
+  location.pathname = '/direct/t/original/';
+  notify();
+  assert.equal(controller.signal.aborted, true, 'returning cannot revive the run');
+  assert.ok(disconnected > 0);
+  cleanup();
+
+  const fallback = new AbortController();
+  const stopWatching = runner.__test.watchThread(fallback, 'original');
+  location.pathname = '/direct/inbox/';
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  assert.equal(fallback.signal.aborted, true, 'route-only changes are caught without DOM events');
+  stopWatching();
+});
+
+test('switching thread during preparation stops the run with zero removals and allows a fresh run', async () => {
+  const location = { pathname: '/direct/t/original/' };
+  let notify;
+  let switchThread = true;
+  const view = { getComputedStyle: () => ({}) };
+  const document = { documentElement: {}, querySelectorAll: () => [root] };
+  const root = Object.assign(new EventTarget(), {
+    isConnected: true,
+    children: [],
+    ownerDocument: { defaultView: view },
+    getBoundingClientRect: () => ({ width: 100, height: 100, top: 0, left: 0, right: 100, bottom: 100 }),
+    scrollHeight: 100,
+    clientHeight: 100,
+    scrollTop: 0,
+    removeAttribute() {},
+  });
+  const runner = loadRunner({
+    AbortController, location, document,
+    MutationObserver: class {
+      constructor(callback) { notify = callback; }
+      observe() {}
+      disconnect() {}
+    },
+  });
+  root.addEventListener('scroll', () => {
+    if (switchThread) {
+      location.pathname = '/direct/t/other/';
+      notify();
+    } else runner.stop();
+  });
+  let ledgerWrites = 0;
+  const run = () => runner.start({
+    plan: runner.createPlan({ threadId: 'original', scope: 'all', expiresAt: Date.now() + 60_000 }),
+    onVerifiedRemoval() { ledgerWrites += 1; },
+  });
+  const outcome = await run();
+  assert.equal(outcome.status, 'stopped');
+  assert.equal(outcome.processed, 0);
+  assert.equal(outcome.canStop, false);
+  assert.equal(ledgerWrites, 0);
+  location.pathname = '/direct/t/original/';
+  switchThread = false;
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal((await run()).status, 'stopped');
+});
+
 test('thread runner carries the proven 0.7.2 interaction model', () => {
   for (const expected of [
     "[data-pagelet='IGDMessagesList']",
