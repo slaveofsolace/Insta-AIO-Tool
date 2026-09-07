@@ -703,6 +703,36 @@
     return null;
   }
 
+  function watchThread(controller, expectedThreadId) {
+    let timer;
+    let observer;
+    const check = () => {
+      if (!controller.signal.aborted && currentThreadId() !== expectedThreadId) {
+        controller.abort('Conversation changed. Unsend stopped.');
+      }
+    };
+    const poll = () => {
+      check();
+      if (!controller.signal.aborted) timer = setTimeout(poll, 200);
+    };
+    const cleanup = () => {
+      clearTimeout(timer);
+      observer?.disconnect();
+      globalThis.removeEventListener?.('popstate', check);
+      globalThis.navigation?.removeEventListener?.('currententrychange', check);
+      controller.signal.removeEventListener('abort', cleanup);
+    };
+    if (globalThis.MutationObserver && document.documentElement) {
+      observer = new MutationObserver(check);
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+    globalThis.addEventListener?.('popstate', check);
+    globalThis.navigation?.addEventListener?.('currententrychange', check);
+    controller.signal.addEventListener('abort', cleanup, { once: true });
+    poll();
+    return cleanup;
+  }
+
   function findScrollableChild(parent, view = globalThis) {
     if (!parent) return null;
     let best = null;
@@ -895,6 +925,7 @@
   }
 
   async function waitForElement(target, getter, signal, timeoutMs = 3_000) {
+    if (signal?.aborted) throw new DOMException('The operation was stopped.', 'AbortError');
     const immediate = getter();
     if (immediate) return immediate;
     return new Promise((resolve, reject) => {
@@ -1054,6 +1085,9 @@
   }
 
   function requireAuthorization(expectedThreadId, authorizationExpiresAt) {
+    if (activeController?.signal.aborted) {
+      throw new DOMException('The operation was stopped.', 'AbortError');
+    }
     const reason = authorizationFailure(expectedThreadId, authorizationExpiresAt);
     if (reason) throw new Error(reason);
   }
@@ -1065,6 +1099,7 @@
       if (candidates.length > 1) return { ambiguous: true };
       return candidates.length === 1 ? { control: candidates[0] } : null;
     }, signal, 3_000);
+    pending.catch(() => {});
     requireAuthorization(expectedThreadId, authorizationExpiresAt);
     activateControl(control);
     const result = await pending;
@@ -1109,6 +1144,7 @@
       signal,
       3_000,
     );
+    pending.catch(() => {});
     requireAuthorization(expectedThreadId, authorizationExpiresAt);
     activateControl(menuControl);
     const result = await pending;
@@ -1130,6 +1166,8 @@
       signal,
       5_000,
     );
+    closed.catch(() => {});
+    removed.catch(() => {});
     requireAuthorization(expectedThreadId, authorizationExpiresAt);
     activateControl(dialogButton);
     // Parenthesised deliberately: `await closed !== true` binds as
@@ -1167,7 +1205,7 @@
       return true;
     } finally {
       row.removeAttribute(ACTIVE_ATTRIBUTE);
-      if (!success) await dismissStaleSurfaces(signal).catch(() => {});
+      if (!success && !signal.aborted) await dismissStaleSurfaces(signal).catch(() => {});
     }
   }
 
@@ -1630,13 +1668,14 @@
   }
 
   async function inspectAll() {
-    if (activeController && !activeController.signal.aborted) {
+    if (activeController) {
       return { ready: false, reason: 'Another message check or run is already active.' };
     }
     const context = threadContext();
     if (!context.ok) return { ready: false, reason: context.reason };
     const controller = new AbortController();
     activeController = controller;
+    const unwatch = watchThread(controller, context.threadId);
     publish({
       status: 'preparing',
       operation: 'check',
@@ -1683,12 +1722,13 @@
       });
       return { ready: false, reason };
     } finally {
+      unwatch();
       if (activeController === controller) activeController = null;
     }
   }
 
   async function start(options = {}) {
-    if (activeController && !activeController.signal.aborted) return snapshot();
+    if (activeController) return snapshot();
     const plan = validatePlan(options.plan);
     if (!plan) {
       publish({
@@ -1736,6 +1776,7 @@
     const controller = new AbortController();
     activeController = controller;
     const signal = controller.signal;
+    const unwatch = watchThread(controller, expectedThreadId);
     const maxFailures = Math.max(1, Math.min(10, Number(options.maxConsecutiveFailures) || DEFAULT_MAX_FAILURES));
     const authorizationExpiresAt = plan.expiresAt;
     // "all" is intentionally not bound to a virtual-DOM count. This ceiling
@@ -1986,6 +2027,7 @@
         });
       }
     } finally {
+      unwatch();
       if (activeController === controller) activeController = null;
       for (const row of document.querySelectorAll(`[${ACTIVE_ATTRIBUTE}]`)) row.removeAttribute(ACTIVE_ATTRIBUTE);
     }
@@ -2038,6 +2080,8 @@
       stableMessageKey,
       traversalBounds,
       validatePlan,
+      watchThread,
+      requireAuthorization,
     });
   }
   Object.defineProperty(globalThis, 'InstaToolboxDmThreadUnsender', {
