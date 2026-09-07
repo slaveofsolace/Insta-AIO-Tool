@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-Toolbox
-// @version      3.1.5
+// @version      3.1.6
 // @description  Mutual Checker, Follow / Unfollow, and DM Unsend on Instagram.
 // @author       @slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-Toolbox
@@ -2316,8 +2316,8 @@
   }) {
     for (let attempt = 1; attempt <= requestAttempts; attempt += 1) {
       try {
-        const response = await relationshipStepWithTimeout(
-          (attemptSignal) => fetchImpl(url.href, {
+        return await relationshipStepWithTimeout(async (attemptSignal) => {
+          const response = await fetchImpl(url.href, {
             cache: 'no-store',
             credentials: 'include',
             headers: {
@@ -2329,40 +2329,47 @@
             referrer: `${INSTAGRAM_WEB_ORIGIN}/${username}/`,
             referrerPolicy: 'strict-origin-when-cross-origin',
             signal: attemptSignal,
-          }),
-          {
-            clearTimer, setTimer, signal, timeoutMs: requestTimeoutMs,
-          },
-        );
-        let data = null;
-        try {
-          data = await relationshipStepWithTimeout(
-            () => response.json(),
-            {
-              clearTimer, setTimer, signal, timeoutMs: requestTimeoutMs,
-            },
-          );
-        } catch (error) {
-          if (error?.code === 'request-timeout' || error?.code === 'stopped') throw error;
-          throw relationshipError('invalid-response', 'Instagram returned an unreadable follower response.');
-        }
-        const responseStop = relationshipResponseStop(data);
-        if (response.status === 429 || responseStop === 'rate-limited') {
-          throw relationshipError('rate-limited', 'Instagram asked this session to wait before loading more accounts.');
-        }
-        if (response.status === 401 || responseStop === 'session-expired') {
-          throw relationshipError('session-expired', 'Instagram requires a fresh login.');
-        }
-        if (responseStop === 'challenge') {
-          throw relationshipError('challenge', 'Instagram opened a security challenge.');
-        }
-        if (responseStop === 'action-blocked') {
-          throw relationshipError('action-blocked', 'Instagram restricted activity.');
-        }
-        if (!response.ok || data?.status === 'fail') {
-          throw relationshipError('request-failed', `Instagram could not load this follower page (HTTP ${response.status || 'error'}).`);
-        }
-        return data;
+          });
+          // Error pages can be HTML. Classify status and redirects before decoding.
+          if (response.status === 429) {
+            throw relationshipError('rate-limited', 'Instagram is rate limiting this check. Wait before trying again.');
+          }
+          const responsePath = response.url ? new URL(response.url, url).pathname : '';
+          if (/^\/(challenge|checkpoint)(\/|$)/.test(responsePath)) {
+            throw relationshipError('challenge', 'Instagram opened a security challenge.');
+          }
+          if (response.status === 401 || /^\/accounts\/login(\/|$)/.test(responsePath)) {
+            throw relationshipError('session-expired', 'Instagram requires a fresh login.');
+          }
+          let data = null;
+          try {
+            data = await response.json();
+          } catch (error) {
+            if (attemptSignal.aborted) throw error;
+            if (error?.code === 'request-timeout' || error?.code === 'stopped') throw error;
+            if (!response.ok) {
+              throw relationshipError('request-failed', `Instagram could not load this account request (HTTP ${response.status || 'error'}).`);
+            }
+            throw relationshipError('invalid-response', 'Instagram returned an invalid account response. Reload your profile before trying again.');
+          }
+          const responseStop = relationshipResponseStop(data);
+          if (response.status === 429 || responseStop === 'rate-limited') {
+            throw relationshipError('rate-limited', 'Instagram asked this session to wait before loading more accounts.');
+          }
+          if (response.status === 401 || responseStop === 'session-expired') {
+            throw relationshipError('session-expired', 'Instagram requires a fresh login.');
+          }
+          if (responseStop === 'challenge') {
+            throw relationshipError('challenge', 'Instagram opened a security challenge.');
+          }
+          if (responseStop === 'action-blocked') {
+            throw relationshipError('action-blocked', 'Instagram restricted activity.');
+          }
+          if (!response.ok || data?.status === 'fail') {
+            throw relationshipError('request-failed', `Instagram could not load this follower page (HTTP ${response.status || 'error'}).`);
+          }
+          return data;
+        }, { clearTimer, setTimer, signal, timeoutMs: requestTimeoutMs });
       } catch (error) {
         let retryable = error?.code === 'request-timeout' || error?.code === 'network-error';
         if (signal?.aborted || error?.code === 'stopped') {
@@ -2452,6 +2459,14 @@
         `Instagram did not provide verified follower and following totals for @${username}. The previous comparison is unchanged.`,
       );
     }
+    return Object.freeze({ followers, following });
+  }
+
+  function openProfileRelationshipCounts(username) {
+    if (normalizeUsername(location.pathname) !== username) return null;
+    const followers = exactProfileListCount('followers', { requireScoped: true });
+    const following = exactProfileListCount('following', { requireScoped: true });
+    if (!Number.isSafeInteger(followers) || !Number.isSafeInteger(following)) return null;
     return Object.freeze({ followers, following });
   }
 
@@ -2698,6 +2713,7 @@
         sleepImpl,
         startedAt,
       };
+      const openProfileCounts = openProfileRelationshipCounts(username);
       const resolution = await resolveRelationshipUserId(username, {
         ...common,
         found: 0,
@@ -2707,7 +2723,7 @@
       });
       const { userId } = resolution;
       onProgress?.(Object.freeze({ found: 0, listType: null, pages: 0, phase: 'verifying-profile', username }));
-      const profileCountsAtStart = await resolveRelationshipProfileCounts(username, userId, {
+      const profileCountsAtStart = openProfileCounts || await resolveRelationshipProfileCounts(username, userId, {
         ...common,
         found: 0,
         listType: null,
@@ -2739,13 +2755,18 @@
         phase: 'revalidating-profile',
         username,
       }));
-      const profileCountsAtEnd = await resolveRelationshipProfileCounts(username, userId, {
-        ...common,
-        found: followersTraversal.accounts.length + followingTraversal.accounts.length,
-        listType: null,
-        pages: followersTraversal.pages + followingTraversal.pages,
-        username,
-      });
+      const profileCountsAtEnd = openProfileCounts
+        ? openProfileRelationshipCounts(username)
+        : await resolveRelationshipProfileCounts(username, userId, {
+          ...common,
+          found: followersTraversal.accounts.length + followingTraversal.accounts.length,
+          listType: null,
+          pages: followersTraversal.pages + followingTraversal.pages,
+          username,
+        });
+      if (!profileCountsAtEnd) {
+        throw relationshipError('profile-count-unavailable', 'Keep the checked profile open until the comparison finishes. The previous comparison is unchanged.');
+      }
       const countDisagreementAtEnd = exactProfileCountDisagreement(username, profileCountsAtEnd);
       const followers = finalizeRelationshipList(followersTraversal, {
         countChanged: profileCountsAtStart.followers !== profileCountsAtEnd.followers,
@@ -3814,7 +3835,7 @@
     return null;
   }
 
-  function exactProfileListCount(listType) {
+  function exactProfileListCount(listType, { requireScoped = false } = {}) {
     if (listType !== 'followers' && listType !== 'following') return null;
     const profileUsername = normalizeUsername(location.pathname);
     const scopedCounts = new Set();
@@ -3824,6 +3845,10 @@
         link.getAttribute('title'),
         visibleText(link),
       ];
+      const exactTitle = link.querySelector?.('[title]')?.getAttribute('title');
+      if (exactTitle && new RegExp(`\\b${listType}$`, 'i').test(visibleText(link).trim())) {
+        values.push(`${exactTitle} ${listType}`);
+      }
       for (const value of values) {
         const label = String(value || '')
           .normalize('NFKC')
@@ -3841,7 +3866,9 @@
         const href = link.getAttribute?.('href');
         if (!href || !profileUsername) continue;
         try {
-          const pathname = new URL(href, INSTAGRAM_WEB_ORIGIN).pathname
+          const target = new URL(href, INSTAGRAM_WEB_ORIGIN);
+          if (target.origin !== INSTAGRAM_WEB_ORIGIN) continue;
+          const pathname = target.pathname
             .replace(/\/+$/, '')
             .toLowerCase();
           if (pathname === `/${profileUsername}/${listType}`) scopedCounts.add(count);
@@ -3851,7 +3878,7 @@
       }
     }
     if (scopedCounts.size === 1) return [...scopedCounts][0];
-    if (!scopedCounts.size && fallbackCounts.size === 1) return [...fallbackCounts][0];
+    if (!requireScoped && !scopedCounts.size && fallbackCounts.size === 1) return [...fallbackCounts][0];
     return null;
   }
 
@@ -6028,8 +6055,7 @@
       return {
         tone: 'ready',
         title: `${followerList.label} list open`,
-        detail: `Scan ${followerList.label} to read every row, not just what is on screen.`,
-        cta: { label: `Scan ${followerList.label}`, action: `scan-${followerList.listType}` },
+        detail: 'Manual capture is optional.',
         view: 'checker',
       };
     }
@@ -6038,8 +6064,8 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Inspect this exact profile, or open its Followers or Following to scan a list.',
-        view: 'account',
+        detail: 'Check both lists without opening them.',
+        view: 'checker',
       };
     }
     return {
