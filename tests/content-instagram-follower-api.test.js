@@ -182,13 +182,12 @@ test('authenticated follower check uses only bounded exact read endpoints and pa
       'X-Requested-With': 'XMLHttpRequest',
     });
   }
-  assert.equal(requests[2].url.searchParams.get('count'), '50');
+  assert.equal(requests[2].url.searchParams.get('count'), '12');
   assert.equal(requests[2].url.searchParams.get('search_surface'), 'follow_list_page');
-  assert.equal(requests[2].url.searchParams.get('query'), '');
-  assert.equal(requests[2].url.searchParams.get('enable_groups'), 'true');
-  assert.equal(requests[2].url.searchParams.has('includes_hashtags'), false);
+  assert.deepEqual([...requests[2].url.searchParams.keys()], ['count', 'search_surface']);
   assert.equal(requests[3].url.searchParams.get('max_id'), 'followers-page-2');
-  assert.equal(requests[4].url.searchParams.get('includes_hashtags'), 'false');
+  assert.deepEqual([...requests[3].url.searchParams.keys()], ['count', 'search_surface', 'max_id']);
+  assert.deepEqual([...requests[4].url.searchParams], [['count', '12']]);
   assert.equal(requests[5].url.pathname, '/api/v1/users/web_profile_info/');
 });
 
@@ -221,7 +220,11 @@ test('open-profile background check accepts real hash-link counters without prof
       const followers = url.pathname.includes('/followers/');
       const total = followers ? 2_104 : 101;
       const offset = Number(url.searchParams.get('max_id') || 0);
-      const end = Math.min(offset + 50, total);
+      assert.equal(url.searchParams.get('count'), '12');
+      assert.deepEqual([...url.searchParams.keys()].sort(), [
+        'count', ...(followers ? ['search_surface'] : []), ...(offset ? ['max_id'] : []),
+      ].sort());
+      const end = Math.min(offset + 12, total);
       return response({
         users: Array.from({ length: end - offset }, (_, i) => ({ username: `${followers ? 'follower' : 'following'}.${offset + i}` })),
         ...(end < total ? { next_max_id: String(end) } : {}),
@@ -230,10 +233,10 @@ test('open-profile background check accepts real hash-link counters without prof
     sleepImpl: async () => {},
     username: 'target_name',
   });
-  assert.equal(calls.length, 47);
+  assert.equal(calls.length, 186);
   assert.deepEqual({ ...result.expectedCounts }, { followers: 2_104, following: 101 });
   assert.deepEqual({ ...result.complete }, { followers: true, following: true });
-  assert.deepEqual({ ...result.pages }, { followers: 43, following: 3 });
+  assert.deepEqual({ ...result.pages }, { followers: 176, following: 9 });
 });
 
 for (const changed of ['count', 'route']) {
