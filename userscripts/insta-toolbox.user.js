@@ -2412,6 +2412,32 @@
     throw relationshipError('request-timeout', 'Instagram follower data did not finish.');
   }
 
+  function relationshipAccountId(account) {
+    const values = [account?.pk_id, account?.id, account?.pk]
+      .filter((value) => value !== undefined && value !== null && value !== '');
+    const exactIds = new Set();
+    const roundedIds = [];
+    for (const value of values) {
+      if (typeof value === 'string' && /^\d+$/.test(value.trim())) {
+        exactIds.add(value.trim().replace(/^0+(?=\d)/, ''));
+      } else if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+        if (Number.isSafeInteger(value)) exactIds.add(String(value));
+        else roundedIds.push(value);
+      } else {
+        throw relationshipError('invalid-response', 'Instagram returned an invalid account ID.');
+      }
+    }
+    if (exactIds.size > 1) {
+      throw relationshipError('invalid-response', 'Instagram returned conflicting account IDs.');
+    }
+    const id = [...exactIds][0] || '';
+    // JSON numbers may already be rounded; an exact text ID must corroborate them.
+    if (roundedIds.some((value) => !id || Number(id) !== value)) {
+      throw relationshipError('invalid-response', 'Instagram did not provide an exact account ID. The previous comparison is unchanged.');
+    }
+    return id;
+  }
+
   async function resolveRelationshipUserId(username, options) {
     const url = new URL('/api/v1/web/search/topsearch/', INSTAGRAM_WEB_ORIGIN);
     url.searchParams.set('context', 'blended');
@@ -2421,7 +2447,7 @@
     const exact = (Array.isArray(data?.users) ? data.users : [])
       .map((entry) => entry?.user)
       .find((user) => normalizeUsername(user?.username) === username);
-    const userId = String(exact?.pk || '').trim();
+    const userId = relationshipAccountId(exact);
     if (!/^\d+$/.test(userId)) {
       throw relationshipError('username-not-found', `Instagram could not resolve @${username}.`);
     }
@@ -2436,7 +2462,7 @@
     const data = await fetchInstagramRelationshipJson(url, options);
     const profile = data?.data?.user;
     const resolvedUsername = normalizeUsername(profile?.username);
-    const resolvedUserId = String(profile?.id || profile?.pk || '').trim();
+    const resolvedUserId = relationshipAccountId(profile);
     if (resolvedUsername !== username || resolvedUserId !== userId) {
       throw relationshipError(
         'profile-mismatch',
@@ -2571,11 +2597,7 @@
       for (const user of data.users) {
         const accountUsername = normalizeUsername(user?.username);
         if (!accountUsername) continue;
-        const rawAccountId = user?.pk ?? user?.id ?? '';
-        const accountId = String(rawAccountId || '').trim();
-        if (accountId && !/^\d+$/.test(accountId)) {
-          throw relationshipError('invalid-response', `Instagram returned an invalid ${listType} account ID.`);
-        }
+        const accountId = relationshipAccountId(user);
         const accountKey = accountId ? `id:${accountId}` : `username:${accountUsername}`;
         const usernameOwner = accountKeyByUsername.get(accountUsername);
         if (usernameOwner && usernameOwner !== accountKey) {
@@ -2593,6 +2615,7 @@
           accountKeyByUsername.delete(previous.username);
         }
         accounts.set(accountKey, {
+          id: accountId,
           username: accountUsername,
           profileUrl: `${INSTAGRAM_WEB_ORIGIN}/${accountUsername}/`,
           displayName: String(user?.full_name || '').trim().slice(0, 160),
@@ -2656,6 +2679,29 @@
       pages,
       reason: accounts.size >= maxAccounts ? 'account-limit' : 'page-limit',
     };
+  }
+
+  function reconcileRelationshipAccounts(followers, following) {
+    const latestById = new Map();
+    for (const account of [...followers, ...following]) {
+      if (account.id) latestById.set(account.id, account);
+    }
+    const idByUsername = new Map();
+    const project = (accounts) => {
+      const seenNames = new Set();
+      return accounts.map((account) => {
+        const current = account.id ? latestById.get(account.id) : account;
+        const { id, ...record } = current;
+        const existingId = idByUsername.get(record.username);
+        if (seenNames.has(record.username) || (id && existingId && id !== existingId)) {
+          throw relationshipError('invalid-response', 'Instagram returned conflicting account identities across the lists. The previous comparison is unchanged.');
+        }
+        seenNames.add(record.username);
+        if (id) idByUsername.set(record.username, id);
+        return record;
+      }).sort((left, right) => left.username.localeCompare(right.username));
+    };
+    return { followers: project(followers), following: project(following) };
   }
 
   async function fetchFollowerComparison({
@@ -2783,12 +2829,13 @@
         following: profileCountsAtEnd.following,
       });
       const capturedAt = new Date(now()).toISOString();
+      const reconciledAccounts = reconcileRelationshipAccounts(followers.accounts, following.accounts);
       const result = Object.freeze({
         capturedAt,
         complete: Object.freeze({ followers: followers.complete, following: following.complete }),
         expectedCounts: Object.freeze({ followers: followers.expectedCount, following: following.expectedCount }),
-        followers: Object.freeze(followers.accounts),
-        following: Object.freeze(following.accounts),
+        followers: Object.freeze(reconciledAccounts.followers),
+        following: Object.freeze(reconciledAccounts.following),
         pages: Object.freeze({ followers: followers.pages, following: following.pages }),
         reasons: Object.freeze({ followers: followers.reason, following: following.reason }),
         source: 'authenticated-instagram-web',

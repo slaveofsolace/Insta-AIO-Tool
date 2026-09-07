@@ -6,6 +6,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 - Recognize Instagram's hash-link follower counters inside the exact profile header. This removes the unintended profile-count fallback on current profile pages.
 - Match the browser fixtures to that markup and reject hash-link counts outside the correct profile header.
+- Preserve exact account IDs when JSON numbers lose precision. Reject conflicting identities before comparing lists.
+- Match cross-list account renames by ID without changing saved row or export formats.
 
 ## 3.1.6 - 2026-09-07
 

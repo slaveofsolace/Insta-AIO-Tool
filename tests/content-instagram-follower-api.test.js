@@ -4,9 +4,10 @@ import { readFile } from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
 import vm from 'node:vm';
 
-const [actionLabelsSource, inspectorSource] = await Promise.all([
+const [actionLabelsSource, inspectorSource, overlaySharedSource] = await Promise.all([
   readFile(new URL('../extension/action-labels.js', import.meta.url), 'utf8'),
   readFile(new URL('../extension/content-instagram.js', import.meta.url), 'utf8'),
+  readFile(new URL('../extension/overlay/shared.js', import.meta.url), 'utf8'),
 ]);
 
 function response(data, status = 200) {
@@ -745,6 +746,109 @@ test('Mutual Checker deduplicates a renamed account by stable Instagram ID', asy
 
   assert.deepEqual([...result.followers].map((account) => account.username), ['new.name', 'steady.name']);
   assert.equal(result.complete.followers, true);
+});
+
+async function scanIdentityFixture({ followers = [], following = [], identity = { pk: '77' }, onRequest = () => {} }) {
+  return createInspector().fetchFollowerComparison({
+    username: 'target_name',
+    sleepImpl: async () => {},
+    fetchImpl: async (input) => {
+      const url = new URL(input);
+      onRequest(url);
+      if (url.pathname.includes('topsearch')) {
+        return response({ users: [{ user: { ...identity, username: 'target_name' } }] });
+      }
+      if (url.pathname.includes('web_profile_info')) {
+        return response({ data: { user: {
+          ...identity,
+          username: 'target_name',
+          edge_followed_by: { count: followers.length },
+          edge_follow: { count: following.length },
+        } } });
+      }
+      return response({ users: url.pathname.includes('/followers/') ? followers : following });
+    },
+  });
+}
+
+test('Mutual Checker preserves exact text IDs when JSON numeric IDs collide', async () => {
+  const followers = JSON.parse('[{"pk":9007199254740992,"pk_id":"9007199254740992","username":"fixture.alpha"},{"pk":9007199254740993,"pk_id":"9007199254740993","username":"fixture.beta"}]');
+  assert.equal(followers[0].pk, followers[1].pk, 'JSON has already rounded the second number');
+  const result = await scanIdentityFixture({ followers });
+  assert.equal(result.followers.length, 2);
+  assert.equal(result.complete.followers, true);
+  assert.deepEqual([...result.followers].map((account) => account.username), ['fixture.alpha', 'fixture.beta']);
+  assert.deepEqual(Object.keys(result.followers[0]).sort(), ['displayName', 'profileUrl', 'source', 'username']);
+});
+
+test('Mutual Checker resolves the exact large profile ID instead of its rounded numeric alias', async () => {
+  const identity = JSON.parse('{"pk":9007199254740993,"pk_id":"9007199254740993"}');
+  const paths = [];
+  const result = await scanIdentityFixture({ identity, onRequest: (url) => paths.push(url.pathname) });
+  assert.equal(result.userId, '9007199254740993');
+  assert.equal(paths.filter((path) => path.includes('/friendships/9007199254740993/')).length, 2);
+});
+
+for (const identity of [
+  { pk: Number.MAX_SAFE_INTEGER + 1 },
+  { pk: '1001', pk_id: '1002' },
+  { pk: 1001, id: '1002' },
+  { pk: Number.MAX_SAFE_INTEGER + 1, id: '9007199254741000' },
+  { pk: 'not-an-id' },
+  { pk: 1.5 },
+]) {
+  test(`Mutual Checker rejects ambiguous identity ${JSON.stringify(identity)} before list requests`, async () => {
+    let requests = 0;
+    await assert.rejects(scanIdentityFixture({ identity, onRequest: () => { requests += 1; } }), { code: 'invalid-response' });
+    assert.equal(requests, 1);
+  });
+}
+
+test('Mutual Checker rejects an unsafe list ID without publishing rounded identities', async () => {
+  await assert.rejects(scanIdentityFixture({
+    followers: [{ pk: Number.MAX_SAFE_INTEGER + 1, username: 'fixture.alpha' }],
+  }), { code: 'invalid-response' });
+});
+
+test('Mutual Checker matches a cross-list rename by ID while preserving the public row schema', async () => {
+  const result = await scanIdentityFixture({
+    followers: [{ pk: '1001', username: 'fixture.old' }],
+    following: [{ id: '1001', username: 'fixture.new' }],
+  });
+  const context = vm.createContext({});
+  vm.runInContext(overlaySharedSource, context);
+  const comparison = context.__instaToolboxOverlayModules.shared.compareCaptureWorkspace({
+    ...result, verified: { followers: true, following: true },
+  });
+  assert.equal(comparison.mutuals.length, 1);
+  assert.equal(comparison.notFollowingMeBack.length, 0);
+  assert.equal(comparison.iDoNotFollowBack.length, 0);
+  assert.equal(comparison.mutuals[0].username, 'fixture.new');
+  assert.equal(result.followers[0].profileUrl, 'https://www.instagram.com/fixture.new/');
+  assert.equal(Object.hasOwn(result.followers[0], 'id'), false);
+});
+
+test('Mutual Checker rejects one username assigned to different IDs across lists', async () => {
+  await assert.rejects(scanIdentityFixture({
+    followers: [{ pk: '1001', username: 'fixture.same' }],
+    following: [{ pk: '1002', username: 'fixture.same' }],
+  }), { code: 'invalid-response' });
+});
+
+test('Mutual Checker rejects a rename that collides with a username-only row', async () => {
+  await assert.rejects(scanIdentityFixture({
+    followers: [{ pk: '1001', username: 'fixture.old' }, { username: 'fixture.new' }],
+    following: [{ pk: '1001', username: 'fixture.new' }],
+  }), { code: 'invalid-response' });
+});
+
+test('Mutual Checker keeps username-only rows compatible and accepts matching safe ID aliases', async () => {
+  const result = await scanIdentityFixture({
+    followers: [{ pk: 1001, id: '1001', pk_id: '1001', username: 'fixture.stable' }, { username: 'fixture.legacy' }],
+    following: [{ username: 'fixture.legacy' }],
+  });
+  assert.deepEqual({ ...result.complete }, { followers: true, following: true });
+  assert.deepEqual([...result.followers].map((account) => account.username), ['fixture.legacy', 'fixture.stable']);
 });
 
 test('Mutual Checker marks a run partial when verified profile totals change during traversal', async () => {
