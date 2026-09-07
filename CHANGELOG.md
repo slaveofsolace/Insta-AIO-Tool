@@ -2,6 +2,14 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.5 - 2026-09-07
+
+- Withhold Mutual Checker comparisons and comparison downloads until both lists are complete. Keep partial rows available separately under Advanced.
+- Scan overlapping windows from the top of virtualized dialogs, retaining rows as Instagram recycles them and reacquiring replaced scrollers.
+- Require an exact profile total for dialog completion; a quiet scrollbar alone is not proof.
+- Reject limited or unfinished API responses even when their counts happen to match. Missing counters are no longer interpreted as zero.
+- Preserve saved data while requiring a fresh scan of older dialog captures with unproven completion.
+
 ## 3.1.4 - 2026-09-06
 
 - Stop DM Unsend and pending message checks when the open conversation changes, including browsers without navigation events.

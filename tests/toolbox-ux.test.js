@@ -110,7 +110,7 @@ test('the checker is a sequence that reports completeness per list', () => {
   // A partial scan must say so on the step and on the comparison.
   assert.match(shell, /accessible accounts found — partial/);
   assert.match(shell, /some accounts may be missing/);
-  assert.match(shell, /\(partial\)/);
+  assert.match(shell, /Comparison withheld to avoid false non-mutuals/);
   assert.match(shell, /Scanned \$\{found\} \$\{listType\} — incomplete\./);
   assert.match(shell, /outcome\?\.reason === 'list-count-mismatch'/);
   assert.match(shell, /Instagram reports \$\{outcome\.expectedCount\}, so this capture stays incomplete/);
@@ -206,7 +206,7 @@ test('Mutual Checker progress is determinate only when verified totals are known
 
 test('legacy checker rows are quarantined until an exact list dialog is rescanned', () => {
   assert.match(shell, /const requiresCountReconciledRescan = Number\(value\.schemaVersion\) < 4/);
-  assert.match(shell, /schemaVersion: 5/);
+  assert.match(shell, /schemaVersion: 6/);
   assert.match(shell, /verified: \{ followers: false, following: false \}/);
   assert.match(shell, /'scanned-followers': \(\) => capturePool\(completeCapture\('followers'\)\)/);
   assert.match(shell, /'scanned-following': \(\) => capturePool\(completeCapture\('following'\)\)/);
@@ -325,6 +325,29 @@ test('a partial scan is never presented as a complete comparison', () => {
     /const complete = scanState\('following'\) === 'done' && scanState\('followers'\) === 'done';/,
   );
   assert.match(shell, /compareStep\.dataset\.state = both \? \(complete \? 'done' : 'partial'\) : 'todo'/);
+});
+
+test('userscript comparison and downloads wait for both complete lists', () => {
+  const state = { capture: {
+    followers: [{ username: 'mutual' }], following: [{ username: 'mutual' }, { username: 'missing' }],
+    verified: { followers: true, following: true },
+    complete: { followers: false, following: true },
+  } };
+  const comparisonIsReady = loadShellFunction('comparisonIsReady', { state });
+  const compare = loadShellFunction('compareCapture', {
+    state, comparisonIsReady, verifiedCapture: (type) => state.capture[type],
+  });
+  assert.equal(comparisonIsReady(), false);
+  assert.deepEqual(JSON.parse(JSON.stringify(compare())), {
+    mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [],
+  });
+  state.capture.complete.followers = true;
+  assert.equal(comparisonIsReady(), true);
+  assert.equal(compare().notFollowingMeBack[0].username, 'missing');
+  state.capture.complete.following = false;
+  assert.equal(comparisonIsReady(), false);
+  assert.match(shell, /const comparisonReady = comparisonIsReady\(\)/);
+  assert.match(extensionCapture, /const comparisonReady = followersVerified && followingVerified\s*&& workspace\.complete\?\.followers === true && workspace\.complete\?\.following === true/);
 });
 
 test('a run shows its targets and skip reasons before it starts', () => {
@@ -666,7 +689,7 @@ test('comparison changes and coarse scan phases use the existing live feedback',
   assert.match(extensionCapture, /const announceProgress = \(key, message\) =>/);
   assert.match(extensionCapture, /announceProgress\(\s*`loading-\$\{progress\.listType\}`/s);
   assert.doesNotMatch(shell, /Complete both follower lists before downloading a comparison/);
-  assert.match(shell, /Scan or verify both follower lists before downloading a comparison/);
+  assert.match(shell, /Both lists must be complete before downloading a comparison/);
 });
 
 test('verified empty relationship lists keep an honest complete or partial state', () => {

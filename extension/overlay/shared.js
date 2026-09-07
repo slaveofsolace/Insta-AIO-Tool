@@ -142,7 +142,7 @@
 
   function captureWorkspaceDefaults() {
     return {
-      schemaVersion: 5,
+      schemaVersion: 6,
       kind: 'insta-toolbox-visible-checker-workspace',
       subjectUsername: '',
       followers: [],
@@ -188,13 +188,14 @@
     // Schema 4 is the first capture format whose `complete` flag is backed by
     // a reconciled exact-list read. Schema 5 additionally records whether that
     // read came from bounded authenticated pagination or the list-dialog
-    // fallback. Keep older rows available for export without mixing subjects.
+    // fallback. Schema 6 requires an exact total for DOM completion; older DOM
+    // rows remain available for export but need a fresh scan.
     const requiresCountReconciledRescan = Number(source.schemaVersion) < 4;
     const capturedAt = source.capturedAt && typeof source.capturedAt === 'object'
       ? source.capturedAt
       : {};
     return {
-      schemaVersion: 5,
+      schemaVersion: 6,
       kind: 'insta-toolbox-visible-checker-workspace',
       subjectUsername: normalizeUsername(source.subjectUsername),
       followers: normalizeCaptureAccounts(source.followers, normalizeUsername),
@@ -205,9 +206,11 @@
       },
       complete: {
         followers: !requiresCountReconciledRescan
+          && (Number(source.schemaVersion) >= 6 || source.source?.followers === 'authenticated-web')
           && source.verified?.followers === true
           && source.complete?.followers === true,
         following: !requiresCountReconciledRescan
+          && (Number(source.schemaVersion) >= 6 || source.source?.following === 'authenticated-web')
           && source.verified?.following === true
           && source.complete?.following === true,
       },
@@ -258,6 +261,7 @@
       [normalizedType]: Array.isArray(source[normalizedType]) ? source[normalizedType] : [],
       subjectUsername: safeText(source.subjectUsername),
       verificationMethod: method,
+      complete: source.complete?.[normalizedType] === true,
       verifiedDialog: source.verified?.[normalizedType] === true && method !== 'authenticated-web',
       note: method === 'authenticated-web'
         ? 'Read from bounded authenticated Instagram pagination. No follow, unfollow, message, or click action was performed.'
@@ -273,6 +277,9 @@
   }
 
   function compareCaptureWorkspace(workspace) {
+    if (!['followers', 'following'].every((type) => (
+      workspace?.verified?.[type] === true && workspace?.complete?.[type] === true
+    ))) return { mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [] };
     const followers = verifiedCaptureAccounts(workspace, 'followers');
     const following = verifiedCaptureAccounts(workspace, 'following');
     const followerNames = new Set(followers.map((account) => account.username));

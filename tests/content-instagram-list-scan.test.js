@@ -9,8 +9,7 @@ const [actionLabelsSource, source] = await Promise.all([
   readFile(new URL('../extension/content-instagram.js', import.meta.url), 'utf8'),
 ]);
 
-// Models an Instagram-style virtualised list: more rows are appended only in
-// response to an actual change of scrollTop that reaches the end of the list.
+// Append-only pagination is separate from the recycled-window fixture below.
 function createLazyList({
   total,
   pageSize = 25,
@@ -88,6 +87,7 @@ function createHarness(list, {
   main = null,
   profileCount = null,
   profileListType = 'followers',
+  settle = () => {},
 } = {}) {
   const profileCountLink = {
     textContent: `${profileCount} ${profileListType}`,
@@ -124,7 +124,7 @@ function createHarness(list, {
       href: 'https://www.instagram.com/demo_creator/followers/',
       pathname: '/demo_creator/',
     },
-    setTimeout,
+    setTimeout(callback, ms) { return setTimeout(() => { settle(); callback(); }, ms); },
   });
   vm.runInContext(actionLabelsSource, context);
   vm.runInContext(source, context);
@@ -133,7 +133,7 @@ function createHarness(list, {
 
 test('full-list scan pages through a lazy list instead of stopping at the first screen', async () => {
   const list = createLazyList({ total: 250, pageSize: 25 });
-  const inspector = createHarness(list);
+  const inspector = createHarness(list, { profileCount: 250 });
 
   const visibleOnly = inspector.captureVisibleAccounts();
   assert.equal(visibleOnly.length, 25, 'the visible-only capture sees just the first page');
@@ -200,7 +200,7 @@ test('full-list scan fails closed when dialog semantics conflict', async () => {
 
 test('full-list scan still advances when the list starts pinned at the bottom', async () => {
   const list = createLazyList({ total: 120, pageSize: 20 });
-  const inspector = createHarness(list);
+  const inspector = createHarness(list, { profileCount: 120 });
   // Pin the scroller at the end first: assigning the same scrollTop fires no
   // scroll event, so the scan must nudge before it can load more.
   list.scroller.scrollTop = list.scroller.scrollHeight;
@@ -219,7 +219,7 @@ test('a first page that fits the dialog is not mistaken for the full list', asyn
   const scanned = await inspector.collectAccountList({ maxScrolls: 20, settleMs: 0, listType: 'followers' });
   assert.equal(scanned.accounts.length, 25);
   assert.equal(scanned.complete, false);
-  assert.equal(scanned.reason, 'list-truncated');
+  assert.equal(scanned.reason, 'list-count-unverified');
 });
 
 test('full-list scan reports an incomplete list rather than claiming completeness', async () => {
@@ -228,7 +228,7 @@ test('full-list scan reports an incomplete list rather than claiming completenes
 
   const scanned = await inspector.collectAccountList({ maxScrolls: 3, settleMs: 0 });
   assert.equal(scanned.complete, false);
-  assert.equal(scanned.reason, 'list-truncated');
+  assert.equal(scanned.reason, 'list-count-unverified');
   assert.ok(scanned.accounts.length < 500);
   assert.ok(scanned.accounts.length > 25);
 });
@@ -264,4 +264,78 @@ test('full-list scan stops and reports when Instagram interrupts the session', a
   assert.equal(scanned.complete, false);
   assert.equal(scanned.reason, 'session-stop');
   assert.ok(scanned.accounts.length < 200);
+});
+
+function createRecycledList({ total = 63, replaceScroller = false, delayed = false } = {}) {
+  let first = 0;
+  let pending = 0;
+  let nextFirst = 0;
+  let replaced = false;
+  const anchors = Array.from({ length: 7 }, (_, slot) => ({
+    get textContent() { return `person${first + slot}`; },
+    getAttribute(name) {
+      return name === 'href' && first + slot < total ? `/person${first + slot}/` : null;
+    },
+  }));
+  const makeScroller = () => ({
+    tagName: 'DIV', clientHeight: 200, scrollHeight: total * 50, top: 0,
+    get scrollTop() { return this.top; },
+    set scrollTop(value) {
+      this.top = Math.min(Math.max(0, value), this.scrollHeight - this.clientHeight);
+      nextFirst = Math.floor(this.top / 50);
+      if (delayed) pending = 2;
+      else first = nextFirst;
+      if (replaceScroller && !replaced && this.top > 600) {
+        replaced = true;
+        scroller = makeScroller();
+      }
+    },
+    querySelectorAll: () => [],
+  });
+  let scroller = makeScroller();
+  const dialog = {
+    tagName: 'DIV', textContent: 'Followers', getAttribute: () => null,
+    querySelectorAll(selector) {
+      if (selector === 'a[href^="/"]') return anchors;
+      if (selector === 'div, ul, section') return [scroller];
+      return [];
+    },
+    querySelector: () => pending > 0 ? {} : null,
+  };
+  return {
+    dialog, get scroller() { return scroller; },
+    settle() { if (pending > 0 && --pending === 0) first = nextFirst; },
+  };
+}
+
+test('virtualized scans accumulate recycled windows from the top, including delayed and replaced scrollers', async () => {
+  for (const options of [{}, { delayed: true }, { replaceScroller: true }]) {
+    const list = createRecycledList(options);
+    list.scroller.scrollTop = 1_500;
+    const inspector = createHarness(list, { profileCount: 63, settle: list.settle });
+    const result = await inspector.collectAccountList({ settleMs: 0, maxScrolls: 150, listType: 'followers' });
+    assert.equal(result.accounts.length, 63, JSON.stringify(options));
+    assert.equal(result.complete, true);
+    assert.equal(new Set(result.accounts.map((item) => item.username)).size, 63);
+    assert.ok(result.accounts.some((item) => item.username === 'person0'));
+    assert.ok(result.accounts.some((item) => item.username === 'person62'));
+  }
+});
+
+test('a quiet virtualized end without an exact total remains unverified', async () => {
+  const list = createRecycledList();
+  const inspector = createHarness(list);
+  const result = await inspector.collectAccountList({ settleMs: 0, maxScrolls: 150 });
+  assert.equal(result.accounts.length, 63);
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'list-count-unverified');
+});
+
+test('virtualized partial data cannot pass even when the scroll height stops changing', async () => {
+  const list = createRecycledList({ total: 27 });
+  const inspector = createHarness(list, { profileCount: 2_104 });
+  const result = await inspector.collectAccountList({ settleMs: 0, maxScrolls: 150 });
+  assert.equal(result.accounts.length, 27);
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'list-count-mismatch');
 });

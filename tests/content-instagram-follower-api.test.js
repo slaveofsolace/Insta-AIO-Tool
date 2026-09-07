@@ -331,6 +331,69 @@ test('Mutual Checker reads a 2,104-follower list in one cursor traversal', async
   assert.equal(progress.some((entry) => entry.phase === 'reconciling'), false);
 });
 
+test('matching totals cannot override an explicit limited list or a missing continuation cursor', async () => {
+  for (const flags of [{ should_limit_list_of_followers: true }, { has_more: true }]) {
+    const result = await createInspector().fetchFollowerComparison({
+      username: 'target_name', sleepImpl: async () => {},
+      fetchImpl: async (input) => {
+        const url = new URL(input);
+        if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+        if (url.pathname.includes('web_profile_info')) return profileResponse({ followers: 1, following: 0 });
+        if (url.pathname.includes('/followers/')) return response({ users: [{ username: 'first' }], ...flags });
+        return response({ users: [] });
+      },
+    });
+    assert.equal(result.complete.followers, false);
+    assert.equal(result.complete.following, true);
+  }
+});
+
+test('missing profile counters are not coerced into a verified zero', async () => {
+  for (const count of [null, '', false]) {
+    await assert.rejects(createInspector().fetchFollowerComparison({
+      username: 'target_name', sleepImpl: async () => {},
+      fetchImpl: async (input) => new URL(input).pathname.includes('topsearch')
+        ? response({ users: [{ user: { pk: '77', username: 'target_name' } }] })
+        : profileResponse({ followers: count, following: 0 }),
+    }), (error) => error.code === 'profile-count-unavailable');
+  }
+});
+
+test('comparison data is not published while the last Following page or final count check is pending', async () => {
+  const followingGate = Promise.withResolvers();
+  const followingReached = Promise.withResolvers();
+  const finalGate = Promise.withResolvers();
+  const finalReached = Promise.withResolvers();
+  let countReads = 0;
+  let published = false;
+  const pending = createInspector().fetchFollowerComparison({
+    username: 'target_name', sleepImpl: async () => {},
+    fetchImpl: async (input) => {
+      const url = new URL(input);
+      if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      if (url.pathname.includes('web_profile_info')) {
+        if (++countReads === 2) { finalReached.resolve(); await finalGate.promise; }
+        return profileResponse({ followers: 1, following: 2 });
+      }
+      if (url.pathname.includes('/followers/')) return response({ users: [{ username: 'mutual' }] });
+      if (!url.searchParams.has('max_id')) return response({ users: [{ username: 'first' }], next_max_id: 'last' });
+      followingReached.resolve();
+      await followingGate.promise;
+      return response({ users: [{ username: 'mutual' }] });
+    },
+  }).then((result) => { published = true; return result; });
+  await followingReached.promise;
+  assert.equal(published, false);
+  followingGate.resolve();
+  await finalReached.promise;
+  assert.equal(published, false);
+  finalGate.resolve();
+  const result = await pending;
+  assert.equal(result.complete.followers, true);
+  assert.equal(result.complete.following, true);
+  assert.equal(result.following.length, 2);
+});
+
 test('Mutual Checker finishes a large cursorless list partial after one traversal', async () => {
   const inspector = createInspector();
   const followers = Array.from({ length: 2_070 }, (_, index) => ({ username: `follower.${index}` }));
@@ -935,7 +998,7 @@ test('follower comparison export provides a readable UTF-8 report and preserves 
   assert.equal(record.notFollowingMeBack[0].username, 'outgoing.only');
 });
 
-test('follower comparison report formats large counts and does not claim a partial API list missed its end', () => {
+test('comparison exports refuse partial lists instead of publishing false non-mutuals', () => {
   const inspector = createInspector();
   const workspace = {
     subjectUsername: 'demo.creator',
@@ -945,10 +1008,12 @@ test('follower comparison report formats large counts and does not claim a parti
     verified: { followers: true, following: true },
     source: { followers: 'authenticated-web', following: 'authenticated-web' },
   };
-  const report = inspector.followerComparisonReport(workspace, {
+  const comparison = {
     mutuals: [], notFollowingMeBack: [], iDoNotFollowBack: [],
-  });
-  assert.match(report, /Followers: 2,070\r\nFollowing: 101/);
-  assert.match(report, /Partial — one or both saved lists may omit accounts/);
-  assert.doesNotMatch(report, /did not reach a verified end/);
+  };
+  for (const method of ['followerComparisonReport', 'followerComparisonRecord']) {
+    assert.throws(() => inspector[method](workspace, comparison), (error) => error.code === 'incomplete-comparison');
+  }
+  workspace.complete.followers = true;
+  assert.match(inspector.followerComparisonReport(workspace, comparison), /Followers: 2,070\r\nFollowing: 101/);
 });

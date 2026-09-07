@@ -350,7 +350,7 @@ test('Mutual Checker migrates the legacy draft and compares both rendered lists 
   }, normalizeUsername);
   assert.equal(migrated.source, 'v1');
   assert.equal(migrated.shouldPersist, true);
-  assert.equal(migrated.workspace.schemaVersion, 5);
+  assert.equal(migrated.workspace.schemaVersion, 6);
   assert.equal(migrated.workspace.verified.following, false);
   assert.equal(migrated.workspace.complete.following, false);
   assert.deepEqual(
@@ -367,9 +367,10 @@ test('Mutual Checker migrates the legacy draft and compares both rendered lists 
   assert.equal(shared.compareCaptureWorkspace(migrated.workspace).notFollowingMeBack.length, 0);
   const workspace = shared.normalizeCaptureWorkspace({
     ...migrated.workspace,
-    schemaVersion: 4,
+    schemaVersion: 6,
     followers: [{ username: 'mutual' }, { username: 'follower_only' }],
     verified: { followers: true, following: true },
+    complete: { followers: true, following: true },
   }, normalizeUsername);
   assert.deepEqual(
     JSON.parse(JSON.stringify(shared.verifiedCaptureAccounts(workspace, 'following'))),
@@ -405,7 +406,7 @@ test('schema 3 list confidence is quarantined until a count-reconciled rescan', 
     verified: { followers: false, following: true },
   }, normalizeUsername);
 
-  assert.equal(migrated.schemaVersion, 5);
+  assert.equal(migrated.schemaVersion, 6);
   assert.equal(migrated.following.length, 2, 'stored rows remain available locally');
   assert.equal(migrated.verified.following, false);
   assert.equal(migrated.complete.following, false);
@@ -416,7 +417,7 @@ test('schema 3 list confidence is quarantined until a count-reconciled rescan', 
 
   const rescanned = shared.normalizeCaptureWorkspace({
     ...migrated,
-    schemaVersion: 4,
+    schemaVersion: 6,
     complete: { followers: false, following: true },
     verified: { followers: false, following: true },
   }, normalizeUsername);
@@ -442,7 +443,7 @@ test('authenticated checker provenance is additive and supports an exact empty c
     source: { followers: 'authenticated-web', following: 'authenticated-web' },
   }, normalizeUsername);
 
-  assert.equal(workspace.schemaVersion, 5);
+  assert.equal(workspace.schemaVersion, 6);
   assert.equal(workspace.subjectUsername, 'demo.creator');
   assert.deepEqual(JSON.parse(JSON.stringify(workspace.source)), {
     followers: 'authenticated-web',
@@ -468,11 +469,11 @@ test('authenticated checker publishes a comparison only after persistence succee
   );
 });
 
-test('partial Mutual Checker data stays visible but cannot seed account actions', () => {
+test('partial Mutual Checker data cannot produce a comparison or seed account actions', () => {
   const { queueView, shared } = loadQueueModules();
   const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
   const base = {
-    schemaVersion: 5,
+    schemaVersion: 6,
     subjectUsername: 'signed_in',
     followers: [{ username: 'mutual' }, { username: 'follower_only' }],
     following: [{ username: 'mutual' }, { username: 'not_back' }],
@@ -514,6 +515,9 @@ test('partial Mutual Checker data stays visible but cannot seed account actions'
       ...base,
       complete: { ...base.complete, [listType]: false },
     }, normalizeUsername);
+    assert.deepEqual(JSON.parse(JSON.stringify(shared.compareCaptureWorkspace(runtime.model.capture))), {
+      mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [],
+    });
     for (const source of ['not-following-me-back', 'i-do-not-follow-back', directSource]) {
       const result = queueView.botTargets(runtime, source, source.includes('following-me') ? 'unfollow' : 'follow');
       assert.deepEqual(JSON.parse(JSON.stringify(result.pool)), []);
@@ -528,6 +532,25 @@ test('partial Mutual Checker data stays visible but cannot seed account actions'
     [],
   );
   assert.equal(quarantined.followers.length, 2, 'partial rows remain available for display and export');
+});
+
+test('pre-3.1.5 dialog captures retain rows but lose unproven completion, while paginated captures survive', () => {
+  const { shared } = loadModules();
+  const normalizeUsername = (value) => String(value || '').toLowerCase();
+  for (const method of ['list-dialog', 'authenticated-web', '']) {
+    const migrated = shared.normalizeCaptureWorkspace({
+      schemaVersion: 5,
+      followers: [{ username: 'first' }], following: [{ username: 'second' }],
+      verified: { followers: true, following: true },
+      complete: { followers: true, following: true },
+      source: { followers: method, following: method },
+    }, normalizeUsername);
+    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.followers.length, 1);
+    assert.equal(migrated.following.length, 1);
+    assert.equal(migrated.complete.followers, method === 'authenticated-web');
+    assert.equal(migrated.complete.following, method === 'authenticated-web');
+  }
 });
 
 test('extension complete rescans replace stale rows and partial rescans cannot be promoted', async () => {
