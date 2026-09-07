@@ -221,7 +221,7 @@ test('PWA refreshes online assets while retaining an offline cache fallback', as
   const serviceWorker = await readFile(new URL('../sw.js', import.meta.url), 'utf8');
   const loader = await readFile(new URL('../src/app.parts/part-04.jsfrag', import.meta.url), 'utf8');
 
-  assert.match(serviceWorker, /const CACHE_NAME = 'insta-toolbox-v313'/);
+  assert.match(serviceWorker, /const CACHE_NAME = 'insta-toolbox-v314'/);
   assert.match(serviceWorker, /'\.\/LICENSE'/);
   assert.match(serviceWorker, /'\.\/THIRD_PARTY_NOTICES\.md'/);
   assert.ok(
