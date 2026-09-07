@@ -1,16 +1,16 @@
 # Release status
 
-Current candidate: **3.1.3**
+Current candidate: **3.1.4**
 
 ## Release files
 
 | Surface | File |
 | --- | --- |
 | Tampermonkey | `insta-toolbox.user.js` |
-| Chrome extension | `Insta-Toolbox-Extension-3.1.3.zip` |
-| Web/PWA | `insta-toolbox-web-3.1.3.zip` |
-| Windows | `Insta-Toolbox-Setup-3.1.3.exe` |
-| macOS | `Insta-Toolbox-3.1.3-universal.dmg` and `.zip` |
+| Chrome extension | `Insta-Toolbox-Extension-3.1.4.zip` |
+| Web/PWA | `insta-toolbox-web-3.1.4.zip` |
+| Windows | `Insta-Toolbox-Setup-3.1.4.exe` |
+| macOS | `Insta-Toolbox-3.1.4-universal.dmg` and `.zip` |
 | Integrity | `SHA256SUMS.txt`, SBOM, and GitHub provenance attestation |
 
 The stable userscript channel is:
@@ -23,10 +23,10 @@ Version 3 keeps the userscript identity introduced in 3.0. Tampermonkey updates 
 
 The 3.1 account-free matrix contains:
 
-- 368 automated tests;
+- 370 automated tests;
 - 45 overlay screenshot states;
 - 11 PWA screenshot states;
-- service-worker cache generation `insta-toolbox-v313`.
+- service-worker cache generation `insta-toolbox-v314`.
 
 Before a release is promoted, the exact `main` commit must pass assembly, tests, repository hygiene, dependency audit, generated-userscript parity, extension and userscript acceptance, Chrome pairing, browser QA, overlay/PWA visual checks, Windows packaging, macOS packaging, archive inspection, checksum generation, and `git diff --check`.
 
@@ -50,7 +50,7 @@ The macOS application is ad-hoc signed for bundle integrity but is not Developer
 
 ## Evidence and nonclaims
 
-The candidate record is [acceptance/3.1.3.md](./acceptance/3.1.3.md). Compatibility is tracked in [compatibility/3.1.3.md](./compatibility/3.1.3.md).
+The candidate record is [acceptance/3.1.4.md](./acceptance/3.1.4.md). Compatibility is tracked in [compatibility/3.1.4.md](./compatibility/3.1.4.md).
 
 Automated fixtures do not prove current authenticated Instagram selectors, human screen-reader use, persistent-profile behavior, SmartScreen trust, Gatekeeper trust, or notarization. Record those checks separately without committing usernames, messages, thread IDs, cookies, tokens, or private screenshots.
 
