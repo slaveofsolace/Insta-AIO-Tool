@@ -2168,12 +2168,15 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       await waitForPageValue(webContents, `Boolean(document.querySelector('${host}')?.shadowRoot)`, `${surface} background fixture`);
       await webContents.executeJavaScript(`(() => {
         document.querySelectorAll('[role="dialog"]').forEach(node => node.remove());
+        const header = document.querySelector('header');
+        const heading = header.querySelector('h1, h2');
+        heading.textContent = 'demo_creator';
         for (const type of ['followers', 'following']) {
           const link = document.createElement('a');
           link.setAttribute('role', 'link');
-          link.href = '/demo_creator/' + type + '/';
+          link.href = '#';
           link.textContent = '2 ' + type;
-          document.querySelector('header').append(link);
+          header.append(link);
         }
         globalThis.backgroundPageClicks = 0;
         document.addEventListener('click', event => {

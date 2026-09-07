@@ -1747,6 +1747,12 @@
     const scopedCounts = new Set();
     const fallbackCounts = new Set();
     for (const link of document.querySelectorAll('a[role="link"], a[href="#"]')) {
+      const href = link.getAttribute?.('href');
+      const header = href === '#' ? link.closest?.('main header') : null;
+      const belongsToOpenProfile = Boolean(profileUsername && header
+        && [...header.querySelectorAll('h1, h2, [role="heading"]')].some((heading) => (
+          visibleText(heading).trim().toLowerCase() === profileUsername
+        )));
       const values = [
         link.getAttribute('title'),
         visibleText(link),
@@ -1769,7 +1775,7 @@
         const count = Number(digits);
         if (!Number.isSafeInteger(count)) continue;
         fallbackCounts.add(count);
-        const href = link.getAttribute?.('href');
+        if (belongsToOpenProfile) scopedCounts.add(count);
         if (!href || !profileUsername) continue;
         try {
           const target = new URL(href, INSTAGRAM_WEB_ORIGIN);

@@ -57,6 +57,12 @@ function createInspector({
     },
     get textContent() { return entry.text || entry.title; },
     querySelector: () => entry.childTitle ? { getAttribute: () => entry.childTitle } : null,
+    closest: () => entry.inProfileHeader ? {
+      querySelectorAll: () => [{
+        textContent: entry.headerUsername || 'target_name',
+        getAttribute: () => null,
+      }],
+    } : null,
   }));
   const document = {
     body: { innerText: '' },
@@ -197,12 +203,12 @@ test('authenticated follower check requires an exact username search result', as
   );
 });
 
-test('open-profile background check uses exact rendered totals without profile requests or dialogs', async () => {
+test('open-profile background check accepts real hash-link counters without profile requests or dialogs', async () => {
   const inspector = createInspector({
     pathname: '/target_name/',
     profileLinks: [
-      { href: '/target_name/followers/', text: '2.1K followers', childTitle: '2,104' },
-      { href: '/target_name/following/', title: '101 following' },
+      { href: '#', inProfileHeader: true, text: '2.1K followers', childTitle: '2,104' },
+      { href: '#', inProfileHeader: true, title: '101 following' },
     ],
   });
   const calls = [];
@@ -262,10 +268,10 @@ for (const changed of ['count', 'route']) {
   });
 }
 
-for (const kind of ['different-profile', 'rounded-only', 'external-origin', 'conflicting-counts']) {
+for (const kind of ['different-profile', 'rounded-only', 'external-origin', 'conflicting-counts', 'unscoped-hash', 'wrong-header-hash']) {
   test(`background count source does not trust ${kind} profile labels`, async () => {
     const profileLinks = [
-      { href: kind === 'different-profile' ? '/different/followers/' : kind === 'external-origin' ? 'https://example.com/target_name/followers/' : '/target_name/followers/', title: kind === 'rounded-only' ? '2.1K followers' : '1 followers' },
+      { href: kind.endsWith('-hash') ? '#' : kind === 'different-profile' ? '/different/followers/' : kind === 'external-origin' ? 'https://example.com/target_name/followers/' : '/target_name/followers/', title: kind === 'rounded-only' ? '2.1K followers' : '1 followers', inProfileHeader: kind === 'wrong-header-hash', headerUsername: 'different_profile' },
       { href: '/target_name/following/', title: '1 following' },
     ];
     if (kind === 'conflicting-counts') profileLinks.push({ href: '/target_name/followers/', title: '2 followers' });

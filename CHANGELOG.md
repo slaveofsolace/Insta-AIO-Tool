@@ -2,6 +2,11 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.7 - 2026-09-07
+
+- Recognize Instagram's hash-link follower counters inside the exact profile header. This removes the unintended profile-count fallback on current profile pages.
+- Match the browser fixtures to that markup and reject hash-link counts outside the correct profile header.
+
 ## 3.1.6 - 2026-09-07
 
 - Check both lists in the background from an open profile, using its exact displayed totals instead of two extra profile-count requests.
