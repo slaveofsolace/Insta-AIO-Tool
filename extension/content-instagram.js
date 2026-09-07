@@ -47,6 +47,8 @@
   const RELATIONSHIP_REQUEST_TIMEOUT_MS = 20_000;
   const RELATIONSHIP_REQUEST_ATTEMPTS = 3;
   const RELATIONSHIP_RETRY_BASE_MS = 1_000;
+  const RELATIONSHIP_RETRY_MAX_MS = 5_000;
+  const RELATIONSHIP_TRANSIENT_HTTP_STATUSES = new Set([500, 502, 503, 504]);
 
   function normalizeUsername(value) {
     const username = String(value || '')
@@ -98,7 +100,7 @@
 
   function assertRelationshipRunActive(signal, startedAt, now, maxDurationMs) {
     if (signal?.aborted) throw relationshipError('stopped', 'Follower check stopped.');
-    if (now() - startedAt > maxDurationMs) {
+    if (now() - startedAt >= maxDurationMs) {
       throw relationshipError('time-limit', 'The follower check reached its 20-minute read limit.');
     }
     const session = inspectSession();
@@ -150,12 +152,38 @@
   }
 
   function relationshipResponseStop(data) {
-    const message = String(data?.message || data?.error_type || '').toLowerCase();
+    if (data?.challenge || data?.challenge_url || data?.checkpoint_url) return 'challenge';
+    if (data?.login_required === true) return 'session-expired';
+    const message = [data?.message, data?.error_type].filter(Boolean).join(' ').toLowerCase();
     if (message.includes('challenge') || message.includes('checkpoint')) return 'challenge';
     if (message.includes('login') || message.includes('not logged')) return 'session-expired';
-    if (message.includes('wait a few minutes') || message.includes('rate limit')) return 'rate-limited';
-    if (message.includes('feedback_required') || message.includes('restrict certain activity')) return 'action-blocked';
+    if (message.includes('wait a few minutes') || /rate[ _-]?limit|too many requests/.test(message)) return 'rate-limited';
+    if (message.includes('feedback_required') || message.includes('action_blocked') || message.includes('restrict certain activity')) return 'action-blocked';
     return '';
+  }
+
+  function relationshipHttpFailure(response, now) {
+    const httpStatus = response.status;
+    const transient = RELATIONSHIP_TRANSIENT_HTTP_STATUSES.has(httpStatus);
+    const error = relationshipError(
+      transient ? 'temporary-http-error' : 'request-failed',
+      `Instagram could not load this account request (HTTP ${httpStatus || 'error'}).`,
+    );
+    error.httpStatus = httpStatus;
+    if (transient) {
+      const header = response.headers?.get?.('Retry-After');
+      if (header !== null && header !== undefined) {
+        const value = String(header).trim();
+        const httpDate = /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+        const retryAt = httpDate.test(value) ? Date.parse(value) : NaN;
+        const delay = /^\d+$/.test(value)
+          ? Number(value) * 1_000
+          : Number.isFinite(retryAt) ? Math.max(0, retryAt - now()) : NaN;
+        if (Number.isSafeInteger(delay) && delay >= 0) error.retryAfterMs = delay;
+        else error.retryAfterInvalid = true;
+      }
+    }
+    return error;
   }
 
   function relationshipStepWithTimeout(task, {
@@ -209,6 +237,8 @@
     fetchImpl,
     found = 0,
     listType = null,
+    maxDurationMs,
+    now = Date.now,
     onProgress,
     pages = 0,
     random,
@@ -218,9 +248,13 @@
     setTimer,
     signal,
     sleepImpl,
+    startedAt,
     username,
   }) {
     for (let attempt = 1; attempt <= requestAttempts; attempt += 1) {
+      assertRelationshipRunActive(signal, startedAt, now, maxDurationMs);
+      let httpStatus = null;
+      let httpFailure = null;
       try {
         return await relationshipStepWithTimeout(async (attemptSignal) => {
           const response = await fetchImpl(url.href, {
@@ -236,6 +270,11 @@
             referrerPolicy: 'strict-origin-when-cross-origin',
             signal: attemptSignal,
           });
+          httpStatus = response.status;
+          // Preserve server pacing even if decoding this response later times out.
+          if (RELATIONSHIP_TRANSIENT_HTTP_STATUSES.has(httpStatus)) {
+            httpFailure = relationshipHttpFailure(response, now);
+          }
           // Error pages can be HTML. Classify status and redirects before decoding.
           if (response.status === 429) {
             throw relationshipError('rate-limited', 'Instagram is rate limiting this check. Wait before trying again.');
@@ -247,6 +286,9 @@
           if (response.status === 401 || /^\/accounts\/login(\/|$)/.test(responsePath)) {
             throw relationshipError('session-expired', 'Instagram requires a fresh login.');
           }
+          if (response.status === 403) {
+            throw Object.assign(relationshipError('action-blocked', 'Instagram restricted this account request.'), { httpStatus: 403 });
+          }
           let data = null;
           try {
             data = await response.json();
@@ -254,7 +296,7 @@
             if (attemptSignal.aborted) throw error;
             if (error?.code === 'request-timeout' || error?.code === 'stopped') throw error;
             if (!response.ok) {
-              throw relationshipError('request-failed', `Instagram could not load this account request (HTTP ${response.status || 'error'}).`);
+              throw httpFailure || relationshipHttpFailure(response, now);
             }
             throw relationshipError('invalid-response', 'Instagram returned an invalid account response. Reload your profile before trying again.');
           }
@@ -272,12 +314,19 @@
             throw relationshipError('action-blocked', 'Instagram restricted activity.');
           }
           if (!response.ok || data?.status === 'fail') {
-            throw relationshipError('request-failed', `Instagram could not load this follower page (HTTP ${response.status || 'error'}).`);
+            throw httpFailure || relationshipHttpFailure(response, now);
           }
           return data;
         }, { clearTimer, setTimer, signal, timeoutMs: requestTimeoutMs });
       } catch (error) {
-        let retryable = error?.code === 'request-timeout' || error?.code === 'network-error';
+        if (error && typeof error === 'object' && httpStatus !== null) {
+          error.httpStatus = httpStatus;
+          if (httpFailure?.retryAfterMs !== undefined) error.retryAfterMs = httpFailure.retryAfterMs;
+          if (httpFailure?.retryAfterInvalid) error.retryAfterInvalid = true;
+        }
+        let retryable = error?.code === 'request-timeout'
+          || error?.code === 'network-error'
+          || error?.code === 'temporary-http-error';
         if (signal?.aborted || error?.code === 'stopped') {
           throw relationshipError('stopped', 'Follower check stopped.');
         }
@@ -288,28 +337,60 @@
           error = relationshipError('network-error', 'Instagram follower data could not be reached from this tab.');
         }
         if (!retryable || attempt >= requestAttempts) {
+          if (error?.code === 'temporary-http-error') {
+            error.attempts = attempt;
+            error.message = `Instagram could not finish this ${listType || 'account'} request (HTTP ${error.httpStatus}) after ${attempt} attempts. The previous comparison is unchanged.`;
+            throw error;
+          }
           if (retryable) {
-            throw relationshipError(
+            throw Object.assign(relationshipError(
               'request-timeout',
               `Instagram did not finish this ${listType || 'account'} request after ${requestAttempts} attempts. The previous comparison is unchanged.`,
-            );
+            ), {
+              ...(error.httpStatus !== undefined ? { httpStatus: error.httpStatus } : {}),
+              ...(error.retryAfterMs !== undefined ? { retryAfterMs: error.retryAfterMs } : {}),
+              attempts: attempt,
+            });
           }
           throw error;
         }
-        const retryDelayMs = Math.min(
-          5_000,
+        if (error.retryAfterInvalid) {
+          throw Object.assign(relationshipError(
+            'retry-after-invalid',
+            'Instagram returned an invalid retry delay. The previous comparison is unchanged.',
+          ), {
+            httpStatus: error.httpStatus,
+            retryAfterMs: error.retryAfterMs ?? null,
+            retryAfterInvalid: error.retryAfterInvalid === true,
+          });
+        }
+        const retryDelayMs = Math.max(error.retryAfterMs || 0, Math.min(
+          RELATIONSHIP_RETRY_MAX_MS,
           (retryBaseMs * attempt) + Math.floor(Math.max(0, Math.min(0.999999, random())) * 250),
-        );
+        ));
+        const remainingMs = Math.max(0, maxDurationMs - (now() - startedAt));
+        if (retryDelayMs >= remainingMs) {
+          throw Object.assign(relationshipError(
+            error.retryAfterMs !== undefined ? 'retry-after-limit' : 'time-limit',
+            'There is not enough time left to retry. The previous comparison is unchanged.',
+          ), {
+            httpStatus: error.httpStatus ?? null,
+            retryAfterMs: error.retryAfterMs ?? null,
+            remainingMs,
+          });
+        }
         onProgress?.(Object.freeze({
           attempt: attempt + 1,
           failedAttempt: attempt,
           found,
+          httpStatus: error.httpStatus ?? null,
           expectedCount,
           listType,
           maxAttempts: requestAttempts,
           pages,
           phase: 'retrying',
           retryDelayMs,
+          retryAfterMs: error.retryAfterMs ?? null,
           username,
         }));
         await sleepImpl(retryDelayMs, signal);
@@ -438,6 +519,31 @@
     return list;
   }
 
+  function relationshipPageUsers(data, listType) {
+    if (listType !== 'followers' || data.groups === undefined || data.groups === null) return data.users;
+    if (!Array.isArray(data.groups)) {
+      throw relationshipError('invalid-response', 'Instagram returned invalid follower groups.');
+    }
+    const groups = data.groups.filter((group) => group?.group === 'self_deactivated_followers');
+    if (groups.length > 1) {
+      throw relationshipError('invalid-response', 'Instagram returned conflicting deactivated follower groups.');
+    }
+    const facepile = groups[0]?.facepile;
+    if (facepile === undefined || facepile === null) return data.users;
+    if (!Array.isArray(facepile)) {
+      throw relationshipError('invalid-response', 'Instagram returned invalid deactivated follower accounts.');
+    }
+    for (const user of facepile) {
+      if (!user || typeof user !== 'object' || Array.isArray(user)
+        || typeof user.username !== 'string' || !/^[a-z0-9._]{1,30}$/i.test(user.username)
+        || !normalizeUsername(user.username) || !/^[1-9]\d*$/.test(relationshipAccountId(user))) {
+        throw relationshipError('invalid-response', 'Instagram returned an invalid deactivated follower identity.');
+      }
+    }
+    // The native Followers reducer includes these supplied rows, not group context counts.
+    return data.users.concat(facepile);
+  }
+
   async function fetchRelationshipList(listType, userId, username, {
     clearTimer,
     fetchImpl,
@@ -478,6 +584,8 @@
         fetchImpl,
         found: accounts.size,
         listType,
+        maxDurationMs,
+        now,
         onProgress,
         pages,
         random,
@@ -487,6 +595,7 @@
         setTimer,
         signal,
         sleepImpl,
+        startedAt,
         username,
       });
       if (!Array.isArray(data?.users)) {
@@ -497,10 +606,11 @@
           throw relationshipError('invalid-response', `Instagram returned an invalid ${listType} pagination flag.`);
         }
       }
+      const pageUsers = relationshipPageUsers(data, listType);
       instagramLimited ||= data.should_limit_list_of_followers === true;
       pages += 1;
       const beforePageCount = accounts.size;
-      for (const user of data.users) {
+      for (const user of pageUsers) {
         const accountUsername = normalizeUsername(user?.username);
         if (!accountUsername) continue;
         const accountId = relationshipAccountId(user);

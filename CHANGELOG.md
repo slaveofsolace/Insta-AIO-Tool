@@ -8,6 +8,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Match the browser fixtures to that markup and reject hash-link counts outside the correct profile header.
 - Preserve exact account IDs when JSON numbers lose precision. Reject conflicting identities before comparing lists.
 - Match cross-list account renames by ID without changing saved row or export formats.
+- Include follower records returned in Instagram's deactivated-account group, deduplicating them with the main list.
+- Retry temporary server failures on the same page, respecting server-requested waits. Rate limits, challenges, and sign-in failures still stop immediately.
 
 ## 3.1.6 - 2026-09-07
 

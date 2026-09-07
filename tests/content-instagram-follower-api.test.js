@@ -36,6 +36,63 @@ function profileResponse({
   });
 }
 
+function temporaryHttpResponse(status, { data, retryAfter, html = false } = {}) {
+  return {
+    ...response(data ?? { status: 'fail', message: 'Temporary server failure' }, status),
+    headers: { get: (name) => name.toLowerCase() === 'retry-after' ? retryAfter ?? null : null },
+    async json() {
+      if (html) throw new SyntaxError('HTML gateway response');
+      return data ?? { status: 'fail', message: 'Temporary server failure' };
+    },
+  };
+}
+
+function temporaryPageFixture(nextPage) {
+  const calls = [];
+  let nextPageAttempts = 0;
+  return {
+    calls,
+    async fetchImpl(input) {
+      const url = new URL(input);
+      calls.push(url);
+      if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      if (url.pathname.includes('web_profile_info')) return profileResponse({ followers: 2, following: 0 });
+      if (url.pathname.includes('/followers/')) {
+        if (!url.searchParams.has('max_id')) return response({ users: [{ pk: '1', username: 'first.person' }], next_max_id: 'page-two' });
+        assert.equal(url.searchParams.get('max_id'), 'page-two');
+        return nextPage(++nextPageAttempts);
+      }
+      assert.ok(url.pathname.includes('/following/'));
+      return response({ users: [] });
+    },
+  };
+}
+
+async function scanGroupFixture({
+  followerPages = [{ users: [] }], followerCount = 0,
+  followingPage = { users: [] }, followingCount = followingPage.users.length,
+  maxAccounts, onProgress, onRequest = () => {},
+} = {}) {
+  let followerPageIndex = 0;
+  return createInspector().fetchFollowerComparison({
+    username: 'target_name', maxAccounts, onProgress,
+    sleepImpl: async () => {},
+    fetchImpl: async (input) => {
+      const url = new URL(input);
+      onRequest(url);
+      if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      if (url.pathname.includes('web_profile_info')) return profileResponse({ followers: followerCount, following: followingCount });
+      if (url.pathname.includes('/followers/')) {
+        assert.equal(url.searchParams.get('max_id'), followerPageIndex === 0 ? null : followerPages[followerPageIndex - 1].next_max_id);
+        assert.ok(followerPages[followerPageIndex], 'no unexpected follower page request');
+        return response(followerPages[followerPageIndex++]);
+      }
+      assert.ok(url.pathname.includes('/following/'));
+      return response(followingPage);
+    },
+  });
+}
+
 function createInspector({
   origin = 'https://www.instagram.com',
   pathname = '/demo_creator/',
@@ -294,6 +351,7 @@ for (const kind of ['different-profile', 'rounded-only', 'external-origin', 'con
 for (const [status, url, code] of [
   [429, '', 'rate-limited'],
   [401, '', 'session-expired'],
+  [403, '', 'action-blocked'],
   [200, 'https://www.instagram.com/accounts/login/', 'session-expired'],
   [200, 'https://www.instagram.com/challenge/', 'challenge'],
   [200, 'https://www.instagram.com/checkpoint/', 'challenge'],
@@ -331,6 +389,361 @@ test('body timeout aborts the original fetch before a retry starts', async () =>
   assert.equal(signals.length, 3);
   assert.equal(signals.every((signal) => signal.aborted), true);
 });
+
+for (const status of [500, 502, 503, 504]) {
+  test(`temporary HTML ${status} retries only the failed page and retains completed accounts`, async () => {
+    const fixture = temporaryPageFixture(attempt => attempt === 1
+      ? temporaryHttpResponse(status, { html: true })
+      : response({ users: [{ pk: '2', username: 'second.person' }] }));
+    const progress = [], delays = [];
+    const result = await createInspector().fetchFollowerComparison({
+      fetchImpl: fixture.fetchImpl, username: 'target_name', random: () => 0,
+      onProgress: entry => progress.push(entry), sleepImpl: async ms => { delays.push(ms); },
+    });
+    const followerCalls = fixture.calls.filter(url => url.pathname.includes('/followers/'));
+    assert.deepEqual(followerCalls.map(url => url.searchParams.get('max_id')), [null, 'page-two', 'page-two']);
+    assert.equal(result.pages.followers, 2);
+    assert.equal(result.followers.length, 2);
+    assert.equal(result.complete.followers, true);
+    const retry = progress.filter(entry => entry.phase === 'retrying');
+    assert.equal(retry.length, 1);
+    assert.equal(retry[0].found, 1);
+    assert.equal(retry[0].pages, 1);
+    assert.equal(retry[0].httpStatus, status);
+    assert.equal(retry[0].attempt, 2);
+    assert.deepEqual(delays, [800, 1000]);
+  });
+}
+
+test('temporary page exhaustion retains HTTP metadata without publishing a replacement comparison', async () => {
+  const fixture = temporaryPageFixture(() => temporaryHttpResponse(502, { html: true }));
+  const previous = { saved: 'previous comparison' };
+  let published = previous;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    fetchImpl: fixture.fetchImpl, username: 'target_name', sleepImpl: async () => {},
+  }).then(result => { published = result; }), error => error.code === 'temporary-http-error'
+    && error.httpStatus === 502 && error.attempts === 3
+    && /previous comparison is unchanged/i.test(error.message));
+  assert.equal(published, previous);
+  assert.deepEqual(fixture.calls.filter(url => url.pathname.includes('/followers/')).map(url => url.searchParams.get('max_id')), [null, 'page-two', 'page-two', 'page-two']);
+  assert.equal(fixture.calls.some(url => url.pathname.includes('/following/')), false);
+});
+
+const retryAfterNow = Date.parse('Mon, 07 Sep 2026 20:00:00 GMT');
+for (const [header, delay] of [['3', 3000], ['6', 6000], ['30', 30000], [new Date(retryAfterNow + 4000).toUTCString(), 3200]]) {
+  test(`temporary server retry honors Retry-After ${header}`, async () => {
+    let clock = retryAfterNow, failedAt;
+    const fixture = temporaryPageFixture(attempt => {
+      if (attempt === 1) {
+        failedAt = clock;
+        return temporaryHttpResponse(503, { retryAfter: header });
+      }
+      assert.ok(clock >= failedAt + delay, 'the next request must wait for Retry-After');
+      return response({ users: [{ pk: '2', username: 'second.person' }] });
+    });
+    const delays = [], retries = [];
+    await createInspector().fetchFollowerComparison({
+      fetchImpl: fixture.fetchImpl, username: 'target_name', now: () => clock, random: () => 0,
+      sleepImpl: async ms => { delays.push(ms); clock += ms; },
+      onProgress: entry => { if (entry.phase === 'retrying') retries.push(entry); },
+    });
+    assert.deepEqual(delays, [800, delay]);
+    assert.equal(retries[0].retryAfterMs, delay);
+    assert.equal(retries[0].retryDelayMs, delay);
+    assert.equal(retries[0].httpStatus, 503);
+  });
+}
+
+for (const [header, code] of [['999999999999999999999', 'retry-after-invalid'], ['1.5', 'retry-after-invalid'], ['not-a-date', 'retry-after-invalid']]) {
+  test(`Retry-After ${header} stops instead of retrying too early`, async () => {
+    let calls = 0;
+    await assert.rejects(createInspector().fetchFollowerComparison({
+      fetchImpl: async () => { calls += 1; return temporaryHttpResponse(503, { retryAfter: header }); },
+      username: 'target_name', sleepImpl: async () => assert.fail('retry must not start'),
+    }), error => error.code === code && error.httpStatus === 503);
+    assert.equal(calls, 1);
+  });
+}
+
+test('Retry-After beyond the remaining run budget stops without another request', async () => {
+  let clock = 0;
+  const fixture = temporaryPageFixture(() => temporaryHttpResponse(503, { retryAfter: '30' }));
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    fetchImpl: fixture.fetchImpl, username: 'target_name', now: () => clock, maxDurationMs: 30000, random: () => 0,
+    sleepImpl: async ms => { assert.equal(ms, 800); clock += ms; },
+  }), error => error.code === 'retry-after-limit' && error.httpStatus === 503
+    && error.retryAfterMs === 30000 && error.remainingMs === 29200
+    && /not enough time left/i.test(error.message));
+  assert.deepEqual(fixture.calls.filter(url => url.pathname.includes('/followers/')).map(url => url.searchParams.get('max_id')), [null, 'page-two']);
+  assert.equal(fixture.calls.some(url => url.pathname.includes('/following/')), false);
+});
+
+for (const [data, code] of [
+  [{ status: 'fail', message: 'challenge_required' }, 'challenge'],
+  [{ status: 'fail', message: 'Temporary failure', error_type: 'checkpoint_required' }, 'challenge'],
+  [{ status: 'fail', challenge: { url: '/challenge/' } }, 'challenge'],
+  [{ status: 'fail', message: 'feedback_required' }, 'action-blocked'],
+  [{ status: 'fail', error_type: 'action_blocked' }, 'action-blocked'],
+  [{ status: 'fail', error_type: 'login_required' }, 'session-expired'],
+  [{ status: 'fail', error_type: 'rate_limit_error' }, 'rate-limited'],
+  [{ status: 'fail', message: 'Please wait a few minutes before you try again.' }, 'rate-limited'],
+]) {
+  test(`HTTP 503 ${code} envelope never triggers server recovery`, async () => {
+    let calls = 0;
+    await assert.rejects(createInspector().fetchFollowerComparison({
+      fetchImpl: async () => { calls += 1; return temporaryHttpResponse(503, { data, retryAfter: '1' }); },
+      username: 'target_name', sleepImpl: async () => assert.fail('security stops must not retry'),
+    }), error => error.code === code && error.httpStatus === 503);
+    assert.equal(calls, 1);
+  });
+}
+
+for (const status of [400, 404, 408, 501]) {
+  test(`HTTP ${status} is not added to temporary server recovery`, async () => {
+    let calls = 0;
+    await assert.rejects(createInspector().fetchFollowerComparison({
+      fetchImpl: async () => { calls += 1; return temporaryHttpResponse(status, { html: true }); },
+      username: 'target_name', sleepImpl: async () => assert.fail('must not retry'),
+    }), error => error.code === 'request-failed' && error.httpStatus === status);
+    assert.equal(calls, 1);
+  });
+}
+
+test('Stop interrupts temporary HTTP Retry-After backoff before another request', async () => {
+  const controller = new AbortController();
+  let calls = 0;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    fetchImpl: async () => { calls += 1; return temporaryHttpResponse(502, { retryAfter: '30', html: true }); },
+    username: 'target_name', signal: controller.signal,
+    onProgress(entry) { if (entry.phase === 'retrying') queueMicrotask(() => controller.abort()); },
+  }), { code: 'stopped' });
+  assert.equal(calls, 1);
+});
+
+test('Retry-After remains authoritative when the temporary HTTP response body hangs', async () => {
+  let calls = 0;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    fetchImpl: async () => {
+      calls += 1;
+      return { ...temporaryHttpResponse(503, { retryAfter: '30' }), json: () => new Promise(() => {}) };
+    },
+    username: 'target_name', requestTimeoutMs: 5, maxDurationMs: 1000,
+    sleepImpl: async () => assert.fail('must not retry sooner than the server permits'),
+  }), error => error.code === 'retry-after-limit' && error.httpStatus === 503 && error.retryAfterMs === 30000);
+  assert.equal(calls, 1);
+});
+
+test('a temporary hung body can recover after its 30-second Retry-After wait', async () => {
+  let clock = 0;
+  const delays = [];
+  const fixture = temporaryPageFixture(attempt => attempt === 1
+    ? { ...temporaryHttpResponse(503, { retryAfter: '30' }), json: () => new Promise(() => {}) }
+    : response({ users: [{ pk: '2', username: 'second.person' }] }));
+  const result = await createInspector().fetchFollowerComparison({
+    fetchImpl: fixture.fetchImpl, username: 'target_name', now: () => clock, requestTimeoutMs: 5, random: () => 0,
+    sleepImpl: async ms => { delays.push(ms); clock += ms; },
+  });
+  assert.deepEqual(delays, [800, 30000]);
+  assert.equal(result.followers.length, 2);
+  assert.deepEqual(fixture.calls.filter(url => url.pathname.includes('/followers/')).map(url => url.searchParams.get('max_id')), [null, 'page-two', 'page-two']);
+});
+
+test('the run deadline interrupts Retry-After backoff without an early retry', async () => {
+  let calls = 0, expire;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    fetchImpl: async () => { calls += 1; return temporaryHttpResponse(503, { retryAfter: '30' }); },
+    username: 'target_name', maxDurationMs: 60000,
+    setTimer(callback, ms) { if (ms === 60000) expire = callback; return 1; },
+    clearTimer() {},
+    onProgress(entry) { if (entry.phase === 'retrying') queueMicrotask(expire); },
+  }), { code: 'time-limit' });
+  assert.equal(calls, 1);
+});
+
+test('elapsed run deadline is checked after retry sleep even before its timer fires', async () => {
+  let calls = 0, clock = 0;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    fetchImpl: async () => { calls += 1; return temporaryHttpResponse(503, { retryAfter: '1' }); },
+    username: 'target_name', maxDurationMs: 2000, now: () => clock, random: () => 0,
+    sleepImpl: async ms => { assert.equal(ms, 1000); clock = 2000; },
+  }), { code: 'time-limit' });
+  assert.equal(calls, 1);
+});
+
+test('Mutual Checker includes supplied deactivated followers before checking the exact total', async () => {
+  const users = Array.from({ length: 100 }, (_, index) => ({ pk: String(index + 1), username: `follower.${index}` }));
+  const progress = [];
+  const result = await scanGroupFixture({
+    followerCount: 101,
+    followerPages: [{ users, groups: [{
+      group: 'self_deactivated_followers',
+      facepile: [{ pk: '101', username: 'deactivated.person', full_name: 'Deactivated Person' }],
+      context: '67 accounts',
+    }] }],
+    onProgress: entry => progress.push(entry),
+  });
+  assert.equal(result.followers.length, 101);
+  assert.equal(result.complete.followers, true);
+  assert.equal(result.reasons.followers, 'pagination-complete');
+  assert.equal(result.pages.followers, 1);
+  const groupRow = result.followers.find(row => row.username === 'deactivated.person');
+  assert.deepEqual(Object.keys(groupRow).sort(), ['displayName', 'profileUrl', 'source', 'username']);
+  assert.equal(groupRow.displayName, 'Deactivated Person');
+  assert.equal(groupRow.profileUrl, 'https://www.instagram.com/deactivated.person/');
+  assert.equal(progress.find(entry => entry.phase === 'loading' && entry.listType === 'followers').found, 101);
+});
+
+test('deactivated follower rows deduplicate by ID within the group and against main rows', async () => {
+  const shared = { pk: '1', username: 'shared.person' };
+  const grouped = { pk: '2', username: 'group.person' };
+  const result = await scanGroupFixture({
+    followerCount: 2,
+    followerPages: [{ users: [shared], groups: [{
+      group: 'self_deactivated_followers', facepile: [shared, grouped, { ...grouped, id: '2' }],
+    }] }],
+  });
+  assert.deepEqual([...result.followers].map(row => row.username), ['group.person', 'shared.person']);
+  assert.equal(result.complete.followers, true);
+});
+
+test('repeated deactivated follower groups across cursor pages do not duplicate accounts', async () => {
+  const groups = [{ group: 'self_deactivated_followers', facepile: [{ pk: '2', username: 'group.person' }] }];
+  const result = await scanGroupFixture({
+    followerCount: 3,
+    followerPages: [
+      { users: [{ pk: '1', username: 'first.person' }], groups, next_max_id: 'page-two' },
+      { users: [{ pk: '3', username: 'last.person' }], groups },
+    ],
+  });
+  assert.equal(result.followers.length, 3);
+  assert.equal(result.pages.followers, 2);
+  assert.equal(result.complete.followers, true);
+});
+
+test('only the exact deactivated follower group contributes account rows', async () => {
+  const result = await scanGroupFixture({
+    followerCount: 1,
+    followerPages: [{ users: [{ pk: '1', username: 'main.person' }], groups: [
+      { group: 'suggested_accounts', facepile: [{ pk: '2', username: 'suggested.person' }] },
+      { group: 'SELF_DEACTIVATED_FOLLOWERS', facepile: [{ pk: '3', username: 'other.person' }] },
+      { group: 'unrelated', facepile: 'not an account list' },
+    ] }],
+  });
+  assert.deepEqual([...result.followers].map(row => row.username), ['main.person']);
+  assert.equal(result.complete.followers, true);
+});
+
+test('Following ignores follower-group metadata and account rows', async () => {
+  const result = await scanGroupFixture({
+    followingPage: { users: [{ pk: '1', username: 'following.person' }], groups: [
+      { group: 'self_deactivated_followers', facepile: [{ pk: '2', username: 'group.person' }] },
+      { group: 'self_deactivated_followers', facepile: 'malformed but unrelated to Following' },
+    ] },
+  });
+  assert.deepEqual([...result.following].map(row => row.username), ['following.person']);
+  assert.equal(result.complete.following, true);
+});
+
+for (const groups of [undefined, null, [], [{ group: 'self_deactivated_followers' }], [{ group: 'self_deactivated_followers', facepile: null }]]) {
+  test(`missing or empty deactivated follower rows remain empty: ${JSON.stringify(groups)}`, async () => {
+    const result = await scanGroupFixture({ followerPages: [{ users: [], groups }] });
+    assert.equal(result.followers.length, 0);
+    assert.equal(result.complete.followers, true);
+  });
+}
+
+for (const [label, groups] of [
+  ['non-array groups', {}],
+  ['non-array facepile', [{ group: 'self_deactivated_followers', facepile: {} }]],
+  ['duplicate matching groups', [{ group: 'self_deactivated_followers' }, { group: 'self_deactivated_followers', facepile: [] }]],
+  ...[
+    null,
+    [],
+    'not an account',
+    { username: 'group.person' },
+    { pk: '1' },
+    { pk: '1', username: '/group.person/' },
+    { pk: '1', username: 'accounts' },
+    { pk: '1', username: 123 },
+    { pk: '0', username: 'group.person' },
+    { pk: 'not-an-id', username: 'group.person' },
+    { pk: Number.MAX_SAFE_INTEGER + 1, username: 'group.person' },
+    { pk: '1', id: '2', username: 'group.person' },
+  ].map((row, index) => [`invalid group identity ${index}`, [{ group: 'self_deactivated_followers', facepile: [row] }]]),
+]) {
+  test(`malformed deactivated follower data fails closed: ${label}`, async () => {
+    const previous = { saved: 'previous comparison' };
+    let published = previous, listCalls = 0;
+    await assert.rejects(scanGroupFixture({
+      followerPages: [{ users: [], groups }],
+      onRequest(url) { if (url.pathname.includes('/friendships/')) listCalls += 1; },
+    }).then(result => { published = result; }), { code: 'invalid-response' });
+    assert.equal(published, previous);
+    assert.equal(listCalls, 1);
+  });
+}
+
+test('deactivated follower identities cannot conflict with the main list or each other', async () => {
+  for (const users of [[], [{ pk: '1', username: 'conflicting.person' }]]) {
+    await assert.rejects(scanGroupFixture({
+      followerPages: [{ users, groups: [{ group: 'self_deactivated_followers', facepile: [
+        { pk: '2', username: 'conflicting.person' }, { pk: '3', username: 'conflicting.person' },
+      ] }] }],
+    }), { code: 'invalid-response' });
+  }
+});
+
+test('group rows preserve exact ID aliases and the existing stable-ID rename contract', async () => {
+  const grouped = JSON.parse('{"pk":9007199254740993,"pk_id":"9007199254740993","username":"renamed.person"}');
+  const result = await scanGroupFixture({
+    followerCount: 1,
+    followerPages: [{ users: [{ id: '9007199254740993', username: 'previous.name' }], groups: [{
+      group: 'self_deactivated_followers', facepile: [grouped],
+    }] }],
+  });
+  assert.equal(result.followers.length, 1);
+  assert.equal(result.followers[0].username, 'renamed.person');
+  assert.equal(result.complete.followers, true);
+});
+
+test('group context counts alone cannot fill a follower counter gap', async () => {
+  const result = await scanGroupFixture({
+    followerCount: 2,
+    followerPages: [{ users: [{ pk: '1', username: 'main.person' }], groups: [{
+      group: 'self_deactivated_followers', facepile: [], context: '1 account', count: 1, total_count: 1,
+    }] }],
+  });
+  assert.equal(result.followers.length, 1);
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.reasons.followers, 'count-mismatch');
+});
+
+test('group rows stay within the existing account limit', async () => {
+  const result = await scanGroupFixture({
+    followerCount: 3, maxAccounts: 2,
+    followerPages: [{ users: [{ pk: '1', username: 'main.person' }], groups: [{
+      group: 'self_deactivated_followers', facepile: [
+        { pk: '2', username: 'group.one' }, { pk: '3', username: 'group.two' },
+      ],
+    }], next_max_id: 'unused-cursor' }],
+  });
+  assert.equal(result.followers.length, 2);
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.reasons.followers, 'account-limit');
+});
+
+for (const flags of [{ has_more: true }, { should_limit_list_of_followers: true }]) {
+  test(`group rows do not override existing pagination safety flags: ${JSON.stringify(flags)}`, async () => {
+    const result = await scanGroupFixture({
+      followerCount: 1,
+      followerPages: [{ users: [], groups: [{
+        group: 'self_deactivated_followers', facepile: [{ pk: '1', username: 'group.person' }],
+      }], ...flags }],
+    });
+    assert.equal(result.followers.length, 1);
+    assert.equal(result.complete.followers, false);
+  });
+}
 
 test('Mutual Checker stops after one premature final Followers page without rerunning the list', async () => {
   const inspector = createInspector();
