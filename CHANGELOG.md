@@ -2,6 +2,13 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.6 - 2026-09-07
+
+- Check both lists in the background from an open profile, using its exact displayed totals instead of two extra profile-count requests.
+- Recognize HTML rate-limit and sign-in responses before decoding JSON. Stop without retries or a manual-scan fallback.
+- Keep the request timeout active through the response body and abort stalled downloads before retrying.
+- Make manual list capture optional in the context banner. Preserve complete-only comparisons and previous results after failures.
+
 ## 3.1.5 - 2026-09-07
 
 - Withhold Mutual Checker comparisons and comparison downloads until both lists are complete. Keep partial rows available separately under Advanced.

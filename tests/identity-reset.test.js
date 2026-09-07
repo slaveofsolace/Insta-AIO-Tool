@@ -28,17 +28,17 @@ const extensionDomSources = await Promise.all([
   'extension/overlay/views/workspace.js',
 ].map(read));
 
-test('all public surfaces share the 3.1.5 Insta Toolbox identity', () => {
+test('all public surfaces share the 3.1.6 Insta Toolbox identity', () => {
   assert.equal(packageMetadata.name, 'insta-toolbox');
-  assert.equal(packageMetadata.version, '3.1.5');
+  assert.equal(packageMetadata.version, '3.1.6');
   assert.equal(packageMetadata.build.productName, 'Insta Toolbox');
   assert.equal(packageMetadata.build.appId, 'com.slaveofsolace.instatoolbox');
   assert.equal(extensionManifest.name, 'Insta Toolbox');
-  assert.equal(extensionManifest.version, '3.1.5');
+  assert.equal(extensionManifest.version, '3.1.6');
   assert.equal(webManifest.name, 'Insta Toolbox');
   assert.match(userscriptMetadata, /@name\s+Insta Toolbox/);
-  assert.match(userscriptMetadata, /@version\s+3\.1\.5/);
-  assert.match(serviceWorker, /const CACHE_NAME = 'insta-toolbox-v315'/);
+  assert.match(userscriptMetadata, /@version\s+3\.1\.6/);
+  assert.match(serviceWorker, /const CACHE_NAME = 'insta-toolbox-v316'/);
 });
 
 test('v3 uses a clean protocol and storage namespace without reading v2 keys', () => {
@@ -57,7 +57,7 @@ test('Tampermonkey metadata uses the stable release channel', () => {
   const stableUrl = 'https://github.com/slaveofsolace/Insta-Toolbox/releases/latest/download/insta-toolbox.user.js';
   assert.match(userscriptMetadata, new RegExp(`@downloadURL\\s+${stableUrl.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`));
   assert.match(userscriptMetadata, new RegExp(`@updateURL\\s+${stableUrl.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`));
-  assert.match(generatedUserscript, /@version\s+3\.1\.5/);
+  assert.match(generatedUserscript, /@version\s+3\.1\.6/);
   assert.match(readme, /releases\/latest\/download\/insta-toolbox\.user\.js/);
 });
 

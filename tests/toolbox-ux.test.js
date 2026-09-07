@@ -93,7 +93,8 @@ test('the panel names the current Instagram context for every handled state', ()
   }
   assert.match(shell, /listType: 'followers', label: 'Followers'/);
   assert.match(shell, /listType: 'following', label: 'Following'/);
-  assert.match(shell, /action: `scan-\$\{followerList\.listType\}`/);
+  assert.match(shell, /Manual capture is optional\./);
+  assert.doesNotMatch(shell, /action: `scan-\$\{followerList\.listType\}`/);
   assert.match(shell, /new MutationObserver\(\(records\) => \{[\s\S]*?renderContext\(\);/);
   // Blocked states must not offer an action that cannot work.
   assert.match(shell, /tone: 'blocked'/);
@@ -379,7 +380,7 @@ test('the open exact profile is the direct bounded Follow or Unfollow source', (
   assert.match(shell, /const count = source === 'current-profile' \? 1 : requestedCount/);
   assert.match(shell, /'current-profile': \(\) => \{/);
   assert.match(shell, /source !== 'current-profile' && action === 'follow'/);
-  assert.match(shell, /view: 'account'/);
+  assert.match(shell, /Check both lists without opening them\./);
   assert.match(shell, /Open one Instagram profile first\. No target was reviewed\./);
 });
 

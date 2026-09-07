@@ -65,7 +65,12 @@ test('isolated Chromium acceptance executes production account and DM DOM chains
   assert.match(fixture, /fixtureMode === 'messages-live'/);
   assert.match(fixture, /aria-controls="fixture-dm-menu"/);
   assert.match(fixture, /aria-labelledby', choice\.id/);
-  assert.doesNotMatch(acceptance, /https:\/\/www\.instagram\.com/);
+  assert.match(acceptance, /isolatedSession\.protocol\.handle\('https'/);
+  assert.match(acceptance, /url\.origin !== 'https:\/\/www\.instagram\.com'/);
+  assert.match(acceptance, /return new Response\('Unexpected endpoint', \{ status: 500 \}\)/);
+  assert.match(acceptance, /assert\.equal\(before\.dialogs, 0\)/);
+  assert.match(acceptance, /assert\.equal\(before\.clicks, 0\)/);
+  assert.doesNotMatch(acceptance, /net\.fetch|net\.request/);
 });
 
 test('browser acceptance covers accessibility, installability, and read-only pairing defaults', () => {

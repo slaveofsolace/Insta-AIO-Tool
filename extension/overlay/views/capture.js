@@ -221,7 +221,7 @@
       setState(
         runtime,
         'Ready for a read-only check',
-        'Confirm your Instagram username, then load Followers and Following.',
+        'Check both lists from your profile. No need to open them.',
       );
     }
 

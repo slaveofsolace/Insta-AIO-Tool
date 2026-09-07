@@ -1419,6 +1419,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
         title: shadow.querySelector('[data-role="context-title"]')?.textContent,
         action: shadow.querySelector('[data-role="context-cta"]')?.dataset.ctaAction,
         label: shadow.querySelector('[data-role="context-cta"]')?.textContent,
+        hidden: shadow.querySelector('[data-role="context-cta"]')?.hidden,
       },
       hasIntro: Boolean(shadow.querySelector('[data-role="intro"]')),
       unsendPlanHidden: shadow.querySelector('[data-role="unsend-plan"]')?.hidden === true,
@@ -1461,8 +1462,9 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.equal(initial.hasIntro, false);
   assert.deepEqual(initial.context, {
     title: 'Following list open',
-    action: 'scan-following',
-    label: 'Scan Following',
+    action: undefined,
+    label: '',
+    hidden: true,
   });
   // The userscript exposes the same live tools as the extension, driven by the
   // shared engine rather than a private copy of the DOM logic.
@@ -1595,14 +1597,14 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       const shadow = document.querySelector('#insta-toolbox-userscript-root')?.shadowRoot;
       const cta = shadow?.querySelector('[data-role="context-cta"]');
       return shadow?.querySelector('[data-role="context-title"]')?.textContent === 'Followers list open'
-        && cta?.dataset.ctaAction === 'scan-followers'
-        ? { title: 'Followers list open', action: cta.dataset.ctaAction, label: cta.textContent }
+        && cta?.hidden === true
+        ? { title: 'Followers list open', hidden: cta.hidden }
         : null;
     })()`,
     'userscript follower-dialog context refresh',
   );
   assert.deepEqual(refreshedContext, {
-    title: 'Followers list open', action: 'scan-followers', label: 'Scan Followers',
+    title: 'Followers list open', hidden: true,
   });
   await webContents.executeJavaScript(`globalThis.fixtureSetList('following')`, true);
 
@@ -2120,6 +2122,93 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   console.log('Accepted the movable Tampermonkey toolbox, trusted-input confirmation with synthetic-click rejection, local follower comparison, account/DM no-click checks, and fixture Unsend.');
 }
 
+async function acceptBackgroundComparison({ window, isolatedSession }) {
+  const requests = [];
+  let rateLimited = false;
+  // This isolated session serves synthetic Instagram pages only; no account traffic.
+  await isolatedSession.protocol.handle('http', () => new Response('', { status: 403 }));
+  await isolatedSession.protocol.handle('https', async (request) => {
+    const url = new URL(request.url);
+    if (url.origin !== 'https://www.instagram.com') return new Response('', { status: 403 });
+    if (url.pathname.startsWith('/api/')) {
+      requests.push(url.pathname);
+      if (url.pathname === '/api/v1/web/search/topsearch/') {
+        return Response.json({ users: [{ user: { pk: '77', username: 'demo_creator' } }] });
+      }
+      if (url.pathname === '/api/v1/friendships/77/followers/') {
+        if (rateLimited) return new Response('<html>Too many requests</html>', { status: 429 });
+        return Response.json(url.searchParams.has('max_id')
+          ? { users: [{ username: 'follower_only' }] }
+          : { users: [{ username: 'mutual_friend' }], next_max_id: 'next' });
+      }
+      if (url.pathname === '/api/v1/friendships/77/following/') {
+        return Response.json({ users: [{ username: 'mutual_friend' }, { username: 'not_back' }] });
+      }
+      return new Response('Unexpected endpoint', { status: 500 });
+    }
+    const target = fixtureAssets.get(url.pathname);
+    if (!target) return new Response('', { status: 404 });
+    return new Response(await readFile(target), { headers: {
+      'Content-Type': target.endsWith('.html') ? 'text/html' : 'text/javascript',
+      'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'self'",
+    } });
+  });
+  try {
+    for (const userscript of [false, true]) {
+      rateLimited = false;
+      requests.length = 0;
+      const webContents = window.webContents;
+      const host = userscript ? '#insta-toolbox-userscript-root' : '#insta-toolbox-sidecar-root';
+      const root = `document.querySelector('${host}').shadowRoot`;
+      const button = userscript ? '[data-action="check-account-relationships"]' : '[data-insta-toolbox-action="check-account-relationships"]';
+      const input = userscript ? '[data-role="checker-username"]' : '[data-insta-toolbox-role="checker-username"]';
+      const result = userscript ? '[data-role="comparison"]' : '[data-insta-toolbox-role="checker-result"]';
+      const surface = userscript ? 'userscript' : 'extension';
+      await webContents.loadURL(`https://www.instagram.com/${userscript ? 'userscript-fixture.html' : 'fixture.html?mode=qa-profile-following&shadow=open'}`);
+      await waitForPageValue(webContents, `Boolean(document.querySelector('${host}')?.shadowRoot)`, `${surface} background fixture`);
+      await webContents.executeJavaScript(`(() => {
+        document.querySelectorAll('[role="dialog"]').forEach(node => node.remove());
+        for (const type of ['followers', 'following']) {
+          const link = document.createElement('a');
+          link.setAttribute('role', 'link');
+          link.href = '/demo_creator/' + type + '/';
+          link.textContent = '2 ' + type;
+          document.querySelector('header').append(link);
+        }
+        globalThis.backgroundPageClicks = 0;
+        document.addEventListener('click', event => {
+          if (event.target.closest('a, button')) globalThis.backgroundPageClicks += 1;
+        });
+        const shadow = ${root};
+        ${userscript ? '' : `shadow.querySelector('.insta-toolbox-launcher').click(); shadow.querySelector('[data-insta-toolbox-section="capture"]').click();`}
+        shadow.querySelector('${input}').value = 'demo_creator';
+        shadow.querySelector('${button}').click();
+      })()`, true);
+      await waitForPageValue(webContents, `(${root}).querySelector('${result}').textContent.includes('Account comparison')`, `${surface} background comparison`);
+      const before = await webContents.executeJavaScript(`({ result: (${root}).querySelector('${result}').textContent, dialogs: document.querySelectorAll('[role="dialog"]').length, clicks: globalThis.backgroundPageClicks })`, true);
+      assert.equal(before.dialogs, 0);
+      assert.equal(before.clicks, 0);
+      assert.deepEqual(requests, [
+        '/api/v1/web/search/topsearch/',
+        '/api/v1/friendships/77/followers/',
+        '/api/v1/friendships/77/followers/',
+        '/api/v1/friendships/77/following/',
+      ]);
+      rateLimited = true;
+      const priorRequests = requests.length;
+      await webContents.executeJavaScript(`(${root}).querySelector('${button}').click()`, true);
+      await waitForPageValue(webContents, `(${root}).textContent.includes('Instagram is rate limiting this check')`, `${surface} HTML rate-limit classification`);
+      assert.equal(requests.length - priorRequests, 2, 'stop without retry or fallback');
+      assert.equal(await webContents.executeJavaScript(`(${root}).querySelector('${result}').textContent`, true), before.result, 'saved comparison remains visible');
+      console.log(`Accepted ${surface} background primary-button comparison: real fetch/JSON, no list dialogs, no profile-count requests, HTML 429 stops with comparison preserved.`);
+    }
+  } finally {
+    window.destroy();
+    isolatedSession.protocol.unhandle('https');
+    isolatedSession.protocol.unhandle('http');
+  }
+}
+
 async function acceptPwaInstallability(webContents, baseUrl) {
   await withTimeout(webContents.loadURL(baseUrl), 'PWA load');
   await waitForPageValue(
@@ -2191,6 +2280,7 @@ async function run() {
   const pwaServer = createAppServer();
   const overlay = createIsolatedWindow(`insta-toolbox-extension-acceptance-${process.pid}`);
   const pwa = createIsolatedWindow(`insta-toolbox-pwa-installability-${process.pid}`);
+  const background = createIsolatedWindow(`insta-toolbox-background-comparison-${process.pid}`);
   let exitCode = 0;
   try {
     const overlayAddress = await listen(overlayServer);
@@ -2212,6 +2302,7 @@ async function run() {
     await acceptThreadUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptToolboxLayout(overlay.window.webContents, overlayBaseUrl);
     await acceptUserscriptToolbox(overlay.window.webContents, overlayBaseUrl);
+    await acceptBackgroundComparison(background);
     await acceptPwaInstallability(pwa.window.webContents, pwaBaseUrl);
     assert.deepEqual(overlay.problems, [], 'extension fixture browser problems');
     assert.deepEqual(pwa.problems, [], 'PWA installability browser problems');
@@ -2223,8 +2314,10 @@ async function run() {
   } finally {
     if (!overlay.window.isDestroyed()) overlay.window.destroy();
     if (!pwa.window.isDestroyed()) pwa.window.destroy();
+    if (!background.window.isDestroyed()) background.window.destroy();
     await overlay.isolatedSession.clearStorageData();
     await pwa.isolatedSession.clearStorageData();
+    await background.isolatedSession.clearStorageData();
     await close(overlayServer);
     await close(pwaServer);
     app.exit(exitCode);

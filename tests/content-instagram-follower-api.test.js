@@ -49,13 +49,14 @@ function createInspector({
         { title: `${profileCounts.following} following` },
       ]
       : [];
-  const profileLinks = profileLinkData.map(({ href = null, title }) => ({
+  const profileLinks = profileLinkData.map((entry) => ({
     getAttribute(name) {
-      if (name === 'title') return title;
-      if (name === 'href') return href;
+      if (name === 'title') return entry.title;
+      if (name === 'href') return entry.href || null;
       return null;
     },
-    textContent: title,
+    get textContent() { return entry.text || entry.title; },
+    querySelector: () => entry.childTitle ? { getAttribute: () => entry.childTitle } : null,
   }));
   const document = {
     body: { innerText: '' },
@@ -194,6 +195,134 @@ test('authenticated follower check requires an exact username search result', as
     }),
     (error) => error.code === 'username-not-found',
   );
+});
+
+test('open-profile background check uses exact rendered totals without profile requests or dialogs', async () => {
+  const inspector = createInspector({
+    pathname: '/target_name/',
+    profileLinks: [
+      { href: '/target_name/followers/', text: '2.1K followers', childTitle: '2,104' },
+      { href: '/target_name/following/', title: '101 following' },
+    ],
+  });
+  const calls = [];
+  const result = await inspector.fetchFollowerComparison({
+    fetchImpl: async (input) => {
+      const url = new URL(input);
+      calls.push(url.pathname);
+      if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      assert.ok(url.pathname.startsWith('/api/v1/friendships/77/'), 'no profile-count request');
+      const followers = url.pathname.includes('/followers/');
+      const total = followers ? 2_104 : 101;
+      const offset = Number(url.searchParams.get('max_id') || 0);
+      const end = Math.min(offset + 50, total);
+      return response({
+        users: Array.from({ length: end - offset }, (_, i) => ({ username: `${followers ? 'follower' : 'following'}.${offset + i}` })),
+        ...(end < total ? { next_max_id: String(end) } : {}),
+      });
+    },
+    sleepImpl: async () => {},
+    username: 'target_name',
+  });
+  assert.equal(calls.length, 47);
+  assert.deepEqual({ ...result.expectedCounts }, { followers: 2_104, following: 101 });
+  assert.deepEqual({ ...result.complete }, { followers: true, following: true });
+  assert.deepEqual({ ...result.pages }, { followers: 43, following: 3 });
+});
+
+for (const changed of ['count', 'route']) {
+  test(`open-profile background check rejects ${changed} changes without a network fallback`, async () => {
+    const links = [
+      { href: '/target_name/followers/', title: '1 followers' },
+      { href: '/target_name/following/', title: '1 following' },
+    ];
+    const inspector = createInspector({ pathname: '/target_name/', profileLinks: links });
+    let calls = 0;
+    const pending = inspector.fetchFollowerComparison({
+      fetchImpl: async (input) => {
+        calls += 1;
+        const url = new URL(input);
+        if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+        assert.ok(url.pathname.includes('/friendships/'));
+        if (url.pathname.includes('/following/')) {
+          if (changed === 'count') links[0].title = '2 followers';
+          else links[0].href = '/different_profile/followers/';
+        }
+        return response({ users: [{ username: 'mutual' }] });
+      },
+      username: 'target_name',
+    });
+    if (changed === 'route') await assert.rejects(pending, { code: 'profile-count-unavailable' });
+    else {
+      const result = await pending;
+      assert.equal(result.complete.followers, false);
+      assert.equal(result.reasons.followers, 'count-changed');
+    }
+    assert.equal(calls, 3);
+  });
+}
+
+for (const kind of ['different-profile', 'rounded-only', 'external-origin', 'conflicting-counts']) {
+  test(`background count source does not trust ${kind} profile labels`, async () => {
+    const profileLinks = [
+      { href: kind === 'different-profile' ? '/different/followers/' : kind === 'external-origin' ? 'https://example.com/target_name/followers/' : '/target_name/followers/', title: kind === 'rounded-only' ? '2.1K followers' : '1 followers' },
+      { href: '/target_name/following/', title: '1 following' },
+    ];
+    if (kind === 'conflicting-counts') profileLinks.push({ href: '/target_name/followers/', title: '2 followers' });
+    const inspector = createInspector({ pathname: '/target_name/', profileLinks });
+    let profileCalls = 0;
+    await assert.rejects(inspector.fetchFollowerComparison({
+      fetchImpl: async (input) => {
+        if (input.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+        assert.ok(input.includes('web_profile_info'));
+        profileCalls += 1;
+        return { ok: false, status: 429, json() { throw new SyntaxError('HTML'); } };
+      },
+      username: 'target_name',
+    }), { code: 'rate-limited' });
+    assert.equal(profileCalls, 1);
+  });
+}
+
+for (const [status, url, code] of [
+  [429, '', 'rate-limited'],
+  [401, '', 'session-expired'],
+  [200, 'https://www.instagram.com/accounts/login/', 'session-expired'],
+  [200, 'https://www.instagram.com/challenge/', 'challenge'],
+  [200, 'https://www.instagram.com/checkpoint/', 'challenge'],
+]) {
+  test(`HTML ${status} ${code} stops before JSON decoding, retry, or another request`, async () => {
+    const inspector = createInspector();
+    let requests = 0;
+    let decodes = 0;
+    await assert.rejects(inspector.fetchFollowerComparison({
+      fetchImpl: async () => {
+        requests += 1;
+        return { ok: status === 200, status, url, json() { decodes += 1; throw new SyntaxError('HTML'); } };
+      },
+      sleepImpl: async () => assert.fail('must not retry a session stop'),
+      username: 'target_name',
+    }), { code });
+    assert.equal(requests, 1);
+    assert.equal(decodes, 0);
+  });
+}
+
+test('body timeout aborts the original fetch before a retry starts', async () => {
+  const inspector = createInspector();
+  const signals = [];
+  await assert.rejects(inspector.fetchFollowerComparison({
+    fetchImpl: async (_url, { signal }) => {
+      if (signals.length) assert.equal(signals.at(-1).aborted, true);
+      signals.push(signal);
+      return { ok: true, status: 200, json: () => new Promise(() => {}) };
+    },
+    requestTimeoutMs: 5,
+    sleepImpl: async () => {},
+    username: 'target_name',
+  }), { code: 'request-timeout' });
+  assert.equal(signals.length, 3);
+  assert.equal(signals.every((signal) => signal.aborted), true);
 });
 
 test('Mutual Checker stops after one premature final Followers page without rerunning the list', async () => {

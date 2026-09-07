@@ -1736,8 +1736,7 @@
       return {
         tone: 'ready',
         title: `${followerList.label} list open`,
-        detail: `Scan ${followerList.label} to read every row, not just what is on screen.`,
-        cta: { label: `Scan ${followerList.label}`, action: `scan-${followerList.listType}` },
+        detail: 'Manual capture is optional.',
         view: 'checker',
       };
     }
@@ -1746,8 +1745,8 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Inspect this exact profile, or open its Followers or Following to scan a list.',
-        view: 'account',
+        detail: 'Check both lists without opening them.',
+        view: 'checker',
       };
     }
     return {

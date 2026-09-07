@@ -51,11 +51,11 @@ Download files from the [latest release](https://github.com/slaveofsolace/Insta-
 | Surface | Release file | Use it when |
 | --- | --- | --- |
 | Tampermonkey | `insta-toolbox.user.js` | You want the simplest Instagram overlay install. |
-| Chrome extension | `Insta-Toolbox-Extension-3.1.5.zip` | You prefer an unpacked browser extension. |
-| Windows desktop | `Insta-Toolbox-Setup-3.1.5.exe` | You want one downloadable Windows installer. |
-| macOS desktop | `Insta-Toolbox-3.1.5-universal.dmg` | You want the recommended drag-to-Applications package for Intel or Apple Silicon. |
-| macOS portable | `Insta-Toolbox-3.1.5-universal.zip` | You prefer to extract the universal app directly. |
-| Web/PWA | `insta-toolbox-web-3.1.5.zip` | You want to self-host the local-first workspace. |
+| Chrome extension | `Insta-Toolbox-Extension-3.1.6.zip` | You prefer an unpacked browser extension. |
+| Windows desktop | `Insta-Toolbox-Setup-3.1.6.exe` | You want one downloadable Windows installer. |
+| macOS desktop | `Insta-Toolbox-3.1.6-universal.dmg` | You want the recommended drag-to-Applications package for Intel or Apple Silicon. |
+| macOS portable | `Insta-Toolbox-3.1.6-universal.zip` | You prefer to extract the universal app directly. |
+| Web/PWA | `insta-toolbox-web-3.1.6.zip` | You want to self-host the local-first workspace. |
 
 Windows packages are unsigned. macOS packages are ad-hoc signed, but not Developer ID signed or notarized. Confirm the checksum before opening a download.
 
@@ -66,13 +66,13 @@ Download `SHA256SUMS.txt` from the same release.
 Windows PowerShell:
 
 ```powershell
-Get-FileHash .\Insta-Toolbox-Setup-3.1.5.exe -Algorithm SHA256
+Get-FileHash .\Insta-Toolbox-Setup-3.1.6.exe -Algorithm SHA256
 ```
 
 macOS:
 
 ```sh
-shasum -a 256 Insta-Toolbox-3.1.5-universal.dmg
+shasum -a 256 Insta-Toolbox-3.1.6-universal.dmg
 ```
 
 Match the printed hash to the file's entry in `SHA256SUMS.txt`.
@@ -114,9 +114,9 @@ pnpm run qa:overlay:check
 pnpm run verify:repo-hygiene
 ```
 
-The 3.1 account-free regression matrix covers the PWA, extension, userscript, layout controls, and packaged apps. The service worker uses cache generation `insta-toolbox-v315`. Authenticated Instagram behavior still depends on the current site and must be accepted separately with disposable content.
+The 3.1 account-free regression matrix covers the PWA, extension, userscript, layout controls, and packaged apps. The service worker uses cache generation `insta-toolbox-v316`. Authenticated Instagram behavior still depends on the current site and must be accepted separately with disposable content.
 
-See [Contributing](CONTRIBUTING.md), [Maintainer Guide](docs/MAINTAINER_GUIDE.md), [3.1.5 compatibility](docs/compatibility/3.1.5.md), and [3.1.5 acceptance](docs/acceptance/3.1.5.md).
+See [Contributing](CONTRIBUTING.md), [Maintainer Guide](docs/MAINTAINER_GUIDE.md), [3.1.6 compatibility](docs/compatibility/3.1.6.md), and [3.1.6 acceptance](docs/acceptance/3.1.6.md).
 
 ## License and credit
 
