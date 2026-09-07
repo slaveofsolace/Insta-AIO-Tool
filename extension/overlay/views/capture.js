@@ -149,7 +149,8 @@
     const followersVerified = workspace.verified?.followers === true;
     const followingVerified = workspace.verified?.following === true;
     const selectedVerified = workspace.verified?.[listType] === true;
-    const comparisonReady = followersVerified && followingVerified;
+    const comparisonReady = followersVerified && followingVerified
+      && workspace.complete?.followers === true && workspace.complete?.following === true;
     const reportDownload = query('[data-insta-toolbox-role="comparison-report-download"]');
     const jsonDownload = query('[data-insta-toolbox-role="comparison-json-download"]');
     if (comparisonReady
@@ -191,11 +192,11 @@
     ));
     setText('compare-step-detail', comparisonReady
       ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back`
-      : 'Scan both lists first');
+      : followersVerified && followingVerified ? 'Waiting for two complete lists' : 'Scan both lists first');
     const compareBadge = query('[data-insta-toolbox-role="compare-step-badge"]');
     if (compareBadge) {
-      compareBadge.textContent = comparisonComplete ? 'complete' : comparisonReady ? 'partial' : 'waiting';
-      compareBadge.dataset.tone = comparisonComplete ? 'good' : comparisonReady ? 'warning' : 'neutral';
+      compareBadge.textContent = comparisonComplete ? 'complete' : 'waiting';
+      compareBadge.dataset.tone = comparisonComplete ? 'good' : 'neutral';
     }
     const authenticatedCheck = workspace.source?.followers === 'authenticated-web'
       && workspace.source?.following === 'authenticated-web';
@@ -213,6 +214,9 @@
         `Followers ${formatCount(workspace.followers.length)} · Following ${formatCount(workspace.following.length)} · Don't follow you back ${formatCount(comparison.notFollowingMeBack.length)}.`,
         comparisonComplete ? 'good' : 'warning',
       );
+    } else if (followersVerified || followingVerified) {
+      setState(runtime, 'Comparison withheld',
+        'Both lists must be complete to avoid false non-mutuals. Captured rows are under Advanced.', 'warning');
     } else {
       setState(
         runtime,
@@ -246,7 +250,9 @@
       } else {
         const detail = document.createElement('p');
         detail.className = 'insta-toolbox-note';
-        detail.textContent = 'Enter a username to compare Followers and Following.';
+        detail.textContent = followersVerified && followingVerified
+          ? 'Both lists must be complete before comparing. Run Check mutuals to load them.'
+          : 'Enter a username to compare Followers and Following.';
         checker.append(detail);
       }
     }

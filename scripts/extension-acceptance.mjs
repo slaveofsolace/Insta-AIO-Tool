@@ -497,6 +497,32 @@ async function acceptOverlayAccessibility(webContents, baseUrl) {
   console.log('Accepted overlay keyboard focus, no-click thread Unsend preview, and Chromium accessibility-tree contract.');
 }
 
+async function acceptIncompleteComparison(webContents, baseUrl) {
+  await loadFixture(webContents, baseUrl, 'qa-checker-partial');
+  await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-toolbox-sidecar-root').shadowRoot;
+    shadow.querySelector('.insta-toolbox-launcher').click();
+    shadow.querySelector('[data-insta-toolbox-section="capture"]').click();
+  })()`, true);
+  const result = await waitForPageValue(webContents, `(() => {
+    const shadow = document.querySelector('#insta-toolbox-sidecar-root').shadowRoot;
+    const title = shadow.querySelector('[data-insta-toolbox-role="capture-state-title"]').textContent;
+    if (title !== 'Comparison withheld') return null;
+    return {
+      title,
+      rows: shadow.querySelectorAll('[data-insta-toolbox-role="checker-filtered-list"] li').length,
+      browser: Boolean(shadow.querySelector('[data-insta-toolbox-role="checker-browser"]')),
+      report: shadow.querySelector('[data-insta-toolbox-role="comparison-report-download"]').getAttribute('href'),
+      json: shadow.querySelector('[data-insta-toolbox-role="comparison-json-download"]').getAttribute('href'),
+      raw: Boolean(shadow.querySelector('[data-insta-toolbox-role="capture-download"]').getAttribute('href')),
+    };
+  })()`, 'extension incomplete comparison');
+  assert.deepEqual(result, { title: 'Comparison withheld', rows: 0, browser: false, report: null, json: null, raw: true });
+  await webContents.executeJavaScript(`new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 200))))`, true);
+  await writeFile(path.join(resultsRoot, 'incomplete-comparison-extension.png'), (await webContents.capturePage()).toPNG());
+  console.log('Accepted incomplete extension comparison: no inferred non-mutuals or comparison download; raw capture retained.');
+}
+
 async function acceptOverlayDmConfirmation(webContents, baseUrl) {
   await loadFixture(webContents, baseUrl, 'messages-live');
   await webContents.executeJavaScript(`(() => {
@@ -1611,6 +1637,37 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     listType.dispatchEvent(new Event('change', { bubbles: true }));
     shadow.querySelector('[data-action="capture"]').click();
   })()`, true);
+  const partialComparison = await webContents.executeJavaScript(`(() => {
+    const shadow = document.querySelector('#insta-toolbox-userscript-root').shadowRoot;
+    globalThis.fixtureDownloads.length = 0;
+    shadow.querySelector('[data-action="download-comparison-json"]').click();
+    return {
+      hidden: shadow.querySelector('[data-role="comparison-browser"]').hidden,
+      rows: shadow.querySelectorAll('[data-role="comparison-list"] strong').length,
+      report: Boolean(shadow.querySelector('[data-role="comparison-report-download"]')),
+      downloads: globalThis.fixtureDownloads.length,
+      text: shadow.querySelector('[data-role="comparison"]').textContent,
+    };
+  })()`, true);
+  assert.equal(partialComparison.hidden, true);
+  assert.equal(partialComparison.rows, 0);
+  assert.equal(partialComparison.report, false);
+  assert.equal(partialComparison.downloads, 0);
+  assert.match(partialComparison.text, /Comparison withheld to avoid false non-mutuals/);
+  await writeFile(path.join(resultsRoot, 'incomplete-comparison-userscript.png'), (await webContents.capturePage()).toPNG());
+
+  const scanFixtureList = async (listType, values = null) => {
+    await webContents.executeJavaScript(`(() => {
+      globalThis.fixtureSetList(${JSON.stringify(listType)}, ${JSON.stringify(values)});
+      document.querySelector('#insta-toolbox-userscript-root').shadowRoot
+        .querySelector('[data-action="scan-${listType}"]').click();
+    })()`, true);
+    await waitForPageValue(webContents,
+      `globalThis.fixtureGmStore.instaToolboxUserscriptStateV2.capture.complete[${JSON.stringify(listType)}] === true`,
+      `complete ${listType} scan`);
+  };
+  await scanFixtureList('following');
+  await scanFixtureList('followers');
   const checker = await waitForPageValue(
     webContents,
     `(() => {
@@ -1638,7 +1695,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   })()`, true);
   assert.deepEqual(initialComparisonBrowser, {
     browserHidden: false,
-    count: 'Showing 1 of 1 account. Partial comparison.',
+    count: 'Showing 1 of 1 account.',
     rows: ['@not_back'],
     report: 'Download comparison report',
     json: 'Download JSON',
@@ -1676,25 +1733,16 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
   assert.deepEqual(downloadedRecord.iDoNotFollowBack.map(({ username }) => username), ['follower_only']);
   assert.deepEqual(downloadedRecord.mutuals.map(({ username }) => username), ['mutual_friend']);
 
-  await webContents.executeJavaScript(`(() => {
-    const shadow = document.querySelector('#insta-toolbox-userscript-root').shadowRoot;
-    shadow.querySelector('[data-action="clear-capture"]').click();
-    globalThis.fixtureSetList('following', [
-      'mutual_friend',
-      ...Array.from({ length: 30 }, (_, index) => ({
-        displayName: index === 7 ? 'Studio Signal' : '',
-        username: 'not_back_' + String(index).padStart(2, '0'),
-      })),
-    ]);
-    const listType = shadow.querySelector('[data-role="list-type"]');
-    listType.value = 'following';
-    listType.dispatchEvent(new Event('change', { bubbles: true }));
-    shadow.querySelector('[data-action="capture"]').click();
-    globalThis.fixtureSetList('followers', ['mutual_friend', 'follower_only']);
-    listType.value = 'followers';
-    listType.dispatchEvent(new Event('change', { bubbles: true }));
-    shadow.querySelector('[data-action="capture"]').click();
-  })()`, true);
+  await webContents.executeJavaScript(`document.querySelector('#insta-toolbox-userscript-root').shadowRoot
+    .querySelector('[data-action="clear-capture"]').click()`, true);
+  await scanFixtureList('following', [
+    'mutual_friend',
+    ...Array.from({ length: 30 }, (_, index) => ({
+      displayName: index === 7 ? 'Studio Signal' : '',
+      username: 'not_back_' + String(index).padStart(2, '0'),
+    })),
+  ]);
+  await scanFixtureList('followers', ['mutual_friend', 'follower_only']);
   const firstComparisonPage = await webContents.executeJavaScript(`(() => {
     const shadow = document.querySelector('#insta-toolbox-userscript-root').shadowRoot;
     return {
@@ -1705,7 +1753,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     };
   })()`, true);
   assert.deepEqual(firstComparisonPage, {
-    count: 'Showing 25 of 30 accounts. Partial comparison.',
+    count: 'Showing 25 of 30 accounts.',
     rows: 25,
     moreHidden: false,
     moreText: 'Show 5 more',
@@ -1730,7 +1778,7 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     };
   })()`, true);
   assert.deepEqual(expandedComparison, {
-    count: 'Showing 30 of 30 accounts. Partial comparison.',
+    count: 'Showing 30 of 30 accounts.',
     rows: 30,
     last: '@not_back_29',
     moreHidden: true,
@@ -1780,11 +1828,11 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
     return { filtered, displayNameFiltered, emptySearch, mutuals, notFollowedBack };
   })()`, true);
   assert.deepEqual(filteredAndMutualViews, {
-    filtered: { count: 'Showing 1 of 1 account. Partial comparison.', rows: ['@not_back_29'] },
-    displayNameFiltered: { count: 'Showing 1 of 1 account. Partial comparison.', rows: ['@not_back_07'] },
-    emptySearch: { count: '0 accounts. Partial comparison.', text: 'No captured account matches this search.' },
-    mutuals: { count: 'Showing 1 of 1 account. Partial comparison.', rows: ['@mutual_friend'] },
-    notFollowedBack: { count: 'Showing 1 of 1 account. Partial comparison.', rows: ['@follower_only'] },
+    filtered: { count: 'Showing 1 of 1 account.', rows: ['@not_back_29'] },
+    displayNameFiltered: { count: 'Showing 1 of 1 account.', rows: ['@not_back_07'] },
+    emptySearch: { count: '0 accounts.', text: 'No captured account matches this search.' },
+    mutuals: { count: 'Showing 1 of 1 account.', rows: ['@mutual_friend'] },
+    notFollowedBack: { count: 'Showing 1 of 1 account.', rows: ['@follower_only'] },
   });
 
   await webContents.executeJavaScript(`(() => {
@@ -2157,6 +2205,7 @@ async function run() {
     });
     await acceptDmUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptOverlayAccessibility(overlay.window.webContents, overlayBaseUrl);
+    await acceptIncompleteComparison(overlay.window.webContents, overlayBaseUrl);
     await acceptOverlayDmConfirmation(overlay.window.webContents, overlayBaseUrl);
     await acceptThreadUnsendScopes(overlay.window.webContents, overlayBaseUrl);
     await acceptThreadUnsendStop(overlay.window.webContents, overlayBaseUrl);

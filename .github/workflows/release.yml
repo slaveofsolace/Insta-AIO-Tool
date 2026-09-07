@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       tag:
-        description: Release tag, for example v3.1.4
+        description: Release tag, for example v3.1.5
         required: true
         type: string
 
@@ -110,7 +110,7 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
           test "$RELEASE_TAG" = "v$version"
-          test "$version" = "3.1.4"
+          test "$version" = "3.1.5"
           mkdir -p release
           copy_exact() {
             local name="$1"
@@ -171,13 +171,13 @@ jobs:
             exit 1
           fi
           release_notes="$(cat <<'EOF'
-          DM Unsend now stops when you switch conversations. Pending waits are canceled so you can start a fresh run without refreshing. Includes the updated Tampermonkey script and fast-uri security fix.
+          Mutual Checker now waits for two complete lists before showing or downloading a comparison. Dialog scans retain recycled rows across overlapping scroll windows. Incomplete data stays available under Advanced without labeling missing accounts as non-mutuals. Includes the updated Tampermonkey script.
 
           ## Distribution notes
 
           - The Windows installer is unsigned and may show a Microsoft SmartScreen warning.
           - The macOS packages are ad-hoc signed and are not Apple-notarized.
-          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.4 acceptance record for any separately recorded manual evidence.
+          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.5 acceptance record for any separately recorded manual evidence.
           EOF
           )"
           gh release create "$RELEASE_TAG" release/* \

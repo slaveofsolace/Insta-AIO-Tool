@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
   "kind": "insta-toolbox-pwa-screenshot-baseline",
-  "productVersion": "3.1.4",
+  "productVersion": "3.1.5",
   "capturedProductVersion": "3.1.3",
   "originalCaptureTimestamp": "2026-08-26T00:00:00.000Z",
-  "captureTimestamp": "2026-09-06T00:00:00.000Z",
+  "captureTimestamp": "2026-09-07T00:00:00.000Z",
   "platform": "win32",
   "electron": "43.2.0",
   "deviceScaleFactor": 1,

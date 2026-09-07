@@ -63,6 +63,7 @@
 
   function relationshipCount(...values) {
     for (const value of values) {
+      if (value === null || value === undefined || typeof value === 'boolean' || String(value).trim() === '') continue;
       const number = Number(value);
       if (Number.isSafeInteger(number) && number >= 0) return number;
     }
@@ -504,7 +505,9 @@
         .sort((left, right) => left.username.localeCompare(right.username));
       const candidateToken = stagnantPages >= 3 ? null : data.next_max_id;
       if (candidateToken === undefined || candidateToken === null || candidateToken === '') {
-        const countReconciled = Number.isSafeInteger(expectedCount) && accounts.size === expectedCount;
+        const countReconciled = Number.isSafeInteger(expectedCount)
+          && accounts.size === expectedCount && !instagramLimited
+          && data.has_more !== true && stagnantPages < 3;
         return {
           accounts: sortedAccounts(),
           complete: countReconciled,
@@ -696,6 +699,11 @@
   }
 
   function followerComparisonRecord(workspace, comparison, generatedAt = new Date().toISOString()) {
+    if (!['followers', 'following'].every((type) => (
+      workspace?.verified?.[type] === true && workspace?.complete?.[type] === true
+    ))) {
+      throw relationshipError('incomplete-comparison', 'Both lists must be complete before comparing. Partial captures are available separately under Advanced.');
+    }
     return {
       schemaVersion: 1,
       kind: 'insta-toolbox-comparison',
@@ -1764,7 +1772,7 @@
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, accounts: [], complete: false, reason: 'session-stop' };
     }
-    const expectedListType = listType === 'followers' || listType === 'following' ? listType : '';
+    let expectedListType = listType === 'followers' || listType === 'following' ? listType : '';
     let listContext = accountListDialog(expectedListType);
     let root = listContext?.dialog || null;
     let scroller = scrollableWithin(root);
@@ -1772,6 +1780,8 @@
       return { ...session, accounts: [], complete: false, reason: 'open-a-followers-or-following-list' };
     }
     const observedListType = listContext?.listType || expectedListType;
+    expectedListType = observedListType;
+    const profilePath = location.pathname;
     const expectedCountAtStart = exactProfileListCount(observedListType);
 
     const accounts = new Map();
@@ -1790,13 +1800,19 @@
     };
 
     harvest();
+    // Recycled rows cannot all exist in the DOM at once. Start at the top and
+    // retain each window before advancing by less than one viewport.
+    if (scroller) {
+      scroller.scrollTop = 0;
+      await sleep(settleMs);
+    }
     let complete = !scroller
       && Number.isSafeInteger(expectedCountAtStart)
       && accounts.size === expectedCountAtStart;
     let stagnantRounds = 0;
     for (let round = 0; round < maxScrolls; round += 1) {
       const currentContext = accountListDialog(expectedListType);
-      if (!currentContext) {
+      if (!currentContext || location.pathname !== profilePath) {
         complete = false;
         break;
       }
@@ -1807,8 +1823,13 @@
         root = currentRoot;
         scroller = currentScroller;
         stagnantRounds = 0;
+        if (scroller) {
+          scroller.scrollTop = 0;
+          await sleep(settleMs);
+        }
         harvest();
       }
+      harvest();
       if (!scroller) {
         complete = Number.isSafeInteger(expectedCountAtStart)
           && accounts.size === expectedCountAtStart;
@@ -1816,17 +1837,20 @@
       }
       const beforeCount = accounts.size;
       const beforeHeight = scroller.scrollHeight;
-      // Virtualised lists only fetch more rows in response to a real scroll
-      // event. When we are already pinned at the end, assigning the same
-      // scrollTop fires nothing, so nudge upward first to guarantee movement.
+      const beforeTop = scroller.scrollTop;
+      // Nudge only at the end to trigger a stalled lazy-loading sentinel.
       if (scroller.scrollTop >= scroller.scrollHeight - scroller.clientHeight - 8) {
         scroller.scrollTop = Math.max(
           0,
           scroller.scrollTop - Math.max(80, Math.floor(scroller.clientHeight / 2)),
         );
-        await sleep(60);
+        await sleep(settleMs);
+        harvest();
       }
-      scroller.scrollTop = scroller.scrollHeight;
+      scroller.scrollTop = Math.min(
+        Math.max(0, scroller.scrollHeight - scroller.clientHeight),
+        beforeTop + Math.max(1, Math.floor(scroller.clientHeight * 0.75)),
+      );
       await sleep(settleMs);
       // A long Followers list keeps a spinner up well past the settle delay.
       // Waiting for it to clear is what stops a big list being declared
@@ -1837,6 +1861,12 @@
         if (!loading) break;
         await sleep(250);
       }
+      const settledContext = accountListDialog(expectedListType);
+      if (location.pathname !== profilePath || !settledContext) {
+        complete = false;
+        break;
+      }
+      if (settledContext.dialog !== root || scrollableWithin(root) !== scroller) continue;
       harvest();
 
       const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 8;
@@ -1851,7 +1881,7 @@
           reason: 'session-stop',
         };
       }
-      if (atBottom
+      if (atBottom && !loading
         && Number.isSafeInteger(expectedCountAtStart)
         && accounts.size === expectedCountAtStart) {
         complete = true;
@@ -1860,7 +1890,6 @@
       // Instagram lazy-loads in bursts and can pause between pages, so a couple
       // of quiet rounds does not mean the end. Be patient before concluding.
       if (atBottom && !loading && stagnantRounds >= 10) {
-        complete = true;
         break;
       }
     }
@@ -1872,7 +1901,7 @@
       && expectedCountAtStart !== expectedCountAtEnd;
     const countMismatch = Number.isSafeInteger(expectedCount)
       && accounts.size !== expectedCount;
-    if (countChanged || countMismatch) complete = false;
+    if (countChanged || countMismatch || !Number.isSafeInteger(expectedCount)) complete = false;
 
     return {
       ...session,
@@ -1887,9 +1916,11 @@
         ? 'list-count-changed'
         : countMismatch
           ? 'list-count-mismatch'
-          : complete
-            ? 'list-complete'
-            : 'list-truncated',
+          : !Number.isSafeInteger(expectedCount)
+            ? 'list-count-unverified'
+            : complete
+              ? 'list-complete'
+              : 'list-truncated',
     };
   }
 

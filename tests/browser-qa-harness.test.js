@@ -131,6 +131,6 @@ test('browser QA manifests bind captures to the current product version and rele
     assert.equal(manifest.schemaVersion, 2);
     assert.equal(manifest.kind, 'insta-toolbox-pwa-screenshot-baseline');
     assert.equal(manifest.productVersion, packageJson.version);
-    assert.equal(manifest.captureTimestamp, '2026-09-06T00:00:00.000Z');
+    assert.equal(manifest.captureTimestamp, '2026-09-07T00:00:00.000Z');
   }
 });

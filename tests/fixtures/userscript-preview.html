@@ -113,6 +113,14 @@
         : type === 'followers'
           ? ['mutual_friend', 'follower_only']
           : ['mutual_friend', 'not_back'];
+      let counter = document.querySelector(`[data-fixture-count="${type}"]`);
+      if (!counter) {
+        counter = document.createElement('a');
+        counter.href = '#';
+        counter.dataset.fixtureCount = type;
+        document.querySelector('header').append(counter);
+      }
+      counter.textContent = `${values.length} ${type}`;
       for (const value of values) {
         const username = typeof value === 'string' ? value : value.username;
         const anchor = document.createElement('a');

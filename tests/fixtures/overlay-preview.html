@@ -352,9 +352,9 @@
           verified: { followers: false, following: true },
         },
       } : {}),
-      ...(fixtureMode === 'qa-checker-results' ? {
+      ...(['qa-checker-results', 'qa-checker-partial'].includes(fixtureMode) ? {
         instaToolboxOverlayCaptureWorkspaceV2: {
-          schemaVersion: 4,
+          schemaVersion: 6,
           kind: 'insta-toolbox-visible-checker-workspace',
           followers: [
             { username: 'follower_only', displayName: 'Follower Only' },
@@ -369,7 +369,7 @@
             followers: '2026-07-31T07:00:00.000Z',
             following: '2026-07-31T07:05:00.000Z',
           },
-          complete: { followers: true, following: true },
+          complete: { followers: fixtureMode !== 'qa-checker-partial', following: true },
           verified: { followers: true, following: true },
         },
       } : {}),

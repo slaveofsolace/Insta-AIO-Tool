@@ -107,7 +107,7 @@
 
   function stateDefaults() {
     return {
-      schemaVersion: 5,
+      schemaVersion: 6,
       capture: {
         subjectUsername: '',
         followers: [],
@@ -223,10 +223,11 @@
     const value = source && typeof source === 'object' ? source : defaults;
     // Schema 4 is the first state whose capture completeness is reconciled
     // against an exact list read. Schema 5 records whether that read used
-    // bounded authenticated pagination or the list-dialog fallback.
+    // bounded authenticated pagination or the list-dialog fallback. Schema 6
+    // requires a fresh DOM scan with an exact total, preserving the saved rows.
     const requiresCountReconciledRescan = Number(value.schemaVersion) < 4;
     return {
-      schemaVersion: 5,
+      schemaVersion: 6,
       capture: {
         subjectUsername: normalizeUsername(value.capture?.subjectUsername),
         followers: normalizeAccounts(value.capture?.followers),
@@ -237,9 +238,11 @@
         },
         complete: {
           followers: !requiresCountReconciledRescan
+            && (Number(value.schemaVersion) >= 6 || value.capture?.source?.followers === 'authenticated-web')
             && value.capture?.verified?.followers === true
             && value.capture?.complete?.followers === true,
           following: !requiresCountReconciledRescan
+            && (Number(value.schemaVersion) >= 6 || value.capture?.source?.following === 'authenticated-web')
             && value.capture?.verified?.following === true
             && value.capture?.complete?.following === true,
         },
@@ -371,6 +374,7 @@
   }
 
   function compareCapture() {
+    if (!comparisonIsReady()) return { mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [] };
     const followers = verifiedCapture('followers');
     const following = verifiedCapture('following');
     const followerNames = new Set(followers.map((account) => account.username));
@@ -380,6 +384,12 @@
       iDoNotFollowBack: followers.filter((account) => !followingNames.has(account.username)),
       notFollowingMeBack: following.filter((account) => !followerNames.has(account.username)),
     };
+  }
+
+  function comparisonIsReady() {
+    return ['followers', 'following'].every((type) => (
+      state.capture.verified?.[type] === true && state.capture.complete?.[type] === true
+    ));
   }
 
   function comparisonBrowserSelection(comparison) {
@@ -1042,8 +1052,7 @@
   function renderChecker() {
     const verifiedFollowers = verifiedCapture('followers');
     const verifiedFollowing = verifiedCapture('following');
-    const comparisonReady = state.capture.verified?.followers === true
-      && state.capture.verified?.following === true;
+    const comparisonReady = comparisonIsReady();
     const authenticatedCheck = state.capture.source?.followers === 'authenticated-web'
       && state.capture.source?.following === 'authenticated-web';
     const usernameInput = query('[data-role="checker-username"]');
@@ -1072,7 +1081,7 @@
     const detail = document.createElement('p');
     detail.textContent = comparisonReady
       ? `${formatCount(verifiedFollowers.length)} followers · ${formatCount(verifiedFollowing.length)} following · ${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back · ${formatCount(comparison.iDoNotFollowBack.length)} you don't follow back.`
-      : 'Confirm your username above, then load Followers and Following in one read-only check.';
+      : 'Both lists must be complete before comparing. Run Check mutuals to load them.';
     result.append(title, detail);
 
     // A scan that stopped early would otherwise be read as the whole list, and
@@ -1083,7 +1092,7 @@
     if (partial.length) {
       const warning = document.createElement('p');
       warning.className = 'notice';
-      warning.textContent = `Instagram returned a partial ${partial.join(' and ')} ${partial.length === 1 ? 'list' : 'lists'}, so some accounts may be missing. You can rerun the check later.`;
+      warning.textContent = `Incomplete ${partial.join(' and ')}: some accounts may be missing. Comparison withheld to avoid false non-mutuals. Captured rows are under Advanced.`;
       result.append(warning);
     }
 
@@ -1124,10 +1133,9 @@
       comparisonList.replaceChildren();
       if (comparisonReady) {
         const selection = comparisonBrowserSelection(comparison);
-        const completeness = partial.length ? ' Partial comparison.' : '';
         comparisonCount.textContent = selection.total
-          ? `Showing ${formatCount(selection.accounts.length)} of ${formatCount(selection.total)} ${selection.total === 1 ? 'account' : 'accounts'}.${completeness}`
-          : `0 accounts.${completeness}`;
+          ? `Showing ${formatCount(selection.accounts.length)} of ${formatCount(selection.total)} ${selection.total === 1 ? 'account' : 'accounts'}.`
+          : '0 accounts.';
         for (const account of selection.accounts) {
           const row = document.createElement('li');
           const username = document.createElement('strong');
@@ -1802,9 +1810,9 @@
       && state.capture.verified?.followers === true;
     const complete = scanState('following') === 'done' && scanState('followers') === 'done';
     if (compareStep) compareStep.dataset.state = both ? (complete ? 'done' : 'partial') : 'todo';
-    setText('step-compare', both
-      ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back${complete ? '' : ' (partial)'}`
-      : 'Scan both lists first');
+    setText('step-compare', complete
+      ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back`
+      : 'Waiting for two complete lists');
   }
 
   function resetRelationshipProgress() {
@@ -2722,6 +2730,7 @@
         capturedAt: state.capture.capturedAt[listType] || nowIso(),
         subjectUsername: state.capture.subjectUsername || '',
         verificationMethod: method,
+        complete: state.capture.complete?.[listType] === true,
         verifiedDialog: state.capture.verified?.[listType] === true && method !== 'authenticated-web',
         [listType]: state.capture[listType],
         note: method === 'authenticated-web'
@@ -2730,10 +2739,9 @@
       });
     },
     'download-comparison-json': () => {
-      const comparisonReady = state.capture.verified?.followers === true
-        && state.capture.verified?.following === true;
+      const comparisonReady = comparisonIsReady();
       if (!comparisonReady) {
-        status('Scan or verify both follower lists before downloading a comparison.');
+        status('Both lists must be complete before downloading a comparison. Captured rows are under Advanced.');
         return;
       }
       const generatedAt = nowIso();

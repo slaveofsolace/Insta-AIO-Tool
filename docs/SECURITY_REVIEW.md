@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-08-24
+Last reviewed: 2026-09-07
 
 ## Boundaries
 
@@ -65,9 +65,11 @@ The client uses browser-managed credentials without reading them, a fixed applic
 
 Results replace Followers and Following atomically and are not sent through the extension bridge. Instagram can change these unsupported web routes without notice.
 
+Comparisons, comparison downloads, and non-mutual action sources require both lists to be verified and complete. Partial rows remain available as separate raw captures, not inferred non-mutuals. The dialog fallback accumulates overlapping windows rather than jumping past recycled rows. It requires an exact profile count; a quiet or motionless list is not enough. Schema 6 retains earlier rows but clears unproven completion from older dialog captures. Existing count-verified authenticated captures remain usable.
+
 ## Local app and web delivery
 
-The PWA service worker uses network-first same-origin GET handling, caches only successful same-origin responses, bypasses the HTTP cache for service-worker update checks, and removes earlier cache generations. Version 3.1 uses `insta-toolbox-v314`.
+The PWA service worker uses network-first same-origin GET handling, caches only successful same-origin responses, bypasses the HTTP cache for service-worker update checks, and removes earlier cache generations. Version 3.1 uses `insta-toolbox-v315`.
 
 The loopback development server accepts only loopback Host headers and serves an explicit asset allowlist. Repository metadata, tests, documentation, and Git internals are not served. Framing protection is sent as HTTP headers because `frame-ancestors` is ineffective in a meta policy.
 
@@ -93,7 +95,7 @@ Runtime application code has no third-party production dependencies. The lockfil
 
 CI actions are pinned to full commit SHAs. Pull requests receive dependency review; CodeQL runs on pull requests, `main`, and weekly. Dependabot proposes npm and action updates. Release promotion accepts only artifacts from the successful current `main` CI run, rechecks versions and checksums, generates an SBOM, and requests GitHub provenance attestation without rebuilding.
 
-The 3.1 account-free matrix contains 370 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.4 acceptance record](./acceptance/3.1.4.md). Fixtures do not prove current authenticated Instagram behavior.
+The 3.1 account-free matrix contains 370 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.5 acceptance record](./acceptance/3.1.5.md). Fixtures do not prove current authenticated Instagram behavior.
 
 ## License
 
