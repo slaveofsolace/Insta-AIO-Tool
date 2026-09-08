@@ -7,6 +7,7 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Revisit incomplete native Followers and Following dialogs with tighter scroll steps so recycled rows skipped on the first sweep can still be collected.
 - Use Instagram's own virtualized-list requests throughout the guided check instead of falling back to a request without its live web-session headers.
 - Accept a comparison only when both unique lists match unchanged profile totals.
+- Exclude suggested profiles from list captures. Stop an empty native list that contradicts the profile total without replacing the saved comparison.
 
 ## 3.1.7 - 2026-09-07
 

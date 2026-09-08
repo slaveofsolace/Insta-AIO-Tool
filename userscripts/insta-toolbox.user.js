@@ -3943,12 +3943,30 @@
     return { result: 'unfollowed', relationship: completion.relationship };
   }
 
+  function relationshipListContent(root) {
+    const markers = [...root.querySelectorAll('h1, h2, h3, h4, [role="heading"], span, p')];
+    const suggestions = markers.find((element) => (
+      /^suggested for you$/i.test(visibleText(element).trim())
+      && getComputedStyle(element).display !== 'none'
+    ));
+    const anchors = [...root.querySelectorAll('a[href^="/"]')].filter((anchor) => (
+      !suggestions || Boolean(suggestions.compareDocumentPosition?.(anchor) & 2)
+    ));
+    // Instagram can show recommendations after an empty or failed list load.
+    // Only profile links before that section belong to the relationship list.
+    const empty = markers.some((element) => (
+      /^you['’]ll see all the people (?:who follow you|you follow) here\.?$/i.test(visibleText(element).trim())
+      && getComputedStyle(element).display !== 'none'
+    ));
+    return { anchors, empty };
+  }
+
   function captureVisibleAccounts(expectedListType = '') {
     const listContext = accountListDialog(expectedListType);
     const roots = listContext ? [listContext.dialog] : [];
     const accounts = new Map();
     for (const root of roots) {
-      for (const anchor of root.querySelectorAll('a[href^="/"]')) {
+      for (const anchor of relationshipListContent(root).anchors) {
         const username = normalizeUsername(anchor.getAttribute('href'));
         if (!username) continue;
         accounts.set(username, {
@@ -4103,9 +4121,13 @@
     const expectedCountAtStart = exactProfileListCount(observedListType);
 
     const accounts = new Map();
+    let emptyList = false;
+    let listUnavailable = false;
     const harvest = () => {
       assertActive();
-      for (const anchor of root.querySelectorAll('a[href^="/"]')) {
+      const content = relationshipListContent(root);
+      emptyList = content.empty;
+      for (const anchor of content.anchors) {
         const username = normalizeUsername(anchor.getAttribute('href'));
         if (!username || accounts.has(username)) continue;
         const label = visibleText(anchor);
@@ -4153,6 +4175,11 @@
         harvest();
       }
       harvest();
+      if (emptyList && accounts.size === 0) {
+        complete = expectedCountAtStart === 0;
+        listUnavailable = Number.isSafeInteger(expectedCountAtStart) && expectedCountAtStart > 0;
+        break;
+      }
       if (!scroller) {
         complete = Number.isSafeInteger(expectedCountAtStart)
           && accounts.size === expectedCountAtStart;
@@ -4256,15 +4283,17 @@
       expectedCount,
       observedCount: accounts.size,
       capturedAt: new Date().toISOString(),
-      reason: countChanged
-        ? 'list-count-changed'
-        : countMismatch
-          ? 'list-count-mismatch'
-          : !Number.isSafeInteger(expectedCount)
-            ? 'list-count-unverified'
-            : complete
-              ? 'list-complete'
-              : 'list-truncated',
+      reason: listUnavailable
+        ? 'list-unavailable'
+        : countChanged
+          ? 'list-count-changed'
+          : countMismatch
+            ? 'list-count-mismatch'
+            : !Number.isSafeInteger(expectedCount)
+              ? 'list-count-unverified'
+              : complete
+                ? 'list-complete'
+                : 'list-truncated',
     };
   }
 
@@ -4390,6 +4419,9 @@
         };
         lists[listType] = await collectAccountList({ listType, signal: runSignal, onProgress, validate: assertOwned });
         validate();
+        if (lists[listType].reason === 'list-unavailable') {
+          throw relationshipError('list-unavailable', `Instagram did not load your ${listType}. Try again later.`);
+        }
         await closeOwnedDialog();
       }
       validate();

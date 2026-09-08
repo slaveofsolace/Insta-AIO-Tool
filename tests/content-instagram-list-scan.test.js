@@ -132,6 +132,60 @@ function createHarness(list, {
   return context.InstaToolboxInstagramInspector;
 }
 
+function addRecommendations(list, { empty = false } = {}) {
+  const read = list.dialog.querySelectorAll;
+  const suggestions = Array.from({ length: 30 }, (_, index) => ({
+    textContent: `suggestion${index}`,
+    getAttribute: name => name === 'href' ? `/suggestion${index}/` : null,
+  }));
+  const heading = {
+    textContent: 'Suggested for you',
+    getAttribute: () => null,
+    compareDocumentPosition: anchor => suggestions.includes(anchor) ? 4 : 2,
+  };
+  const emptyMessage = { textContent: "You'll see all the people who follow you here.", getAttribute: () => null };
+  list.dialog.querySelectorAll = selector => {
+    if (selector === 'a[href^="/"]') return [...read(selector), ...suggestions];
+    if (selector === 'h1, h2, h3, h4, [role="heading"], span, p') {
+      return empty ? [emptyMessage, heading] : [heading];
+    }
+    return read(selector);
+  };
+}
+
+test('recommended profiles inside a list dialog never enter visible or full captures', async () => {
+  const list = createLazyList({ total: 25, pageSize: 25 });
+  addRecommendations(list);
+  const inspector = createHarness(list, { profileCount: 55 });
+  assert.equal(inspector.captureVisibleAccounts('followers').length, 25);
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(result.accounts.length, 25);
+  assert.equal(result.complete, false, 'suggestions cannot fill the missing profile total');
+  assert.equal(result.accounts.some(account => account.username.startsWith('suggestion')), false);
+});
+
+test('an empty native list with a positive profile total reports unavailable without scrolling suggestions', async () => {
+  const list = createLazyList({ total: 0 });
+  addRecommendations(list, { empty: true });
+  const inspector = createHarness(list, { profileCount: 30 });
+  assert.equal(inspector.captureVisibleAccounts('followers').length, 0);
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(result.accounts.length, 0);
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'list-unavailable');
+  assert.equal(list.scroller.scrollTop, 0);
+});
+
+test('a genuinely empty list can complete with recommendations excluded', async () => {
+  const list = createLazyList({ total: 0 });
+  addRecommendations(list, { empty: true });
+  const inspector = createHarness(list, { profileCount: 0 });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(result.accounts.length, 0);
+  assert.equal(result.complete, true);
+  assert.equal(result.reason, 'list-complete');
+});
+
 test('full-list scan pages through a lazy list instead of stopping at the first screen', async () => {
   const list = createLazyList({ total: 250, pageSize: 25 });
   const inspector = createHarness(list, { profileCount: 250 });
@@ -351,11 +405,15 @@ function createRecycledList({ total = 63, replaceScroller = false, delayed = fal
   };
 }
 
-function guidedHarness({ total = 45, expected = total, duplicateLink = false, wrongDialog = false, closeButtons = 1 } = {}) {
+function guidedHarness({ total = 45, expected = total, duplicateLink = false, wrongDialog = false, closeButtons = 1, unavailableFollowers = false } = {}) {
   const lists = {
     followers: createRecycledList({ total, delayed: true }),
     following: createRecycledList({ total, replaceScroller: true }),
   };
+  if (unavailableFollowers) {
+    lists.followers = createRecycledList({ total: 0 });
+    addRecommendations(lists.followers, { empty: true });
+  }
   let active = null;
   const clicks = [];
   const listeners = new Map();
@@ -433,6 +491,15 @@ test('guided incomplete lists remain partial instead of producing false non-mutu
   assert.equal(result.complete.following, false);
   assert.equal(result.reasons.followers, 'count-mismatch');
   assert.equal(result.followers.length, 45);
+});
+
+test('guided capture rejects an unavailable native list before saving or opening the next list', async () => {
+  const h = guidedHarness({ unavailableFollowers: true });
+  await assert.rejects(h.inspector.fetchFollowerComparison({
+    mode: 'dialog', username: 'demo_creator',
+  }), { code: 'list-unavailable' });
+  assert.deepEqual(h.clicks, ['open:followers']);
+  assert.equal(h.listeners.size, 0);
 });
 
 test('guided capture never falls back to a request without Instagram native session headers', async () => {

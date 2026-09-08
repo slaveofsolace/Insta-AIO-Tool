@@ -23,7 +23,7 @@ Version 3 keeps the userscript identity introduced in 3.0. Tampermonkey updates 
 
 The 3.1 account-free matrix contains:
 
-- 482 automated tests;
+- 486 automated tests;
 - 45 overlay screenshot states;
 - 11 PWA screenshot states;
 - service-worker cache generation `insta-toolbox-v318`.
@@ -52,6 +52,8 @@ The macOS application is ad-hoc signed for bundle integrity but is not Developer
 ## Evidence and nonclaims
 
 The candidate record is [acceptance/3.1.8.md](./acceptance/3.1.8.md). Compatibility is tracked in [compatibility/3.1.8.md](./compatibility/3.1.8.md).
+
+Authenticated Mutual Checker acceptance has not passed. The native Followers request redirected to the homepage instead of returning list data, and the captured Following list remained below the displayed total. Version 3.1.8 is not ready for release promotion.
 
 Automated fixtures do not prove current authenticated Instagram selectors, human screen-reader use, persistent-profile behavior, SmartScreen trust, Gatekeeper trust, or notarization. Record those checks separately without committing usernames, messages, thread IDs, cookies, tokens, or private screenshots.
 

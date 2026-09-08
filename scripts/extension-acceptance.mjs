@@ -2158,6 +2158,7 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
         header.querySelector('h1, h2').textContent = 'demo_creator';
         globalThis.guidedClicks = [];
         globalThis.guidedInterrupt = false;
+        globalThis.guidedUnavailable = false;
         for (const type of ['followers', 'following']) {
           const link = document.createElement('a');
           link.setAttribute('role', 'link');
@@ -2180,6 +2181,12 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
             scroll.append(spacer);
             const render = () => {
               spacer.replaceChildren();
+              if (globalThis.guidedUnavailable) {
+                const empty = document.createElement('span');
+                empty.textContent = "You'll see all the people who follow you here.";
+                spacer.append(empty);
+                return;
+              }
               const first = Math.max(0, Math.floor(scroll.scrollTop / 40) - 1);
               for (let i = first; i < Math.min(45, first + 7); i += 1) {
                 const row = document.createElement('a');
@@ -2191,7 +2198,17 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
             };
             scroll.addEventListener('scroll', render);
             render();
-            dialog.append(title, close, scroll);
+            const recommendations = document.createElement('section');
+            const suggestionTitle = document.createElement('span');
+            suggestionTitle.textContent = 'Suggested for you';
+            recommendations.append(suggestionTitle);
+            for (let i = 0; i < 30; i += 1) {
+              const suggestion = document.createElement('a');
+              suggestion.href = '/fixture_suggestion' + i + '/';
+              suggestion.textContent = 'fixture_suggestion' + i;
+              recommendations.append(suggestion);
+            }
+            dialog.append(title, close, scroll, recommendations);
             document.body.append(dialog);
             if (globalThis.guidedInterrupt) {
               const notice = document.createElement('p');
@@ -2218,11 +2235,16 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       assert.equal(before.notice, true);
       assert.match(before.result, /45/);
       assert.deepEqual(requests, [], 'only native list navigation, no direct API reader');
+      await webContents.executeJavaScript("globalThis.guidedUnavailable=true; (" + root + ").querySelector('" + button + "').click()", true);
+      await waitForPageValue(webContents, "(" + root + ").textContent.includes('Instagram did not load your followers')", surface + ' unavailable native list');
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
+      assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
+      await webContents.executeJavaScript("document.querySelector('[role=dialog]').remove(); globalThis.guidedUnavailable=false; globalThis.guidedClicks=" + JSON.stringify(before.clicks), true);
       await webContents.executeJavaScript("globalThis.guidedInterrupt=true; (" + root + ").querySelector('" + button + "').click()", true);
       await waitForPageValue(webContents, "(" + root + ").querySelector('" + button + "').textContent.includes('Check Followers')", surface + ' interrupted guided capture');
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
       assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
-      console.log('Accepted ' + surface + ' guided primary-button flow: 45 recycled rows per list, exact open/close order, zero API calls, persistent notice, and interrupted-run preservation.');
+      console.log('Accepted ' + surface + ' guided primary-button flow: 45 recycled rows per list, 30 suggestions excluded, exact open/close order, zero API calls, and saved-comparison preservation on unavailable or interrupted lists.');
     }
   } finally {
     window.destroy();
