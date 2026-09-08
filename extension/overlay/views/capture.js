@@ -499,6 +499,20 @@
             announceProgress('revalidating-profile', `Finishing the mutual check for @${username}.`);
             return;
           }
+          if (progress.phase === 'resweeping') {
+            const label = progress.listType === 'followers' ? 'Followers' : 'Following';
+            setState(
+              runtime,
+              `Checking ${label} again`,
+              `${formatCount(progress.found)} of ${formatCount(progress.expectedCount)} accounts collected. Leave this tab open and untouched.`,
+              'warning',
+            );
+            announceProgress(
+              `resweeping-${progress.listType}-${progress.pages}`,
+              `Checking ${label} again to catch recycled rows.`,
+            );
+            return;
+          }
           if (progress.phase === 'reconciling') {
             setState(runtime, `Finishing @${username}`, 'Completing the full Followers and Following lists.', 'warning');
             announceProgress('reconciling', `Completing the full lists for @${username}.`);

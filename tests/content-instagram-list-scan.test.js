@@ -304,21 +304,26 @@ test('full-list scan stops and reports when Instagram interrupts the session', a
   assert.ok(scanned.accounts.length < 200);
 });
 
-function createRecycledList({ total = 63, replaceScroller = false, delayed = false } = {}) {
+function createRecycledList({ total = 63, replaceScroller = false, delayed = false, omitFirstSweepIndex = -1 } = {}) {
   let first = 0;
   let pending = 0;
   let nextFirst = 0;
   let replaced = false;
+  let sweeps = 0;
   const anchors = Array.from({ length: 7 }, (_, slot) => ({
     get textContent() { return `person${first + slot}`; },
     getAttribute(name) {
-      return name === 'href' && first + slot < total ? `/person${first + slot}/` : null;
+      const index = first + slot;
+      return name === 'href' && index < total && !(sweeps === 0 && index === omitFirstSweepIndex)
+        ? `/person${index}/`
+        : null;
     },
   }));
   const makeScroller = () => ({
     tagName: 'DIV', clientHeight: 200, scrollHeight: total * 50, top: 0,
     get scrollTop() { return this.top; },
     set scrollTop(value) {
+      if (value === 0 && this.top > 0) sweeps += 1;
       this.top = Math.min(Math.max(0, value), this.scrollHeight - this.clientHeight);
       nextFirst = Math.floor(this.top / 50);
       if (delayed) pending = 2;
@@ -430,29 +435,13 @@ test('guided incomplete lists remain partial instead of producing false non-mutu
   assert.equal(result.followers.length, 45);
 });
 
-test('guided capture reconciles Instagram page-boundary duplicates in one run', async () => {
+test('guided capture never falls back to a request without Instagram native session headers', async () => {
   const h = guidedHarness({ expected: 46 });
   const requests = [];
-  const paginatedUsers = [
-    ...Array.from({ length: 44 }, (_, index) => ({
-      pk: String(index + 1),
-      username: `person${index}`,
-    })),
-    { pk: '46', username: 'person45' },
-  ];
   const progress = [];
   const fetchImpl = async (url) => {
     requests.push(url);
-    const data = url.includes('/web/search/topsearch/')
-      ? { users: [{ user: { pk: '77', username: 'demo_creator' } }] }
-      : { users: paginatedUsers, has_more: false, next_max_id: '' };
-    return {
-      headers: { get: () => null },
-      json: async () => data,
-      ok: true,
-      status: 200,
-      url,
-    };
+    assert.fail('dialog mode must use Instagram native list requests');
   };
   const result = await h.inspector.fetchFollowerComparison({
     mode: 'dialog',
@@ -461,17 +450,15 @@ test('guided capture reconciles Instagram page-boundary duplicates in one run', 
     onProgress: entry => progress.push(entry),
   });
 
-  assert.equal(requests.length, 3, 'one account lookup and one traversal per list');
-  assert.equal(requests.filter(url => url.includes('/followers/')).length, 1);
-  assert.equal(requests.filter(url => url.includes('/following/')).length, 1);
-  assert.equal(result.followers.length, 46);
-  assert.equal(result.following.length, 46);
-  assert.equal(result.complete.followers, true);
-  assert.equal(result.complete.following, true);
-  assert.equal(result.reasons.followers, 'pagination-reconciled');
-  assert.equal(result.reasons.following, 'pagination-reconciled');
-  assert.equal(result.source, 'list-dialog-reconciled');
-  assert.ok(progress.some(entry => entry.phase === 'reconciling'));
+  assert.equal(requests.length, 0);
+  assert.equal(result.followers.length, 45);
+  assert.equal(result.following.length, 45);
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.complete.following, false);
+  assert.equal(result.reasons.followers, 'count-mismatch');
+  assert.equal(result.reasons.following, 'count-mismatch');
+  assert.equal(result.source, 'list-dialog');
+  assert.ok(progress.some(entry => entry.phase === 'resweeping'));
 });
 
 for (const [label, options, code] of [
@@ -523,6 +510,20 @@ test('virtualized scans accumulate recycled windows from the top, including dela
   }
 });
 
+test('virtualized scans revisit the list to recover rows skipped during the first sweep', async () => {
+  const list = createRecycledList({ total: 63, omitFirstSweepIndex: 31 });
+  const inspector = createHarness(list, { profileCount: 63, settle: list.settle });
+  const progress = [];
+  const result = await inspector.collectAccountList({
+    settleMs: 0,
+    maxScrolls: 300,
+    listType: 'followers',
+    onProgress: entry => progress.push(entry),
+  });
+  assert.equal(result.accounts.length, 63);
+  assert.equal(result.complete, true);
+  assert.ok(progress.some(entry => entry.phase === 'resweeping'));
+});
 test('a quiet virtualized end without an exact total remains unverified', async () => {
   const list = createRecycledList();
   const inspector = createHarness(list);

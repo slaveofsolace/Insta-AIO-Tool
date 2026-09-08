@@ -1998,6 +1998,20 @@
             setText('scan-detail', `Confirming @${username}'s profile totals did not change…`);
             return;
           }
+          if (progress.phase === 'resweeping') {
+            showScanProgress(
+              progress.listType,
+              progress.found,
+              false,
+              false,
+              progress.expectedCount,
+            );
+            setText(
+              'scan-detail',
+              `Checking ${progress.listType} again to catch recycled rows (${formatCount(progress.found)} of ${formatCount(progress.expectedCount)}). Leave this tab untouched.`,
+            );
+            return;
+          }
           if (progress.phase === 'reconciling') {
             setText('scan-detail', 'Finishing the full Followers and Following lists…');
             return;

@@ -2844,35 +2844,12 @@
     username: requestedUsername,
   } = {}) {
     if (mode === 'dialog') {
-      const reconcileWithPagination = typeof fetchImpl === 'function'
-        ? ({ signal: reconciliationSignal, username }) => fetchFollowerComparison({
-          clearTimer,
-          fetchImpl,
-          maxAccounts,
-          maxDurationMs,
-          maxPages,
-          mode: 'background',
-          now,
-          onProgress: (progress) => onProgress?.(Object.freeze({
-            ...progress,
-            phase: 'reconciling',
-            reconciliationPhase: progress.phase,
-          })),
-          random,
-          requestAttempts,
-          requestTimeoutMs,
-          retryBaseMs,
-          setTimer,
-          signal: reconciliationSignal,
-          sleepImpl,
-          username,
-        })
-        : null;
+      // Instagram adds live session headers to its native virtualized-list requests.
       return collectFollowerComparison({
         username: requestedUsername,
         signal,
         onProgress,
-        reconcileWithPagination,
+        reconcileWithPagination: null,
       });
     }
     const username = normalizeUsername(requestedUsername);
@@ -4153,6 +4130,8 @@
       && Number.isSafeInteger(expectedCountAtStart)
       && accounts.size === expectedCountAtStart;
     let stagnantRounds = 0;
+    let sweep = 0;
+    const maxSweeps = 3;
     for (let round = 0; round < maxScrolls; round += 1) {
       assertActive();
       const currentContext = accountListDialog(expectedListType);
@@ -4193,7 +4172,7 @@
       }
       scroller.scrollTop = Math.min(
         Math.max(0, scroller.scrollHeight - scroller.clientHeight),
-        beforeTop + Math.max(1, Math.floor(scroller.clientHeight * 0.75)),
+        beforeTop + Math.max(1, Math.floor(scroller.clientHeight * (sweep ? 0.5 : 0.75))),
       );
       await settle(settleMs);
       // Instagram keeps its next-page spinner mounted below loaded rows.
@@ -4238,6 +4217,23 @@
       // Instagram lazy-loads in bursts and can pause between pages, so a couple
       // of quiet rounds does not mean the end. Be patient before concluding.
       if (atBottom && !loading && stagnantRounds >= 10) {
+        if (Number.isSafeInteger(expectedCountAtStart)
+          && accounts.size < expectedCountAtStart
+          && sweep + 1 < maxSweeps) {
+          sweep += 1;
+          stagnantRounds = 0;
+          onProgress?.({
+            listType: observedListType,
+            found: accounts.size,
+            expectedCount: expectedCountAtStart,
+            phase: 'resweeping',
+            pages: sweep,
+          });
+          scroller.scrollTop = 0;
+          await settle(settleMs);
+          harvest();
+          continue;
+        }
         break;
       }
     }
@@ -6721,6 +6717,20 @@
           }
           if (progress.phase === 'revalidating-profile') {
             setText('scan-detail', `Confirming @${username}'s profile totals did not change…`);
+            return;
+          }
+          if (progress.phase === 'resweeping') {
+            showScanProgress(
+              progress.listType,
+              progress.found,
+              false,
+              false,
+              progress.expectedCount,
+            );
+            setText(
+              'scan-detail',
+              `Checking ${progress.listType} again to catch recycled rows (${formatCount(progress.found)} of ${formatCount(progress.expectedCount)}). Leave this tab untouched.`,
+            );
             return;
           }
           if (progress.phase === 'reconciling') {
