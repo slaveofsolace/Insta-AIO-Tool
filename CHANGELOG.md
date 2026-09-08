@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.8 - 2026-09-07
+
+- Finish incomplete native Mutual Checker captures with one automatic authenticated pagination pass.
+- Merge only exact observed account identities and accept a comparison only when both lists match unchanged profile totals.
+- Show one short finishing message while Instagram's unstable page-boundary duplicates are reconciled.
+
 ## 3.1.7 - 2026-09-07
 
 - Automate the native Followers → Following scan from the open profile. Keep collected rows as Instagram recycles the visible list, and compare only after both exact totals reconcile.
