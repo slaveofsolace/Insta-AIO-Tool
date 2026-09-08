@@ -7,6 +7,7 @@
   let relationshipController = null;
   const formatCount = (value) => Number(value || 0).toLocaleString('en-US');
   const comparisonAnnouncements = new WeakMap();
+  const relationshipReviews = new WeakMap();
 
   function setState(runtime, title, detail, tone = 'neutral') {
     const state = runtime.query('[data-insta-toolbox-role="capture-state"]');
@@ -83,14 +84,17 @@
       searchControl?.value,
     );
     const hasQuery = Boolean(String(searchControl?.value || '').trim());
+    const categoryKeys = { mutuals: 'mutuals', 'not-following-me-back': 'notFollowingMeBack', 'i-do-not-follow-back': 'iDoNotFollowBack' };
+    const partial = comparison.kind === 'insta-toolbox-relationship-review'
+      && comparison.complete[categoryKeys[categoryControl?.value] || 'notFollowingMeBack'] !== true;
     setText('checker-filter-count', String(result.total));
-    setText('checker-filter-detail', result.total === 1 ? 'account' : 'accounts');
+    setText('checker-filter-detail', `${result.total === 1 ? 'account' : 'accounts'}${partial ? ' · partial list' : ''}`);
     const categoryLabel = categoryControl?.selectedOptions?.[0]?.textContent
       || 'Comparison';
     if (!relationshipController) {
       announceComparisonResult(
         runtime,
-        `${categoryLabel}: ${formatCount(result.total)} ${result.total === 1 ? 'account' : 'accounts'}${hasQuery ? ' match this search' : ''}.`,
+        `${categoryLabel}: ${formatCount(result.total)} ${result.total === 1 ? 'account' : 'accounts'}${hasQuery ? ' match this search' : ''}.${partial ? ' Partial list.' : ''}`,
       );
     }
 
@@ -109,7 +113,7 @@
       empty.className = 'insta-toolbox-empty';
       empty.textContent = hasQuery
         ? 'No captured username matches this search.'
-        : 'No accounts are in this comparison group.';
+        : partial ? 'No verified accounts in this group yet. The list is incomplete.' : 'No accounts are in this comparison group.';
       list.append(empty);
     } else if (result.truncated) {
       const more = document.createElement('li');
@@ -134,7 +138,7 @@
         || '';
     }
     const runButton = query('[data-insta-toolbox-role="checker-run"]');
-    const backgroundButton = query('[data-insta-toolbox-role="checker-background"]');
+    const backgroundButton = query('[data-insta-toolbox-role="checker-dialog"]');
     if (backgroundButton) backgroundButton.disabled = Boolean(relationshipController);
     if (runButton) {
       runButton.textContent = relationshipController
@@ -146,13 +150,14 @@
       ? 'followers'
       : 'following';
     const accounts = workspace[listType] || [];
-    const comparison = shared.compareCaptureWorkspace(workspace);
+    const review = relationshipReviews.get(model);
+    const comparison = review || shared.compareCaptureWorkspace(workspace);
     const batch = model.captureMeta;
     const followersVerified = workspace.verified?.followers === true;
     const followingVerified = workspace.verified?.following === true;
     const selectedVerified = workspace.verified?.[listType] === true;
-    const comparisonReady = followersVerified && followingVerified
-      && workspace.complete?.followers === true && workspace.complete?.following === true;
+    const comparisonReady = Boolean(review) || (followersVerified && followingVerified
+      && workspace.complete?.followers === true && workspace.complete?.following === true);
     const reportDownload = query('[data-insta-toolbox-role="comparison-report-download"]');
     const jsonDownload = query('[data-insta-toolbox-role="comparison-json-download"]');
     if (comparisonReady
@@ -162,18 +167,18 @@
       const filenameSuffix = generatedAt.replace(/[:.]/g, '-');
       downloads.update('comparison-report', reportDownload, {
         filename: `insta-toolbox-mutual-comparison-${filenameSuffix}.txt`,
-        text: inspector.followerComparisonReport(workspace, comparison, generatedAt),
+        text: review ? inspector.relationshipReviewReport(review) : inspector.followerComparisonReport(workspace, comparison, generatedAt),
       });
       downloads.update('comparison-json', jsonDownload, {
-        filename: `insta-toolbox-mutual-comparison-${filenameSuffix}.json`,
-        payload: inspector.followerComparisonRecord(workspace, comparison, generatedAt),
+        filename: `insta-toolbox-${review ? 'follow-back-review' : 'mutual-comparison'}-${filenameSuffix}.json`,
+        payload: review || inspector.followerComparisonRecord(workspace, comparison, generatedAt),
       });
     } else {
       downloads.clear('comparison-report', reportDownload);
       downloads.clear('comparison-json', jsonDownload);
     }
-    setText('followers-count', formatCount(followersVerified ? workspace.followers.length : 0));
-    setText('following-count', formatCount(followingVerified ? workspace.following.length : 0));
+    setText('followers-count', formatCount(review ? review.counts.followers : followersVerified ? workspace.followers.length : 0));
+    setText('following-count', formatCount(review ? review.counts.following : followingVerified ? workspace.following.length : 0));
     setText('capture-count', formatCount(accounts.length));
     setText(
       'capture-detail',
@@ -209,6 +214,9 @@
         'Please leave this tab open and untouched while the check runs. Use Stop mutual check to cancel.',
         'warning',
       );
+    } else if (review) {
+      setState(runtime, 'Follow-back results ready',
+        `${formatCount(review.counts.following)} following returned; Instagram's total is ${formatCount(review.counts.expectedFollowing)}. Followers: ${formatCount(review.counts.followers)} of ${formatCount(review.counts.expectedFollowers)}. Saved comparison unchanged.`, 'warning');
     } else if (comparisonReady) {
       setState(
         runtime,
@@ -231,16 +239,16 @@
     if (checker) {
       checker.replaceChildren();
       const heading = document.createElement('h2');
-      heading.textContent = comparisonReady
+      heading.textContent = review ? `Verified follow-backs · @${review.subjectUsername}` : comparisonReady
         ? authenticatedCheck ? 'Account comparison' : 'Scanned-list comparison'
         : 'No comparison loaded';
       checker.append(heading);
       if (comparisonReady) {
         const facts = document.createElement('dl');
         for (const [label, value] of [
-          ['Mutuals', comparison.mutuals.length],
-          ["Don't follow you back", comparison.notFollowingMeBack.length],
-          ["You don't follow back", comparison.iDoNotFollowBack.length],
+          [review && !review.complete.mutuals ? 'Mutuals (partial)' : 'Mutuals', comparison.mutuals.length],
+          [review && !review.complete.notFollowingMeBack ? "Don't follow you back (partial)" : "Don't follow you back", comparison.notFollowingMeBack.length],
+          [review && !review.complete.iDoNotFollowBack ? "You don't follow back (partial)" : "You don't follow back", comparison.iDoNotFollowBack.length],
         ]) {
           const term = document.createElement('dt');
           term.textContent = label;
@@ -249,6 +257,12 @@
           facts.append(term, detail);
         }
         checker.append(facts);
+        if (review) {
+          const note = document.createElement('p');
+          note.className = 'insta-toolbox-note';
+          note.textContent = 'Only verified accounts are listed. Partial groups may omit accounts. Available until reload; saved comparison unchanged.';
+          checker.append(note);
+        }
       } else {
         const detail = document.createElement('p');
         detail.className = 'insta-toolbox-note';
@@ -263,6 +277,9 @@
       comparison,
       comparisonReady,
     );
+    if (review && query('[data-insta-toolbox-role="checker-category"]')?.value === 'i-do-not-follow-back') {
+      setText('checker-filter-detail', review.complete.iDoNotFollowBack ? 'accounts' : 'known followers · partial');
+    }
 
     if (batch?.listType === listType) {
       setState(
@@ -304,6 +321,7 @@
   }
 
   async function captureVisible(runtime) {
+    relationshipReviews.delete(runtime.model);
     const { inspector, model, query, status } = runtime;
     const listType = query('[data-insta-toolbox-role="list-type"]')?.value === 'followers'
       ? 'followers'
@@ -399,6 +417,7 @@
 
   // Auto-scrolls the open Followers/Following dialog and reads every rendered row.
   async function scanFullList(runtime, requestedListType = null) {
+    relationshipReviews.delete(runtime.model);
     const { inspector, query, status } = runtime;
     const listType = requestedListType === 'followers'
       ? 'followers'
@@ -457,6 +476,7 @@
     if (input) input.value = username;
     const controller = new AbortController();
     relationshipController = controller;
+    relationshipReviews.delete(model);
     let announcedProgressKey = '';
     const announceProgress = (key, message) => {
       if (key === announcedProgressKey) return;
@@ -554,6 +574,12 @@
         },
       });
       if (!result.complete?.followers || !result.complete?.following) {
+        if (result.relationshipReview) {
+          relationshipReviews.set(model, result.relationshipReview);
+          model.captureMeta = null;
+          status('Follow-back results ready. Check list coverage below. Saved comparison unchanged.', 'warning');
+          return;
+        }
         throw new Error(`Instagram returned ${formatCount(result.followers.length)} of ${formatCount(result.expectedCounts?.followers)} followers and ${formatCount(result.following.length)} of ${formatCount(result.expectedCounts?.following)} following. Full lists could not be verified. The previous comparison is unchanged.`);
       }
       const nextCapture = shared.normalizeCaptureWorkspace({
@@ -620,6 +646,7 @@
   async function reset(runtime) {
     relationshipController?.abort();
     relationshipController = null;
+    relationshipReviews.delete(runtime.model);
     runtime.model.capture = shared.captureWorkspaceDefaults();
     runtime.model.captureMeta = null;
     await runtime.persistCapture(null);

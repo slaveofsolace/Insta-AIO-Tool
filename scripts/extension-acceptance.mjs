@@ -2142,10 +2142,13 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       const following = url.searchParams.get('query_hash') === '3dec7e2c57367ef3da3d987d89f9dbc8';
       const edge = following ? 'edge_follow' : 'edge_followed_by';
       const second = Boolean(variables.after);
-      const ids = second ? (graphScenario === 'partial' ? [] : [following ? 4 : 3]) : (following ? [2, 3] : [1, 2]);
+      const ids = second ? (graphScenario === 'partial' || (graphScenario.startsWith('reciprocal') && !following) ? [] : following && graphScenario === 'reciprocal-counter' ? [4, 5] : [following ? 4 : 3]) : (following ? [2, 3] : [1, 2]);
       return Response.json({ status: 'ok', data: { user: { id: '77', [edge]: {
         count: 3,
-        edges: ids.map(id => ({ node: { id: String(id), username: 'fixture_person' + id } })),
+        edges: ids.map(id => ({ node: {
+          id: String(id), username: 'fixture_person' + id,
+          ...(graphScenario.startsWith('reciprocal') ? { follows_viewer: id !== 4, followed_by_viewer: following || id !== 1 } : {}),
+        } })),
         page_info: { has_next_page: !second, end_cursor: second ? null : (following ? 'following-next' : 'followers-next') },
       } } } });
     }
@@ -2167,12 +2170,15 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       const webContents = window.webContents;
       const host = userscript ? '#insta-toolbox-userscript-root' : '#insta-toolbox-sidecar-root';
       const root = "document.querySelector('" + host + "').shadowRoot";
-      const button = userscript ? '[data-action="check-account-relationships"]' : '[data-insta-toolbox-action="check-account-relationships"]';
+      const button = userscript ? '[data-action="check-account-dialog"]' : '[data-insta-toolbox-action="check-account-dialog"]';
       const input = userscript ? '[data-role="checker-username"]' : '[data-insta-toolbox-role="checker-username"]';
       const result = userscript ? '[data-role="comparison"]' : '[data-insta-toolbox-role="checker-result"]';
       const surface = userscript ? 'userscript' : 'extension';
       await webContents.loadURL('https://www.instagram.com/' + (userscript ? 'userscript-fixture.html' : 'fixture.html?mode=qa-profile-following&shadow=open'));
       await waitForPageValue(webContents, "Boolean(document.querySelector('" + host + "')?.shadowRoot)", surface + ' guided fixture');
+      if (!userscript) {
+        await webContents.executeJavaScript("(" + root + ").querySelector('[data-insta-toolbox-action=open]').click()", true);
+      }
       const setup = () => {
         document.querySelectorAll('[role="dialog"]').forEach(node => node.remove());
         history.replaceState({}, '', '/demo_creator/');
@@ -2265,14 +2271,14 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       await webContents.executeJavaScript('(' + setup.toString() + ')()', true);
       await webContents.executeJavaScript("(() => {const shadow = " + root + ";" +
         (userscript ? '' : "shadow.querySelector('.insta-toolbox-launcher').click(); shadow.querySelector('[data-insta-toolbox-section=\"capture\"]').click();") +
-        "shadow.querySelector('" + input + "').value = 'demo_creator'; shadow.querySelector('" + button + "').click();})()", true);
+        "shadow.querySelector('" + input + "').value = 'demo_creator'; shadow.querySelector('" + button + "').closest('details').open = true; shadow.querySelector('" + button + "').click();})()", true);
       try {
         await waitForPageValue(webContents, "(" + root + ").querySelector('" + result + "').textContent.includes('Scanned-list comparison')", surface + ' guided comparison', 45_000);
       } catch (error) {
         console.error(await webContents.executeJavaScript("({result:(" + root + ").querySelector('" + result + "').textContent,clicks:globalThis.guidedClicks})", true));
         throw error;
       }
-      const before = await webContents.executeJavaScript("({result:(" + root + ").querySelector('" + result + "').textContent,dialogs:document.querySelectorAll('[role=\"dialog\"]').length,clicks:globalThis.guidedClicks,notice:(" + root + ").textContent.includes('leave this tab open and untouched')})", true);
+      const before = await webContents.executeJavaScript("({result:(" + root + ").querySelector('" + result + "').textContent,dialogs:document.querySelectorAll('[role=\"dialog\"]').length,clicks:globalThis.guidedClicks,notice:(" + root + ").textContent.includes('Leave the tab untouched')})", true);
       assert.equal(before.dialogs, 0);
       assert.deepEqual(before.clicks, ['open:followers', 'close:followers', 'open:following', 'close:following']);
       assert.equal(before.notice, true);
@@ -2289,10 +2295,10 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
       await webContents.executeJavaScript("document.querySelector('[role=dialog]').remove(); globalThis.guidedStalled=false; globalThis.guidedClicks=" + JSON.stringify(before.clicks), true);
       await webContents.executeJavaScript("globalThis.guidedInterrupt=true; (" + root + ").querySelector('" + button + "').click()", true);
-      await waitForPageValue(webContents, "(" + root + ").querySelector('" + button + "').textContent.includes('Check Followers')", surface + ' interrupted guided capture');
+      await waitForPageValue(webContents, "!(" + root + ").querySelector('" + button + "').disabled", surface + ' interrupted guided capture');
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
       assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
-      console.log('Accepted ' + surface + ' guided primary-button flow: delayed initial rows, hidden-first loaders, 45 recycled rows per list, 30 suggestions excluded, exact open/close order, zero API calls, and saved-comparison preservation on unavailable, stalled, or interrupted lists.');
+      console.log('Accepted ' + surface + ' guided-list button: delayed initial rows, hidden-first loaders, 45 recycled rows per list, 30 suggestions excluded, exact open/close order, zero API calls, and saved-comparison preservation on unavailable, stalled, or interrupted lists.');
       graphScenario = 'complete';
       requests.length = 0;
       await webContents.loadURL('https://www.instagram.com/' + (userscript ? 'userscript-fixture.html' : 'fixture.html?mode=qa-profile-following&shadow=open'));
@@ -2303,6 +2309,9 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
         const header = document.querySelector('header');
         header.querySelector('h1, h2').textContent = 'demo_creator';
         globalThis.graphListClicks = 0;
+        const profile = document.createElement('a');
+        profile.href = '/demo_creator/'; profile.setAttribute('aria-label', 'Profile');
+        document.body.append(profile);
         for (const type of ['followers', 'following']) {
           const link = document.createElement('a');
           link.href = '#'; link.setAttribute('role', 'link'); link.textContent = '3 ' + type;
@@ -2310,9 +2319,19 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
           header.append(link);
         }
       })()`, true);
-      const graphButton = userscript ? '[data-action="check-account-background"]' : '[data-insta-toolbox-action="check-account-background"]';
-      const clickGraph = "(() => {const shadow = " + root + ";shadow.querySelector('" + input + "').value = 'demo_creator';shadow.querySelector('" + graphButton + "').click();})()";
-      await webContents.executeJavaScript(clickGraph, true);
+      const graphButton = userscript ? '[data-action="check-account-relationships"]' : '[data-insta-toolbox-action="check-account-relationships"]';
+      const clickGraph = async () => {
+        if (!userscript) {
+          const launcher = "(" + root + ").querySelector('[data-insta-toolbox-action=open]')";
+          if (await webContents.executeJavaScript(`(() => { const r = ${launcher}.getBoundingClientRect(); return r.width > 0 && r.height > 0; })()`, true)) {
+            await trustedClick(webContents, launcher, 'open checker toolbox');
+          }
+          await trustedClick(webContents, "(" + root + ").querySelector('#insta-toolbox-tab-capture')", 'Mutual Checker tab');
+        }
+        await webContents.executeJavaScript("(" + root + ").querySelector('" + input + "').value = 'demo_creator'", true);
+        await trustedClick(webContents, "(" + root + ").querySelector('" + graphButton + "')", surface + ' primary background check');
+      };
+      await clickGraph();
       try {
         const completeCount = userscript
           ? "(" + root + ").querySelector('" + result + "').textContent.includes('3 followers · 3 following')"
@@ -2327,17 +2346,50 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       assert.equal(await webContents.executeJavaScript('globalThis.graphListClicks', true), 0);
       graphScenario = 'partial';
       requests.length = 0;
-      await webContents.executeJavaScript(clickGraph, true);
+      await clickGraph();
       await waitForPageValue(webContents, "(" + root + ").textContent.includes('Full lists could not be verified') && !(" + root + ").querySelector('" + graphButton + "').disabled", surface + ' partial background preservation');
       assert.equal(requests.length, 5);
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), completeGraph);
       graphScenario = 'rate-limited';
       requests.length = 0;
-      await webContents.executeJavaScript(clickGraph, true);
+      await clickGraph();
       await waitForPageValue(webContents, "(" + root + ").textContent.includes('rate limiting this check') && !(" + root + ").querySelector('" + graphButton + "').disabled", surface + ' background restriction stop');
       assert.equal(requests.length, 2, 'no retry or fallback after restriction');
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), completeGraph);
       assert.equal(await webContents.executeJavaScript('globalThis.graphListClicks', true), 0);
+      graphScenario = 'reciprocal';
+      requests.length = 0;
+      await clickGraph();
+      await waitForPageValue(webContents, "(" + root + ").querySelector('" + result + "').textContent.includes('Verified follow-backs')", surface + ' explicit follow-back review');
+      assert.equal(requests.length, 5);
+      assert.equal(await webContents.executeJavaScript('globalThis.graphListClicks', true), 0);
+      const reviewList = userscript ? '[data-role="comparison-list"]' : '[data-insta-toolbox-role="checker-filtered-list"]';
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + reviewList + "').textContent.includes('fixture_person4')", true), true);
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + reviewList + "').textContent.includes('fixture_person3')", true), false, 'an omitted follower with an explicit true flag is not a non-follower');
+      const category = userscript ? '[data-role="comparison-category"]' : '[data-insta-toolbox-role="checker-category"]';
+      await webContents.executeJavaScript("(() => { const control = (" + root + ").querySelector('" + category + "'); control.value='i-do-not-follow-back'; control.dispatchEvent(new Event('change',{bubbles:true})); })()", true);
+      assert.match(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), /incomplete|partial/i);
+      const reportButton = userscript ? '[data-role="comparison-report-download"]' : '[data-insta-toolbox-role="comparison-report-download"]';
+      assert.equal(await webContents.executeJavaScript("Boolean((" + root + ").querySelector('" + reportButton + "'))", true), true);
+      if (userscript) assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('[data-role=scan-bar]').hidden", true), true, 'a settled review must not retain a loading bar');
+      graphScenario = 'reciprocal-counter';
+      await clickGraph();
+      await waitForPageValue(webContents, "(" + root + ").querySelector('" + result + "').textContent.includes('Verified follow-backs')", surface + ' direct evidence despite counter mismatch');
+      await webContents.executeJavaScript("(() => { const control = (" + root + ").querySelector('" + category + "'); control.value='not-following-me-back'; control.dispatchEvent(new Event('change',{bubbles:true})); })()", true);
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + reviewList + "').textContent.includes('fixture_person4')", true), true);
+      const coverage = userscript ? '[data-role="comparison-count"]' : '[data-insta-toolbox-role="checker-filter-detail"]';
+      assert.match(await webContents.executeJavaScript("(" + root + ").querySelector('" + coverage + "').textContent", true), /partial/i, 'individual evidence cannot imply complete list coverage');
+      if (!userscript) {
+        assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('[data-insta-toolbox-role=followers-count]').textContent", true), '2');
+        assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('[data-insta-toolbox-role=following-count]').textContent", true), '4');
+      }
+      await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').scrollIntoView({block:'start',behavior:'instant'})", true);
+      await webContents.executeJavaScript('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))', true);
+      await writeFile(path.join(resultsRoot, `verified-follow-backs-${surface}.png`), (await webContents.capturePage()).toPNG());
+      graphScenario = 'rate-limited';
+      await clickGraph();
+      await waitForPageValue(webContents, "(" + root + ").textContent.includes('rate limiting this check')", surface + ' review cleared without saved-data loss');
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), completeGraph, 'the transient review must not overwrite the previous complete comparison');
       console.log('Accepted ' + surface + ' background button: both cursor chains, no list clicks, partial-save preservation, and immediate restriction stop.');
     }
   } finally {

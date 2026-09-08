@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "capturedAt": "2026-09-08T01:09:11.508Z",
+  "capturedAt": "2026-09-08T18:46:45.686Z",
   "platform": "win32",
-  "builtExtensionVersion": "3.1.7",
+  "builtExtensionVersion": "3.1.8",
   "screenshots": [
     {
       "id": "settings-customization",
@@ -213,7 +213,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -595,7 +595,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -807,7 +807,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -1026,7 +1026,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -1244,7 +1244,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -1309,7 +1309,7 @@
     },
     {
       "id": "followers-first-capture",
-      "sha256": "dcdad84d1d587fd6cf929d6b0293069b4fa7bed6a27baa311ae7dc54ca73c86a",
+      "sha256": "505d87a7da7314f11da33c04d23e279c7c213ebe2f5a72f5d7f64a73cb1c5d9c",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "followers",
@@ -1373,11 +1373,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 758.5625,
+            "bottom": 741.171875,
             "height": 27,
             "left": 1076,
             "right": 1410,
-            "top": 731.5625,
+            "top": 714.171875,
             "width": 334
           },
           "header": {
@@ -1425,18 +1425,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 759.5625,
-            "height": 705.5625,
+            "bottom": 742.171875,
+            "height": 688.171875,
             "left": 951,
             "right": 1411,
             "top": 54,
             "width": 460
           },
-          "panelAreaShare": 0.2504311342592593,
+          "panelAreaShare": 0.24425853587962962,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 759.5625,
-            "height": 705.5625,
+            "bottom": 742.171875,
+            "height": 688.171875,
             "left": 951,
             "right": 1411,
             "top": 54,
@@ -1510,18 +1510,18 @@
           },
           "status": "Ready. Read 3 rendered rows; 3 unique in the local draft.",
           "statusRegion": {
-            "bottom": 727.5625,
+            "bottom": 710.171875,
             "height": 36,
             "left": 1084,
             "right": 1402,
-            "top": 691.5625,
+            "top": 674.171875,
             "width": 318
           },
           "statusSemantics": {
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 872,
@@ -1590,6 +1590,11 @@
             },
             {
               "height": 44,
+              "label": "Scan Instagram lists",
+              "width": 151.8125
+            },
+            {
+              "height": 44,
               "label": "Scan",
               "width": 55.6875
             },
@@ -1631,7 +1636,7 @@
     },
     {
       "id": "following-repeated-capture",
-      "sha256": "9a74de9535840e6398818bb97d7582e8b713f04c153a4f4c9c759a21011426c9",
+      "sha256": "5eb8cf5589106438c21b9a8980dcf5db3f8a10d2009807ee0eadd62e4a4c3706",
       "scenario": {
         "after": "capture-visible",
         "captureListType": "following",
@@ -1695,11 +1700,11 @@
           "documentWidth": 1425,
           "dock": "right",
           "footer": {
-            "bottom": 758.5625,
+            "bottom": 741.171875,
             "height": 27,
             "left": 1076,
             "right": 1410,
-            "top": 731.5625,
+            "top": 714.171875,
             "width": 334
           },
           "header": {
@@ -1747,18 +1752,18 @@
           "opacity": "88%",
           "overflowing": [],
           "panel": {
-            "bottom": 759.5625,
-            "height": 705.5625,
+            "bottom": 742.171875,
+            "height": 688.171875,
             "left": 951,
             "right": 1411,
             "top": 54,
             "width": 460
           },
-          "panelAreaShare": 0.2504311342592593,
+          "panelAreaShare": 0.24425853587962962,
           "panelHorizontalOverflow": 0,
           "presentation": {
-            "bottom": 759.5625,
-            "height": 705.5625,
+            "bottom": 742.171875,
+            "height": 688.171875,
             "left": 951,
             "right": 1411,
             "top": 54,
@@ -1832,18 +1837,18 @@
           },
           "status": "Ready. Read 3 rendered rows; 4 unique in the local draft.",
           "statusRegion": {
-            "bottom": 727.5625,
+            "bottom": 710.171875,
             "height": 36,
             "left": 1084,
             "right": 1402,
-            "top": 691.5625,
+            "top": 674.171875,
             "width": 318
           },
           "statusSemantics": {
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 872,
@@ -1912,6 +1917,11 @@
             },
             {
               "height": 44,
+              "label": "Scan Instagram lists",
+              "width": 151.8125
+            },
+            {
+              "height": 44,
               "label": "Scan",
               "width": 55.6875
             },
@@ -1953,7 +1963,7 @@
     },
     {
       "id": "checker-filtered-results",
-      "sha256": "987dc07dd34344cf34e8cd93053162d214bca00ff2b5100fa21ed95a8f87c75c",
+      "sha256": "0453a281c6fa845a952c4a64fae20fb6227edfa814c63da82493da7609b2b44d",
       "scenario": {
         "after": "filter-checker-results",
         "captureListType": null,
@@ -2169,7 +2179,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -2241,6 +2251,11 @@
             },
             {
               "height": 44,
+              "label": "Scan Instagram lists",
+              "width": 151.8125
+            },
+            {
+              "height": 44,
               "label": "Scan",
               "width": 55.6875
             },
@@ -2282,7 +2297,7 @@
     },
     {
       "id": "checker-authenticated-read",
-      "sha256": "24345280e8ab484624af9d6b8b3a1194218c8288e1cac6471d9245d473a31b5a",
+      "sha256": "5b2bdee01bd2cb31a8a85f8c3fac1467f134ec7e4f8fd01940cfacb72a22dd9b",
       "scenario": {
         "after": "check-account-relationships",
         "captureListType": null,
@@ -2570,7 +2585,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -2639,6 +2654,11 @@
               "height": 44,
               "label": "",
               "width": 287
+            },
+            {
+              "height": 44,
+              "label": "Scan Instagram lists",
+              "width": 151.8125
             },
             {
               "height": 44,
@@ -2902,7 +2922,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -3214,7 +3234,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -3437,7 +3457,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": {
             "bottom": 886,
             "height": 67,
@@ -3666,7 +3686,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -3973,7 +3993,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 177.984375,
@@ -4256,7 +4276,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 237.578125,
@@ -4532,7 +4552,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 237.578125,
@@ -4743,7 +4763,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": {
             "bottom": 886,
             "height": 67,
@@ -4769,7 +4789,7 @@
     },
     {
       "id": "workspace-unpaired",
-      "sha256": "39f173ab4bfa088f7229b0cf2d600235d8589b4a8057b458dd82e2bc6ab0fbff",
+      "sha256": "be46fa5766a907cdc3c659a0b5c9550172023f3fe2c56f7c7ffb913373b110d4",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -4980,7 +5000,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -5038,7 +5058,7 @@
     },
     {
       "id": "workspace-read-only",
-      "sha256": "c8ac30da69c3d657137252c816321cef8fec935e4d67f919dee17789d9309312",
+      "sha256": "290249430d876a59849efc272e2f7da4676514810e8f463a292cc7739d805527",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5229,7 +5249,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -5287,7 +5307,7 @@
     },
     {
       "id": "workspace-action-permission",
-      "sha256": "310b68cbfa74d8d1b8483fdf33b6472c2fd4ead99da9aa6c62cb573e794b993b",
+      "sha256": "c7e9ee225f3fbf98519ad68e971817c55ef9414559fd364fb37bb617c92b69d3",
       "scenario": {
         "after": null,
         "captureListType": null,
@@ -5478,7 +5498,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -5679,7 +5699,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": {
             "bottom": 886,
             "height": 67,
@@ -5857,7 +5877,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -6067,7 +6087,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -6277,7 +6297,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -6463,7 +6483,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -6656,7 +6676,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -6879,7 +6899,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -7072,7 +7092,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -7295,7 +7315,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 117,
@@ -7483,7 +7503,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 177.984375,
@@ -7895,7 +7915,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 237.578125,
@@ -8113,7 +8133,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61,
@@ -8301,7 +8321,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61,
@@ -8519,7 +8539,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -8707,7 +8727,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -8925,7 +8945,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61.5,
@@ -9113,7 +9133,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61.5,
@@ -9301,7 +9321,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61.5,
@@ -9546,7 +9566,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61.5,
@@ -9968,7 +9988,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "dark",
@@ -10179,7 +10199,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -10372,7 +10392,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -10589,7 +10609,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 91,
@@ -10707,7 +10727,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": {
             "bottom": 61,
@@ -10797,7 +10817,7 @@
           }
         ],
         "metrics": {
-          "activeElementSection": null,
+          "activeElementSection": "queue",
           "adaptiveDock": null,
           "adaptiveWidth": null,
           "bodyWidth": 1425,
@@ -11015,7 +11035,7 @@
             "atomic": "true",
             "live": "polite"
           },
-          "workspaceExtensionVersion": "3.1.7",
+          "workspaceExtensionVersion": "3.1.8",
           "strip": null,
           "target": null,
           "theme": "light",
@@ -11108,13 +11128,13 @@
     }
   ],
   "performance": {
-    "collapsedTaskMs": 4.364,
-    "openTaskMs": 3.6220000000000003,
+    "collapsedTaskMs": 4.672,
+    "openTaskMs": 4.571000000000002,
     "queue": {
-      "durationMs": 29.100000001490116,
+      "durationMs": 28.700000002980232,
       "renderedItems": 1,
-      "totalOverlayNodes": 385
+      "totalOverlayNodes": 387
     },
-    "routeTransitionMs": 93
+    "routeTransitionMs": 98.40000000596046
   }
 }

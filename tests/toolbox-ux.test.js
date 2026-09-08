@@ -349,7 +349,9 @@ test('userscript comparison and downloads wait for both complete lists', () => {
   state.capture.complete.following = false;
   assert.equal(comparisonIsReady(), false);
   assert.match(shell, /const comparisonReady = comparisonIsReady\(\)/);
-  assert.match(extensionCapture, /const comparisonReady = followersVerified && followingVerified\s*&& workspace\.complete\?\.followers === true && workspace\.complete\?\.following === true/);
+  assert.match(extensionCapture, /const comparisonReady = Boolean\(review\) \|\| \(followersVerified && followingVerified\s*&& workspace\.complete\?\.followers === true && workspace\.complete\?\.following === true\)/);
+  assert.match(shell, /review \? engine\.relationshipReviewReport\(review\) : engine\.followerComparisonReport/);
+  assert.match(shell, /insta-toolbox-follow-back-review/);
 });
 
 test('a run shows its targets and skip reasons before it starts', () => {
@@ -381,11 +383,12 @@ test('the open exact profile is the direct bounded Follow or Unfollow source', (
   assert.match(shell, /const count = source === 'current-profile' \? 1 : requestedCount/);
   assert.match(shell, /'current-profile': \(\) => \{/);
   assert.match(shell, /source !== 'current-profile' && action === 'follow'/);
-  assert.match(shell, /Automatically open and scan both lists\./);
+  assert.match(shell, /Check mutuals in the background\./);
   assert.match(shell, /function checkAccountRelationships\(mode = 'dialog'\)/);
-  assert.match(shell, /'check-account-background': \(\) => checkAccountRelationships\('graphql'\)/);
-  assert.match(shell, /data-role="checker-background"/);
-  assert.match(shell, /Please leave this tab open and untouched/);
+  assert.match(shell, /'check-account-relationships': \(\) => checkAccountRelationships\('graphql'\)/);
+  assert.match(shell, /'check-account-dialog': \(\) => checkAccountRelationships\('dialog'\)/);
+  assert.match(shell, /data-role="checker-dialog"/);
+  assert.match(shell, /Keep your profile open until it finishes/);
   assert.match(shell, /Open one Instagram profile first\. No target was reviewed\./);
 });
 

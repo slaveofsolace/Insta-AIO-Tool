@@ -99,6 +99,7 @@ function createInspector({
   profileCounts = null,
   profileLinks: suppliedProfileLinks = null,
   pageLocation = null,
+  viewerUsername = '',
 } = {}) {
   const profileLinkData = Array.isArray(suppliedProfileLinks)
     ? suppliedProfileLinks
@@ -126,9 +127,14 @@ function createInspector({
   const document = {
     body: { innerText: '' },
     querySelector: () => null,
-    querySelectorAll: (selector) => (
-      selector === 'a[role="link"], a[href="#"]' ? profileLinks : []
-    ),
+    querySelectorAll: (selector) => {
+      if (selector === 'a[role="link"], a[href="#"]') return profileLinks;
+      const viewer = typeof viewerUsername === 'function' ? viewerUsername() : viewerUsername;
+      return selector === 'a[href]' && viewer ? [{
+        getAttribute: name => name === 'href' ? `/${viewer}/` : name === 'aria-label' ? 'Profile' : null,
+        querySelectorAll: () => [],
+      }] : [];
+    },
   };
   const context = vm.createContext({
     AbortController,
@@ -1685,9 +1691,10 @@ async function graphFixture({
   following = [graphPage([['2', 'mutual.person'], ['3', 'outgoing.person']], 2)],
   counts = { followers: 2, following: 2 }, onRequest = () => {}, options = {},
   pageLocation = { href: 'https://www.instagram.com/target_name/', origin: 'https://www.instagram.com', pathname: '/target_name/' },
+  viewerUsername = '',
 } = {}) {
   const inspector = createInspector({
-    pageLocation,
+    pageLocation, viewerUsername,
     profileLinks: ['followers', 'following'].map(type => ({
       href: '#', inProfileHeader: true, title: `${counts[type]} ${type}`,
     })),
@@ -1813,4 +1820,140 @@ test('background reader never retries restrictions or unreadable pages through a
     } } }));
     assert.equal(calls, 2);
   }
+});
+
+function relationshipGraphPage(rows, count, cursor = null) {
+  const page = graphPage(rows.map(row => row.slice(0, 2)), count, cursor);
+  page.edges.forEach((edge, index) => {
+    edge.node.follows_viewer = rows[index][2];
+    edge.node.followed_by_viewer = rows[index].length > 3 ? rows[index][3] : true;
+  });
+  return page;
+}
+
+test('explicit viewer status proves follow-backs without pretending the Followers list is complete', async () => {
+  const result = await graphFixture({
+    viewerUsername: 'target_name', counts: { followers: 3, following: 2 },
+    followers: [graphPage([['1', 'incoming.person']], 3)],
+    following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], 2)],
+  });
+  assert.equal(result.complete.followers, false);
+  const review = result.relationshipReview;
+  assert.equal(review.kind, 'insta-toolbox-relationship-review');
+  assert.equal(review.complete.notFollowingMeBack, true);
+  assert.equal(review.complete.mutuals, true);
+  assert.equal(review.complete.iDoNotFollowBack, false);
+  assert.deepEqual(Array.from(review.mutuals, row => row.username), ['mutual.person']);
+  assert.deepEqual(Array.from(review.notFollowingMeBack, row => row.username), ['outgoing.person']);
+  assert.deepEqual(Array.from(review.iDoNotFollowBack, row => row.username), ['incoming.person']);
+  assert.equal(result.following.some(row => 'relationship' in row || 'id' in row), false, 'legacy capture rows stay unchanged');
+  const report = createInspector().relationshipReviewReport(review);
+  assert.match(report, /Followers returned: 1 of 3/);
+  assert.match(report, /NOT FOLLOWING YOU BACK — VERIFIED \(1\)/);
+  assert.match(report, /KNOWN FOLLOWERS YOU DO NOT FOLLOW BACK — PARTIAL/);
+  assert.match(report, /1\. @outgoing\.person/);
+});
+
+test('follow-back flags for a different or unknown viewer cannot classify the requested profile', async () => {
+  for (const viewerUsername of ['', 'another.account']) {
+    const result = await graphFixture({
+      viewerUsername,
+      following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], 2)],
+    });
+    assert.equal(result.relationshipReview, undefined);
+  }
+});
+
+test('null, missing, malformed and conflicting follow-back flags never mean false', async () => {
+  for (const value of [null, undefined, 0, 'false']) {
+    const result = await graphFixture({
+      viewerUsername: 'target_name',
+      following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', value]], 2)],
+    });
+    assert.equal(result.relationshipReview, undefined);
+  }
+  const conflict = await graphFixture({
+    viewerUsername: 'target_name',
+    following: [relationshipGraphPage([['2', 'mutual.person', true]], 2, 'next'), relationshipGraphPage([['2', 'mutual.person', false], ['3', 'outgoing.person', false]], 2)],
+  });
+  assert.equal(conflict.relationshipReview, undefined);
+});
+
+test('contradictory relationship evidence withholds the direct review', async () => {
+  for (const following of [
+    [relationshipGraphPage([['2', 'mutual.person', false], ['3', 'outgoing.person', false]], 2)],
+    [relationshipGraphPage([['2', 'mutual.person', true, false], ['3', 'outgoing.person', false]], 2)],
+  ]) {
+    const result = await graphFixture({ viewerUsername: 'target_name', following });
+    assert.equal(result.relationshipReview, undefined);
+  }
+});
+
+test('Following counter mismatches retain proven statuses but mark list coverage partial', async () => {
+  for (const declared of [1, 3]) {
+    const result = await graphFixture({
+      viewerUsername: 'target_name', counts: { followers: 3, following: declared },
+      followers: [graphPage([['1', 'unknown.person']], 3)],
+      following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], declared)],
+    });
+    const review = result.relationshipReview;
+    assert.equal(review.verified, true);
+    assert.equal(review.complete.mutuals, false);
+    assert.equal(review.complete.notFollowingMeBack, false);
+    assert.equal(review.complete.iDoNotFollowBack, false);
+    assert.deepEqual(Array.from(review.notFollowingMeBack, row => row.username), ['outgoing.person']);
+    assert.equal(review.iDoNotFollowBack.length, 0, 'absence from partial Following cannot prove an unfollowed fan');
+    assert.match(createInspector().relationshipReviewReport(review), /VERIFIED, PARTIAL LIST/);
+  }
+});
+
+test('partial Following uses explicit follower-side status rather than missing names', async () => {
+  const result = await graphFixture({
+    viewerUsername: 'target_name', counts: { followers: 3, following: 3 },
+    followers: [relationshipGraphPage([['1', 'incoming.person', true, false], ['4', 'other.mutual', true, true]], 3)],
+    following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], 3)],
+  });
+  assert.deepEqual(Array.from(result.relationshipReview.iDoNotFollowBack, row => row.username), ['incoming.person']);
+  assert.equal(result.relationshipReview.complete.iDoNotFollowBack, false);
+});
+
+test('follower-side contradictions cannot place a followed account among unfollowed fans', async () => {
+  for (const flags of [[true, false], [false, true]]) {
+    const result = await graphFixture({
+      viewerUsername: 'target_name',
+      followers: [relationshipGraphPage([['2', 'mutual.person', ...flags]], 2)],
+      following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], 2)],
+    });
+    assert.equal(result.relationshipReview, undefined);
+  }
+});
+
+test('switching the logged-in viewer during a response stops the check', async () => {
+  let viewer = 'target_name';
+  await assert.rejects(graphFixture({
+    viewerUsername: () => viewer,
+    onRequest: () => { viewer = 'another.account'; },
+  }), error => error.code === 'profile-changed');
+});
+
+test('matching totals cannot hide an omitted follower proved by a direct relationship flag', async () => {
+  const result = await graphFixture({
+    viewerUsername: 'target_name', counts: { followers: 2, following: 2 },
+    followers: [graphPage([['1', 'incoming.person'], ['4', 'other.person']], 2)],
+    following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], 2)],
+  });
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.reasons.followers, 'relationship-disagreement');
+  assert.deepEqual(Array.from(result.relationshipReview.mutuals, row => row.username), ['mutual.person']);
+});
+
+test('matching totals cannot hide an omitted followed account proved by follower-side flags', async () => {
+  const result = await graphFixture({
+    viewerUsername: 'target_name', counts: { followers: 2, following: 2 },
+    followers: [relationshipGraphPage([['1', 'incoming.person', true, false], ['4', 'other.mutual', true, true]], 2)],
+    following: [relationshipGraphPage([['2', 'mutual.person', true], ['3', 'outgoing.person', false]], 2)],
+  });
+  assert.equal(result.complete.following, false);
+  assert.equal(result.reasons.following, 'relationship-disagreement');
+  assert.deepEqual(Array.from(result.relationshipReview.iDoNotFollowBack, row => row.username), ['incoming.person']);
 });

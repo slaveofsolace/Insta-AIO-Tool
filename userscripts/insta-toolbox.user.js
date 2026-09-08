@@ -2757,6 +2757,17 @@
           }
         }
         const previous = accounts.get(accountKey);
+        const observedRelationship = graphql ? {
+          followsViewer: typeof user.follows_viewer === 'boolean' ? user.follows_viewer : null,
+          followedByViewer: typeof user.followed_by_viewer === 'boolean' ? user.followed_by_viewer : null,
+        } : null;
+        if (previous?.relationship && observedRelationship) {
+          for (const direction of ['followsViewer', 'followedByViewer']) {
+            if (previous.relationship[direction] !== observedRelationship[direction]) {
+              observedRelationship[direction] = null;
+            }
+          }
+        }
         if (previous?.username && previous.username !== accountUsername) {
           accountKeyByUsername.delete(previous.username);
         }
@@ -2766,6 +2777,7 @@
           profileUrl: `${INSTAGRAM_WEB_ORIGIN}/${accountUsername}/`,
           displayName: String(user?.full_name || '').trim().slice(0, 160),
           source: 'authenticated-instagram-web',
+          ...(observedRelationship ? { relationship: observedRelationship } : {}),
         });
         accountKeyByUsername.set(accountUsername, accountKey);
         if (accounts.size >= maxAccounts) break;
@@ -2838,7 +2850,7 @@
       const seenNames = new Set();
       return accounts.map((account) => {
         const current = account.id ? latestById.get(account.id) : account;
-        const { id, ...record } = current;
+        const { id, relationship, ...record } = current;
         const existingId = idByUsername.get(record.username);
         if (seenNames.has(record.username) || (id && existingId && id !== existingId)) {
           throw relationshipError('invalid-response', 'Instagram returned conflicting account identities across the lists. The previous comparison is unchanged.');
@@ -2860,6 +2872,56 @@
     }
     return [...byUsername.values()]
       .sort((left, right) => left.username.localeCompare(right.username));
+  }
+
+  function directRelationshipReview(username, capturedAt, followers, following, accounts) {
+    if (!following.accounts.length || following.accounts.some(account => (
+      typeof account.relationship?.followsViewer !== 'boolean'
+      || account.relationship?.followedByViewer !== true
+    ))) return null;
+    const followerIds = new Set(followers.accounts.map(account => account.id));
+    if (following.accounts.some(account => (
+      account.relationship.followsViewer === false && followerIds.has(account.id)
+    ))) return null;
+    const followsViewer = new Map(following.accounts.map(account => (
+      [account.username, account.relationship.followsViewer]
+    )));
+    const followingNames = new Set(accounts.following.map(account => account.username));
+    const followingIds = new Set(following.accounts.map(account => account.id));
+    if (followers.accounts.some(account => (
+      account.relationship?.followsViewer === false
+      || (account.relationship?.followedByViewer === false && followingIds.has(account.id))
+    ))) return null;
+    const directFans = new Set(followers.accounts.filter(account => (
+      account.relationship?.followsViewer === true && account.relationship?.followedByViewer === false
+    )).map(account => account.id));
+    const fanNames = new Set(followers.accounts.filter(account => directFans.has(account.id)).map(account => account.username));
+    const allFollowerFlags = followers.accounts.every(account => (
+      account.relationship?.followsViewer === true && typeof account.relationship?.followedByViewer === 'boolean'
+    ));
+    return Object.freeze({
+      schemaVersion: 1,
+      kind: 'insta-toolbox-relationship-review',
+      subjectUsername: username,
+      capturedAt,
+      basis: 'explicit-viewer-relationship',
+      verified: true,
+      counts: Object.freeze({
+        followers: accounts.followers.length,
+        expectedFollowers: followers.expectedCount,
+        following: accounts.following.length,
+        expectedFollowing: following.expectedCount,
+      }),
+      complete: Object.freeze({
+        mutuals: following.complete, notFollowingMeBack: following.complete,
+        iDoNotFollowBack: followers.complete && (following.complete || allFollowerFlags),
+      }),
+      mutuals: Object.freeze(accounts.following.filter(account => followsViewer.get(account.username) === true)),
+      notFollowingMeBack: Object.freeze(accounts.following.filter(account => followsViewer.get(account.username) === false)),
+      iDoNotFollowBack: Object.freeze(accounts.followers.filter(account => (
+        following.complete ? !followingNames.has(account.username) : fanNames.has(account.username)
+      ))),
+    });
   }
 
   async function fetchFollowerComparison({
@@ -2917,7 +2979,8 @@
         transport: mode === 'graphql' ? 'graphql' : 'legacy',
         fetchImpl: mode === 'graphql' ? async (...args) => {
           const verifyProfile = () => {
-            if (!openProfileRelationshipCounts(username)) {
+            if (!openProfileRelationshipCounts(username)
+              || (viewerAtStart && detectAuthenticatedUsername() !== viewerAtStart)) {
               throw relationshipError('profile-changed', 'The checked profile is no longer open. The previous comparison is unchanged.');
             }
           };
@@ -2942,6 +3005,7 @@
         startedAt,
       };
       const openProfileCounts = openProfileRelationshipCounts(username);
+      const viewerAtStart = mode === 'graphql' ? detectAuthenticatedUsername() : '';
       const resolution = await resolveRelationshipUserId(username, {
         ...common,
         found: 0,
@@ -2996,12 +3060,12 @@
         throw relationshipError('profile-count-unavailable', 'Keep the checked profile open until the comparison finishes. The previous comparison is unchanged.');
       }
       const countDisagreementAtEnd = exactProfileCountDisagreement(username, profileCountsAtEnd);
-      const followers = finalizeRelationshipList(followersTraversal, {
+      let followers = finalizeRelationshipList(followersTraversal, {
         countChanged: profileCountsAtStart.followers !== profileCountsAtEnd.followers,
         countDisagreed: countDisagreementAtStart.followers || countDisagreementAtEnd.followers,
         expectedCount: profileCountsAtEnd.followers,
       });
-      const following = finalizeRelationshipList(followingTraversal, {
+      let following = finalizeRelationshipList(followingTraversal, {
         countChanged: profileCountsAtStart.following !== profileCountsAtEnd.following,
         countDisagreed: countDisagreementAtStart.following || countDisagreementAtEnd.following,
         expectedCount: profileCountsAtEnd.following,
@@ -3011,7 +3075,23 @@
         following: profileCountsAtEnd.following,
       });
       const capturedAt = new Date(now()).toISOString();
+      if (viewerAtStart === username && detectAuthenticatedUsername() === username) {
+        const followerIds = new Set(followers.accounts.map(account => account.id));
+        const followingIds = new Set(following.accounts.map(account => account.id));
+        // Equal totals cannot override explicit evidence of an omitted or changed relationship.
+        const followersDisagree = followers.accounts.some(account => account.relationship?.followsViewer === false)
+          || following.accounts.some(account => typeof account.relationship?.followsViewer === 'boolean'
+            && account.relationship.followsViewer !== followerIds.has(account.id));
+        const followingDisagree = following.accounts.some(account => account.relationship?.followedByViewer === false)
+          || followers.accounts.some(account => typeof account.relationship?.followedByViewer === 'boolean'
+            && account.relationship.followedByViewer !== followingIds.has(account.id));
+        if (followers.complete && followersDisagree) followers = { ...followers, complete: false, reason: 'relationship-disagreement' };
+        if (following.complete && followingDisagree) following = { ...following, complete: false, reason: 'relationship-disagreement' };
+      }
       const reconciledAccounts = reconcileRelationshipAccounts(followers.accounts, following.accounts);
+      const relationshipReview = viewerAtStart === username && detectAuthenticatedUsername() === username
+        ? directRelationshipReview(username, capturedAt, followers, following, reconciledAccounts)
+        : null;
       const result = Object.freeze({
         capturedAt,
         complete: Object.freeze({ followers: followers.complete, following: following.complete }),
@@ -3023,6 +3103,7 @@
         source: 'authenticated-instagram-web',
         userId,
         username,
+        ...(relationshipReview ? { relationshipReview } : {}),
       });
       onProgress?.(Object.freeze({
         found: result.followers.length + result.following.length,
@@ -3064,6 +3145,43 @@
         ? comparison.iDoNotFollowBack
         : [],
     };
+  }
+
+  function relationshipReviewReport(review) {
+    if (review?.kind !== 'insta-toolbox-relationship-review'
+      || review.basis !== 'explicit-viewer-relationship'
+      || review.verified !== true) {
+      throw relationshipError('unverified-relationships', 'Follow-back status has not been verified.');
+    }
+    const lines = [
+      'INSTA TOOLBOX FOLLOW-BACK REVIEW',
+      '================================',
+      `Account: @${normalizeUsername(review.subjectUsername)}`,
+      `Checked: ${review.capturedAt}`,
+      `Following returned: ${review.counts.following} of ${review.counts.expectedFollowing}`,
+      `Followers returned: ${review.counts.followers} of ${review.counts.expectedFollowers}`,
+      'Mutuals and non-followers use explicit Instagram follow-back status, not missing list entries.',
+      review.complete.notFollowingMeBack
+        ? 'Follow-back coverage: complete.'
+        : 'Follow-back coverage: partial. Every listed status is verified, but accounts may be missing.',
+      review.complete.iDoNotFollowBack
+        ? 'Followers list: complete.'
+        : 'Followers list: incomplete. The known followers section may omit accounts.',
+    ];
+    for (const [title, accounts] of [
+      [`NOT FOLLOWING YOU BACK — VERIFIED${review.complete.notFollowingMeBack ? '' : ', PARTIAL LIST'}`, review.notFollowingMeBack],
+      [`MUTUALS — VERIFIED${review.complete.mutuals ? '' : ', PARTIAL LIST'}`, review.mutuals],
+      [review.complete.iDoNotFollowBack ? 'YOU DO NOT FOLLOW BACK' : 'KNOWN FOLLOWERS YOU DO NOT FOLLOW BACK — PARTIAL', review.iDoNotFollowBack],
+    ]) {
+      lines.push('', `${title} (${accounts.length})`, '-'.repeat(title.length));
+      if (!accounts.length) lines.push('None observed');
+      accounts.forEach((account, index) => {
+        const displayName = String(account.displayName || '').replace(/[\r\n]+/g, ' ').trim();
+        lines.push(`${index + 1}. @${normalizeUsername(account.username)}${displayName ? ` — ${displayName}` : ''}`);
+      });
+    }
+    lines.push('', 'Read-only review. No account action was performed.', '');
+    return lines.join('\r\n');
   }
 
   function followerComparisonReport(workspace, comparison, generatedAt = new Date().toISOString()) {
@@ -4768,6 +4886,7 @@
     detectAuthenticatedUsername,
     enumerateSentDms,
     fetchFollowerComparison,
+    relationshipReviewReport,
     followerComparisonRecord,
     followerComparisonReport,
     inspectPageContext,
@@ -5674,11 +5793,11 @@
         <button id="insta-toolbox-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="insta-toolbox-panel-messages" aria-selected="false" tabindex="-1">DM Unsend</button>
       </nav>
       <div class="scroll">
-        <section id="insta-toolbox-panel-checker" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="insta-toolbox-checker-account-title"><h2 id="insta-toolbox-checker-account-title">Check mutuals</h2><p>Opens Followers, then Following. Please leave this tab open and untouched while the check runs.</p><div class="field"><label for="insta-toolbox-checker-username">Instagram username</label><input id="insta-toolbox-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check mutuals</button></div></section>
+        <section id="insta-toolbox-panel-checker" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="insta-toolbox-checker-account-title"><h2 id="insta-toolbox-checker-account-title">Check mutuals</h2><p>Checks both lists in the background. Keep your profile open until it finishes.</p><div class="field"><label for="insta-toolbox-checker-username">Instagram username</label><input id="insta-toolbox-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check mutuals</button></div></section>
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar" data-role="scan-bar" role="progressbar" aria-label="Mutual check progress" aria-describedby="insta-toolbox-scan-detail" aria-valuemin="0" aria-valuemax="100"><span data-role="scan-fill"></span></div><p id="insta-toolbox-scan-detail" class="lead" data-role="scan-detail"></p></div>
           <div class="card" data-role="comparison"></div>
           <section class="card comparison-browser" data-role="comparison-browser" aria-labelledby="insta-toolbox-comparison-browser-title" hidden><h2 id="insta-toolbox-comparison-browser-title">Comparison list</h2><div class="comparison-controls"><div class="field"><label for="insta-toolbox-comparison-category">Show accounts</label><select id="insta-toolbox-comparison-category" data-role="comparison-category" aria-controls="insta-toolbox-comparison-list"><option value="not-following-me-back">Don't follow you back</option><option value="i-do-not-follow-back">You don't follow back</option><option value="mutuals">Mutuals</option></select></div><div class="field"><label for="insta-toolbox-filter">Find a username</label><input id="insta-toolbox-filter" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Search usernames" data-role="result-filter" aria-controls="insta-toolbox-comparison-list"></div></div><p id="insta-toolbox-comparison-count" class="comparison-count" data-role="comparison-count" tabindex="-1"></p><ul id="insta-toolbox-comparison-list" class="list comparison-list" data-role="comparison-list" aria-describedby="insta-toolbox-comparison-count"></ul><button class="button quiet comparison-more" type="button" data-action="show-more-comparison" data-role="comparison-more" hidden>Show more</button></section>
-          <details class="settings-inline"><summary>Capture lists and export</summary><p class="lead">Check without opening the lists. Keep your profile open; both lists must match its totals.</p><button class="button quiet" type="button" data-action="check-account-background" data-role="checker-background">Check in background</button><p class="lead">If the account check fails, open Followers or Following and scan that list.</p><ol class="steps" data-role="checker-steps"><li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan Following</strong><span data-role="step-following">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-following">Scan Following</button></li><li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan Followers</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-followers">Scan Followers</button></li><li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li></ol><ul class="list" data-role="capture-list"></ul><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download raw list</button><button class="button quiet" type="button" data-action="download-comparison-json">Download JSON</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="insta-toolbox-list-type">Raw list</label><select id="insta-toolbox-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details></section>
+          <details class="settings-inline"><summary>Capture lists and export</summary><p class="lead">Prefer a visible scan? Open and read Instagram’s lists.</p><button class="button quiet" type="button" data-action="check-account-dialog" data-role="checker-dialog">Scan Instagram lists</button><p class="lead">This opens Followers, then Following. Leave the tab untouched.</p><ol class="steps" data-role="checker-steps"><li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan Following</strong><span data-role="step-following">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-following">Scan Following</button></li><li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan Followers</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-followers">Scan Followers</button></li><li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li></ol><ul class="list" data-role="capture-list"></ul><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download raw list</button><button class="button quiet" type="button" data-action="download-comparison-json">Download JSON</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="insta-toolbox-list-type">Raw list</label><select id="insta-toolbox-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details></section>
         <section id="insta-toolbox-panel-account" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow.</strong> Choose an action, then review the accounts. Review never clicks.</p><div class="card" data-role="queue-current"></div>
           <div class="toolbar"><button class="button primary" type="button" data-action="account-dry-run">Refresh profile status</button><button class="button quiet" type="button" data-action="open-profile">Open profile</button></div><details class="settings-inline"><summary>Queue and files</summary><div class="toolbar"><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
           <div class="field"><label for="insta-toolbox-bot-action">What do you want to do?</label><select id="insta-toolbox-bot-action" data-role="bot-action"><option value="follow">Follow people</option><option value="unfollow">Unfollow people</option></select></div>
@@ -5892,9 +6011,10 @@
   }
 
   function renderChecker() {
+    const review = relationshipReview;
     const verifiedFollowers = verifiedCapture('followers');
     const verifiedFollowing = verifiedCapture('following');
-    const comparisonReady = comparisonIsReady();
+    const comparisonReady = comparisonIsReady() || Boolean(review);
     const authenticatedCheck = ['authenticated-web', 'authenticated-instagram-web'].includes(state.capture.source?.followers)
       && ['authenticated-web', 'authenticated-instagram-web'].includes(state.capture.source?.following);
     const usernameInput = query('[data-role="checker-username"]');
@@ -5904,7 +6024,7 @@
         || '';
     }
     const runButton = query('[data-role="checker-run"]');
-    const backgroundButton = query('[data-role="checker-background"]');
+    const backgroundButton = query('[data-role="checker-dialog"]');
     if (backgroundButton) backgroundButton.disabled = Boolean(relationshipController);
     if (runButton) {
       runButton.textContent = relationshipController
@@ -5913,27 +6033,38 @@
       runButton.classList.toggle('danger', Boolean(relationshipController));
       runButton.classList.toggle('primary', !relationshipController);
     }
-    setText('followers-count', formatCount(verifiedFollowers.length));
-    setText('following-count', formatCount(verifiedFollowing.length));
-    const comparison = compareCapture();
+    setText('followers-count', formatCount(review ? review.counts.followers : verifiedFollowers.length));
+    setText('following-count', formatCount(review ? review.counts.following : verifiedFollowing.length));
+    const comparison = review || compareCapture();
     const result = query('[data-role="comparison"]');
     result.replaceChildren();
     const title = document.createElement('h2');
-    title.textContent = comparisonReady
+    title.textContent = review ? `Verified follow-backs · @${review.subjectUsername}` : comparisonReady
       ? authenticatedCheck ? `Account comparison${state.capture.subjectUsername ? ` · @${state.capture.subjectUsername}` : ''}` : 'Scanned-list comparison'
       : 'No comparison loaded';
     const detail = document.createElement('p');
-    detail.textContent = comparisonReady
+    detail.textContent = review
+      ? `${formatCount(review.mutuals.length)} mutual · ${formatCount(review.notFollowingMeBack.length)} don't follow you back. Verified from Instagram.`
+      : comparisonReady
       ? `${formatCount(verifiedFollowers.length)} followers · ${formatCount(verifiedFollowing.length)} following · ${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back · ${formatCount(comparison.iDoNotFollowBack.length)} you don't follow back.`
       : 'Both lists must be complete before comparing. Run Check mutuals to load them.';
     result.append(title, detail);
+    if (review) {
+      const note = document.createElement('p');
+      note.className = 'notice';
+      note.textContent = `Partial coverage. Following: ${formatCount(review.counts.following)} returned (${formatCount(review.counts.expectedFollowing)} reported). Followers: ${formatCount(review.counts.followers)} returned (${formatCount(review.counts.expectedFollowers)} reported). Only verified accounts are listed.`;
+      result.append(note);
+      const persistence = document.createElement('p');
+      persistence.textContent = 'Available until reload; saved comparison unchanged.';
+      result.append(persistence);
+    }
 
     // A scan that stopped early would otherwise be read as the whole list, and
     // every number below it would quietly be wrong.
     const partial = ['followers', 'following']
       .filter((type) => state.capture.verified?.[type] === true
         && state.capture.complete?.[type] !== true);
-    if (partial.length) {
+    if (partial.length && !review) {
       const warning = document.createElement('p');
       warning.className = 'notice';
       warning.textContent = `Incomplete ${partial.join(' and ')}: some accounts may be missing. Comparison withheld to avoid false non-mutuals. Captured rows are under Advanced.`;
@@ -5942,7 +6073,7 @@
 
     const unverified = ['followers', 'following']
       .filter((type) => state.capture[type].length && state.capture.verified?.[type] !== true);
-    if (unverified.length) {
+    if (unverified.length && !review) {
       const warning = document.createElement('p');
       warning.className = 'notice';
       warning.textContent = `Saved ${unverified.join(' and ')} rows were captured before exact dialog verification. They remain available under Advanced for export, but cannot drive comparisons or runs until rescanned.`;
@@ -5961,7 +6092,7 @@
         const generatedAt = nowIso();
         downloadText(
           `insta-toolbox-mutual-comparison-${generatedAt.replace(/[:.]/g, '-')}.txt`,
-          engine.followerComparisonReport(state.capture, comparison, generatedAt),
+          review ? engine.relationshipReviewReport(review) : engine.followerComparisonReport(state.capture, comparison, generatedAt),
         );
       });
       actions.append(button);
@@ -5977,9 +6108,10 @@
       comparisonList.replaceChildren();
       if (comparisonReady) {
         const selection = comparisonBrowserSelection(comparison);
-        comparisonCount.textContent = selection.total
+        const partialGroup = review && review.complete[CHECKER_CATEGORY_KEYS[selection.category]] !== true;
+        comparisonCount.textContent = (partialGroup ? 'Verified accounts · partial list · ' : '') + (selection.total
           ? `Showing ${formatCount(selection.accounts.length)} of ${formatCount(selection.total)} ${selection.total === 1 ? 'account' : 'accounts'}.`
-          : '0 accounts.';
+          : '0 accounts.');
         for (const account of selection.accounts) {
           const row = document.createElement('li');
           const username = document.createElement('strong');
@@ -5996,7 +6128,7 @@
           const empty = document.createElement('li');
           empty.textContent = safeText(query('[data-role="result-filter"]')?.value)
             ? 'No captured account matches this search.'
-            : 'No accounts are in this comparison group.';
+            : partialGroup ? 'No verified accounts in this group yet. The list is incomplete.' : 'No accounts are in this comparison group.';
           comparisonList.append(empty);
         }
         const remaining = Math.max(0, selection.total - selection.accounts.length);
@@ -6228,6 +6360,7 @@
   let batchAbort = false;
   let accountRunDraft = null;
   let relationshipController = null;
+  let relationshipReview = null;
   let relationshipProgress = null;
   let dmThreadPreview = null;
   let dmRunnerSnapshot = null;
@@ -6589,7 +6722,7 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Automatically open and scan both lists.',
+        detail: 'Check mutuals in the background.',
         view: 'checker',
       };
     }
@@ -6716,6 +6849,7 @@
     );
     if (fill) fill.style.width = percent === null ? '100%' : `${percent}%`;
     if (bar) {
+      bar.hidden = settled;
       bar.dataset.indeterminate = String(percent === null);
       if (percent === null) bar.removeAttribute('aria-valuenow');
       else bar.setAttribute('aria-valuenow', String(percent));
@@ -6751,6 +6885,7 @@
     const fill = query('[data-role="scan-fill"]');
     if (fill) fill.style.width = '0%';
     if (!bar) return;
+    bar.hidden = true;
     bar.dataset.indeterminate = 'false';
     bar.removeAttribute('aria-valuenow');
     bar.setAttribute(
@@ -6760,6 +6895,7 @@
   }
 
   async function scanInto(listType) {
+    relationshipReview = null;
     const select = query('[data-role="list-type"]');
     if (select) select.value = listType;
     resetRelationshipProgress();
@@ -6811,6 +6947,7 @@
     if (input) input.value = username;
     const controller = new AbortController();
     relationshipController = controller;
+    relationshipReview = null;
     resetRelationshipProgress();
     renderAll();
     showScanProgress(null, 0, false);
@@ -6889,6 +7026,16 @@
         },
       });
       if (!result.complete?.followers || !result.complete?.following) {
+        if (result.relationshipReview) {
+          relationshipReview = result.relationshipReview;
+          relationshipProgress.found.followers = result.followers.length;
+          relationshipProgress.found.following = result.following.length;
+          showScanProgress(null, result.followers.length + result.following.length, false, true, null, result.expectedCounts);
+          const message = 'Follow-back results ready. Check list coverage below. Saved comparison unchanged.';
+          setText('scan-detail', message);
+          status(message);
+          return;
+        }
         throw new Error(`Instagram returned ${formatCount(result.followers.length)} of ${formatCount(result.expectedCounts?.followers)} followers and ${formatCount(result.following.length)} of ${formatCount(result.expectedCounts?.following)} following. Full lists could not be verified.`);
       }
       const previousCapture = state.capture;
@@ -7372,8 +7519,8 @@
   const actions = {
     'confirm-cancel': () => confirmationController?.cancel(),
     'close-settings': () => setSettingsOpen(false),
-    'check-account-relationships': () => checkAccountRelationships(),
-    'check-account-background': () => checkAccountRelationships('graphql'),
+    'check-account-relationships': () => checkAccountRelationships('graphql'),
+    'check-account-dialog': () => checkAccountRelationships('dialog'),
     'scan-following': () => scanInto('following'),
     'scan-followers': () => scanInto('followers'),
     'context-cta': () => {
@@ -7534,6 +7681,7 @@
       view: preferences.view,
     }),
     capture: () => {
+      relationshipReview = null;
       const listType = query('[data-role="list-type"]').value === 'followers' ? 'followers' : 'following';
       const visible = captureVisibleAccounts(listType);
       if (!visible.length) {
@@ -7557,6 +7705,7 @@
       status(`Captured ${visible.length} rendered ${listType} rows; ${state.capture[listType].length - before} were new.`);
     },
     'clear-capture': () => {
+      relationshipReview = null;
       state.capture = stateDefaults().capture;
       checkerResultKey = '';
       checkerResultLimit = CHECKER_RESULTS_PAGE_SIZE;
@@ -7605,6 +7754,10 @@
       });
     },
     'download-comparison-json': () => {
+      if (relationshipReview) {
+        downloadJson(`insta-toolbox-follow-back-review-${Date.now()}.json`, relationshipReview);
+        return;
+      }
       const comparisonReady = comparisonIsReady();
       if (!comparisonReady) {
         status('Both lists must be complete before downloading a comparison. Captured rows are under Advanced.');

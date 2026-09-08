@@ -648,6 +648,8 @@ test('background comparison replaces storage only after both complete lists are 
   }, normalizeUsername);
   let persisted = 0;
   let complete = false;
+  let directReview = null;
+  let lastStatus = '';
   const runtime = {
     inspector: {
       normalizeUsername,
@@ -659,15 +661,22 @@ test('background comparison replaces storage only after both complete lists are 
           followers: [{ username: 'new_person' }], following: [{ username: 'new_person' }],
           complete: { followers: complete, following: true }, expectedCounts: { followers: complete ? 1 : 2, following: 1 },
           reasons: {},
+          ...(directReview ? { relationshipReview: directReview } : {}),
         };
       },
     },
     model: { context: { pageKind: 'profile', username: 'fixture_profile' }, capture: original },
-    persistCapture: async () => { persisted += 1; }, query: () => null, status: () => {}, setText: () => {},
+    persistCapture: async () => { persisted += 1; }, query: () => null, status: message => { lastStatus = message; }, setText: () => {},
   };
   await captureView.checkAccount(runtime, 'graphql');
   assert.equal(runtime.model.capture, original);
   assert.equal(persisted, 0);
+  directReview = { notFollowingMeBack: [{ username: 'new_person' }] };
+  await captureView.checkAccount(runtime, 'graphql');
+  assert.equal(runtime.model.capture, original);
+  assert.equal(persisted, 0, 'a direct review cannot replace the complete stored lists');
+  assert.match(lastStatus, /Follow-back results ready/);
+  directReview = null;
   complete = true;
   await captureView.checkAccount(runtime, 'graphql');
   assert.equal(persisted, 1);

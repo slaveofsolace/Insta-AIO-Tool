@@ -110,6 +110,15 @@ No upstream bundle or implementation is included. Cookie lookup, session copying
 unbounded retries, and mutation helpers were not adopted. The private GraphQL
 routes are not supported public APIs and may stop working or omit accounts.
 
+The same pinned InstagramUnfollowers revision was rechecked for its
+`follows_viewer` and `followed_by_viewer` fields in `src/model/user.ts` and
+`src/utils/utils.ts`. Those explicit relationship flags support individual
+follow-back classification without subtracting incomplete lists. This project
+requires strict booleans, the matching logged-in profile, and consistent identity
+evidence. It does not copy the upstream cookie reader or coerce missing flags
+to false. Verified per-account status and overall list coverage are reported
+separately; missing identities remain unknown.
+
 ## instagram-dm-unsender
 
 - Repository: <https://github.com/thoughtsunificator/instagram-dm-unsender>

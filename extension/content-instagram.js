@@ -663,6 +663,17 @@
           }
         }
         const previous = accounts.get(accountKey);
+        const observedRelationship = graphql ? {
+          followsViewer: typeof user.follows_viewer === 'boolean' ? user.follows_viewer : null,
+          followedByViewer: typeof user.followed_by_viewer === 'boolean' ? user.followed_by_viewer : null,
+        } : null;
+        if (previous?.relationship && observedRelationship) {
+          for (const direction of ['followsViewer', 'followedByViewer']) {
+            if (previous.relationship[direction] !== observedRelationship[direction]) {
+              observedRelationship[direction] = null;
+            }
+          }
+        }
         if (previous?.username && previous.username !== accountUsername) {
           accountKeyByUsername.delete(previous.username);
         }
@@ -672,6 +683,7 @@
           profileUrl: `${INSTAGRAM_WEB_ORIGIN}/${accountUsername}/`,
           displayName: String(user?.full_name || '').trim().slice(0, 160),
           source: 'authenticated-instagram-web',
+          ...(observedRelationship ? { relationship: observedRelationship } : {}),
         });
         accountKeyByUsername.set(accountUsername, accountKey);
         if (accounts.size >= maxAccounts) break;
@@ -744,7 +756,7 @@
       const seenNames = new Set();
       return accounts.map((account) => {
         const current = account.id ? latestById.get(account.id) : account;
-        const { id, ...record } = current;
+        const { id, relationship, ...record } = current;
         const existingId = idByUsername.get(record.username);
         if (seenNames.has(record.username) || (id && existingId && id !== existingId)) {
           throw relationshipError('invalid-response', 'Instagram returned conflicting account identities across the lists. The previous comparison is unchanged.');
@@ -766,6 +778,56 @@
     }
     return [...byUsername.values()]
       .sort((left, right) => left.username.localeCompare(right.username));
+  }
+
+  function directRelationshipReview(username, capturedAt, followers, following, accounts) {
+    if (!following.accounts.length || following.accounts.some(account => (
+      typeof account.relationship?.followsViewer !== 'boolean'
+      || account.relationship?.followedByViewer !== true
+    ))) return null;
+    const followerIds = new Set(followers.accounts.map(account => account.id));
+    if (following.accounts.some(account => (
+      account.relationship.followsViewer === false && followerIds.has(account.id)
+    ))) return null;
+    const followsViewer = new Map(following.accounts.map(account => (
+      [account.username, account.relationship.followsViewer]
+    )));
+    const followingNames = new Set(accounts.following.map(account => account.username));
+    const followingIds = new Set(following.accounts.map(account => account.id));
+    if (followers.accounts.some(account => (
+      account.relationship?.followsViewer === false
+      || (account.relationship?.followedByViewer === false && followingIds.has(account.id))
+    ))) return null;
+    const directFans = new Set(followers.accounts.filter(account => (
+      account.relationship?.followsViewer === true && account.relationship?.followedByViewer === false
+    )).map(account => account.id));
+    const fanNames = new Set(followers.accounts.filter(account => directFans.has(account.id)).map(account => account.username));
+    const allFollowerFlags = followers.accounts.every(account => (
+      account.relationship?.followsViewer === true && typeof account.relationship?.followedByViewer === 'boolean'
+    ));
+    return Object.freeze({
+      schemaVersion: 1,
+      kind: 'insta-toolbox-relationship-review',
+      subjectUsername: username,
+      capturedAt,
+      basis: 'explicit-viewer-relationship',
+      verified: true,
+      counts: Object.freeze({
+        followers: accounts.followers.length,
+        expectedFollowers: followers.expectedCount,
+        following: accounts.following.length,
+        expectedFollowing: following.expectedCount,
+      }),
+      complete: Object.freeze({
+        mutuals: following.complete, notFollowingMeBack: following.complete,
+        iDoNotFollowBack: followers.complete && (following.complete || allFollowerFlags),
+      }),
+      mutuals: Object.freeze(accounts.following.filter(account => followsViewer.get(account.username) === true)),
+      notFollowingMeBack: Object.freeze(accounts.following.filter(account => followsViewer.get(account.username) === false)),
+      iDoNotFollowBack: Object.freeze(accounts.followers.filter(account => (
+        following.complete ? !followingNames.has(account.username) : fanNames.has(account.username)
+      ))),
+    });
   }
 
   async function fetchFollowerComparison({
@@ -823,7 +885,8 @@
         transport: mode === 'graphql' ? 'graphql' : 'legacy',
         fetchImpl: mode === 'graphql' ? async (...args) => {
           const verifyProfile = () => {
-            if (!openProfileRelationshipCounts(username)) {
+            if (!openProfileRelationshipCounts(username)
+              || (viewerAtStart && detectAuthenticatedUsername() !== viewerAtStart)) {
               throw relationshipError('profile-changed', 'The checked profile is no longer open. The previous comparison is unchanged.');
             }
           };
@@ -848,6 +911,7 @@
         startedAt,
       };
       const openProfileCounts = openProfileRelationshipCounts(username);
+      const viewerAtStart = mode === 'graphql' ? detectAuthenticatedUsername() : '';
       const resolution = await resolveRelationshipUserId(username, {
         ...common,
         found: 0,
@@ -902,12 +966,12 @@
         throw relationshipError('profile-count-unavailable', 'Keep the checked profile open until the comparison finishes. The previous comparison is unchanged.');
       }
       const countDisagreementAtEnd = exactProfileCountDisagreement(username, profileCountsAtEnd);
-      const followers = finalizeRelationshipList(followersTraversal, {
+      let followers = finalizeRelationshipList(followersTraversal, {
         countChanged: profileCountsAtStart.followers !== profileCountsAtEnd.followers,
         countDisagreed: countDisagreementAtStart.followers || countDisagreementAtEnd.followers,
         expectedCount: profileCountsAtEnd.followers,
       });
-      const following = finalizeRelationshipList(followingTraversal, {
+      let following = finalizeRelationshipList(followingTraversal, {
         countChanged: profileCountsAtStart.following !== profileCountsAtEnd.following,
         countDisagreed: countDisagreementAtStart.following || countDisagreementAtEnd.following,
         expectedCount: profileCountsAtEnd.following,
@@ -917,7 +981,23 @@
         following: profileCountsAtEnd.following,
       });
       const capturedAt = new Date(now()).toISOString();
+      if (viewerAtStart === username && detectAuthenticatedUsername() === username) {
+        const followerIds = new Set(followers.accounts.map(account => account.id));
+        const followingIds = new Set(following.accounts.map(account => account.id));
+        // Equal totals cannot override explicit evidence of an omitted or changed relationship.
+        const followersDisagree = followers.accounts.some(account => account.relationship?.followsViewer === false)
+          || following.accounts.some(account => typeof account.relationship?.followsViewer === 'boolean'
+            && account.relationship.followsViewer !== followerIds.has(account.id));
+        const followingDisagree = following.accounts.some(account => account.relationship?.followedByViewer === false)
+          || followers.accounts.some(account => typeof account.relationship?.followedByViewer === 'boolean'
+            && account.relationship.followedByViewer !== followingIds.has(account.id));
+        if (followers.complete && followersDisagree) followers = { ...followers, complete: false, reason: 'relationship-disagreement' };
+        if (following.complete && followingDisagree) following = { ...following, complete: false, reason: 'relationship-disagreement' };
+      }
       const reconciledAccounts = reconcileRelationshipAccounts(followers.accounts, following.accounts);
+      const relationshipReview = viewerAtStart === username && detectAuthenticatedUsername() === username
+        ? directRelationshipReview(username, capturedAt, followers, following, reconciledAccounts)
+        : null;
       const result = Object.freeze({
         capturedAt,
         complete: Object.freeze({ followers: followers.complete, following: following.complete }),
@@ -929,6 +1009,7 @@
         source: 'authenticated-instagram-web',
         userId,
         username,
+        ...(relationshipReview ? { relationshipReview } : {}),
       });
       onProgress?.(Object.freeze({
         found: result.followers.length + result.following.length,
@@ -970,6 +1051,43 @@
         ? comparison.iDoNotFollowBack
         : [],
     };
+  }
+
+  function relationshipReviewReport(review) {
+    if (review?.kind !== 'insta-toolbox-relationship-review'
+      || review.basis !== 'explicit-viewer-relationship'
+      || review.verified !== true) {
+      throw relationshipError('unverified-relationships', 'Follow-back status has not been verified.');
+    }
+    const lines = [
+      'INSTA TOOLBOX FOLLOW-BACK REVIEW',
+      '================================',
+      `Account: @${normalizeUsername(review.subjectUsername)}`,
+      `Checked: ${review.capturedAt}`,
+      `Following returned: ${review.counts.following} of ${review.counts.expectedFollowing}`,
+      `Followers returned: ${review.counts.followers} of ${review.counts.expectedFollowers}`,
+      'Mutuals and non-followers use explicit Instagram follow-back status, not missing list entries.',
+      review.complete.notFollowingMeBack
+        ? 'Follow-back coverage: complete.'
+        : 'Follow-back coverage: partial. Every listed status is verified, but accounts may be missing.',
+      review.complete.iDoNotFollowBack
+        ? 'Followers list: complete.'
+        : 'Followers list: incomplete. The known followers section may omit accounts.',
+    ];
+    for (const [title, accounts] of [
+      [`NOT FOLLOWING YOU BACK — VERIFIED${review.complete.notFollowingMeBack ? '' : ', PARTIAL LIST'}`, review.notFollowingMeBack],
+      [`MUTUALS — VERIFIED${review.complete.mutuals ? '' : ', PARTIAL LIST'}`, review.mutuals],
+      [review.complete.iDoNotFollowBack ? 'YOU DO NOT FOLLOW BACK' : 'KNOWN FOLLOWERS YOU DO NOT FOLLOW BACK — PARTIAL', review.iDoNotFollowBack],
+    ]) {
+      lines.push('', `${title} (${accounts.length})`, '-'.repeat(title.length));
+      if (!accounts.length) lines.push('None observed');
+      accounts.forEach((account, index) => {
+        const displayName = String(account.displayName || '').replace(/[\r\n]+/g, ' ').trim();
+        lines.push(`${index + 1}. @${normalizeUsername(account.username)}${displayName ? ` — ${displayName}` : ''}`);
+      });
+    }
+    lines.push('', 'Read-only review. No account action was performed.', '');
+    return lines.join('\r\n');
   }
 
   function followerComparisonReport(workspace, comparison, generatedAt = new Date().toISOString()) {
@@ -2674,6 +2792,7 @@
     detectAuthenticatedUsername,
     enumerateSentDms,
     fetchFollowerComparison,
+    relationshipReviewReport,
     followerComparisonRecord,
     followerComparisonReport,
     inspectPageContext,
