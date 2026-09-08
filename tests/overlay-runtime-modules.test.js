@@ -41,7 +41,7 @@ function loadQueueModules() {
 }
 
 function loadCaptureModules() {
-  const context = vm.createContext({ console, Date, Intl, Map });
+  const context = vm.createContext({ console, Date, Intl, Map, AbortController });
   vm.runInContext(sources.shared, context);
   vm.runInContext(captureViewSource, context);
   return context.__instaToolboxOverlayModules;
@@ -636,6 +636,42 @@ test('extension complete rescans replace stale rows and partial rescans cannot b
     ['fresh'],
   );
   assert.equal(externalProfileRuntime.model.capture.subjectUsername, 'external_b');
+});
+
+test('background comparison replaces storage only after both complete lists are verified', async () => {
+  const { captureView, shared } = loadCaptureModules();
+  const normalizeUsername = value => String(value || '').toLowerCase();
+  const original = shared.normalizeCaptureWorkspace({
+    subjectUsername: 'fixture_profile',
+    followers: [{ username: 'previous_person' }], following: [{ username: 'previous_person' }],
+    verified: { followers: true, following: true }, complete: { followers: true, following: true },
+  }, normalizeUsername);
+  let persisted = 0;
+  let complete = false;
+  const runtime = {
+    inspector: {
+      normalizeUsername,
+      detectAuthenticatedUsername: () => 'fixture_profile',
+      fetchFollowerComparison: async options => {
+        assert.equal(options.mode, 'graphql');
+        return {
+          username: 'fixture_profile', capturedAt: '2026-09-08T00:00:00.000Z',
+          followers: [{ username: 'new_person' }], following: [{ username: 'new_person' }],
+          complete: { followers: complete, following: true }, expectedCounts: { followers: complete ? 1 : 2, following: 1 },
+          reasons: {},
+        };
+      },
+    },
+    model: { context: { pageKind: 'profile', username: 'fixture_profile' }, capture: original },
+    persistCapture: async () => { persisted += 1; }, query: () => null, status: () => {}, setText: () => {},
+  };
+  await captureView.checkAccount(runtime, 'graphql');
+  assert.equal(runtime.model.capture, original);
+  assert.equal(persisted, 0);
+  complete = true;
+  await captureView.checkAccount(runtime, 'graphql');
+  assert.equal(persisted, 1);
+  assert.equal(runtime.model.capture.followers[0].username, 'new_person');
 });
 
 test('follower comparison filters stay local, bounded, and category-specific', () => {

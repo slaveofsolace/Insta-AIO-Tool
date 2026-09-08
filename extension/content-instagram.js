@@ -41,6 +41,10 @@
   const INSTAGRAM_WEB_APP_ID = '936619743392459';
   const INSTAGRAM_WEB_ASBD_ID = '129477';
   const RELATIONSHIP_PAGE_SIZE = 50;
+  const RELATIONSHIP_GRAPHQL = Object.freeze({
+    followers: Object.freeze({ hash: '37479f2b8209594dde7facb0d904896a', edge: 'edge_followed_by' }),
+    following: Object.freeze({ hash: '3dec7e2c57367ef3da3d987d89f9dbc8', edge: 'edge_follow' }),
+  });
   const RELATIONSHIP_MAX_PAGES = 1_000;
   const RELATIONSHIP_MAX_ACCOUNTS = 25_000;
   const RELATIONSHIP_MAX_DURATION_MS = 20 * 60 * 1_000;
@@ -260,7 +264,7 @@
           const response = await fetchImpl(url.href, {
             cache: 'no-store',
             credentials: 'include',
-            headers: {
+            headers: url.pathname === '/graphql/query/' ? {} : {
               'X-ASBD-ID': INSTAGRAM_WEB_ASBD_ID,
               'X-IG-App-ID': INSTAGRAM_WEB_APP_ID,
               'X-Requested-With': 'XMLHttpRequest',
@@ -561,6 +565,7 @@
     sleepImpl,
     startedAt,
     expectedCount = null,
+    transport = 'legacy',
   }) {
     const accounts = new Map();
     const accountKeyByUsername = new Map();
@@ -569,16 +574,27 @@
     let pages = 0;
     let stagnantPages = 0;
     let instagramLimited = false;
+    let reportedCount = null;
     while (pages < maxPages && accounts.size < maxAccounts) {
       assertRelationshipRunActive(signal, startedAt, now, maxDurationMs);
-      const url = new URL(`/api/v1/friendships/${userId}/${listType}/`, INSTAGRAM_WEB_ORIGIN);
-      url.searchParams.set('count', String(RELATIONSHIP_PAGE_SIZE));
-      url.searchParams.set('search_surface', 'follow_list_page');
-      url.searchParams.set('query', '');
-      url.searchParams.set('enable_groups', 'true');
-      if (listType === 'following') url.searchParams.set('includes_hashtags', 'false');
-      if (nextMaxId) url.searchParams.set('max_id', nextMaxId);
-      const data = await fetchInstagramRelationshipJson(url, {
+      const graphql = transport === 'graphql' ? RELATIONSHIP_GRAPHQL[listType] : null;
+      const url = new URL(graphql ? '/graphql/query/' : `/api/v1/friendships/${userId}/${listType}/`, INSTAGRAM_WEB_ORIGIN);
+      if (graphql) {
+        url.searchParams.set('query_hash', graphql.hash);
+        url.searchParams.set('variables', JSON.stringify({
+          id: userId, include_reel: true, fetch_mutual: false,
+          first: RELATIONSHIP_PAGE_SIZE,
+          ...(nextMaxId ? { after: nextMaxId } : {}),
+        }));
+      } else {
+        url.searchParams.set('count', String(RELATIONSHIP_PAGE_SIZE));
+        url.searchParams.set('search_surface', 'follow_list_page');
+        url.searchParams.set('query', '');
+        url.searchParams.set('enable_groups', 'true');
+        if (listType === 'following') url.searchParams.set('includes_hashtags', 'false');
+        if (nextMaxId) url.searchParams.set('max_id', nextMaxId);
+      }
+      let data = await fetchInstagramRelationshipJson(url, {
         clearTimer,
         expectedCount,
         fetchImpl,
@@ -598,6 +614,26 @@
         startedAt,
         username,
       });
+      if (graphql) {
+        const edge = data?.data?.user?.[graphql.edge];
+        if (data?.errors || !edge || !Array.isArray(edge.edges)
+          || !Number.isSafeInteger(edge.count) || edge.count < 0
+          || typeof edge.page_info?.has_next_page !== 'boolean'
+          || (edge.page_info.end_cursor != null && typeof edge.page_info.end_cursor !== 'string')
+          || (data.data.user.id != null && String(data.data.user.id) !== userId)
+          || edge.edges.some(entry => !entry?.node || !relationshipAccountId(entry.node))) {
+          throw relationshipError('invalid-response', `Instagram returned an invalid ${listType} page.`);
+        }
+        if (reportedCount !== null && reportedCount !== edge.count) {
+          throw relationshipError('count-changed', 'Instagram changed the list total during this check. The previous comparison is unchanged.');
+        }
+        reportedCount = edge.count;
+        data = {
+          users: edge.edges.map(entry => entry.node),
+          has_more: edge.page_info.has_next_page,
+          next_max_id: edge.page_info.has_next_page ? edge.page_info.end_cursor : null,
+        };
+      }
       if (!Array.isArray(data?.users)) {
         throw relationshipError('invalid-response', `Instagram returned an invalid ${listType} page.`);
       }
@@ -655,6 +691,7 @@
       if (candidateToken === undefined || candidateToken === null || candidateToken === '') {
         const countReconciled = Number.isSafeInteger(expectedCount)
           && accounts.size === expectedCount && !instagramLimited
+          && (reportedCount === null || reportedCount === expectedCount)
           && data.has_more !== true && stagnantPages < 3;
         return {
           accounts: sortedAccounts(),
@@ -760,6 +797,9 @@
     }
     const username = normalizeUsername(requestedUsername);
     if (!username) throw relationshipError('invalid-username', 'Enter a valid Instagram username.');
+    if (mode === 'graphql' && !openProfileRelationshipCounts(username)) {
+      throw relationshipError('profile-count-unavailable', 'Open the matching profile before starting a background read.');
+    }
     const pageOrigin = String(location?.origin || '');
     if (pageOrigin !== INSTAGRAM_WEB_ORIGIN) {
       throw relationshipError('wrong-origin', 'Open instagram.com before running the follower check.');
@@ -780,7 +820,18 @@
       assertRelationshipRunActive(runSignal, startedAt, now, boundedDuration);
       onProgress?.(Object.freeze({ found: 0, listType: null, pages: 0, phase: 'resolving', username }));
       const common = {
-        fetchImpl,
+        transport: mode === 'graphql' ? 'graphql' : 'legacy',
+        fetchImpl: mode === 'graphql' ? async (...args) => {
+          const verifyProfile = () => {
+            if (!openProfileRelationshipCounts(username)) {
+              throw relationshipError('profile-changed', 'The checked profile is no longer open. The previous comparison is unchanged.');
+            }
+          };
+          verifyProfile();
+          const response = await fetchImpl(...args);
+          verifyProfile();
+          return response;
+        } : fetchImpl,
         maxAccounts: boundedAccounts,
         maxDurationMs: boundedDuration,
         maxPages: boundedPages,

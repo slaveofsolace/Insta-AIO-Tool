@@ -23,7 +23,8 @@ let exitCode = 1;
 try {
   const child = spawn(
     electronPath,
-    [...(hostedLinuxNoSandbox ? ['--no-sandbox'] : []), acceptancePath],
+    [...(hostedLinuxNoSandbox ? ['--no-sandbox'] : []), acceptancePath,
+      ...(process.argv.includes('--relationships-only') ? ['--relationships-only'] : [])],
     {
       cwd: repositoryRoot,
       env: {

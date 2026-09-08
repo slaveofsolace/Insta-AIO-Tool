@@ -55,3 +55,9 @@ No explicit license was identified on the supplied Gist page. Its source code is
 ## Acknowledgments
 
 These sources helped shape Insta Toolbox. Thanks to their creators for sharing their work and making this project possible.
+
+The background relationship query formats were reviewed in
+[David Arroyo's InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers/tree/a203e13b2c6bd039d75438bdf7f8803fa595544c)
+and [instagrapi](https://github.com/subzeroid/instagrapi/tree/c23bb018e2131a476979d30ab2d1fb08c774338c),
+both MIT-licensed. Their application code, session helpers, and dependencies are
+not included. See [Source audit](docs/SOURCE_AUDIT.md) for the reviewed scope.

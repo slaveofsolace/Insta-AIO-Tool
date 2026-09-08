@@ -98,6 +98,7 @@ function createInspector({
   pathname = '/demo_creator/',
   profileCounts = null,
   profileLinks: suppliedProfileLinks = null,
+  pageLocation = null,
 } = {}) {
   const profileLinkData = Array.isArray(suppliedProfileLinks)
     ? suppliedProfileLinks
@@ -138,7 +139,7 @@ function createInspector({
     crypto: webcrypto,
     document,
     getComputedStyle: () => ({ display: 'block', visibility: 'visible' }),
-    location: {
+    location: pageLocation || {
       href: `${origin}${pathname}`,
       origin,
       pathname,
@@ -1668,4 +1669,148 @@ test('comparison exports refuse partial lists instead of publishing false non-mu
   }
   workspace.complete.followers = true;
   assert.match(inspector.followerComparisonReport(workspace, comparison), /Followers: 2,070\r\nFollowing: 101/);
+});
+
+function graphPage(users, count, cursor = null, extra = {}) {
+  return {
+    count,
+    edges: users.map(([id, username]) => ({ node: { id, username } })),
+    page_info: { has_next_page: cursor !== null, end_cursor: cursor },
+    ...extra,
+  };
+}
+
+async function graphFixture({
+  followers = [graphPage([['1', 'incoming.person'], ['2', 'mutual.person']], 2)],
+  following = [graphPage([['2', 'mutual.person'], ['3', 'outgoing.person']], 2)],
+  counts = { followers: 2, following: 2 }, onRequest = () => {}, options = {},
+  pageLocation = { href: 'https://www.instagram.com/target_name/', origin: 'https://www.instagram.com', pathname: '/target_name/' },
+} = {}) {
+  const inspector = createInspector({
+    pageLocation,
+    profileLinks: ['followers', 'following'].map(type => ({
+      href: '#', inProfileHeader: true, title: `${counts[type]} ${type}`,
+    })),
+  });
+  const pages = { followers: 0, following: 0 };
+  return inspector.fetchFollowerComparison({
+    mode: 'graphql', username: 'target_name', sleepImpl: async () => {},
+    fetchImpl: async (input, init) => {
+      const url = new URL(input);
+      assert.equal(url.origin, 'https://www.instagram.com');
+      assert.equal(init.method, 'GET');
+      assert.equal(init.credentials, 'include');
+      onRequest(url, init);
+      if (url.pathname.includes('topsearch')) {
+        return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      }
+      assert.equal(url.pathname, '/graphql/query/');
+      assert.deepEqual(Object.keys(init.headers), []);
+      const hash = url.searchParams.get('query_hash');
+      assert.ok(['37479f2b8209594dde7facb0d904896a', '3dec7e2c57367ef3da3d987d89f9dbc8'].includes(hash));
+      const type = hash === '37479f2b8209594dde7facb0d904896a' ? 'followers' : 'following';
+      const variables = JSON.parse(url.searchParams.get('variables'));
+      assert.equal(variables.id, '77');
+      assert.equal(variables.first, 50);
+      assert.equal(variables.fetch_mutual, false);
+      const list = type === 'followers' ? followers : following;
+      const index = pages[type]++;
+      assert.ok(list[index], 'must not guess an extra page');
+      assert.equal(variables.after, index ? list[index - 1].page_info.end_cursor : undefined);
+      const edge = type === 'followers' ? 'edge_followed_by' : 'edge_follow';
+      return response({ status: 'ok', data: { user: { id: '77', [edge]: list[index] } } });
+    },
+    ...options,
+  });
+}
+
+test('background GraphQL reader completes both exact cursor chains without list clicks', async () => {
+  const requests = [];
+  const result = await graphFixture({
+    followers: [graphPage([['1', 'incoming.person']], 2, 'f-2'), graphPage([['1', 'incoming.person'], ['2', 'mutual.person']], 2)],
+    following: [graphPage([['2', 'mutual.person']], 2, 'g-2'), graphPage([['3', 'outgoing.person']], 2)],
+    onRequest: url => requests.push(url.pathname),
+  });
+  assert.equal(requests.length, 5);
+  assert.deepEqual({ ...result.complete }, { followers: true, following: true });
+  assert.deepEqual({ ...result.pages }, { followers: 2, following: 2 });
+  assert.equal(result.followers.length, 2);
+  assert.equal(result.following.length, 2);
+  assert.equal(result.source, 'authenticated-instagram-web');
+});
+
+test('background reader does not equate a terminal server subset with the profile total', async () => {
+  const result = await graphFixture({ counts: { followers: 3, following: 2 } });
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.reasons.followers, 'count-mismatch');
+  assert.equal(result.complete.following, true);
+});
+
+test('background reader stops immediately if the server count changes during pagination', async () => {
+  let calls = 0;
+  await assert.rejects(graphFixture({
+    followers: [graphPage([['1', 'incoming.person']], 2, 'next'), graphPage([['2', 'mutual.person']], 3)],
+    onRequest: () => { calls += 1; },
+  }), error => error.code === 'count-changed');
+  assert.equal(calls, 3, 'must not start Following after an unstable Followers read');
+});
+
+test('background reader requires a matching open profile before making any request', async () => {
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    mode: 'graphql', username: 'target_name',
+    fetchImpl: async () => assert.fail('no lookup without profile context'),
+  }), error => error.code === 'profile-count-unavailable');
+});
+
+test('background reader stops on a profile change before accepting the response', async () => {
+  const pageLocation = { href: 'https://www.instagram.com/target_name/', origin: 'https://www.instagram.com', pathname: '/target_name/' };
+  let calls = 0;
+  await assert.rejects(graphFixture({
+    pageLocation,
+    onRequest: () => { calls += 1; pageLocation.pathname = '/different.profile/'; },
+  }), error => error.code === 'profile-changed');
+  assert.equal(calls, 1);
+});
+
+test('background reader rejects malformed edge identity and pagination shapes', async () => {
+  for (const extra of [
+    { edges: [{ node: { username: 'missing.id' } }] },
+    { count: '2' },
+    { page_info: { has_next_page: 'false', end_cursor: null } },
+    { page_info: { has_next_page: true, end_cursor: { cursor: 'bad' } } },
+  ]) {
+    await assert.rejects(graphFixture({ followers: [graphPage([], 2, null, extra)] }), error => error.code === 'invalid-response');
+  }
+});
+
+test('background reader leaves missing and repeated cursors incomplete without guessing pages', async () => {
+  const missing = await graphFixture({ followers: [graphPage([['1', 'incoming.person'], ['2', 'mutual.person']], 2, null, { page_info: { has_next_page: true } })] });
+  assert.equal(missing.complete.followers, false);
+  assert.equal(missing.reasons.followers, 'cursor-missing');
+  const repeated = await graphFixture({ followers: [graphPage([['1', 'incoming.person']], 2, 'same'), graphPage([['2', 'mutual.person']], 2, 'same')] });
+  assert.equal(repeated.complete.followers, false);
+  assert.equal(repeated.reasons.followers, 'count-mismatch');
+});
+
+test('background reader respects Stop between cursor pages', async () => {
+  const controller = new AbortController();
+  let calls = 0;
+  await assert.rejects(graphFixture({
+    followers: [graphPage([['1', 'incoming.person']], 2, 'next')],
+    onRequest: () => { calls += 1; },
+    options: { signal: controller.signal, sleepImpl: async () => controller.abort() },
+  }), error => error.code === 'stopped');
+  assert.equal(calls, 2);
+});
+
+test('background reader never retries restrictions or unreadable pages through another route', async () => {
+  for (const blocked of [response({}, 429), response({ challenge: {} }), { ...response({}), json: async () => { throw new SyntaxError('HTML'); } }]) {
+    let calls = 0;
+    await assert.rejects(graphFixture({ options: { fetchImpl: async input => {
+      calls += 1;
+      if (input.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      return blocked;
+    } } }));
+    assert.equal(calls, 2);
+  }
 });

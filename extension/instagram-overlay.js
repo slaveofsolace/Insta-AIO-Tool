@@ -525,6 +525,7 @@
     'bot-start': () => queueView.botStart(runtime),
     'capture-visible': () => captureView.captureVisible(runtime),
     'check-account-relationships': () => captureView.checkAccount(runtime),
+    'check-account-background': () => captureView.checkAccount(runtime, 'graphql'),
     'confirm-cancel': () => confirmationController?.cancel(),
     close: () => setOpen(false),
     'close-settings': () => setSettingsOpen(false),

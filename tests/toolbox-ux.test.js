@@ -382,7 +382,9 @@ test('the open exact profile is the direct bounded Follow or Unfollow source', (
   assert.match(shell, /'current-profile': \(\) => \{/);
   assert.match(shell, /source !== 'current-profile' && action === 'follow'/);
   assert.match(shell, /Automatically open and scan both lists\./);
-  assert.match(shell, /mode: 'dialog'/);
+  assert.match(shell, /function checkAccountRelationships\(mode = 'dialog'\)/);
+  assert.match(shell, /'check-account-background': \(\) => checkAccountRelationships\('graphql'\)/);
+  assert.match(shell, /data-role="checker-background"/);
   assert.match(shell, /Please leave this tab open and untouched/);
   assert.match(shell, /Open one Instagram profile first\. No target was reviewed\./);
 });

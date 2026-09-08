@@ -11,6 +11,8 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Wait for delayed initial rows and check every visible loading indicator, including when a hidden spinner appears first.
 - Stop stalled list loads with a useful error instead of waiting through repeated loading cycles. Preserve the previous comparison.
 - Keep resweep progress visible while collecting recycled rows.
+- Add an optional background read using fixed relationship queries and bounded cursor pagination. Keep the matching profile open; both lists must reconcile before saving.
+- Preserve the previous comparison when either background list is partial or its reported total changes. Never retry restrictions through a different route.
 
 ## 3.1.7 - 2026-09-07
 

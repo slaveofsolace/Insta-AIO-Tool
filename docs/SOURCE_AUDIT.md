@@ -86,6 +86,30 @@ Rejected:
 - Promoting partial rows into Follow / Unfollow targets
 - Claiming the private web route is a stable public Instagram API
 
+### Background relationship pagination references
+
+The September 2026 review rechecked the original Gist at the same revision;
+its recent activity is discussion, not a changed implementation. Its missing
+cursor handling cannot prove that a complete list was returned.
+
+Two maintained MIT projects were also inspected:
+
+- [InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers/tree/a203e13b2c6bd039d75438bdf7f8803fa595544c):
+  `src/utils/utils.ts` and the relationship-reader portion of `src/main.tsx`.
+  The Following reader uses a fixed GraphQL query and `page_info` cursors.
+- [instagrapi](https://github.com/subzeroid/instagrapi/blob/c23bb018e2131a476979d30ab2d1fb08c774338c/instagrapi/mixins/user.py):
+  `user_followers_gql_chunk` and adjacent relationship readers. The Followers
+  query exposes account edges, a reported count, and an explicit continuation.
+
+The independently implemented background option uses those fixed query shapes
+with the existing bounded reader, exact username lookup, stable-ID deduplication,
+and unchanged-profile count checks. Both routes returned JSON in authenticated
+read-only probes. That is route evidence, not proof of a complete comparison.
+
+No upstream bundle or implementation is included. Cookie lookup, session copying,
+unbounded retries, and mutation helpers were not adopted. The private GraphQL
+routes are not supported public APIs and may stop working or omit accounts.
+
 ## instagram-dm-unsender
 
 - Repository: <https://github.com/thoughtsunificator/instagram-dm-unsender>

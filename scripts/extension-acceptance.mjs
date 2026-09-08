@@ -2124,10 +2124,31 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
 
 async function acceptBackgroundComparison({ window, isolatedSession }) {
   const requests = [];
+  let graphScenario = '';
   await isolatedSession.protocol.handle('http', () => new Response('', { status: 403 }));
   await isolatedSession.protocol.handle('https', async (request) => {
     const url = new URL(request.url);
     if (url.origin !== 'https://www.instagram.com') return new Response('', { status: 403 });
+    if (graphScenario && (url.pathname.startsWith('/api/') || url.pathname === '/graphql/query/')) {
+      requests.push(url.pathname);
+      if (url.pathname === '/api/v1/web/search/topsearch/') {
+        return Response.json({ users: [{ user: { pk: '77', username: 'demo_creator' } }] });
+      }
+      assert.equal(url.pathname, '/graphql/query/');
+      if (graphScenario === 'rate-limited') return new Response('Wait before trying again', { status: 429 });
+      const variables = JSON.parse(url.searchParams.get('variables'));
+      assert.equal(variables.id, '77');
+      assert.equal(variables.first, 50);
+      const following = url.searchParams.get('query_hash') === '3dec7e2c57367ef3da3d987d89f9dbc8';
+      const edge = following ? 'edge_follow' : 'edge_followed_by';
+      const second = Boolean(variables.after);
+      const ids = second ? (graphScenario === 'partial' ? [] : [following ? 4 : 3]) : (following ? [2, 3] : [1, 2]);
+      return Response.json({ status: 'ok', data: { user: { id: '77', [edge]: {
+        count: 3,
+        edges: ids.map(id => ({ node: { id: String(id), username: 'fixture_person' + id } })),
+        page_info: { has_next_page: !second, end_cursor: second ? null : (following ? 'following-next' : 'followers-next') },
+      } } } });
+    }
     if (url.pathname.startsWith('/api/')) {
       requests.push(url.pathname);
       return new Response('No background API requests expected', { status: 500 });
@@ -2141,6 +2162,7 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
   });
   try {
     for (const userscript of [false, true]) {
+      graphScenario = '';
       requests.length = 0;
       const webContents = window.webContents;
       const host = userscript ? '#insta-toolbox-userscript-root' : '#insta-toolbox-sidecar-root';
@@ -2271,6 +2293,52 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
       assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
       console.log('Accepted ' + surface + ' guided primary-button flow: delayed initial rows, hidden-first loaders, 45 recycled rows per list, 30 suggestions excluded, exact open/close order, zero API calls, and saved-comparison preservation on unavailable, stalled, or interrupted lists.');
+      graphScenario = 'complete';
+      requests.length = 0;
+      await webContents.loadURL('https://www.instagram.com/' + (userscript ? 'userscript-fixture.html' : 'fixture.html?mode=qa-profile-following&shadow=open'));
+      await waitForPageValue(webContents, "Boolean(document.querySelector('" + host + "')?.shadowRoot)", surface + ' background fixture');
+      await webContents.executeJavaScript(`(() => {
+        document.querySelectorAll('[role="dialog"]').forEach(node => node.remove());
+        history.replaceState({}, '', '/demo_creator/');
+        const header = document.querySelector('header');
+        header.querySelector('h1, h2').textContent = 'demo_creator';
+        globalThis.graphListClicks = 0;
+        for (const type of ['followers', 'following']) {
+          const link = document.createElement('a');
+          link.href = '#'; link.setAttribute('role', 'link'); link.textContent = '3 ' + type;
+          link.onclick = event => { event.preventDefault(); globalThis.graphListClicks += 1; };
+          header.append(link);
+        }
+      })()`, true);
+      const graphButton = userscript ? '[data-action="check-account-background"]' : '[data-insta-toolbox-action="check-account-background"]';
+      const clickGraph = "(() => {const shadow = " + root + ";shadow.querySelector('" + input + "').value = 'demo_creator';shadow.querySelector('" + graphButton + "').click();})()";
+      await webContents.executeJavaScript(clickGraph, true);
+      try {
+        const completeCount = userscript
+          ? "(" + root + ").querySelector('" + result + "').textContent.includes('3 followers · 3 following')"
+          : "(" + root + ").querySelector('[data-insta-toolbox-role=followers-count]').textContent === '3' && (" + root + ").querySelector('[data-insta-toolbox-role=following-count]').textContent === '3'";
+        await waitForPageValue(webContents, "!(" + root + ").querySelector('" + graphButton + "').disabled && " + completeCount, surface + ' exact background comparison');
+      } catch (error) {
+        console.error({ requests, surface, result: await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true) });
+        throw error;
+      }
+      assert.equal(requests.length, 5, 'one lookup and two pages per list');
+      const completeGraph = await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true);
+      assert.equal(await webContents.executeJavaScript('globalThis.graphListClicks', true), 0);
+      graphScenario = 'partial';
+      requests.length = 0;
+      await webContents.executeJavaScript(clickGraph, true);
+      await waitForPageValue(webContents, "(" + root + ").textContent.includes('Full lists could not be verified') && !(" + root + ").querySelector('" + graphButton + "').disabled", surface + ' partial background preservation');
+      assert.equal(requests.length, 5);
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), completeGraph);
+      graphScenario = 'rate-limited';
+      requests.length = 0;
+      await webContents.executeJavaScript(clickGraph, true);
+      await waitForPageValue(webContents, "(" + root + ").textContent.includes('rate limiting this check') && !(" + root + ").querySelector('" + graphButton + "').disabled", surface + ' background restriction stop');
+      assert.equal(requests.length, 2, 'no retry or fallback after restriction');
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), completeGraph);
+      assert.equal(await webContents.executeJavaScript('globalThis.graphListClicks', true), 0);
+      console.log('Accepted ' + surface + ' background button: both cursor chains, no list clicks, partial-save preservation, and immediate restriction stop.');
     }
   } finally {
     window.destroy();
@@ -2353,6 +2421,10 @@ async function run() {
   const background = createIsolatedWindow(`insta-toolbox-background-comparison-${process.pid}`);
   let exitCode = 0;
   try {
+    if (process.argv.includes('--relationships-only')) {
+      await acceptBackgroundComparison(background);
+      return;
+    }
     const overlayAddress = await listen(overlayServer);
     const pwaAddress = await listen(pwaServer);
     const overlayBaseUrl = `http://127.0.0.1:${overlayAddress.port}`;

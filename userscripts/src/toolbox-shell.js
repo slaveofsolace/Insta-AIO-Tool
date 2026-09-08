@@ -836,7 +836,7 @@
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar" data-role="scan-bar" role="progressbar" aria-label="Mutual check progress" aria-describedby="insta-toolbox-scan-detail" aria-valuemin="0" aria-valuemax="100"><span data-role="scan-fill"></span></div><p id="insta-toolbox-scan-detail" class="lead" data-role="scan-detail"></p></div>
           <div class="card" data-role="comparison"></div>
           <section class="card comparison-browser" data-role="comparison-browser" aria-labelledby="insta-toolbox-comparison-browser-title" hidden><h2 id="insta-toolbox-comparison-browser-title">Comparison list</h2><div class="comparison-controls"><div class="field"><label for="insta-toolbox-comparison-category">Show accounts</label><select id="insta-toolbox-comparison-category" data-role="comparison-category" aria-controls="insta-toolbox-comparison-list"><option value="not-following-me-back">Don't follow you back</option><option value="i-do-not-follow-back">You don't follow back</option><option value="mutuals">Mutuals</option></select></div><div class="field"><label for="insta-toolbox-filter">Find a username</label><input id="insta-toolbox-filter" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Search usernames" data-role="result-filter" aria-controls="insta-toolbox-comparison-list"></div></div><p id="insta-toolbox-comparison-count" class="comparison-count" data-role="comparison-count" tabindex="-1"></p><ul id="insta-toolbox-comparison-list" class="list comparison-list" data-role="comparison-list" aria-describedby="insta-toolbox-comparison-count"></ul><button class="button quiet comparison-more" type="button" data-action="show-more-comparison" data-role="comparison-more" hidden>Show more</button></section>
-          <details class="settings-inline"><summary>Capture lists and export</summary><p class="lead">If the account check fails, open Followers or Following and scan that list.</p><ol class="steps" data-role="checker-steps"><li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan Following</strong><span data-role="step-following">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-following">Scan Following</button></li><li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan Followers</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-followers">Scan Followers</button></li><li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li></ol><ul class="list" data-role="capture-list"></ul><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download raw list</button><button class="button quiet" type="button" data-action="download-comparison-json">Download JSON</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="insta-toolbox-list-type">Raw list</label><select id="insta-toolbox-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details></section>
+          <details class="settings-inline"><summary>Capture lists and export</summary><p class="lead">Check without opening the lists. Keep your profile open; both lists must match its totals.</p><button class="button quiet" type="button" data-action="check-account-background" data-role="checker-background">Check in background</button><p class="lead">If the account check fails, open Followers or Following and scan that list.</p><ol class="steps" data-role="checker-steps"><li class="step" data-step="following"><span class="step-num">1</span><div class="step-body"><strong>Scan Following</strong><span data-role="step-following">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-following">Scan Following</button></li><li class="step" data-step="followers"><span class="step-num">2</span><div class="step-body"><strong>Scan Followers</strong><span data-role="step-followers">Not scanned yet</span></div><button class="button quiet" type="button" data-action="scan-followers">Scan Followers</button></li><li class="step" data-step="compare"><span class="step-num">3</span><div class="step-body"><strong>Compare</strong><span data-role="step-compare">Scan both lists first</span></div></li></ol><ul class="list" data-role="capture-list"></ul><div class="toolbar"><button class="button quiet" type="button" data-action="capture">Capture visible rows</button><button class="button quiet" type="button" data-action="download-list">Download raw list</button><button class="button quiet" type="button" data-action="download-comparison-json">Download JSON</button><button class="button quiet" type="button" data-action="clear-capture">Clear checker</button></div><div class="field"><label for="insta-toolbox-list-type">Raw list</label><select id="insta-toolbox-list-type" data-role="list-type"><option value="following">Following</option><option value="followers">Followers</option></select></div></details></section>
         <section id="insta-toolbox-panel-account" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-account" data-panel="account" hidden><p class="lead"><strong>Follow / Unfollow.</strong> Choose an action, then review the accounts. Review never clicks.</p><div class="card" data-role="queue-current"></div>
           <div class="toolbar"><button class="button primary" type="button" data-action="account-dry-run">Refresh profile status</button><button class="button quiet" type="button" data-action="open-profile">Open profile</button></div><details class="settings-inline"><summary>Queue and files</summary><div class="toolbar"><button class="button quiet" type="button" data-action="queue-complete">Complete</button><button class="button quiet" type="button" data-action="queue-skip">Skip</button></div><div class="toolbar"><label class="file quiet">Import queue JSON<input type="file" accept=".json,application/json" data-file="queue"></label><button class="button quiet" type="button" data-action="export-queue">Export queue state</button></div></details><div class="card" data-role="account-result"></div>
           <div class="field"><label for="insta-toolbox-bot-action">What do you want to do?</label><select id="insta-toolbox-bot-action" data-role="bot-action"><option value="follow">Follow people</option><option value="unfollow">Unfollow people</option></select></div>
@@ -1053,8 +1053,8 @@
     const verifiedFollowers = verifiedCapture('followers');
     const verifiedFollowing = verifiedCapture('following');
     const comparisonReady = comparisonIsReady();
-    const authenticatedCheck = state.capture.source?.followers === 'authenticated-web'
-      && state.capture.source?.following === 'authenticated-web';
+    const authenticatedCheck = ['authenticated-web', 'authenticated-instagram-web'].includes(state.capture.source?.followers)
+      && ['authenticated-web', 'authenticated-instagram-web'].includes(state.capture.source?.following);
     const usernameInput = query('[data-role="checker-username"]');
     if (usernameInput && document.activeElement !== usernameInput && !usernameInput.value) {
       usernameInput.value = state.capture.subjectUsername
@@ -1062,6 +1062,8 @@
         || '';
     }
     const runButton = query('[data-role="checker-run"]');
+    const backgroundButton = query('[data-role="checker-background"]');
+    if (backgroundButton) backgroundButton.disabled = Boolean(relationshipController);
     if (runButton) {
       runButton.textContent = relationshipController
         ? 'Stop mutual check'
@@ -1945,7 +1947,7 @@
     renderAll();
   }
 
-  async function checkAccountRelationships() {
+  async function checkAccountRelationships(mode = 'dialog') {
     if (relationshipController) {
       relationshipController.abort();
       status('Stopping the mutual check. Saved comparison data was not changed.');
@@ -1973,7 +1975,7 @@
     setText('scan-detail', `Finding the exact @${username} account…`);
     try {
       const result = await engine.fetchFollowerComparison({
-        mode: 'dialog',
+        mode,
         username,
         signal: controller.signal,
         onProgress(progress) {
@@ -2044,6 +2046,9 @@
           }
         },
       });
+      if (!result.complete?.followers || !result.complete?.following) {
+        throw new Error(`Instagram returned ${formatCount(result.followers.length)} of ${formatCount(result.expectedCounts?.followers)} followers and ${formatCount(result.following.length)} of ${formatCount(result.expectedCounts?.following)} following. Full lists could not be verified.`);
+      }
       const previousCapture = state.capture;
       const nextCapture = {
         ...stateDefaults().capture,
@@ -2526,6 +2531,7 @@
     'confirm-cancel': () => confirmationController?.cancel(),
     'close-settings': () => setSettingsOpen(false),
     'check-account-relationships': () => checkAccountRelationships(),
+    'check-account-background': () => checkAccountRelationships('graphql'),
     'scan-following': () => scanInto('following'),
     'scan-followers': () => scanInto('followers'),
     'context-cta': () => {

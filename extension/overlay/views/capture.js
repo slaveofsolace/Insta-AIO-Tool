@@ -134,6 +134,8 @@
         || '';
     }
     const runButton = query('[data-insta-toolbox-role="checker-run"]');
+    const backgroundButton = query('[data-insta-toolbox-role="checker-background"]');
+    if (backgroundButton) backgroundButton.disabled = Boolean(relationshipController);
     if (runButton) {
       runButton.textContent = relationshipController
         ? 'Stop mutual check'
@@ -198,8 +200,8 @@
       compareBadge.textContent = comparisonComplete ? 'complete' : 'waiting';
       compareBadge.dataset.tone = comparisonComplete ? 'good' : 'neutral';
     }
-    const authenticatedCheck = workspace.source?.followers === 'authenticated-web'
-      && workspace.source?.following === 'authenticated-web';
+    const authenticatedCheck = ['authenticated-web', 'authenticated-instagram-web'].includes(workspace.source?.followers)
+      && ['authenticated-web', 'authenticated-instagram-web'].includes(workspace.source?.following);
     if (relationshipController) {
       setState(
         runtime,
@@ -430,7 +432,7 @@
     });
   }
 
-  async function checkAccount(runtime) {
+  async function checkAccount(runtime, mode = 'dialog') {
     const {
       inspector, model, query, status,
     } = runtime;
@@ -466,7 +468,7 @@
     announceProgress('resolving', `Starting the read-only mutual check for @${username}.`);
     try {
       const result = await inspector.fetchFollowerComparison({
-        mode: 'dialog',
+        mode,
         username,
         signal: controller.signal,
         onProgress(progress) {
@@ -551,6 +553,9 @@
           }
         },
       });
+      if (!result.complete?.followers || !result.complete?.following) {
+        throw new Error(`Instagram returned ${formatCount(result.followers.length)} of ${formatCount(result.expectedCounts?.followers)} followers and ${formatCount(result.following.length)} of ${formatCount(result.expectedCounts?.following)} following. Full lists could not be verified. The previous comparison is unchanged.`);
+      }
       const nextCapture = shared.normalizeCaptureWorkspace({
         ...shared.captureWorkspaceDefaults(),
         subjectUsername: result.username,
