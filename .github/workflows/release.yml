@@ -171,7 +171,7 @@ jobs:
             exit 1
           fi
           release_notes="$(cat <<'EOF'
-          Recognize Instagram's current hash-link follower counters in the exact profile header. Background checks no longer fall back to the profile-count request merely because those links use a hash. Neither list needs to be opened. Incomplete lists and rate limits still stop safely. Includes the updated Tampermonkey script.
+          Check mutuals from your open profile: the toolbox opens Followers, collects the list, closes it, then repeats with Following. Leave the tab open and untouched while it runs. Recycled rows are retained, and incomplete lists cannot produce a misleading comparison. Stop, profile changes, challenges, and rate limits halt the scan. Includes the updated Tampermonkey script.
 
           ## Distribution notes
 
