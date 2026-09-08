@@ -53,7 +53,7 @@ The macOS application is ad-hoc signed for bundle integrity but is not Developer
 
 The candidate record is [acceptance/3.1.8.md](./acceptance/3.1.8.md). Compatibility is tracked in [compatibility/3.1.8.md](./compatibility/3.1.8.md).
 
-Full-list authenticated Mutual Checker acceptance has not passed. The native Followers request redirected to the homepage; the background cursor chain also ended below the declared follower total. A separate verified follow-back review now uses explicit relationship flags without claiming complete lists. Exact-build installed acceptance of that review and release promotion remain pending.
+Full-list authenticated Mutual Checker acceptance has not passed. The native Followers request redirected to the homepage; the background cursor chain also ended below the declared follower total. A separate verified follow-back review uses explicit relationship flags without claiming complete lists. Its exact-build installed background check, result categories, pagination, and downloaded report passed on September 8, 2026. All five hosted CI jobs passed, including Windows and macOS package checks. Missing follower identities remain unrecovered; release promotion is pending.
 
 Automated fixtures do not prove current authenticated Instagram selectors, human screen-reader use, persistent-profile behavior, SmartScreen trust, Gatekeeper trust, or notarization. Record those checks separately without committing usernames, messages, thread IDs, cookies, tokens, or private screenshots.
 
