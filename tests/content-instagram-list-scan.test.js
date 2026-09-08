@@ -430,6 +430,50 @@ test('guided incomplete lists remain partial instead of producing false non-mutu
   assert.equal(result.followers.length, 45);
 });
 
+test('guided capture reconciles Instagram page-boundary duplicates in one run', async () => {
+  const h = guidedHarness({ expected: 46 });
+  const requests = [];
+  const paginatedUsers = [
+    ...Array.from({ length: 44 }, (_, index) => ({
+      pk: String(index + 1),
+      username: `person${index}`,
+    })),
+    { pk: '46', username: 'person45' },
+  ];
+  const progress = [];
+  const fetchImpl = async (url) => {
+    requests.push(url);
+    const data = url.includes('/web/search/topsearch/')
+      ? { users: [{ user: { pk: '77', username: 'demo_creator' } }] }
+      : { users: paginatedUsers, has_more: false, next_max_id: '' };
+    return {
+      headers: { get: () => null },
+      json: async () => data,
+      ok: true,
+      status: 200,
+      url,
+    };
+  };
+  const result = await h.inspector.fetchFollowerComparison({
+    mode: 'dialog',
+    username: 'demo_creator',
+    fetchImpl,
+    onProgress: entry => progress.push(entry),
+  });
+
+  assert.equal(requests.length, 3, 'one account lookup and one traversal per list');
+  assert.equal(requests.filter(url => url.includes('/followers/')).length, 1);
+  assert.equal(requests.filter(url => url.includes('/following/')).length, 1);
+  assert.equal(result.followers.length, 46);
+  assert.equal(result.following.length, 46);
+  assert.equal(result.complete.followers, true);
+  assert.equal(result.complete.following, true);
+  assert.equal(result.reasons.followers, 'pagination-reconciled');
+  assert.equal(result.reasons.following, 'pagination-reconciled');
+  assert.equal(result.source, 'list-dialog-reconciled');
+  assert.ok(progress.some(entry => entry.phase === 'reconciling'));
+});
+
 for (const [label, options, code] of [
   ['ambiguous link', { duplicateLink: true }, 'ambiguous-list-link'],
   ['wrong dialog', { wrongDialog: true }, 'dialog-changed'],

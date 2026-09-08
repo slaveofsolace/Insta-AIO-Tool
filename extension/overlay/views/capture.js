@@ -499,6 +499,11 @@
             announceProgress('revalidating-profile', `Finishing the mutual check for @${username}.`);
             return;
           }
+          if (progress.phase === 'reconciling') {
+            setState(runtime, `Finishing @${username}`, 'Completing the full Followers and Following lists.', 'warning');
+            announceProgress('reconciling', `Completing the full lists for @${username}.`);
+            return;
+          }
           if (progress.phase === 'retrying') {
             const label = progress.listType === 'followers'
               ? 'Followers'

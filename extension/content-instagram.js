@@ -720,6 +720,17 @@
     return { followers: project(followers), following: project(following) };
   }
 
+  function mergeRelationshipCapture(primary, secondary) {
+    const byUsername = new Map();
+    for (const account of [...primary, ...secondary]) {
+      const username = normalizeUsername(account?.username);
+      if (!username) continue;
+      byUsername.set(username, { ...account, username });
+    }
+    return [...byUsername.values()]
+      .sort((left, right) => left.username.localeCompare(right.username));
+  }
+
   async function fetchFollowerComparison({
     mode = 'background',
     clearTimer = clearTimeout,
@@ -739,7 +750,36 @@
     username: requestedUsername,
   } = {}) {
     if (mode === 'dialog') {
-      return collectFollowerComparison({ username: requestedUsername, signal, onProgress });
+      const reconcileWithPagination = typeof fetchImpl === 'function'
+        ? ({ signal: reconciliationSignal, username }) => fetchFollowerComparison({
+          clearTimer,
+          fetchImpl,
+          maxAccounts,
+          maxDurationMs,
+          maxPages,
+          mode: 'background',
+          now,
+          onProgress: (progress) => onProgress?.(Object.freeze({
+            ...progress,
+            phase: 'reconciling',
+            reconciliationPhase: progress.phase,
+          })),
+          random,
+          requestAttempts,
+          requestTimeoutMs,
+          retryBaseMs,
+          setTimer,
+          signal: reconciliationSignal,
+          sleepImpl,
+          username,
+        })
+        : null;
+      return collectFollowerComparison({
+        username: requestedUsername,
+        signal,
+        onProgress,
+        reconcileWithPagination,
+      });
     }
     const username = normalizeUsername(requestedUsername);
     if (!username) throw relationshipError('invalid-username', 'Enter a valid Instagram username.');
@@ -2145,7 +2185,12 @@
   }
 
   // Only opens/closes the exact profile list dialogs; never relationship controls.
-  async function collectFollowerComparison({ username: requestedUsername, signal, onProgress } = {}) {
+  async function collectFollowerComparison({
+    username: requestedUsername,
+    signal,
+    onProgress,
+    reconcileWithPagination = null,
+  } = {}) {
     const username = normalizeUsername(requestedUsername);
     const deadline = relationshipRunDeadline(signal, RELATIONSHIP_MAX_DURATION_MS, setTimeout, clearTimeout);
     const runSignal = deadline.signal;
@@ -2258,15 +2303,51 @@
         await closeOwnedDialog();
       }
       validate();
+      let reconciliation = null;
+      if (typeof reconcileWithPagination === 'function'
+        && ['followers', 'following'].some((type) => !lists[type].complete)) {
+        reconciliation = await reconcileWithPagination({ username, signal: runSignal });
+        validate();
+        for (const listType of ['followers', 'following']) {
+          if (lists[listType].complete) continue;
+          const paginationReason = reconciliation?.reasons?.[listType];
+          const paginationTerminal = reconciliation?.complete?.[listType] === true
+            || paginationReason === 'count-mismatch';
+          const sameExpectedCount = reconciliation?.expectedCounts?.[listType]
+            === expectedCounts[listType];
+          if (!paginationTerminal || !sameExpectedCount) continue;
+          const accounts = mergeRelationshipCapture(
+            lists[listType].accounts,
+            reconciliation[listType] || [],
+          );
+          const complete = accounts.length === expectedCounts[listType];
+          lists[listType] = {
+            ...lists[listType],
+            accounts,
+            complete,
+            observedCount: accounts.length,
+            reason: complete ? 'pagination-reconciled' : 'list-count-mismatch',
+          };
+        }
+      }
+      validate();
       const finalCounts = openProfileRelationshipCounts(username);
       const unchanged = finalCounts && ['followers', 'following'].every((type) => finalCounts[type] === expectedCounts[type]);
+      const reconciledAccounts = reconcileRelationshipAccounts(
+        lists.followers.accounts,
+        lists.following.accounts,
+      );
       return {
-        username, capturedAt: new Date().toISOString(), source: 'list-dialog',
-        followers: lists.followers.accounts, following: lists.following.accounts,
-        expectedCounts, pages: { followers: 0, following: 0 },
+        username,
+        capturedAt: new Date().toISOString(),
+        source: reconciliation ? 'list-dialog-reconciled' : 'list-dialog',
+        followers: reconciledAccounts.followers,
+        following: reconciledAccounts.following,
+        expectedCounts,
+        pages: reconciliation?.pages || { followers: 0, following: 0 },
         complete: Object.fromEntries(['followers', 'following'].map((type) => [type, Boolean(unchanged && lists[type].complete)])),
         reasons: Object.fromEntries(['followers', 'following'].map((type) => [type,
-          !unchanged ? 'count-changed' : lists[type].complete ? 'list-complete'
+          !unchanged ? 'count-changed' : lists[type].complete ? lists[type].reason
             : lists[type].reason === 'list-count-mismatch' ? 'count-mismatch' : lists[type].reason])),
       };
     } finally {

@@ -1998,6 +1998,10 @@
             setText('scan-detail', `Confirming @${username}'s profile totals did not change…`);
             return;
           }
+          if (progress.phase === 'reconciling') {
+            setText('scan-detail', 'Finishing the full Followers and Following lists…');
+            return;
+          }
           if (progress.phase === 'retrying') {
             const label = progress.listType || 'account lookup';
             if (progress.listType) {

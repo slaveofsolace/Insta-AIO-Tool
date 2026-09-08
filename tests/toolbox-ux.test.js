@@ -149,7 +149,8 @@ test('the Mutual Checker uses one traversal and settles final detail', () => {
     'Mutual check failed: Instagram returned an unreadable page. Saved comparison unchanged.',
   );
 
-  assert.doesNotMatch(shell, /progress\.phase === 'reconciling'/);
+  assert.match(shell, /progress\.phase === 'reconciling'/);
+  assert.match(shell, /Finishing the full Followers and Following lists/);
   assert.doesNotMatch(shell, /reconciliationScanDetail/);
   assert.match(shell, /setText\('scan-detail', completedRelationshipScanDetail\(result\)\)/);
   assert.match(shell, /const detail = failedRelationshipScanDetail\(error\)/);
