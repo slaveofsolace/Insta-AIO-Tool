@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       tag:
-        description: Release tag, for example v3.1.7
+        description: Release tag, for example v3.1.8
         required: true
         type: string
 
@@ -110,7 +110,7 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
           test "$RELEASE_TAG" = "v$version"
-          test "$version" = "3.1.7"
+          test "$version" = "3.1.8"
           mkdir -p release
           copy_exact() {
             local name="$1"
@@ -171,13 +171,13 @@ jobs:
             exit 1
           fi
           release_notes="$(cat <<'EOF'
-          Check mutuals from your open profile: the toolbox opens Followers, collects the list, closes it, then repeats with Following. Leave the tab open and untouched while it runs. Recycled rows are retained, and incomplete lists cannot produce a misleading comparison. Stop, profile changes, challenges, and rate limits halt the scan. Includes the updated Tampermonkey script.
+          Check mutuals from your open profile: the toolbox opens Followers, collects the native virtualized list, closes it, then repeats with Following. Leave the tab open and untouched while it runs. If Instagram recycles a row before it is read, the checker revisits the list with tighter scroll steps. Incomplete lists cannot produce a misleading comparison. Includes the updated Tampermonkey script.
 
           ## Distribution notes
 
           - The Windows installer is unsigned and may show a Microsoft SmartScreen warning.
           - The macOS packages are ad-hoc signed and are not Apple-notarized.
-          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.7 acceptance record for any separately recorded manual evidence.
+          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.8 acceptance record for any separately recorded manual evidence.
           EOF
           )"
           gh release create "$RELEASE_TAG" release/* \

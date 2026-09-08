@@ -262,6 +262,7 @@ test('Pages deploys only the tested artifact for the current main commit', () =>
 });
 
 test('release promotion checksums the SBOM and promotes no updater blockmap', () => {
+  const escapedVersion = packageJson.version.replaceAll('.', '\\.');
   assert.match(releaseWorkflow, /CI run is not for the current main commit/);
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(releaseWorkflow, /"\$event" = "push" \|\| "\$event" = "workflow_dispatch"/);
@@ -269,5 +270,8 @@ test('release promotion checksums the SBOM and promotes no updater blockmap', ()
   assert.match(releaseWorkflow, /sha256sum "Insta-Toolbox-\$\{\{ steps\.assets\.outputs\.version \}\}\.spdx\.json" >> SHA256SUMS\.txt/);
   assert.match(releaseWorkflow, /test "\$\(wc -l < SHA256SUMS\.txt\)" -eq 7/);
   assert.match(releaseWorkflow, /subject-checksums: release\/SHA256SUMS\.txt/);
+  assert.match(releaseWorkflow, new RegExp(`test "\\$version" = "${escapedVersion}"`));
+  assert.match(releaseWorkflow, new RegExp(`v${escapedVersion}`));
+  assert.match(releaseWorkflow, new RegExp(`${escapedVersion} acceptance record`));
   assert.doesNotMatch(releaseWorkflow, /\.blockmap/);
 });
