@@ -140,7 +140,16 @@ async function validateSources() {
   if (!instagramSource.includes(allowedLiveActivator)) {
     throw new Error('Instagram content script is missing the isolated live-control activator.');
   }
-  if (/\.click\s*\(/.test(instagramSource.replace(allowedLiveActivator, ''))) {
+  const allowedListNavigation = `function activateListNavigationControl(resolve) {
+    const control = resolve();
+    if (!control) throw relationshipError('ambiguous-list-control', 'The list control changed.');
+    control.click();
+  }`;
+  if (!instagramSource.includes(allowedListNavigation)
+    || (instagramSource.match(/activateListNavigationControl\(/g) || []).length !== 3) {
+    throw new Error('Exact read-only list navigation is missing or has extra callers.');
+  }
+  if (/\.click\s*\(/.test(instagramSource.replace(allowedLiveActivator, '').replace(allowedListNavigation, ''))) {
     throw new Error('Instagram content script contains an unreviewed click path.');
   }
   if (/\.click\s*\(|dispatchEvent\s*\(/.test(overlaySource)) {

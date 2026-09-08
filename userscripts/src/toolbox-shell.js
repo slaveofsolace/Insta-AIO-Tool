@@ -832,7 +832,7 @@
         <button id="insta-toolbox-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="insta-toolbox-panel-messages" aria-selected="false" tabindex="-1">DM Unsend</button>
       </nav>
       <div class="scroll">
-        <section id="insta-toolbox-panel-checker" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="insta-toolbox-checker-account-title"><h2 id="insta-toolbox-checker-account-title">Check mutuals</h2><p>Read-only. Uses the Instagram session in this tab.</p><div class="field"><label for="insta-toolbox-checker-username">Instagram username</label><input id="insta-toolbox-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check mutuals</button></div></section>
+        <section id="insta-toolbox-panel-checker" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="insta-toolbox-checker-account-title"><h2 id="insta-toolbox-checker-account-title">Check mutuals</h2><p>Opens Followers, then Following. Please leave this tab open and untouched while the check runs.</p><div class="field"><label for="insta-toolbox-checker-username">Instagram username</label><input id="insta-toolbox-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check mutuals</button></div></section>
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar" data-role="scan-bar" role="progressbar" aria-label="Mutual check progress" aria-describedby="insta-toolbox-scan-detail" aria-valuemin="0" aria-valuemax="100"><span data-role="scan-fill"></span></div><p id="insta-toolbox-scan-detail" class="lead" data-role="scan-detail"></p></div>
           <div class="card" data-role="comparison"></div>
           <section class="card comparison-browser" data-role="comparison-browser" aria-labelledby="insta-toolbox-comparison-browser-title" hidden><h2 id="insta-toolbox-comparison-browser-title">Comparison list</h2><div class="comparison-controls"><div class="field"><label for="insta-toolbox-comparison-category">Show accounts</label><select id="insta-toolbox-comparison-category" data-role="comparison-category" aria-controls="insta-toolbox-comparison-list"><option value="not-following-me-back">Don't follow you back</option><option value="i-do-not-follow-back">You don't follow back</option><option value="mutuals">Mutuals</option></select></div><div class="field"><label for="insta-toolbox-filter">Find a username</label><input id="insta-toolbox-filter" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Search usernames" data-role="result-filter" aria-controls="insta-toolbox-comparison-list"></div></div><p id="insta-toolbox-comparison-count" class="comparison-count" data-role="comparison-count" tabindex="-1"></p><ul id="insta-toolbox-comparison-list" class="list comparison-list" data-role="comparison-list" aria-describedby="insta-toolbox-comparison-count"></ul><button class="button quiet comparison-more" type="button" data-action="show-more-comparison" data-role="comparison-more" hidden>Show more</button></section>
@@ -1745,7 +1745,7 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Check both lists without opening them.',
+        detail: 'Automatically open and scan both lists.',
         view: 'checker',
       };
     }
@@ -1973,6 +1973,7 @@
     setText('scan-detail', `Finding the exact @${username} account…`);
     try {
       const result = await engine.fetchFollowerComparison({
+        mode: 'dialog',
         username,
         signal: controller.signal,
         onProgress(progress) {
@@ -2034,7 +2035,7 @@
         capturedAt: { followers: result.capturedAt, following: result.capturedAt },
         complete: { ...result.complete },
         verified: { followers: true, following: true },
-        source: { followers: 'authenticated-web', following: 'authenticated-web' },
+        source: { followers: result.source || 'authenticated-web', following: result.source || 'authenticated-web' },
       };
       state.capture = nextCapture;
       try {

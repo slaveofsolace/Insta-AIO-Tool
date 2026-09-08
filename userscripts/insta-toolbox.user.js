@@ -2815,6 +2815,7 @@
   }
 
   async function fetchFollowerComparison({
+    mode = 'background',
     clearTimer = clearTimeout,
     fetchImpl = globalThis.fetch?.bind(globalThis),
     maxAccounts = RELATIONSHIP_MAX_ACCOUNTS,
@@ -2831,6 +2832,9 @@
     setTimer = setTimeout,
     username: requestedUsername,
   } = {}) {
+    if (mode === 'dialog') {
+      return collectFollowerComparison({ username: requestedUsername, signal, onProgress });
+    }
     const username = normalizeUsername(requestedUsername);
     if (!username) throw relationshipError('invalid-username', 'Enter a valid Instagram username.');
     const pageOrigin = String(location?.origin || '');
@@ -4051,7 +4055,20 @@
 
   // Scrolls the open followers/following dialog to enumerate the full list.
   // Read-only: it only scrolls an already-open list and reads rendered rows.
-  async function collectAccountList({ maxScrolls = 1_200, settleMs = 500, listType = '' } = {}) {
+  async function collectAccountList({
+    maxScrolls = 1_200, settleMs = 500, listType = '', signal = null,
+    onProgress = null, validate = () => {},
+  } = {}) {
+    const assertActive = () => {
+      if (signal?.aborted) throw relationshipError('stopped', 'Mutual check stopped.');
+      validate();
+    };
+    const settle = async (ms) => {
+      assertActive();
+      await relationshipDelay(ms, signal);
+      assertActive();
+    };
+    assertActive();
     const session = inspectSession();
     if (session.sessionExpired || session.challenge || session.actionBlocked || session.rateLimited) {
       return { ...session, accounts: [], complete: false, reason: 'session-stop' };
@@ -4070,6 +4087,7 @@
 
     const accounts = new Map();
     const harvest = () => {
+      assertActive();
       for (const anchor of root.querySelectorAll('a[href^="/"]')) {
         const username = normalizeUsername(anchor.getAttribute('href'));
         if (!username || accounts.has(username)) continue;
@@ -4081,6 +4099,7 @@
           source: 'extension-scrolled-dom',
         });
       }
+      onProgress?.({ listType: observedListType, found: accounts.size, expectedCount: expectedCountAtStart, phase: 'loading', pages: 0 });
     };
 
     harvest();
@@ -4088,13 +4107,14 @@
     // retain each window before advancing by less than one viewport.
     if (scroller) {
       scroller.scrollTop = 0;
-      await sleep(settleMs);
+      await settle(settleMs);
     }
     let complete = !scroller
       && Number.isSafeInteger(expectedCountAtStart)
       && accounts.size === expectedCountAtStart;
     let stagnantRounds = 0;
     for (let round = 0; round < maxScrolls; round += 1) {
+      assertActive();
       const currentContext = accountListDialog(expectedListType);
       if (!currentContext || location.pathname !== profilePath) {
         complete = false;
@@ -4109,7 +4129,7 @@
         stagnantRounds = 0;
         if (scroller) {
           scroller.scrollTop = 0;
-          await sleep(settleMs);
+          await settle(settleMs);
         }
         harvest();
       }
@@ -4128,14 +4148,14 @@
           0,
           scroller.scrollTop - Math.max(80, Math.floor(scroller.clientHeight / 2)),
         );
-        await sleep(settleMs);
+        await settle(settleMs);
         harvest();
       }
       scroller.scrollTop = Math.min(
         Math.max(0, scroller.scrollHeight - scroller.clientHeight),
         beforeTop + Math.max(1, Math.floor(scroller.clientHeight * 0.75)),
       );
-      await sleep(settleMs);
+      await settle(settleMs);
       // A long Followers list keeps a spinner up well past the settle delay.
       // Waiting for it to clear is what stops a big list being declared
       // complete while thousands of rows are still unfetched.
@@ -4143,7 +4163,7 @@
       for (let wait = 0; wait < 24; wait += 1) {
         loading = Boolean(root.querySelector('[role="progressbar"], svg[aria-label*="Loading" i]'));
         if (!loading) break;
-        await sleep(250);
+        await settle(250);
       }
       const settledContext = accountListDialog(expectedListType);
       if (location.pathname !== profilePath || !settledContext) {
@@ -4206,6 +4226,144 @@
               ? 'list-complete'
               : 'list-truncated',
     };
+  }
+
+  function activateListNavigationControl(resolve) {
+    const control = resolve();
+    if (!control) throw relationshipError('ambiguous-list-control', 'The list control changed.');
+    control.click();
+  }
+
+  // Only opens/closes the exact profile list dialogs; never relationship controls.
+  async function collectFollowerComparison({ username: requestedUsername, signal, onProgress } = {}) {
+    const username = normalizeUsername(requestedUsername);
+    const deadline = relationshipRunDeadline(signal, RELATIONSHIP_MAX_DURATION_MS, setTimeout, clearTimeout);
+    const runSignal = deadline.signal;
+    const startedAt = Date.now();
+    let ownedDialog = null;
+    let interrupted = false;
+    const isVisible = (element) => {
+      const style = getComputedStyle(element);
+      return element.getAttribute('aria-hidden') !== 'true'
+        && style.display !== 'none' && style.visibility !== 'hidden';
+    };
+    const validate = () => {
+      assertRelationshipRunActive(runSignal, startedAt, Date.now, RELATIONSHIP_MAX_DURATION_MS);
+      if (interrupted) throw relationshipError('interrupted', 'The page was used during the check. Previous comparison unchanged.');
+      if (location.origin !== INSTAGRAM_WEB_ORIGIN || !username
+        || normalizeUsername(location.pathname) !== username || !verifiedProfileHeader(username).root) {
+        throw relationshipError('wrong-profile', 'Open the matching Instagram profile before checking its lists.');
+      }
+      const dialogs = visibleDialogs();
+      if (dialogs.length && (dialogs.length !== 1 || dialogs[0] !== ownedDialog)) {
+        throw relationshipError('dialog-changed', 'The open dialog changed. Previous comparison unchanged.');
+      }
+    };
+    const onInteraction = (event) => {
+      if (!event.isTrusted) return;
+      const inToolbox = event.composedPath().some((node) => (
+        node?.id === 'insta-toolbox-userscript-root' || node?.id === 'insta-toolbox-sidecar-root'
+      ));
+      if (!inToolbox) interrupted = true;
+    };
+    const pause = async () => { await relationshipDelay(100, runSignal); };
+    const listLink = (listType) => {
+      const header = verifiedProfileHeader(username).root;
+      const links = [...header.querySelectorAll('a[href]')].filter((link) => {
+        if (!isVisible(link)) return false;
+        const href = link.getAttribute('href');
+        const text = visibleText(link).replace(/\s+/g, ' ').trim().toLowerCase();
+        if (!new RegExp(`^[0-9][0-9., ]* ${listType}$`).test(text)) return false;
+        if (href === '#') return true;
+        try {
+          const target = new URL(href, INSTAGRAM_WEB_ORIGIN);
+          return target.origin === INSTAGRAM_WEB_ORIGIN
+            && target.pathname.replace(/\/+$/, '').toLowerCase() === `/${username}/${listType}`;
+        } catch { return false; }
+      });
+      if (links.length !== 1) throw relationshipError('ambiguous-list-link', `Cannot identify the exact ${listType} link.`);
+      return links[0];
+    };
+    const closeOwnedDialog = async () => {
+      validate();
+      if (!ownedDialog || !ownedDialog.isConnected) throw relationshipError('dialog-changed', 'The list closed before the check finished.');
+      const buttons = [...ownedDialog.querySelectorAll('button, [role="button"]')].filter((button) => {
+        const label = button.getAttribute('aria-label')
+          || button.querySelector('[aria-label]')?.getAttribute('aria-label') || visibleText(button);
+        return isVisible(button) && String(label).trim().toLowerCase() === 'close';
+      });
+      if (buttons.length !== 1) throw relationshipError('ambiguous-close', 'Cannot identify the list close button.');
+      activateListNavigationControl(() => {
+        validate();
+        return buttons[0].isConnected === false ? null : buttons[0];
+      });
+      const until = Date.now() + 5_000;
+      while (visibleDialogs().includes(ownedDialog) && Date.now() < until) {
+        await pause();
+        validate();
+      }
+      if (visibleDialogs().length) throw relationshipError('dialog-changed', 'The list did not close.');
+      ownedDialog = null;
+    };
+    try {
+      validate();
+      const expectedCounts = openProfileRelationshipCounts(username);
+      if (!expectedCounts) throw relationshipError('count-unverified', 'The exact profile totals are not readable.');
+      // Resolve both links before opening either list.
+      listLink('followers');
+      listLink('following');
+      for (const type of ['pointerdown', 'keydown', 'wheel']) document.addEventListener(type, onInteraction, true);
+      onProgress?.({ phase: 'counts-ready', expectedCounts });
+      const lists = {};
+      for (const listType of ['followers', 'following']) {
+        validate();
+        onProgress?.({ phase: 'opening-list', listType, found: 0, expectedCount: expectedCounts[listType], pages: 0 });
+        activateListNavigationControl(() => { validate(); return listLink(listType); });
+        const until = Date.now() + 10_000;
+        while (Date.now() < until) {
+          assertRelationshipRunActive(runSignal, startedAt, Date.now, RELATIONSHIP_MAX_DURATION_MS);
+          if (interrupted || normalizeUsername(location.pathname) !== username) {
+            throw relationshipError('interrupted', 'The page changed during the check.');
+          }
+          const dialogs = visibleDialogs();
+          const context = accountListDialog(listType);
+          if (dialogs.length) {
+            if (dialogs.length !== 1 || !context || dialogs[0] !== context.dialog) {
+              throw relationshipError('dialog-changed', 'Instagram opened an unexpected dialog.');
+            }
+            ownedDialog = context.dialog;
+            break;
+          }
+          await pause();
+        }
+        if (!ownedDialog) throw relationshipError('list-open-timeout', `Instagram did not open ${listType}.`);
+        const assertOwned = () => {
+          validate();
+          if (accountListDialog(listType)?.dialog !== ownedDialog) {
+            throw relationshipError('dialog-changed', 'The list changed during the check.');
+          }
+        };
+        lists[listType] = await collectAccountList({ listType, signal: runSignal, onProgress, validate: assertOwned });
+        validate();
+        await closeOwnedDialog();
+      }
+      validate();
+      const finalCounts = openProfileRelationshipCounts(username);
+      const unchanged = finalCounts && ['followers', 'following'].every((type) => finalCounts[type] === expectedCounts[type]);
+      return {
+        username, capturedAt: new Date().toISOString(), source: 'list-dialog',
+        followers: lists.followers.accounts, following: lists.following.accounts,
+        expectedCounts, pages: { followers: 0, following: 0 },
+        complete: Object.fromEntries(['followers', 'following'].map((type) => [type, Boolean(unchanged && lists[type].complete)])),
+        reasons: Object.fromEntries(['followers', 'following'].map((type) => [type,
+          !unchanged ? 'count-changed' : lists[type].complete ? 'list-complete'
+            : lists[type].reason === 'list-count-mismatch' ? 'count-mismatch' : lists[type].reason])),
+      };
+    } finally {
+      for (const type of ['pointerdown', 'keydown', 'wheel']) document.removeEventListener(type, onInteraction, true);
+      deadline.cleanup();
+      // Stop or unexpected UI leaves the visible dialog untouched; no late click.
+    }
   }
 
   // Enumerates messages the signed-in account sent in the open conversation.
@@ -5314,7 +5472,7 @@
         <button id="insta-toolbox-tab-messages" class="tab" type="button" role="tab" data-view="messages" aria-controls="insta-toolbox-panel-messages" aria-selected="false" tabindex="-1">DM Unsend</button>
       </nav>
       <div class="scroll">
-        <section id="insta-toolbox-panel-checker" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="insta-toolbox-checker-account-title"><h2 id="insta-toolbox-checker-account-title">Check mutuals</h2><p>Read-only. Uses the Instagram session in this tab.</p><div class="field"><label for="insta-toolbox-checker-username">Instagram username</label><input id="insta-toolbox-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check mutuals</button></div></section>
+        <section id="insta-toolbox-panel-checker" class="view" role="tabpanel" aria-labelledby="insta-toolbox-tab-checker" data-panel="checker" hidden><section class="card" aria-labelledby="insta-toolbox-checker-account-title"><h2 id="insta-toolbox-checker-account-title">Check mutuals</h2><p>Opens Followers, then Following. Please leave this tab open and untouched while the check runs.</p><div class="field"><label for="insta-toolbox-checker-username">Instagram username</label><input id="insta-toolbox-checker-username" type="text" inputmode="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="your_username" data-role="checker-username"></div><div class="toolbar"><button class="button primary" type="button" data-action="check-account-relationships" data-role="checker-run">Check mutuals</button></div></section>
           <div class="scan-progress" data-role="scan-progress" hidden><div class="run-bar" data-role="scan-bar" role="progressbar" aria-label="Mutual check progress" aria-describedby="insta-toolbox-scan-detail" aria-valuemin="0" aria-valuemax="100"><span data-role="scan-fill"></span></div><p id="insta-toolbox-scan-detail" class="lead" data-role="scan-detail"></p></div>
           <div class="card" data-role="comparison"></div>
           <section class="card comparison-browser" data-role="comparison-browser" aria-labelledby="insta-toolbox-comparison-browser-title" hidden><h2 id="insta-toolbox-comparison-browser-title">Comparison list</h2><div class="comparison-controls"><div class="field"><label for="insta-toolbox-comparison-category">Show accounts</label><select id="insta-toolbox-comparison-category" data-role="comparison-category" aria-controls="insta-toolbox-comparison-list"><option value="not-following-me-back">Don't follow you back</option><option value="i-do-not-follow-back">You don't follow back</option><option value="mutuals">Mutuals</option></select></div><div class="field"><label for="insta-toolbox-filter">Find a username</label><input id="insta-toolbox-filter" type="search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Search usernames" data-role="result-filter" aria-controls="insta-toolbox-comparison-list"></div></div><p id="insta-toolbox-comparison-count" class="comparison-count" data-role="comparison-count" tabindex="-1"></p><ul id="insta-toolbox-comparison-list" class="list comparison-list" data-role="comparison-list" aria-describedby="insta-toolbox-comparison-count"></ul><button class="button quiet comparison-more" type="button" data-action="show-more-comparison" data-role="comparison-more" hidden>Show more</button></section>
@@ -6227,7 +6385,7 @@
       return {
         tone: 'ready',
         title: `Profile: @${username}`,
-        detail: 'Check both lists without opening them.',
+        detail: 'Automatically open and scan both lists.',
         view: 'checker',
       };
     }
@@ -6455,6 +6613,7 @@
     setText('scan-detail', `Finding the exact @${username} account…`);
     try {
       const result = await engine.fetchFollowerComparison({
+        mode: 'dialog',
         username,
         signal: controller.signal,
         onProgress(progress) {
@@ -6516,7 +6675,7 @@
         capturedAt: { followers: result.capturedAt, following: result.capturedAt },
         complete: { ...result.complete },
         verified: { followers: true, following: true },
-        source: { followers: 'authenticated-web', following: 'authenticated-web' },
+        source: { followers: result.source || 'authenticated-web', following: result.source || 'authenticated-web' },
       };
       state.capture = nextCapture;
       try {

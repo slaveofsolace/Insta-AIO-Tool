@@ -112,6 +112,7 @@ function createHarness(list, {
   const context = vm.createContext({
     chrome: { runtime: { onMessage: { addListener() {} } } },
     console,
+    clearTimeout,
     crypto: webcrypto,
     document,
     getComputedStyle: (element) => ({
@@ -306,6 +307,125 @@ function createRecycledList({ total = 63, replaceScroller = false, delayed = fal
     dialog, get scroller() { return scroller; },
     settle() { if (pending > 0 && --pending === 0) first = nextFirst; },
   };
+}
+
+function guidedHarness({ total = 45, expected = total, duplicateLink = false, wrongDialog = false, closeButtons = 1 } = {}) {
+  const lists = {
+    followers: createRecycledList({ total, delayed: true }),
+    following: createRecycledList({ total, replaceScroller: true }),
+  };
+  let active = null;
+  const clicks = [];
+  const listeners = new Map();
+  const location = { origin: 'https://www.instagram.com', pathname: '/demo_creator/' };
+  const heading = { textContent: 'demo_creator', getAttribute: () => null };
+  const header = {
+    textContent: 'demo_creator', getAttribute: () => null,
+    querySelectorAll: selector => selector === 'a[href]' ? links : [heading],
+  };
+  const links = ['followers', 'following'].map(type => ({
+    textContent: `${expected} ${type}`,
+    getAttribute: name => name === 'href' ? '#' : null,
+    closest: () => header, querySelector: () => null,
+    click() { clicks.push(`open:${type}`); active = lists[type]; },
+  }));
+  if (duplicateLink) links.push({ ...links[0] });
+  for (const [type, list] of Object.entries(lists)) {
+    const read = list.dialog.querySelectorAll;
+    list.dialog.textContent = wrongDialog ? 'Unrelated dialog' : type === 'followers' ? 'Followers' : 'Following';
+    Object.defineProperty(list.dialog, 'isConnected', { get: () => active === list });
+    list.dialog.querySelectorAll = selector => selector === 'button, [role="button"]'
+      ? Array.from({ length: closeButtons }, () => ({
+        getAttribute: name => name === 'aria-label' ? 'Close' : null,
+        click() { clicks.push(`close:${type}`); active = null; },
+      })) : read(selector);
+  }
+  const document = {
+    body: { innerText: '' }, querySelector: () => null,
+    querySelectorAll(selector) {
+      if (selector === 'main header') return [header];
+      if (selector === 'a[role="link"], a[href="#"]') return links;
+      if (selector === '[role="dialog"]') return active ? [active.dialog] : [];
+      return [];
+    },
+    addEventListener: (type, callback) => listeners.set(type, callback),
+    removeEventListener: type => listeners.delete(type),
+  };
+  const context = vm.createContext({
+    document, location, URL, AbortController, clearTimeout, console, crypto: webcrypto,
+    getComputedStyle: node => ({ display: 'block', visibility: 'visible', overflowY: Object.values(lists).some(list => node === list.scroller) ? 'auto' : 'visible' }),
+    setTimeout(callback, ms) {
+      return setTimeout(() => { Object.values(lists).forEach(list => list.settle()); callback(); }, ms >= 1_200_000 ? ms : 1);
+    },
+  });
+  vm.runInContext(actionLabelsSource, context);
+  vm.runInContext(source, context);
+  return {
+    inspector: context.InstaToolboxInstagramInspector, clicks, listeners, location, document,
+    closeExternally() { active = null; },
+    interact() { listeners.get('pointerdown')?.({ isTrusted: true, composedPath: () => [] }); },
+  };
+}
+
+test('guided check opens Followers, captures recycled rows, closes it, then handles Following', async () => {
+  const h = guidedHarness();
+  const progress = [];
+  const result = await h.inspector.fetchFollowerComparison({
+    mode: 'dialog', username: 'demo_creator', onProgress: entry => progress.push(entry),
+    fetchImpl: () => assert.fail('guided capture must not call the background API reader'),
+  });
+  assert.deepEqual(h.clicks, ['open:followers', 'close:followers', 'open:following', 'close:following']);
+  assert.equal(result.followers.length, 45);
+  assert.equal(result.following.length, 45);
+  assert.equal(result.complete.followers, true);
+  assert.equal(result.complete.following, true);
+  assert.equal(result.source, 'list-dialog');
+  assert.ok(progress.some(p => p.phase === 'loading' && p.found > 7));
+  assert.equal(h.listeners.size, 0);
+});
+
+test('guided incomplete lists remain partial instead of producing false non-mutuals', async () => {
+  const h = guidedHarness({ expected: 46 });
+  const result = await h.inspector.fetchFollowerComparison({ mode: 'dialog', username: 'demo_creator' });
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.complete.following, false);
+  assert.equal(result.reasons.followers, 'count-mismatch');
+  assert.equal(result.followers.length, 45);
+});
+
+for (const [label, options, code] of [
+  ['ambiguous link', { duplicateLink: true }, 'ambiguous-list-link'],
+  ['wrong dialog', { wrongDialog: true }, 'dialog-changed'],
+  ['ambiguous close', { closeButtons: 2 }, 'ambiguous-close'],
+]) {
+  test(`guided capture stops on ${label} without advancing to Following`, async () => {
+    const h = guidedHarness(options);
+    await assert.rejects(h.inspector.fetchFollowerComparison({ mode: 'dialog', username: 'demo_creator' }), { code });
+    assert.equal(h.clicks.includes('open:following'), false);
+    assert.equal(h.listeners.size, 0);
+  });
+}
+
+for (const reason of ['stop', 'profile', 'dialog', 'interaction', 'rate-limit']) {
+  test(`guided ${reason} interruption leaves no late close or next-list click`, async () => {
+    const h = guidedHarness();
+    const controller = new AbortController();
+    let interrupted = false;
+    await assert.rejects(h.inspector.fetchFollowerComparison({
+      mode: 'dialog', username: 'demo_creator', signal: controller.signal,
+      onProgress(entry) {
+        if (entry.phase !== 'loading' || interrupted) return;
+        interrupted = true;
+        if (reason === 'stop') controller.abort();
+        if (reason === 'profile') h.location.pathname = '/another_profile/';
+        if (reason === 'dialog') h.closeExternally();
+        if (reason === 'interaction') h.interact();
+        if (reason === 'rate-limit') h.document.body.innerText = 'Please wait a few minutes';
+      },
+    }));
+    assert.deepEqual(h.clicks, ['open:followers']);
+    assert.equal(h.listeners.size, 0);
+  });
 }
 
 test('virtualized scans accumulate recycled windows from the top, including delayed and replaced scrollers', async () => {

@@ -138,11 +138,13 @@ test('v3 pairing and bridge updates use only the Insta Toolbox storage namespace
   assert.doesNotMatch(instagramOverlay, /['"]bridgePairings['"]/);
 });
 
-test('Instagram content script isolates its only page-control call behind the reviewed live driver', () => {
+test('Instagram content script separates exact list navigation from reviewed mutations', () => {
   assert.match(instagramContent, /insta-toolbox-inspect-profile/);
   assert.match(instagramContent, /insta-toolbox-capture-visible-accounts/);
   assert.match(instagramContent, /replace\(\/\^\\\/\+\/, ''\)/);
-  assert.equal((instagramContent.match(/\.click\s*\(/g) || []).length, 1);
+  assert.equal((instagramContent.match(/\.click\s*\(/g) || []).length, 2);
+  assert.equal((instagramContent.match(/activateListNavigationControl\(/g) || []).length, 3);
+  assert.match(instagramContent, /function activateListNavigationControl\(resolve\)/);
   assert.match(instagramContent, /function activateLiveControl\(control\)[\s\S]*?control\.click\(\)/);
   assert.match(instagramContent, /profileResolutions\.delete\(token\)/);
   assert.match(instagramContent, /globalThis\.__instaToolboxActionLabels/);

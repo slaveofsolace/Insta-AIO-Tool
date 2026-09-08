@@ -23,7 +23,7 @@ Version 3 keeps the userscript identity introduced in 3.0. Tampermonkey updates 
 
 The 3.1 account-free matrix contains:
 
-- 468 automated tests;
+- 478 automated tests;
 - 45 overlay screenshot states;
 - 11 PWA screenshot states;
 - service-worker cache generation `insta-toolbox-v317`.
@@ -42,6 +42,7 @@ The macOS application is ad-hoc signed for bundle integrity but is not Developer
 
 - Live actions start disabled on every load.
 - Dry runs do not click Instagram controls.
+- Mutual Checker navigation opens and closes only the exact Followers and Following dialogs; it never clicks relationship controls.
 - Every mutation requires an action-specific confirmation and transient capability.
 - Follow / Unfollow revalidates the target and relationship.
 - DM Unsend revalidates the open thread, sent-message ownership, menu, dialog, and removal result.

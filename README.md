@@ -37,7 +37,7 @@ See [Installation](docs/INSTALLATION.md) for the extension, desktop apps, web ap
 
 ## What it does
 
-- **Mutual Checker** waits for two complete lists before comparing Followers and Following. Browse or search the results, or download a report. Incomplete captures stay under Advanced; missing entries are never labeled non-mutuals.
+- **Mutual Checker** opens Followers, scrolls and collects the list, then closes it and repeats with Following. Leave the tab open and untouched while it runs. Browse or download the comparison once both lists are complete. Incomplete captures stay under Advanced; missing entries are never labeled non-mutuals.
 - **Follow / Unfollow** builds a finite target list, previews every target, and asks for confirmation before clicking.
 - **DM Unsend** works in the open conversation, confirms the thread and action, and reports only verified removals.
 - **Workspace** keeps local imports, comparisons, reviewed plans, ledgers, and exports in the PWA or desktop app.

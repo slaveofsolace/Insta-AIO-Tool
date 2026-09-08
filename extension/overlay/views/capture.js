@@ -204,7 +204,7 @@
       setState(
         runtime,
         'Mutual check running',
-        'Instagram relationship pages are being read. Use Stop mutual check to cancel safely.',
+        'Please leave this tab open and untouched while the check runs. Use Stop mutual check to cancel.',
         'warning',
       );
     } else if (comparisonReady) {
@@ -221,7 +221,7 @@
       setState(
         runtime,
         'Ready for a read-only check',
-        'Check both lists from your profile. No need to open them.',
+        'Automatically open and scan both lists from your profile.',
       );
     }
 
@@ -295,7 +295,7 @@
     } else {
       const empty = document.createElement('li');
       empty.className = 'insta-toolbox-empty';
-      empty.textContent = 'Instagram is not auto-scrolled and hidden accounts are not inferred.';
+      empty.textContent = 'Run Check mutuals to open and scan both lists.';
       list.append(empty);
       downloads.clear('capture', query('[data-insta-toolbox-role="capture-download"]'));
     }
@@ -462,10 +462,11 @@
       status(message, 'neutral');
     };
     render(runtime);
-    setState(runtime, `Resolving @${username}`, 'No page controls are being opened or clicked.', 'warning');
+    setState(runtime, `Resolving @${username}`, 'Please leave this tab open and untouched while the check runs.', 'warning');
     announceProgress('resolving', `Starting the read-only mutual check for @${username}.`);
     try {
       const result = await inspector.fetchFollowerComparison({
+        mode: 'dialog',
         username,
         signal: controller.signal,
         onProgress(progress) {
@@ -521,7 +522,7 @@
             setState(
               runtime,
               `Loading ${label} for @${username}`,
-              `${formatCount(progress.found)} of ${formatCount(progress.expectedCount)} expected accounts read across ${progress.pages} page${progress.pages === 1 ? '' : 's'}.`,
+              `${formatCount(progress.found)} of ${formatCount(progress.expectedCount)} accounts collected. Leave this tab open and untouched.`,
               'warning',
             );
             announceProgress(
@@ -542,7 +543,7 @@
         },
         complete: result.complete,
         verified: { followers: true, following: true },
-        source: { followers: 'authenticated-web', following: 'authenticated-web' },
+        source: { followers: result.source || 'authenticated-web', following: result.source || 'authenticated-web' },
       }, inspector.normalizeUsername);
       // Persist the complete pair before publishing it to the rendered model.
       // A storage/quota failure must leave the previous saved comparison visible.

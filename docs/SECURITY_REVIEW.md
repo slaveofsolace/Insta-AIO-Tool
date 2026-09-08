@@ -54,7 +54,9 @@ Visible DM evidence is scoped to the exact open thread. Navigating to the inbox,
 
 ## Mutual Checker
 
-Mutual Checker is the narrow authenticated-read exception. It can call only these same-origin GET routes:
+The primary action navigates only exact Followers and Following links in the matching profile header and the unique Close control in each owned dialog. It validates profile, dialog, session, deadline, and cancellation before each navigation click. Trusted page interaction outside the toolbox interrupts the scan. The navigation helper is separate from the mutation driver and is not exposed through the bridge. It cannot select Follow, Unfollow, or Remove controls.
+
+The internal authenticated reader remains restricted to these same-origin GET routes:
 
 - `/api/v1/web/search/topsearch/`
 - `/api/v1/users/web_profile_info/?username=<exact-username>`
@@ -65,7 +67,7 @@ The client uses browser-managed credentials without reading them, a fixed applic
 
 Results replace Followers and Following atomically and are not sent through the extension bridge. Instagram can change these unsupported web routes without notice.
 
-Comparisons, comparison downloads, and non-mutual action sources require both lists to be verified and complete. Partial rows remain available as separate raw captures, not inferred non-mutuals. The dialog fallback accumulates overlapping windows rather than jumping past recycled rows. It requires an exact profile count; a quiet or motionless list is not enough. Schema 6 retains earlier rows but clears unproven completion from older dialog captures. Existing count-verified authenticated captures remain usable.
+Comparisons, comparison downloads, and non-mutual action sources require both lists to be verified and complete. Partial rows remain available as separate raw captures, not inferred non-mutuals. The guided dialog capture accumulates overlapping windows rather than jumping past recycled rows. It requires an exact profile count; a quiet or motionless list is not enough. Schema 6 retains earlier rows but clears unproven completion from older dialog captures. Existing count-verified authenticated captures remain usable.
 
 ## Local app and web delivery
 
@@ -95,7 +97,7 @@ Runtime application code has no third-party production dependencies. The lockfil
 
 CI actions are pinned to full commit SHAs. Pull requests receive dependency review; CodeQL runs on pull requests, `main`, and weekly. Dependabot proposes npm and action updates. Release promotion accepts only artifacts from the successful current `main` CI run, rechecks versions and checksums, generates an SBOM, and requests GitHub provenance attestation without rebuilding.
 
-The 3.1 account-free matrix contains 393 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.7 acceptance record](./acceptance/3.1.7.md). Fixtures do not prove current authenticated Instagram behavior.
+The 3.1.7 account-free matrix contains 478 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.7 acceptance record](./acceptance/3.1.7.md). Fixtures do not prove current authenticated Instagram behavior.
 
 ## License
 

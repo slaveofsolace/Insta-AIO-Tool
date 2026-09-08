@@ -67,9 +67,8 @@ test('isolated Chromium acceptance executes production account and DM DOM chains
   assert.match(fixture, /aria-labelledby', choice\.id/);
   assert.match(acceptance, /isolatedSession\.protocol\.handle\('https'/);
   assert.match(acceptance, /url\.origin !== 'https:\/\/www\.instagram\.com'/);
-  assert.match(acceptance, /return new Response\('Unexpected endpoint', \{ status: 500 \}\)/);
   assert.match(acceptance, /assert\.equal\(before\.dialogs, 0\)/);
-  assert.match(acceptance, /assert\.equal\(before\.clicks, 0\)/);
+  assert.match(acceptance, /assert\.deepEqual\(before\.clicks, \['open:followers', 'close:followers', 'open:following', 'close:following'\]\)/);
   assert.doesNotMatch(acceptance, /net\.fetch|net\.request/);
 });
 

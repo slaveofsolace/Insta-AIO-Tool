@@ -2124,27 +2124,13 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
 
 async function acceptBackgroundComparison({ window, isolatedSession }) {
   const requests = [];
-  let rateLimited = false;
-  // This isolated session serves synthetic Instagram pages only; no account traffic.
   await isolatedSession.protocol.handle('http', () => new Response('', { status: 403 }));
   await isolatedSession.protocol.handle('https', async (request) => {
     const url = new URL(request.url);
     if (url.origin !== 'https://www.instagram.com') return new Response('', { status: 403 });
     if (url.pathname.startsWith('/api/')) {
       requests.push(url.pathname);
-      if (url.pathname === '/api/v1/web/search/topsearch/') {
-        return Response.json({ users: [{ user: { pk: '77', username: 'demo_creator' } }] });
-      }
-      if (url.pathname === '/api/v1/friendships/77/followers/') {
-        if (rateLimited) return new Response('<html>Too many requests</html>', { status: 429 });
-        return Response.json(url.searchParams.has('max_id')
-          ? { users: [{ username: 'follower_only' }] }
-          : { users: [{ username: 'mutual_friend' }], next_max_id: 'next' });
-      }
-      if (url.pathname === '/api/v1/friendships/77/following/') {
-        return Response.json({ users: [{ username: 'mutual_friend' }, { username: 'not_back' }] });
-      }
-      return new Response('Unexpected endpoint', { status: 500 });
+      return new Response('No background API requests expected', { status: 500 });
     }
     const target = fixtureAssets.get(url.pathname);
     if (!target) return new Response('', { status: 404 });
@@ -2155,55 +2141,88 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
   });
   try {
     for (const userscript of [false, true]) {
-      rateLimited = false;
       requests.length = 0;
       const webContents = window.webContents;
       const host = userscript ? '#insta-toolbox-userscript-root' : '#insta-toolbox-sidecar-root';
-      const root = `document.querySelector('${host}').shadowRoot`;
+      const root = "document.querySelector('" + host + "').shadowRoot";
       const button = userscript ? '[data-action="check-account-relationships"]' : '[data-insta-toolbox-action="check-account-relationships"]';
       const input = userscript ? '[data-role="checker-username"]' : '[data-insta-toolbox-role="checker-username"]';
       const result = userscript ? '[data-role="comparison"]' : '[data-insta-toolbox-role="checker-result"]';
       const surface = userscript ? 'userscript' : 'extension';
-      await webContents.loadURL(`https://www.instagram.com/${userscript ? 'userscript-fixture.html' : 'fixture.html?mode=qa-profile-following&shadow=open'}`);
-      await waitForPageValue(webContents, `Boolean(document.querySelector('${host}')?.shadowRoot)`, `${surface} background fixture`);
-      await webContents.executeJavaScript(`(() => {
+      await webContents.loadURL('https://www.instagram.com/' + (userscript ? 'userscript-fixture.html' : 'fixture.html?mode=qa-profile-following&shadow=open'));
+      await waitForPageValue(webContents, "Boolean(document.querySelector('" + host + "')?.shadowRoot)", surface + ' guided fixture');
+      const setup = () => {
         document.querySelectorAll('[role="dialog"]').forEach(node => node.remove());
+        history.replaceState({}, '', '/demo_creator/');
         const header = document.querySelector('header');
-        const heading = header.querySelector('h1, h2');
-        heading.textContent = 'demo_creator';
+        header.querySelector('h1, h2').textContent = 'demo_creator';
+        globalThis.guidedClicks = [];
+        globalThis.guidedInterrupt = false;
         for (const type of ['followers', 'following']) {
           const link = document.createElement('a');
           link.setAttribute('role', 'link');
           link.href = '#';
-          link.textContent = '2 ' + type;
+          link.textContent = '45 ' + type;
+          link.onclick = event => {
+            event.preventDefault();
+            globalThis.guidedClicks.push('open:' + type);
+            const dialog = document.createElement('div');
+            dialog.setAttribute('role', 'dialog');
+            const title = document.createElement('h2');
+            title.textContent = type === 'followers' ? 'Followers' : 'Following';
+            const close = document.createElement('button');
+            close.textContent = 'Close';
+            close.onclick = () => { globalThis.guidedClicks.push('close:' + type); dialog.remove(); };
+            const scroll = document.createElement('div');
+            scroll.style.cssText = 'height:200px;overflow-y:auto;position:relative';
+            const spacer = document.createElement('div');
+            spacer.style.cssText = 'height:1800px;position:relative';
+            scroll.append(spacer);
+            const render = () => {
+              spacer.replaceChildren();
+              const first = Math.max(0, Math.floor(scroll.scrollTop / 40) - 1);
+              for (let i = first; i < Math.min(45, first + 7); i += 1) {
+                const row = document.createElement('a');
+                row.href = '/fixture_person' + i + '/';
+                row.textContent = 'fixture_person' + i;
+                row.style.cssText = 'position:absolute;left:0;height:40px;top:' + (i * 40) + 'px';
+                spacer.append(row);
+              }
+            };
+            scroll.addEventListener('scroll', render);
+            render();
+            dialog.append(title, close, scroll);
+            document.body.append(dialog);
+            if (globalThis.guidedInterrupt) {
+              const notice = document.createElement('p');
+              notice.textContent = 'Please wait a few minutes';
+              document.body.append(notice);
+            }
+          };
           header.append(link);
         }
-        globalThis.backgroundPageClicks = 0;
-        document.addEventListener('click', event => {
-          if (event.target.closest('a, button')) globalThis.backgroundPageClicks += 1;
-        });
-        const shadow = ${root};
-        ${userscript ? '' : `shadow.querySelector('.insta-toolbox-launcher').click(); shadow.querySelector('[data-insta-toolbox-section="capture"]').click();`}
-        shadow.querySelector('${input}').value = 'demo_creator';
-        shadow.querySelector('${button}').click();
-      })()`, true);
-      await waitForPageValue(webContents, `(${root}).querySelector('${result}').textContent.includes('Account comparison')`, `${surface} background comparison`);
-      const before = await webContents.executeJavaScript(`({ result: (${root}).querySelector('${result}').textContent, dialogs: document.querySelectorAll('[role="dialog"]').length, clicks: globalThis.backgroundPageClicks })`, true);
+      };
+      await webContents.executeJavaScript('(' + setup.toString() + ')()', true);
+      await webContents.executeJavaScript("(() => {const shadow = " + root + ";" +
+        (userscript ? '' : "shadow.querySelector('.insta-toolbox-launcher').click(); shadow.querySelector('[data-insta-toolbox-section=\"capture\"]').click();") +
+        "shadow.querySelector('" + input + "').value = 'demo_creator'; shadow.querySelector('" + button + "').click();})()", true);
+      try {
+        await waitForPageValue(webContents, "(" + root + ").querySelector('" + result + "').textContent.includes('Scanned-list comparison')", surface + ' guided comparison', 45_000);
+      } catch (error) {
+        console.error(await webContents.executeJavaScript("({result:(" + root + ").querySelector('" + result + "').textContent,clicks:globalThis.guidedClicks})", true));
+        throw error;
+      }
+      const before = await webContents.executeJavaScript("({result:(" + root + ").querySelector('" + result + "').textContent,dialogs:document.querySelectorAll('[role=\"dialog\"]').length,clicks:globalThis.guidedClicks,notice:(" + root + ").textContent.includes('leave this tab open and untouched')})", true);
       assert.equal(before.dialogs, 0);
-      assert.equal(before.clicks, 0);
-      assert.deepEqual(requests, [
-        '/api/v1/web/search/topsearch/',
-        '/api/v1/friendships/77/followers/',
-        '/api/v1/friendships/77/followers/',
-        '/api/v1/friendships/77/following/',
-      ]);
-      rateLimited = true;
-      const priorRequests = requests.length;
-      await webContents.executeJavaScript(`(${root}).querySelector('${button}').click()`, true);
-      await waitForPageValue(webContents, `(${root}).textContent.includes('Instagram is rate limiting this check')`, `${surface} HTML rate-limit classification`);
-      assert.equal(requests.length - priorRequests, 2, 'stop without retry or fallback');
-      assert.equal(await webContents.executeJavaScript(`(${root}).querySelector('${result}').textContent`, true), before.result, 'saved comparison remains visible');
-      console.log(`Accepted ${surface} background primary-button comparison: real fetch/JSON, no list dialogs, no profile-count requests, HTML 429 stops with comparison preserved.`);
+      assert.deepEqual(before.clicks, ['open:followers', 'close:followers', 'open:following', 'close:following']);
+      assert.equal(before.notice, true);
+      assert.match(before.result, /45/);
+      assert.deepEqual(requests, [], 'only native list navigation, no direct API reader');
+      await webContents.executeJavaScript("globalThis.guidedInterrupt=true; (" + root + ").querySelector('" + button + "').click()", true);
+      await waitForPageValue(webContents, "(" + root + ").querySelector('" + button + "').textContent.includes('Check Followers')", surface + ' interrupted guided capture');
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
+      assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
+      console.log('Accepted ' + surface + ' guided primary-button flow: 45 recycled rows per list, exact open/close order, zero API calls, persistent notice, and interrupted-run preservation.');
     }
   } finally {
     window.destroy();

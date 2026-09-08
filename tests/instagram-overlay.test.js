@@ -201,7 +201,8 @@ test('sidecar captures focus before hiding its launcher and restores a usable ta
 });
 
 test('dry runs remain no-click while the one live activator is token-bound and one-use', () => {
-  assert.equal((inspector.match(/\.click\s*\(/g) || []).length, 1);
+  assert.equal((inspector.match(/\.click\s*\(/g) || []).length, 2);
+  assert.equal((inspector.match(/activateListNavigationControl\(/g) || []).length, 3);
   assert.match(inspector, /function activateLiveControl\(control\)/);
   assert.match(inspector, /profileResolutions\.delete\(token\)/);
   assert.match(inspector, /current\.control !== resolution\.control/);
