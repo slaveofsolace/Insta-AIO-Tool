@@ -2159,6 +2159,7 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
         globalThis.guidedClicks = [];
         globalThis.guidedInterrupt = false;
         globalThis.guidedUnavailable = false;
+        globalThis.guidedStalled = false;
         for (const type of ['followers', 'following']) {
           const link = document.createElement('a');
           link.setAttribute('role', 'link');
@@ -2198,6 +2199,12 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
             };
             scroll.addEventListener('scroll', render);
             render();
+            const hiddenLoader = document.createElement('div');
+            hiddenLoader.setAttribute('role', 'progressbar');
+            hiddenLoader.style.display = 'none';
+            const visibleLoader = document.createElement('div');
+            visibleLoader.setAttribute('role', 'progressbar');
+            visibleLoader.style.cssText = 'position:sticky;top:0;width:24px;height:24px';
             const recommendations = document.createElement('section');
             const suggestionTitle = document.createElement('span');
             suggestionTitle.textContent = 'Suggested for you';
@@ -2208,8 +2215,22 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
               suggestion.textContent = 'fixture_suggestion' + i;
               recommendations.append(suggestion);
             }
-            dialog.append(title, close, scroll, recommendations);
+            dialog.append(title, close, hiddenLoader, recommendations);
             document.body.append(dialog);
+            if (globalThis.guidedUnavailable) {
+              dialog.insertBefore(scroll, recommendations);
+            } else {
+              dialog.insertBefore(visibleLoader, recommendations);
+              // The native dialog shell appears before the list, and its first
+              // hidden indicator must not conceal a later visible loader.
+              setTimeout(() => {
+                if (!dialog.isConnected) return;
+                scroll.prepend(visibleLoader);
+                dialog.insertBefore(scroll, recommendations);
+                render();
+                if (!globalThis.guidedStalled) setTimeout(() => visibleLoader.remove(), 800);
+              }, 900);
+            }
             if (globalThis.guidedInterrupt) {
               const notice = document.createElement('p');
               notice.textContent = 'Please wait a few minutes';
@@ -2240,11 +2261,16 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
       assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
       await webContents.executeJavaScript("document.querySelector('[role=dialog]').remove(); globalThis.guidedUnavailable=false; globalThis.guidedClicks=" + JSON.stringify(before.clicks), true);
+      await webContents.executeJavaScript("globalThis.guidedStalled=true; (" + root + ").querySelector('" + button + "').click()", true);
+      await waitForPageValue(webContents, "(" + root + ").textContent.includes('Instagram stopped loading your followers')", surface + ' stalled native loader', 15_000);
+      assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
+      assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
+      await webContents.executeJavaScript("document.querySelector('[role=dialog]').remove(); globalThis.guidedStalled=false; globalThis.guidedClicks=" + JSON.stringify(before.clicks), true);
       await webContents.executeJavaScript("globalThis.guidedInterrupt=true; (" + root + ").querySelector('" + button + "').click()", true);
       await waitForPageValue(webContents, "(" + root + ").querySelector('" + button + "').textContent.includes('Check Followers')", surface + ' interrupted guided capture');
       assert.equal(await webContents.executeJavaScript("(" + root + ").querySelector('" + result + "').textContent", true), before.result);
       assert.deepEqual(await webContents.executeJavaScript('globalThis.guidedClicks', true), [...before.clicks, 'open:followers']);
-      console.log('Accepted ' + surface + ' guided primary-button flow: 45 recycled rows per list, 30 suggestions excluded, exact open/close order, zero API calls, and saved-comparison preservation on unavailable or interrupted lists.');
+      console.log('Accepted ' + surface + ' guided primary-button flow: delayed initial rows, hidden-first loaders, 45 recycled rows per list, 30 suggestions excluded, exact open/close order, zero API calls, and saved-comparison preservation on unavailable, stalled, or interrupted lists.');
     }
   } finally {
     window.destroy();

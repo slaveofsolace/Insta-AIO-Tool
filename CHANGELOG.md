@@ -8,6 +8,9 @@ This project uses [Semantic Versioning](https://semver.org/).
 - Use Instagram's own virtualized-list requests throughout the guided check instead of falling back to a request without its live web-session headers.
 - Accept a comparison only when both unique lists match unchanged profile totals.
 - Exclude suggested profiles from list captures. Stop an empty native list that contradicts the profile total without replacing the saved comparison.
+- Wait for delayed initial rows and check every visible loading indicator, including when a hidden spinner appears first.
+- Stop stalled list loads with a useful error instead of waiting through repeated loading cycles. Preserve the previous comparison.
+- Keep resweep progress visible while collecting recycled rows.
 
 ## 3.1.7 - 2026-09-07
 

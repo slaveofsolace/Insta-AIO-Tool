@@ -88,6 +88,7 @@ function createHarness(list, {
   profileCount = null,
   profileListType = 'followers',
   settle = () => {},
+  fastTimers = false,
 } = {}) {
   const profileCountLink = {
     textContent: `${profileCount} ${profileListType}`,
@@ -125,7 +126,7 @@ function createHarness(list, {
       href: 'https://www.instagram.com/demo_creator/followers/',
       pathname: '/demo_creator/',
     },
-    setTimeout(callback, ms) { return setTimeout(() => { settle(ms); callback(); }, ms); },
+    setTimeout(callback, ms) { return setTimeout(() => { settle(ms); callback(); }, fastTimers ? 1 : ms); },
   });
   vm.runInContext(actionLabelsSource, context);
   vm.runInContext(source, context);
@@ -207,13 +208,15 @@ test('offscreen next-page spinners do not delay traversal through loaded rows', 
   const list = createLazyList({ total: 250, pageSize: 25 });
   let spinnerWaits = 0;
   list.scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400 });
-  list.dialog.querySelector = () => list.rendered < 250 ? {
+  const read = list.dialog.querySelectorAll;
+  list.dialog.querySelectorAll = selector => selector !== '[role="progressbar"], svg[aria-label*="Loading" i]'
+    ? read(selector) : list.rendered < 250 ? [{
     getBoundingClientRect: () => ({
       top: list.scroller.scrollHeight - list.scroller.scrollTop,
       bottom: list.scroller.scrollHeight - list.scroller.scrollTop + 32,
       width: 32, height: 32,
     }),
-  } : null;
+  }] : [];
   const inspector = createHarness(list, {
     profileCount: 250,
     settle(ms) { if (ms === 250) spinnerWaits += 1; },
@@ -228,9 +231,11 @@ test('an in-viewport loading indicator still waits before claiming completion', 
   const list = createLazyList({ total: 25, pageSize: 25 });
   let pending = 3;
   list.scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400 });
-  list.dialog.querySelector = () => pending > 0 ? {
+  const read = list.dialog.querySelectorAll;
+  list.dialog.querySelectorAll = selector => selector !== '[role="progressbar"], svg[aria-label*="Loading" i]'
+    ? read(selector) : pending > 0 ? [{
     getBoundingClientRect: () => ({ top: 350, bottom: 382, width: 32, height: 32 }),
-  } : null;
+  }] : [];
   const inspector = createHarness(list, {
     profileCount: 25,
     settle(ms) { if (ms === 250) pending -= 1; },
@@ -238,6 +243,156 @@ test('an in-viewport loading indicator still waits before claiming completion', 
   const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
   assert.equal(pending, 0);
   assert.equal(result.complete, true);
+});
+
+test('an initially empty dialog waits for asynchronously mounted relationship rows', async () => {
+  const list = createLazyList({ total: 25 });
+  const read = list.dialog.querySelectorAll;
+  let waits = 0;
+  list.dialog.querySelectorAll = selector => waits < 4 ? [] : read(selector);
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle(ms) { if (ms === 250) waits += 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.ok(waits >= 4, 'wait for initial rows instead of returning an empty capture');
+  assert.equal(result.complete, true);
+  assert.deepEqual(Array.from(result.accounts, account => account.username),
+    Array.from({ length: 25 }, (_, index) => `user${String(index).padStart(4, '0')}`));
+});
+
+test('a hidden first spinner cannot conceal a later visible loading indicator', async () => {
+  const list = createLazyList({ total: 25 });
+  const read = list.dialog.querySelectorAll;
+  let pending = 3;
+  const hidden = { getBoundingClientRect: () => ({ top: 0, bottom: 0, width: 0, height: 0 }) };
+  const visible = { getBoundingClientRect: () => ({ top: 350, bottom: 382, width: 32, height: 32 }) };
+  list.scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400 });
+  list.dialog.querySelector = () => hidden;
+  list.dialog.querySelectorAll = selector => selector === '[role="progressbar"], svg[aria-label*="Loading" i]'
+    ? pending > 0 ? [hidden, visible] : [hidden] : read(selector);
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle(ms) { if (ms === 250) pending -= 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(pending, 0);
+  assert.equal(result.complete, true);
+});
+
+test('an existing scroll shell does not advance before its initial rows arrive', async () => {
+  const list = createLazyList({ total: 25 });
+  const read = list.dialog.querySelectorAll;
+  let waits = 0;
+  list.dialog.querySelectorAll = selector => selector === 'a[href^="/"]' && waits < 4 ? [] : read(selector);
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle(ms) {
+      if (ms === 250) {
+        assert.equal(list.scroller.scrollTop, 0);
+        waits += 1;
+      }
+    },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(waits, 4);
+  assert.equal(result.accounts.length, 25);
+  assert.equal(result.complete, true);
+});
+
+test('a loader disappearing on the final wait is rechecked before reporting a stall', async () => {
+  const list = createLazyList({ total: 25 });
+  const read = list.dialog.querySelectorAll;
+  let pending = 24;
+  list.dialog.querySelectorAll = selector => selector === '[role="progressbar"], svg[aria-label*="Loading" i]'
+    ? pending > 0 ? [{}] : [] : read(selector);
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle(ms) { if (ms === 250) pending -= 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(pending, 0);
+  assert.equal(result.complete, true);
+});
+
+test('a persistent visible loader stops within its wait budget even when counts match', async () => {
+  const list = createLazyList({ total: 25 });
+  const read = list.dialog.querySelectorAll;
+  const loader = { getBoundingClientRect: () => ({ top: 350, bottom: 382, width: 32, height: 32 }) };
+  let waits = 0;
+  list.scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400 });
+  list.dialog.querySelector = () => loader;
+  list.dialog.querySelectorAll = selector => selector === '[role="progressbar"], svg[aria-label*="Loading" i]'
+    ? [loader] : read(selector);
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle(ms) { if (ms === 250) waits += 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, maxScrolls: 30, listType: 'followers' });
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'list-loader-stalled');
+  assert.equal(result.accounts.length, 25);
+  assert.equal(waits, 24, 'one bounded wait, not repeated loader waits until the run deadline');
+});
+
+test('initial rows that never arrive return a bounded useful timeout', async () => {
+  const list = createLazyList({ total: 0 });
+  let waits = 0;
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle(ms) { if (ms === 250) waits += 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, 'list-load-timeout');
+  assert.equal(result.accounts.length, 0);
+  assert.equal(waits, 40);
+});
+
+test('Stop interrupts initial row loading before any late capture', async () => {
+  const list = createLazyList({ total: 0 });
+  const controller = new AbortController();
+  let waits = 0;
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle() { waits += 1; controller.abort(); },
+  });
+  await assert.rejects(inspector.collectAccountList({
+    settleMs: 0, listType: 'followers', signal: controller.signal,
+  }), { code: 'stopped' });
+  assert.equal(waits, 1);
+});
+
+test('a rate-limit signal during initial loading stops without waiting for the timeout', async () => {
+  const list = createLazyList({ total: 0 });
+  let waits = 0;
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    bodyText: () => waits ? 'Please wait a few minutes' : '',
+    settle() { waits += 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(result.rateLimited, true);
+  assert.equal(result.reason, 'session-stop');
+  assert.equal(result.complete, false);
+  assert.equal(waits, 1);
+});
+
+test('Stop interrupts a visible loader without promoting matching counts', async () => {
+  const list = createLazyList({ total: 25 });
+  const read = list.dialog.querySelectorAll;
+  const controller = new AbortController();
+  let waits = 0;
+  list.dialog.querySelectorAll = selector => selector === '[role="progressbar"], svg[aria-label*="Loading" i]'
+    ? [{}] : read(selector);
+  const inspector = createHarness(list, {
+    profileCount: 25, fastTimers: true,
+    settle() { waits += 1; controller.abort(); },
+  });
+  await assert.rejects(inspector.collectAccountList({
+    settleMs: 0, listType: 'followers', signal: controller.signal,
+  }), { code: 'stopped' });
+  assert.equal(waits, 1);
 });
 
 test('full-list scan rejects profile suggestions when no account-list dialog is open', async () => {
@@ -395,6 +550,7 @@ function createRecycledList({ total = 63, replaceScroller = false, delayed = fal
     querySelectorAll(selector) {
       if (selector === 'a[href^="/"]') return anchors;
       if (selector === 'div, ul, section') return [scroller];
+      if (selector === '[role="progressbar"], svg[aria-label*="Loading" i]') return pending > 0 ? [{}] : [];
       return [];
     },
     querySelector: () => pending > 0 ? {} : null,
@@ -526,6 +682,10 @@ test('guided capture never falls back to a request without Instagram native sess
   assert.equal(result.reasons.following, 'count-mismatch');
   assert.equal(result.source, 'list-dialog');
   assert.ok(progress.some(entry => entry.phase === 'resweeping'));
+  const followers = progress.filter(entry => entry.listType === 'followers');
+  const revisit = followers.findIndex(entry => entry.phase === 'resweeping');
+  assert.ok(followers.slice(revisit).every(entry => entry.phase === 'resweeping' && entry.pages > 0),
+    'harvesting cannot reset an active resweep to loading page zero');
 });
 
 for (const [label, options, code] of [

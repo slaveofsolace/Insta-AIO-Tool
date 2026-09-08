@@ -3994,6 +3994,19 @@
     return best?.element || null;
   }
 
+  function visibleRelationshipLoader(root, scroller) {
+    const viewport = (scroller || root).getBoundingClientRect?.();
+    return [...root.querySelectorAll('[role="progressbar"], svg[aria-label*="Loading" i]')]
+      .some((indicator) => {
+        const style = getComputedStyle(indicator);
+        if (style.display === 'none' || style.visibility === 'hidden'
+          || indicator.getAttribute?.('aria-hidden') === 'true') return false;
+        const rect = indicator.getBoundingClientRect?.();
+        if (rect && (rect.height <= 0 || rect.width <= 0)) return false;
+        return !rect || !viewport || (rect.bottom > viewport.top && rect.top < viewport.bottom);
+      });
+  }
+
   function accountListTypeFromText(value) {
     const label = String(value || '')
       .normalize('NFKC')
@@ -4123,6 +4136,9 @@
     const accounts = new Map();
     let emptyList = false;
     let listUnavailable = false;
+    let loadingFailure = '';
+    let initialWaits = 0;
+    let sweep = 0;
     const harvest = () => {
       assertActive();
       const content = relationshipListContent(root);
@@ -4138,7 +4154,11 @@
           source: 'extension-scrolled-dom',
         });
       }
-      onProgress?.({ listType: observedListType, found: accounts.size, expectedCount: expectedCountAtStart, phase: 'loading', pages: 0 });
+      onProgress?.({
+        listType: observedListType, found: accounts.size, expectedCount: expectedCountAtStart,
+        phase: sweep ? 'resweeping' : 'loading', pages: sweep,
+      });
+      assertActive();
     };
 
     harvest();
@@ -4148,11 +4168,8 @@
       scroller.scrollTop = 0;
       await settle(settleMs);
     }
-    let complete = !scroller
-      && Number.isSafeInteger(expectedCountAtStart)
-      && accounts.size === expectedCountAtStart;
+    let complete = false;
     let stagnantRounds = 0;
-    let sweep = 0;
     const maxSweeps = 3;
     for (let round = 0; round < maxScrolls; round += 1) {
       assertActive();
@@ -4175,15 +4192,30 @@
         harvest();
       }
       harvest();
-      if (emptyList && accounts.size === 0) {
+      const currentSession = inspectSession();
+      if (currentSession.sessionExpired || currentSession.challenge
+        || currentSession.actionBlocked || currentSession.rateLimited) {
+        return { ...currentSession, accounts: [...accounts.values()], complete: false, reason: 'session-stop' };
+      }
+      const initialLoading = visibleRelationshipLoader(root, scroller);
+      if (emptyList && accounts.size === 0 && !initialLoading) {
         complete = expectedCountAtStart === 0;
         listUnavailable = Number.isSafeInteger(expectedCountAtStart) && expectedCountAtStart > 0;
         break;
       }
-      if (!scroller) {
-        complete = Number.isSafeInteger(expectedCountAtStart)
+      if (!scroller || (accounts.size === 0 && expectedCountAtStart !== 0)) {
+        complete = !initialLoading && Number.isSafeInteger(expectedCountAtStart)
           && accounts.size === expectedCountAtStart;
-        break;
+        if (complete) break;
+        // The dialog can mount before either its rows or scroll container.
+        // Reacquire both after a bounded wait; an empty shell is not a list.
+        if (initialWaits >= 40) {
+          loadingFailure = 'list-load-timeout';
+          break;
+        }
+        initialWaits += 1;
+        await settle(250);
+        continue;
       }
       const beforeCount = accounts.size;
       const beforeHeight = scroller.scrollHeight;
@@ -4204,16 +4236,11 @@
       await settle(settleMs);
       // Instagram keeps its next-page spinner mounted below loaded rows.
       // Wait only when it reaches the scroll viewport, not on every step.
-      let loading = false;
+      let loading = visibleRelationshipLoader(root, scroller);
       for (let wait = 0; wait < 24; wait += 1) {
-        const indicator = root.querySelector('[role="progressbar"], svg[aria-label*="Loading" i]');
-        const indicatorRect = indicator?.getBoundingClientRect?.();
-        const viewportRect = scroller.getBoundingClientRect?.();
-        loading = Boolean(indicator) && (!indicatorRect || !viewportRect
-          || (indicatorRect.height > 0 && indicatorRect.width > 0
-            && indicatorRect.bottom > viewportRect.top && indicatorRect.top < viewportRect.bottom));
         if (!loading) break;
         await settle(250);
+        loading = visibleRelationshipLoader(root, scroller);
       }
       const settledContext = accountListDialog(expectedListType);
       if (location.pathname !== profilePath || !settledContext) {
@@ -4234,6 +4261,11 @@
           complete: false,
           reason: 'session-stop',
         };
+      }
+      if (loading) {
+        loadingFailure = 'list-loader-stalled';
+        complete = false;
+        break;
       }
       if (atBottom && !loading
         && Number.isSafeInteger(expectedCountAtStart)
@@ -4256,6 +4288,7 @@
             phase: 'resweeping',
             pages: sweep,
           });
+          assertActive();
           scroller.scrollTop = 0;
           await settle(settleMs);
           harvest();
@@ -4285,6 +4318,8 @@
       capturedAt: new Date().toISOString(),
       reason: listUnavailable
         ? 'list-unavailable'
+        : loadingFailure && Number.isSafeInteger(expectedCount)
+          ? loadingFailure
         : countChanged
           ? 'list-count-changed'
           : countMismatch
@@ -4421,6 +4456,9 @@
         validate();
         if (lists[listType].reason === 'list-unavailable') {
           throw relationshipError('list-unavailable', `Instagram did not load your ${listType}. Try again later.`);
+        }
+        if (['list-load-timeout', 'list-loader-stalled'].includes(lists[listType].reason)) {
+          throw relationshipError(lists[listType].reason, `Instagram stopped loading your ${listType}. Previous comparison unchanged.`);
         }
         await closeOwnedDialog();
       }

@@ -1,6 +1,6 @@
 # Security review
 
-Last reviewed: 2026-09-07
+Last reviewed: 2026-09-08
 
 ## Boundaries
 
@@ -66,6 +66,8 @@ The internal authenticated reader remains restricted to these same-origin GET ro
 The primary checker opens Instagram's native Followers and Following dialogs, scrolls their virtualized lists, and reads rendered account links without reading credentials. It uses overlapping sweeps, a 20-minute deadline, and user cancellation. Complete results require exact total equality and stable totals before and after traversal. Login loss, challenge, block, rate limit, changed dialogs, conflicting totals, and incomplete lists leave the result partial or stop the scan.
 
 Results replace Followers and Following atomically and are not sent through the extension bridge. Instagram can change these unsupported web routes without notice.
+
+Initial row loading and visible pagination loaders have bounded waits. Stop, profile/dialog validation, and session checks stay active while waiting. An unavailable or stalled list stops the guided check before any next-list navigation; no timeout promotes a partial capture or replaces the saved comparison. No new endpoint, permission, response interceptor, credential access, or action capability is introduced by these waits.
 
 Comparisons, comparison downloads, and non-mutual action sources require both lists to be verified and complete. Partial rows remain available as separate raw captures, not inferred non-mutuals. The guided dialog capture accumulates overlapping windows rather than jumping past recycled rows. It requires an exact profile count; a quiet or motionless list is not enough. Schema 6 retains earlier rows but clears unproven completion from older dialog captures. Existing count-verified authenticated captures remain usable.
 
