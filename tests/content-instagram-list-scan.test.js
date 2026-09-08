@@ -125,7 +125,7 @@ function createHarness(list, {
       href: 'https://www.instagram.com/demo_creator/followers/',
       pathname: '/demo_creator/',
     },
-    setTimeout(callback, ms) { return setTimeout(() => { settle(); callback(); }, ms); },
+    setTimeout(callback, ms) { return setTimeout(() => { settle(ms); callback(); }, ms); },
   });
   vm.runInContext(actionLabelsSource, context);
   vm.runInContext(source, context);
@@ -147,6 +147,43 @@ test('full-list scan pages through a lazy list instead of stopping at the first 
   assert.equal(scanned.accounts.at(-1).username, 'user0249');
   // Every username is unique and normalised.
   assert.equal(new Set(scanned.accounts.map((a) => a.username)).size, 250);
+});
+
+test('offscreen next-page spinners do not delay traversal through loaded rows', async () => {
+  const list = createLazyList({ total: 250, pageSize: 25 });
+  let spinnerWaits = 0;
+  list.scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400 });
+  list.dialog.querySelector = () => list.rendered < 250 ? {
+    getBoundingClientRect: () => ({
+      top: list.scroller.scrollHeight - list.scroller.scrollTop,
+      bottom: list.scroller.scrollHeight - list.scroller.scrollTop + 32,
+      width: 32, height: 32,
+    }),
+  } : null;
+  const inspector = createHarness(list, {
+    profileCount: 250,
+    settle(ms) { if (ms === 250) spinnerWaits += 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(result.accounts.length, 250);
+  assert.equal(result.complete, true);
+  assert.equal(spinnerWaits, 0, 'a mounted spinner below the viewport must not add six-second waits');
+});
+
+test('an in-viewport loading indicator still waits before claiming completion', async () => {
+  const list = createLazyList({ total: 25, pageSize: 25 });
+  let pending = 3;
+  list.scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400 });
+  list.dialog.querySelector = () => pending > 0 ? {
+    getBoundingClientRect: () => ({ top: 350, bottom: 382, width: 32, height: 32 }),
+  } : null;
+  const inspector = createHarness(list, {
+    profileCount: 25,
+    settle(ms) { if (ms === 250) pending -= 1; },
+  });
+  const result = await inspector.collectAccountList({ settleMs: 0, listType: 'followers' });
+  assert.equal(pending, 0);
+  assert.equal(result.complete, true);
 });
 
 test('full-list scan rejects profile suggestions when no account-list dialog is open', async () => {

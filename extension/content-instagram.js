@@ -2062,12 +2062,16 @@
         beforeTop + Math.max(1, Math.floor(scroller.clientHeight * 0.75)),
       );
       await settle(settleMs);
-      // A long Followers list keeps a spinner up well past the settle delay.
-      // Waiting for it to clear is what stops a big list being declared
-      // complete while thousands of rows are still unfetched.
+      // Instagram keeps its next-page spinner mounted below loaded rows.
+      // Wait only when it reaches the scroll viewport, not on every step.
       let loading = false;
       for (let wait = 0; wait < 24; wait += 1) {
-        loading = Boolean(root.querySelector('[role="progressbar"], svg[aria-label*="Loading" i]'));
+        const indicator = root.querySelector('[role="progressbar"], svg[aria-label*="Loading" i]');
+        const indicatorRect = indicator?.getBoundingClientRect?.();
+        const viewportRect = scroller.getBoundingClientRect?.();
+        loading = Boolean(indicator) && (!indicatorRect || !viewportRect
+          || (indicatorRect.height > 0 && indicatorRect.width > 0
+            && indicatorRect.bottom > viewportRect.top && indicatorRect.top < viewportRect.bottom));
         if (!loading) break;
         await settle(250);
       }

@@ -6,6 +6,7 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 - Automate the native Followers → Following scan from the open profile. Keep collected rows as Instagram recycles the visible list, and compare only after both exact totals reconcile.
 - Stop native capture on page interaction, profile changes, ambiguous controls, challenges, or Stop. Keep the previous comparison if either list fails.
+- Avoid repeated six-second waits for next-page spinners below the visible list. Continue through loaded rows while still waiting for visible loading indicators.
 - Recognize Instagram's hash-link follower counters inside the exact profile header. This removes the unintended profile-count fallback on current profile pages.
 - Match the browser fixtures to that markup and reject hash-link counts outside the correct profile header.
 - Preserve exact account IDs when JSON numbers lose precision. Reject conflicting identities before comparing lists.
