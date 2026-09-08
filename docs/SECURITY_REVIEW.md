@@ -63,7 +63,7 @@ The internal authenticated reader remains restricted to these same-origin GET ro
 - `/api/v1/friendships/<numeric-id>/followers/`
 - `/api/v1/friendships/<numeric-id>/following/`
 
-The client uses browser-managed credentials without reading them, a fixed application header, bounded pagination, paced requests, a 20-minute deadline, and user cancellation. The profile response must repeat the exact normalized username and numeric ID. Complete results require exact total equality and stable totals before and after traversal. Login loss, challenge, block, rate limit, repeated pagination tokens, invalid schemas, conflicting totals, and request failures leave the result incomplete or stop the scan.
+The primary checker opens Instagram's native Followers and Following dialogs, scrolls their virtualized lists, and reads rendered account links without reading credentials. It uses overlapping sweeps, a 20-minute deadline, and user cancellation. Complete results require exact total equality and stable totals before and after traversal. Login loss, challenge, block, rate limit, changed dialogs, conflicting totals, and incomplete lists leave the result partial or stop the scan.
 
 Results replace Followers and Following atomically and are not sent through the extension bridge. Instagram can change these unsupported web routes without notice.
 
@@ -97,7 +97,7 @@ Runtime application code has no third-party production dependencies. The lockfil
 
 CI actions are pinned to full commit SHAs. Pull requests receive dependency review; CodeQL runs on pull requests, `main`, and weekly. Dependabot proposes npm and action updates. Release promotion accepts only artifacts from the successful current `main` CI run, rechecks versions and checksums, generates an SBOM, and requests GitHub provenance attestation without rebuilding.
 
-The 3.1.8 account-free matrix contains 481 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.8 acceptance record](./acceptance/3.1.8.md). Fixtures do not prove current authenticated Instagram behavior.
+The 3.1.8 account-free matrix contains 482 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.8 acceptance record](./acceptance/3.1.8.md). Fixtures do not prove current authenticated Instagram behavior.
 
 ## License
 
