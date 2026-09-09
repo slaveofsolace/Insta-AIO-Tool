@@ -1819,9 +1819,11 @@
   function exactProfileListCount(listType, { requireScoped = false } = {}) {
     if (listType !== 'followers' && listType !== 'following') return null;
     const profileUsername = normalizeUsername(location.pathname);
+    const profileHeader = requireScoped ? verifiedProfileHeader(profileUsername).root : null;
     const scopedCounts = new Set();
     const fallbackCounts = new Set();
     for (const link of document.querySelectorAll('a[role="link"], a[href="#"]')) {
+      if (!visibleText(link) || link.closest?.('[hidden], [aria-hidden="true"], [role="dialog"]')) continue;
       const values = [
         link.getAttribute('title'),
         visibleText(link),
@@ -1839,6 +1841,7 @@
           .toLowerCase();
         const match = label.match(/^([0-9][0-9., ]*)\s+(followers|following)$/);
         if (!match || match[2] !== listType) continue;
+        if (!/^(?:\d+|\d{1,3}([,. ])\d{3}(?:\1\d{3})*)$/.test(match[1])) continue;
         const digits = match[1].replace(/\D/g, '');
         if (!digits) continue;
         const count = Number(digits);
@@ -1846,6 +1849,12 @@
         fallbackCounts.add(count);
         const href = link.getAttribute?.('href');
         if (!href || !profileUsername) continue;
+        // Instagram also renders profile counters as non-navigation links.
+        // Trust those only inside the uniquely identified current profile header.
+        if (href === '#' && profileHeader?.contains(link)) {
+          scopedCounts.add(count);
+          continue;
+        }
         try {
           const target = new URL(href, INSTAGRAM_WEB_ORIGIN);
           if (target.origin !== INSTAGRAM_WEB_ORIGIN) continue;

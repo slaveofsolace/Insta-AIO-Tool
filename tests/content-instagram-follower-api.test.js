@@ -41,6 +41,8 @@ function createInspector({
   profileCounts = null,
   profileLinks: suppliedProfileLinks = null,
   pageLocation = null,
+  headerUsername = null,
+  headerCopies = 1,
 } = {}) {
   const profileLinkData = Array.isArray(suppliedProfileLinks)
     ? suppliedProfileLinks
@@ -52,18 +54,27 @@ function createInspector({
       : [];
   const profileLinks = profileLinkData.map((entry) => ({
     getAttribute(name) {
+      if (name === 'aria-hidden') return entry.hidden ? 'true' : null;
       if (name === 'title') return entry.title;
       if (name === 'href') return entry.href || null;
       return null;
     },
     get textContent() { return entry.text || entry.title; },
     querySelector: () => entry.childTitle ? { getAttribute: () => entry.childTitle } : null,
+    closest: () => entry.inDialog ? {} : null,
   }));
+  const header = {
+    getAttribute: () => null,
+    textContent: headerUsername,
+    contains: (link) => profileLinks.includes(link) && !profileLinkData[profileLinks.indexOf(link)].outsideHeader,
+    querySelectorAll: () => [{ getAttribute: () => null, textContent: headerUsername }],
+  };
   const document = {
     body: { innerText: '' },
     querySelector: () => null,
     querySelectorAll: (selector) => (
-      selector === 'a[role="link"], a[href="#"]' ? profileLinks : []
+      selector === 'a[role="link"], a[href="#"]' ? profileLinks
+        : selector === 'main header' && headerUsername ? Array(headerCopies).fill(header) : []
     ),
   };
   const context = vm.createContext({
@@ -268,6 +279,88 @@ test('open-profile background check uses exact rendered totals without profile r
   assert.deepEqual({ ...result.expectedCounts }, { followers: 2_104, following: 101 });
   assert.deepEqual({ ...result.complete }, { followers: true, following: true });
   assert.deepEqual({ ...result.pages }, { followers: 43, following: 3 });
+});
+
+for (const titled of [false, true]) {
+  test(`hash-link profile counters avoid metadata requests (${titled ? 'exact title' : 'visible text'})`, async () => {
+    const inspector = createInspector({
+      pathname: '/target_name/',
+      headerUsername: 'target_name',
+      profileLinks: [
+        { href: '#', text: titled ? '1K followers' : '1,001 followers', childTitle: titled ? '1,001' : null },
+        { href: '#', text: '2 following' },
+        { href: '#', text: '999 followers', outsideHeader: true },
+        { href: '#', text: '888 followers', hidden: true },
+        { href: '#', text: '777 followers', inDialog: true },
+      ],
+    });
+    const paths = [];
+    const result = await inspector.fetchFollowerComparison({
+      username: 'target_name',
+      sleepImpl: async () => {},
+      fetchImpl: async (input) => {
+        const url = new URL(input);
+        paths.push(url.pathname);
+        if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+        assert.ok(url.pathname.startsWith('/api/v1/friendships/77/'), 'must not request profile metadata');
+        const followers = url.pathname.includes('/followers/');
+        const total = followers ? 1_001 : 2;
+        const offset = Number(url.searchParams.get('max_id') || 0);
+        const end = Math.min(offset + 50, total);
+        return response({
+          users: Array.from({ length: end - offset }, (_, i) => ({ username: `account.${offset + i}` })),
+          ...(end < total ? { next_max_id: String(end) } : {}),
+        });
+      },
+    });
+    assert.deepEqual({ ...result.expectedCounts }, { followers: 1_001, following: 2 });
+    assert.deepEqual({ ...result.complete }, { followers: true, following: true });
+    assert.equal(paths.length, 23);
+  });
+}
+
+for (const kind of ['missing-header', 'wrong-header', 'ambiguous-header', 'outside-header', 'rounded', 'decimal', 'conflicting', 'hidden', 'dialog']) {
+  test(`hash-link counters reject ${kind} evidence`, async () => {
+    const links = [
+      { href: '#', text: kind === 'rounded' ? '1K followers' : kind === 'decimal' ? '1.2 followers' : '1 followers',
+        outsideHeader: kind === 'outside-header', hidden: kind === 'hidden', inDialog: kind === 'dialog' },
+      { href: '#', text: '1 following' },
+    ];
+    if (kind === 'conflicting') links.push({ href: '#', text: '2 followers' });
+    const inspector = createInspector({
+      pathname: '/target_name/',
+      headerUsername: kind === 'missing-header' ? null : kind === 'wrong-header' ? 'another_profile' : 'target_name',
+      headerCopies: kind === 'ambiguous-header' ? 2 : 1,
+      profileLinks: links,
+    });
+    let metadataRequests = 0;
+    await assert.rejects(inspector.fetchFollowerComparison({
+      username: 'target_name',
+      fetchImpl: async (input) => {
+        if (input.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+        assert.ok(input.includes('web_profile_info'));
+        metadataRequests += 1;
+        return response({}, 429);
+      },
+    }), { code: 'rate-limited' });
+    assert.equal(metadataRequests, 1);
+  });
+}
+
+test('hash-link counter changes keep the comparison incomplete', async () => {
+  const links = [{ href: '#', text: '1 followers' }, { href: '#', text: '1 following' }];
+  const inspector = createInspector({ pathname: '/target_name/', headerUsername: 'target_name', profileLinks: links });
+  const result = await inspector.fetchFollowerComparison({
+    username: 'target_name',
+    fetchImpl: async (input) => {
+      if (input.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+      assert.ok(input.includes('/friendships/'));
+      if (input.includes('/following/')) links[0].text = '2 followers';
+      return response({ users: [{ username: 'mutual' }] });
+    },
+  });
+  assert.equal(result.complete.followers, false);
+  assert.equal(result.reasons.followers, 'count-changed');
 });
 
 for (const changed of ['count', 'route']) {
