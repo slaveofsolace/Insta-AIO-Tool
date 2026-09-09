@@ -469,7 +469,7 @@ test('authenticated checker publishes a comparison only after persistence succee
   );
 });
 
-test('partial Mutual Checker data cannot produce a comparison or seed account actions', () => {
+test('partial Mutual Checker data can be viewed but cannot seed account actions', () => {
   const { queueView, shared } = loadQueueModules();
   const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
   const base = {
@@ -518,6 +518,9 @@ test('partial Mutual Checker data cannot produce a comparison or seed account ac
     assert.deepEqual(JSON.parse(JSON.stringify(shared.compareCaptureWorkspace(runtime.model.capture))), {
       mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [],
     });
+    const visible = shared.compareCaptureWorkspace(runtime.model.capture, { allowPartial: true });
+    assert.equal(visible.notFollowingMeBack[0].username, 'not_back');
+    assert.equal(visible.mutuals[0].username, 'mutual');
     for (const source of ['not-following-me-back', 'i-do-not-follow-back', directSource]) {
       const result = queueView.botTargets(runtime, source, source.includes('following-me') ? 'unfollow' : 'follow');
       assert.deepEqual(JSON.parse(JSON.stringify(result.pool)), []);

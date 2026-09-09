@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-09T03:10:02.566Z",
+  "platform": "win32",
+  "source": {
+    "current": "docs/evidence/overlay-ui-3.1.11-2026-09-08/after/win32"
+  },
+  "comparison": [
+    {
+      "area": "shell",
+      "before": "Default-open, visually dominant overlay panel",
+      "after": "Fresh collapsed launcher; standard open share 28.65%",
+      "status": "MEASURED"
+    },
+    {
+      "area": "hierarchy",
+      "before": "Multiple equal-weight cards and protocol copy",
+      "after": "Current target, state, then one next safe step with progressive disclosure",
+      "status": "MEASURED"
+    },
+    {
+      "area": "theme",
+      "before": "Forced light presentation",
+      "after": "Explicit light/dark plus auto resolver",
+      "status": "MEASURED"
+    },
+    {
+      "area": "navigation",
+      "before": "Text-heavy tabs",
+      "after": "Five semantic 44px rail targets with keyboard roving tabindex",
+      "status": "MEASURED"
+    },
+    {
+      "area": "queue",
+      "before": "Queue and safety protocol compete",
+      "after": "One current item; exact gate disclosed only when relevant",
+      "status": "MEASURED"
+    },
+    {
+      "area": "messages",
+      "before": "Evidence and identity rules visually dense",
+      "after": "Bounded evidence thread and secondary exact-identity disclosure",
+      "status": "MEASURED"
+    },
+    {
+      "area": "collision",
+      "before": "Maximum-z panel could compete with native surfaces",
+      "after": "Measured opposite-edge strip or fail-closed hidden controls",
+      "status": "MEASURED"
+    },
+    {
+      "area": "mobile",
+      "before": "Large work surface",
+      "after": "Bounded bottom sheet with short-height rules",
+      "status": "MEASURED"
+    },
+    {
+      "area": "accessibility",
+      "before": "DOM/focus checks only",
+      "after": "Semantic tabs, forced colors, reduced motion, zoom matrix, and AX smoke; human screen-reader still open",
+      "status": "PARTIAL"
+    }
+  ],
+  "performance": {
+    "collapsedTaskMs": 4.585999999999999,
+    "openTaskMs": 3.908,
+    "queue": {
+      "durationMs": 19.099999994039536,
+      "renderedItems": 1,
+      "totalOverlayNodes": 385
+    },
+    "routeTransitionMs": 98
+  },
+  "limitations": [
+    "Platform screenshot hashes are not cross-platform visual proof.",
+    "Automated accessibility checks are not human screen-reader acceptance.",
+    "Synthetic Instagram fixtures are not authenticated selector acceptance.",
+    "No Instagram account mutation was executed."
+  ]
+}

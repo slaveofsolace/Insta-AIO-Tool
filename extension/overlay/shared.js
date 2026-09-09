@@ -276,12 +276,12 @@
       : [];
   }
 
-  function compareCaptureWorkspace(workspace) {
-    if (!['followers', 'following'].every((type) => (
+  function compareCaptureWorkspace(workspace, { allowPartial = false } = {}) {
+    if (!allowPartial && !['followers', 'following'].every((type) => (
       workspace?.verified?.[type] === true && workspace?.complete?.[type] === true
     ))) return { mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [] };
-    const followers = verifiedCaptureAccounts(workspace, 'followers');
-    const following = verifiedCaptureAccounts(workspace, 'following');
+    const followers = allowPartial ? workspace?.followers || [] : verifiedCaptureAccounts(workspace, 'followers');
+    const following = allowPartial ? workspace?.following || [] : verifiedCaptureAccounts(workspace, 'following');
     const followerNames = new Set(followers.map((account) => account.username));
     const followingNames = new Set(following.map((account) => account.username));
     return {

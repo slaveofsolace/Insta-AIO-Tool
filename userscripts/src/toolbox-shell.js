@@ -373,10 +373,10 @@
       : [];
   }
 
-  function compareCapture() {
-    if (!comparisonIsReady()) return { mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [] };
-    const followers = verifiedCapture('followers');
-    const following = verifiedCapture('following');
+  function compareCapture({ allowPartial = false } = {}) {
+    if (!allowPartial && !comparisonIsReady()) return { mutuals: [], iDoNotFollowBack: [], notFollowingMeBack: [] };
+    const followers = allowPartial ? state.capture.followers : verifiedCapture('followers');
+    const following = allowPartial ? state.capture.following : verifiedCapture('following');
     const followerNames = new Set(followers.map((account) => account.username));
     const followingNames = new Set(following.map((account) => account.username));
     return {
@@ -1052,7 +1052,8 @@
   function renderChecker() {
     const verifiedFollowers = verifiedCapture('followers');
     const verifiedFollowing = verifiedCapture('following');
-    const comparisonReady = comparisonIsReady();
+    const summary = engine.followerComparisonSummary(state.capture);
+    const comparisonReady = summary.available;
     const authenticatedCheck = state.capture.source?.followers === 'authenticated-web'
       && state.capture.source?.following === 'authenticated-web';
     const usernameInput = query('[data-role="checker-username"]');
@@ -1071,28 +1072,23 @@
     }
     setText('followers-count', formatCount(verifiedFollowers.length));
     setText('following-count', formatCount(verifiedFollowing.length));
-    const comparison = compareCapture();
+    const comparison = compareCapture({ allowPartial: true });
     const result = query('[data-role="comparison"]');
     result.replaceChildren();
     const title = document.createElement('h2');
     title.textContent = comparisonReady
-      ? authenticatedCheck ? `Account comparison${state.capture.subjectUsername ? ` · @${state.capture.subjectUsername}` : ''}` : 'Scanned-list comparison'
+      ? !summary.complete ? 'Partial comparison' : authenticatedCheck ? `Account comparison${state.capture.subjectUsername ? ` · @${state.capture.subjectUsername}` : ''}` : 'Scanned-list comparison'
       : 'No comparison loaded';
     const detail = document.createElement('p');
     detail.textContent = comparisonReady
-      ? `${formatCount(verifiedFollowers.length)} followers · ${formatCount(verifiedFollowing.length)} following · ${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back · ${formatCount(comparison.iDoNotFollowBack.length)} you don't follow back.`
-      : 'Both lists must be complete before comparing. Run Check mutuals to load them.';
+      ? `${formatCount(state.capture.followers.length)} followers · ${formatCount(state.capture.following.length)} following · ${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} ${summary.labels.notFollowingMeBack.toLowerCase()} · ${formatCount(comparison.iDoNotFollowBack.length)} ${summary.labels.iDoNotFollowBack.toLowerCase()}.`
+      : 'Run Check mutuals to load a comparison.';
     result.append(title, detail);
 
-    // A scan that stopped early would otherwise be read as the whole list, and
-    // every number below it would quietly be wrong.
-    const partial = ['followers', 'following']
-      .filter((type) => state.capture.verified?.[type] === true
-        && state.capture.complete?.[type] !== true);
-    if (partial.length) {
+    if (comparisonReady && !summary.complete) {
       const warning = document.createElement('p');
       warning.className = 'notice';
-      warning.textContent = `Incomplete ${partial.join(' and ')}: some accounts may be missing. Comparison withheld to avoid false non-mutuals. Captured rows are under Advanced.`;
+      warning.textContent = summary.warning;
       result.append(warning);
     }
 
@@ -1101,7 +1097,7 @@
     if (unverified.length) {
       const warning = document.createElement('p');
       warning.className = 'notice';
-      warning.textContent = `Saved ${unverified.join(' and ')} rows were captured before exact dialog verification. They remain available under Advanced for export, but cannot drive comparisons or runs until rescanned.`;
+      warning.textContent = `Saved ${unverified.join(' and ')} rows need a fresh scan before they can be used for runs.`;
       result.append(warning);
     }
 
@@ -1125,6 +1121,10 @@
     }
 
     const browser = query('[data-role="comparison-browser"]');
+    const category = query('[data-role="comparison-category"]');
+    if (category) for (const option of category.options) {
+      option.textContent = summary.labels[CHECKER_CATEGORY_KEYS[option.value]] || option.textContent;
+    }
     const comparisonList = query('[data-role="comparison-list"]');
     const comparisonCount = query('[data-role="comparison-count"]');
     const showMore = query('[data-role="comparison-more"]');
@@ -1788,7 +1788,8 @@
   }
 
   function renderCheckerSteps() {
-    const comparison = compareCapture();
+    const comparison = compareCapture({ allowPartial: true });
+    const summary = engine.followerComparisonSummary(state.capture);
     for (const listType of ['following', 'followers']) {
       const step = query(`.step[data-step="${listType}"]`);
       const status = scanState(listType);
@@ -1809,9 +1810,9 @@
       && state.capture.verified?.followers === true;
     const complete = scanState('following') === 'done' && scanState('followers') === 'done';
     if (compareStep) compareStep.dataset.state = both ? (complete ? 'done' : 'partial') : 'todo';
-    setText('step-compare', complete
-      ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back`
-      : 'Waiting for two complete lists');
+    setText('step-compare', summary.available
+      ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} ${summary.labels.notFollowingMeBack.toLowerCase()}`
+      : 'Scan both lists to compare');
   }
 
   function resetRelationshipProgress() {
@@ -2745,15 +2746,15 @@
       });
     },
     'download-comparison-json': () => {
-      const comparisonReady = comparisonIsReady();
+      const comparisonReady = engine.followerComparisonSummary(state.capture).available;
       if (!comparisonReady) {
-        status('Both lists must be complete before downloading a comparison. Captured rows are under Advanced.');
+        status('Run Check mutuals to load a comparison.');
         return;
       }
       const generatedAt = nowIso();
       downloadJson(
         `insta-toolbox-mutual-comparison-${generatedAt.replace(/[:.]/g, '-')}.json`,
-        engine.followerComparisonRecord(state.capture, compareCapture(), generatedAt),
+        engine.followerComparisonRecord(state.capture, compareCapture({ allowPartial: true }), generatedAt),
       );
     },
     'export-queue': () => downloadJson(`insta-toolbox-companion-state-${Date.now()}.json`, {
