@@ -2179,7 +2179,7 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
         for (const type of ['followers', 'following']) {
           const link = document.createElement('a');
           link.setAttribute('role', 'link');
-          link.href = '/demo_creator/' + type + '/';
+          link.href = '#';
           link.textContent = '2 ' + type;
           document.querySelector('header').append(link);
         }
@@ -2225,7 +2225,7 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
       assert.equal(requests.length, requestsBeforeStop, 'Stop cancels retry');
       assert.equal(await webContents.executeJavaScript(`(${root}).querySelector('${result}').textContent`, true), before.result, 'saved comparison remains visible');
       assert.equal(await webContents.executeJavaScript('globalThis.backgroundPageClicks', true), 0);
-      console.log(`Accepted ${surface} background comparison and cooldown: real fetch/JSON, visible countdown, same-page retry, Stop, no list dialogs, and saved comparison preserved.`);
+      console.log(`Accepted ${surface} hash-link profile counters and cooldown: no metadata request, real fetch/JSON, visible countdown, same-page retry, Stop, no list dialogs, and saved comparison preserved.`);
     }
   } finally {
     window.destroy();

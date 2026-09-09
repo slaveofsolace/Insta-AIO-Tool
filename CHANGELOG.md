@@ -2,6 +2,11 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.10 - 2026-09-08
+
+- Read exact follower and following counters from verified profile headers when Instagram uses `#` links. This avoids unnecessary profile-metadata requests before and after a comparison.
+- Reject unrelated, hidden, ambiguous, rounded, or changing counters. Rate-limit cooldowns and incomplete-list protections remain unchanged.
+
 ## 3.1.9 - 2026-09-08
 
 - Keep the single-pass background Mutual Checker workflow from 3.1.3, with no automatic list opening or alternate data-source fallback.
