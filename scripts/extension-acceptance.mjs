@@ -2125,6 +2125,9 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
 async function acceptBackgroundComparison({ window, isolatedSession }) {
   const requests = [];
   let rateLimited = false;
+  let remainingLimits = 0;
+  let retryAfter = '1';
+  const rateTimes = [];
   // This isolated session serves synthetic Instagram pages only; no account traffic.
   await isolatedSession.protocol.handle('http', () => new Response('', { status: 403 }));
   await isolatedSession.protocol.handle('https', async (request) => {
@@ -2136,7 +2139,12 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
         return Response.json({ users: [{ user: { pk: '77', username: 'demo_creator' } }] });
       }
       if (url.pathname === '/api/v1/friendships/77/followers/') {
-        if (rateLimited) return new Response('<html>Too many requests</html>', { status: 429 });
+        if (rateLimited && url.searchParams.has('max_id')) {
+          rateTimes.push(Date.now());
+          if (remainingLimits-- > 0) return new Response('<html>Too many requests</html>', {
+            status: 429, headers: { 'Retry-After': retryAfter },
+          });
+        }
         return Response.json(url.searchParams.has('max_id')
           ? { users: [{ username: 'follower_only' }] }
           : { users: [{ username: 'mutual_friend' }], next_max_id: 'next' });
@@ -2195,12 +2203,29 @@ async function acceptBackgroundComparison({ window, isolatedSession }) {
         '/api/v1/friendships/77/following/',
       ]);
       rateLimited = true;
+      remainingLimits = 1;
+      retryAfter = '1';
+      rateTimes.length = 0;
       const priorRequests = requests.length;
       await webContents.executeJavaScript(`(${root}).querySelector('${button}').click()`, true);
-      await waitForPageValue(webContents, `(${root}).textContent.includes('Instagram is rate limiting this check')`, `${surface} HTML rate-limit classification`);
-      assert.equal(requests.length - priorRequests, 2, 'stop without retry or fallback');
+      await waitForPageValue(webContents, `(${root}).textContent.includes('Retrying in') && (${root}).textContent.includes('Wait supplied by Instagram')`, `${surface} rate-limit countdown`);
+      assert.equal(requests.length - priorRequests, 3, 'no requests during cooldown');
+      await waitForPageValue(webContents, `!(${root}).querySelector('${button}').textContent.includes('Stop')`, `${surface} cooldown recovery`);
+      assert.equal(requests.length - priorRequests, 5, 'retry only the interrupted page, not the completed page');
+      assert.ok(rateTimes[1] - rateTimes[0] >= 1000, 'server wait honored');
+      remainingLimits = 1;
+      retryAfter = '30';
+      await webContents.executeJavaScript(`(${root}).querySelector('${button}').click()`, true);
+      await waitForPageValue(webContents, `(${root}).textContent.includes('Retrying in')`, `${surface} cancellable cooldown`);
+      const requestsBeforeStop = requests.length;
+      await writeFile(path.join(resultsRoot, `cooldown-${surface}.png`), (await webContents.capturePage()).toPNG());
+      await webContents.executeJavaScript(`(${root}).querySelector('${button}').click()`, true);
+      await waitForPageValue(webContents, `!(${root}).querySelector('${button}').textContent.includes('Stop')`, `${surface} cooldown Stop`);
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      assert.equal(requests.length, requestsBeforeStop, 'Stop cancels retry');
       assert.equal(await webContents.executeJavaScript(`(${root}).querySelector('${result}').textContent`, true), before.result, 'saved comparison remains visible');
-      console.log(`Accepted ${surface} background primary-button comparison: real fetch/JSON, no list dialogs, no profile-count requests, HTML 429 stops with comparison preserved.`);
+      assert.equal(await webContents.executeJavaScript('globalThis.backgroundPageClicks', true), 0);
+      console.log(`Accepted ${surface} background comparison and cooldown: real fetch/JSON, visible countdown, same-page retry, Stop, no list dialogs, and saved comparison preserved.`);
     }
   } finally {
     window.destroy();

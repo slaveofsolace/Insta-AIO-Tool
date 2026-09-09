@@ -119,7 +119,7 @@ The `Release` workflow promotes tested artifacts; it does not rebuild them.
 3. Run the `Release` workflow manually with that run ID and the
    `v<package.version>` tag.
 4. Approve the protected `release` environment after reviewing the run and
-   [acceptance record](./acceptance/3.1.6.md).
+   [acceptance record](./acceptance/3.1.9.md).
 5. Confirm that the workflow rejects a stale, non-`main`, non-push, failed, or
    version-mismatched CI run.
 6. Verify every promoted file against `SHA256SUMS.txt`, then inspect the SBOM,
@@ -133,7 +133,7 @@ Keep the repository description, homepage, and topics aligned with
 [GITHUB_METADATA.md](./GITHUB_METADATA.md).
 
 Version 3.1 publishes `insta-toolbox.user.js`,
-`Insta-Toolbox-Extension-3.1.6.zip`, and `insta-toolbox-web-3.1.6.zip`. Do not
+`Insta-Toolbox-Extension-3.1.9.zip`, and `insta-toolbox-web-3.1.9.zip`. Do not
 publish old-name aliases or a raw-branch userscript update channel.
 
 ## Source integrations

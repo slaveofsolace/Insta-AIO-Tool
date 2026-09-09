@@ -2,6 +2,14 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.9 - 2026-09-08
+
+- Keep the single-pass background Mutual Checker workflow from 3.1.3, with no automatic list opening or alternate data-source fallback.
+- Honor Instagram's Retry-After before retrying the interrupted request. Without a reset time, back off five minutes, then ten; show a countdown and keep Stop available.
+- Preserve completed pages during retries and the saved comparison on failure. Do not infer non-mutuals from incomplete lists.
+- Retain the DM conversation-change stop fix, response-body cancellation, storage compatibility, and patched dependencies.
+- Update desktop build dependencies to xmldom 0.8.15 and js-yaml 4.3.2.
+
 ## 3.1.6 - 2026-09-07
 
 - Check both lists in the background from an open profile, using its exact displayed totals instead of two extra profile-count requests.

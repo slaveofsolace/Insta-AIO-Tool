@@ -40,6 +40,7 @@ function createInspector({
   pathname = '/demo_creator/',
   profileCounts = null,
   profileLinks: suppliedProfileLinks = null,
+  pageLocation = null,
 } = {}) {
   const profileLinkData = Array.isArray(suppliedProfileLinks)
     ? suppliedProfileLinks
@@ -74,7 +75,7 @@ function createInspector({
     crypto: webcrypto,
     document,
     getComputedStyle: () => ({ display: 'block', visibility: 'visible' }),
-    location: {
+    location: pageLocation || {
       href: `${origin}${pathname}`,
       origin,
       pathname,
@@ -184,6 +185,45 @@ test('authenticated follower check uses only bounded exact read endpoints and pa
   assert.equal(requests[3].url.searchParams.get('max_id'), 'followers-page-2');
   assert.equal(requests[4].url.searchParams.get('includes_hashtags'), 'false');
   assert.equal(requests[5].url.pathname, '/api/v1/users/web_profile_info/');
+});
+
+test('profile metadata restrictions stop before decoding HTML or stalled bodies', async () => {
+  for (const [status, code] of [[429, 'rate-limited'], [401, 'session-expired']]) {
+    for (const body of ['html', 'stalled']) {
+      const inspector = createInspector();
+      const requests = [];
+      let decodeCalls = 0;
+      let retries = 0;
+      await assert.rejects(inspector.fetchFollowerComparison({
+        username: 'target_name',
+        fetchImpl: async (input) => {
+          const url = new URL(input);
+          requests.push(url.pathname);
+          if (url.pathname.includes('topsearch')) {
+            return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+          }
+          assert.equal(url.pathname, '/api/v1/users/web_profile_info/');
+          return {
+            ok: false,
+            status,
+            json() {
+              decodeCalls += 1;
+              if (body === 'stalled') return new Promise(() => {});
+              throw new SyntaxError('HTML is not JSON');
+            },
+          };
+        },
+        requestTimeoutMs: 5,
+        sleepImpl: async () => { retries += 1; },
+      }), (error) => error.code === code);
+      assert.equal(decodeCalls, 0);
+      assert.equal(retries, 0);
+      assert.deepEqual(requests, [
+        '/api/v1/web/search/topsearch/',
+        '/api/v1/users/web_profile_info/',
+      ]);
+    }
+  }
 });
 
 test('authenticated follower check requires an exact username search result', async () => {
@@ -1092,6 +1132,161 @@ test('authenticated follower check stops immediately when aborted during retry b
     (error) => error.code === 'stopped',
   );
   assert.equal(calls, 1);
+});
+
+test('cooldown retries the same page after Retry-After seconds or HTTP date without rescanning', async () => {
+  for (const dateHeader of [false, true]) {
+    const inspector = createInspector();
+    let clock = 1_800_000_000_000;
+    const start = clock;
+    const requests = [];
+    const events = [];
+    let secondPage = 0;
+    const result = await inspector.fetchFollowerComparison({
+      username: 'target_name', retryRateLimits: true, now: () => clock,
+      sleepImpl: async (ms) => { clock += ms; }, random: () => 0,
+      onProgress: (event) => events.push(event),
+      fetchImpl: async (input) => {
+        const url = new URL(input);
+        requests.push(url.pathname + url.search);
+        if (url.pathname.includes('topsearch')) return response({ users: [{ user: { pk: '77', username: 'target_name' } }] });
+        if (url.pathname.includes('web_profile_info')) return profileResponse({ followers: 2, following: 1 });
+        if (url.pathname.includes('/followers/')) {
+          if (!url.searchParams.has('max_id')) return response({ users: [{ username: 'first' }], next_max_id: 'second' });
+          if (++secondPage === 1) return {
+            status: 429, ok: false,
+            headers: { get: () => dateHeader ? new Date(clock + 4000).toUTCString() : '4' },
+            json() { throw new Error('must not decode restriction HTML'); },
+          };
+          assert.ok(clock >= start + 4000);
+          return response({ users: [{ username: 'second' }] });
+        }
+        return response({ users: [{ username: 'first' }] });
+      },
+    });
+    assert.equal(result.followers.length, 2);
+    assert.equal(result.complete.followers, true);
+    assert.equal(requests.filter(u => u.includes('/followers/') && !u.includes('max_id')).length, 1);
+    assert.equal(secondPage, 2);
+    const cooldowns = events.filter(e => e.phase === 'cooldown');
+    assert.ok(cooldowns.length >= 3);
+    assert.equal(cooldowns[0].found, 1);
+    assert.equal(cooldowns[0].pages, 1);
+    assert.equal(cooldowns[0].cooldownSource, 'server');
+    assert.ok(cooldowns.at(-1).remainingMs <= 1000);
+  }
+});
+
+test('missing or malformed Retry-After backs off five then ten minutes and stops before the run deadline', async () => {
+  for (const header of [null, 'nonsense', '-1', '0.5']) {
+    let clock = 1_800_000_000_000;
+    let calls = 0;
+    const starts = [];
+    await assert.rejects(createInspector().fetchFollowerComparison({
+      username: 'target_name', retryRateLimits: true, now: () => clock,
+      sleepImpl: async (ms) => { clock += ms; },
+      onProgress(e) { if (e.phase === 'cooldown' && !starts.some(s => s.attempt === e.attempt)) starts.push(e); },
+      fetchImpl: async () => { calls += 1; return { status: 429, headers: { get: () => header } }; },
+    }), e => e.code === 'rate-limited' && /run has stopped/.test(e.message));
+    assert.equal(calls, 3);
+    assert.deepEqual(starts.map(e => e.remainingMs), [300000, 600000]);
+    assert.ok(starts.every(e => e.cooldownSource === 'fallback'));
+  }
+});
+
+test('long Retry-After is never shortened to fit the run deadline', async () => {
+  let calls = 0;
+  let waits = 0;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    username: 'target_name', retryRateLimits: true,
+    fetchImpl: async () => { calls += 1; return { status: 429, headers: { get: () => '86400' } }; },
+    sleepImpl: async () => { waits += 1; },
+  }), e => e.code === 'rate-limited' && /no earlier than/.test(e.message));
+  assert.equal(calls, 1);
+  assert.equal(waits, 0);
+});
+
+test('Stop and profile navigation cancel a cooldown before another request', async () => {
+  for (const navigate of [false, true]) {
+    const controller = new AbortController();
+    const pageLocation = { origin: 'https://www.instagram.com', pathname: '/target_name/' };
+    let clock = 1_800_000_000_000;
+    let calls = 0;
+    await assert.rejects(createInspector({ pageLocation }).fetchFollowerComparison({
+      username: 'target_name', retryRateLimits: true, signal: controller.signal, now: () => clock,
+      fetchImpl: async () => { calls += 1; return { status: 429, headers: { get: () => '4' } }; },
+      sleepImpl: async (ms) => {
+        clock += ms;
+        if (navigate) pageLocation.pathname = '/different/';
+        else controller.abort();
+      },
+    }), e => e.code === (navigate ? 'profile-mismatch' : 'stopped'));
+    assert.equal(calls, 1);
+  }
+});
+
+test('Stop then restart keeps the pending cooldown in the same tab', async () => {
+  const inspector = createInspector();
+  const controller = new AbortController();
+  let clock = 1_800_000_000_000;
+  const start = clock;
+  await assert.rejects(inspector.fetchFollowerComparison({
+    username: 'target_name', retryRateLimits: true, now: () => clock, signal: controller.signal,
+    fetchImpl: async () => ({ status: 429, headers: { get: () => '10' } }),
+    sleepImpl: async (ms) => { clock += ms; controller.abort(); },
+  }), e => e.code === 'stopped');
+  let calls = 0;
+  await assert.rejects(inspector.fetchFollowerComparison({
+    username: 'target_name', retryRateLimits: true, now: () => clock,
+    sleepImpl: async (ms) => { clock += ms; },
+    fetchImpl: async () => {
+      calls += 1;
+      assert.ok(clock >= start + 10000);
+      return response(null, 401);
+    },
+  }), e => e.code === 'session-expired');
+  assert.equal(calls, 1);
+});
+
+test('zero Retry-After still has a finite retry budget and no immediate request loop', async () => {
+  let clock = 1_800_000_000_000;
+  const start = clock;
+  let calls = 0;
+  await assert.rejects(createInspector().fetchFollowerComparison({
+    username: 'target_name', retryRateLimits: true, now: () => clock,
+    sleepImpl: async (ms) => { assert.ok(ms > 0); clock += ms; },
+    fetchImpl: async () => { calls += 1; return { status: 429, headers: { get: () => '0' } }; },
+  }), e => e.code === 'rate-limited' && /Automatic retries stopped/.test(e.message));
+  assert.equal(calls, 9);
+  assert.equal(clock - start, 8000);
+});
+
+test('both surfaces enable cancellable cooldowns with source-labeled countdown text', async () => {
+  for (const file of ['../userscripts/src/toolbox-shell.js', '../extension/overlay/views/capture.js']) {
+    const source = await readFile(new URL(file, import.meta.url), 'utf8');
+    assert.match(source, /retryRateLimits: true/);
+    assert.match(source, /progress\.phase === 'cooldown'/);
+    assert.match(source, /progress\.remainingMs/);
+    assert.match(source, /Wait supplied by Instagram/);
+    assert.match(source, /Instagram gave no reset time/);
+    assert.match(source, /Stop cancels the retry/);
+  }
+});
+
+test('automatic cooldown never retries login, challenge, or action-block responses', async () => {
+  for (const [status, body, code] of [
+    [401, null, 'session-expired'],
+    [400, { message: 'challenge_required' }, 'challenge'],
+    [400, { message: 'feedback_required' }, 'action-blocked'],
+  ]) {
+    let calls = 0;
+    await assert.rejects(createInspector().fetchFollowerComparison({
+      username: 'target_name', retryRateLimits: true,
+      fetchImpl: async () => { calls += 1; return response(body, status); },
+      sleepImpl: async () => assert.fail('must not wait or retry'),
+    }), e => e.code === code);
+    assert.equal(calls, 1);
+  }
 });
 
 test('follower comparison export provides a readable UTF-8 report and preserves schema-1 JSON', () => {

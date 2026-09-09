@@ -54,8 +54,13 @@ const patchedBuildDependencies = [
   },
   {
     name: "js-yaml",
-    version: "4.3.1",
-    override: '"js-yaml@<4.3.1": 4.3.1',
+    version: "4.3.2",
+    override: '"js-yaml@<4.3.2": 4.3.2',
+  },
+  {
+    name: "@xmldom/xmldom",
+    version: "0.8.15",
+    override: '"@xmldom/xmldom@<0.8.15": 0.8.15',
   },
 ];
 
@@ -63,7 +68,7 @@ for (const dependency of patchedBuildDependencies) {
   const escapedVersion = dependency.version.replaceAll(".", "\\.");
   assert.match(
     lockfile,
-    new RegExp(`^  ${dependency.name}@${escapedVersion}:$`, "m"),
+    new RegExp(`^  '?${dependency.name}@${escapedVersion}'?:$`, "m"),
     `pnpm-lock.yaml must resolve ${dependency.name} ${dependency.version}`,
   );
   assert.ok(
@@ -75,7 +80,7 @@ for (const dependency of patchedBuildDependencies) {
     projectRoot,
     "node_modules",
     ".pnpm",
-    `${dependency.name}@${dependency.version}`,
+    `${dependency.name.replaceAll('/', '+')}@${dependency.version}`,
     "node_modules",
     dependency.name,
     "package.json",
@@ -84,5 +89,5 @@ for (const dependency of patchedBuildDependencies) {
 }
 
 console.log(
-  `Dependency verification passed: brace-expansion ${expectedVersions.join(", ")} enforce the CVE-2026-14257 length bound; fast-uri 3.1.6 and js-yaml 4.3.1 are patched.`,
+  `Dependency verification passed: brace-expansion ${expectedVersions.join(", ")} enforce the CVE-2026-14257 length bound; fast-uri 3.1.6, js-yaml 4.3.2, and xmldom 0.8.15 are patched.`,
 );

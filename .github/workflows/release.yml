@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       tag:
-        description: Release tag, for example v3.1.6
+        description: Release tag, for example v3.1.9
         required: true
         type: string
 
@@ -110,7 +110,7 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
           test "$RELEASE_TAG" = "v$version"
-          test "$version" = "3.1.6"
+          test "$version" = "3.1.9"
           mkdir -p release
           copy_exact() {
             local name="$1"
@@ -171,13 +171,15 @@ jobs:
             exit 1
           fi
           release_notes="$(cat <<'EOF'
-          Check Followers and Following in the background from your open profile, without opening either list. Exact displayed totals replace two extra profile-count requests. HTML rate-limit responses now show the correct error, stalled response bodies are cancelled, and manual capture stays optional. Incomplete lists still cannot produce a misleading comparison. Includes the updated Tampermonkey script.
+          Check mutuals in the background using the single-pass workflow from 3.1.3. When Instagram rate-limits a request, wait for Retry-After or a clearly labeled backoff countdown, then retry the same page. Stop cancels the wait. Incomplete lists cannot produce a misleading comparison. Keeps the DM conversation-change fix and patched dependencies. Includes the updated Tampermonkey script.
+
+          Cooldowns do not bypass Instagram restrictions or guarantee complete server responses. Without Retry-After, waits begin at five and ten minutes; the existing 20-minute run deadline still applies.
 
           ## Distribution notes
 
           - The Windows installer is unsigned and may show a Microsoft SmartScreen warning.
           - The macOS packages are ad-hoc signed and are not Apple-notarized.
-          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.6 acceptance record for any separately recorded manual evidence.
+          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.9 acceptance record for any separately recorded manual evidence.
           EOF
           )"
           gh release create "$RELEASE_TAG" release/* \
