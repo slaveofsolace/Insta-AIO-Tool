@@ -44,6 +44,8 @@ See [Installation](docs/INSTALLATION.md) for the extension, desktop apps, web ap
 
 Live actions start disabled on every load. A follow, unfollow, or unsend run requires an action-specific confirmation. Stop remains available during a run. Challenge, rate-limit, wrong-thread, ambiguous-control, and uncertain-result checks stop the runner.
 
+Mutual Checker waits before retrying rate-limited reads: Instagram's reset time when supplied, otherwise five minutes then ten. A countdown shows the wait; Stop cancels it. [Cooldown details](docs/MUTUAL_CHECKER_COOLDOWNS.md).
+
 ## Other ways to run it
 
 Download files from the [latest release](https://github.com/slaveofsolace/Insta-Toolbox/releases/latest).
@@ -51,11 +53,11 @@ Download files from the [latest release](https://github.com/slaveofsolace/Insta-
 | Surface | Release file | Use it when |
 | --- | --- | --- |
 | Tampermonkey | `insta-toolbox.user.js` | You want the simplest Instagram overlay install. |
-| Chrome extension | `Insta-Toolbox-Extension-3.1.6.zip` | You prefer an unpacked browser extension. |
-| Windows desktop | `Insta-Toolbox-Setup-3.1.6.exe` | You want one downloadable Windows installer. |
-| macOS desktop | `Insta-Toolbox-3.1.6-universal.dmg` | You want the recommended drag-to-Applications package for Intel or Apple Silicon. |
-| macOS portable | `Insta-Toolbox-3.1.6-universal.zip` | You prefer to extract the universal app directly. |
-| Web/PWA | `insta-toolbox-web-3.1.6.zip` | You want to self-host the local-first workspace. |
+| Chrome extension | `Insta-Toolbox-Extension-3.1.9.zip` | You prefer an unpacked browser extension. |
+| Windows desktop | `Insta-Toolbox-Setup-3.1.9.exe` | You want one downloadable Windows installer. |
+| macOS desktop | `Insta-Toolbox-3.1.9-universal.dmg` | You want the recommended drag-to-Applications package for Intel or Apple Silicon. |
+| macOS portable | `Insta-Toolbox-3.1.9-universal.zip` | You prefer to extract the universal app directly. |
+| Web/PWA | `insta-toolbox-web-3.1.9.zip` | You want to self-host the local-first workspace. |
 
 Windows packages are unsigned. macOS packages are ad-hoc signed, but not Developer ID signed or notarized. Confirm the checksum before opening a download.
 
@@ -66,13 +68,13 @@ Download `SHA256SUMS.txt` from the same release.
 Windows PowerShell:
 
 ```powershell
-Get-FileHash .\Insta-Toolbox-Setup-3.1.6.exe -Algorithm SHA256
+Get-FileHash .\Insta-Toolbox-Setup-3.1.9.exe -Algorithm SHA256
 ```
 
 macOS:
 
 ```sh
-shasum -a 256 Insta-Toolbox-3.1.6-universal.dmg
+shasum -a 256 Insta-Toolbox-3.1.9-universal.dmg
 ```
 
 Match the printed hash to the file's entry in `SHA256SUMS.txt`.
@@ -114,9 +116,9 @@ pnpm run qa:overlay:check
 pnpm run verify:repo-hygiene
 ```
 
-The 3.1 account-free regression matrix covers the PWA, extension, userscript, layout controls, and packaged apps. The service worker uses cache generation `insta-toolbox-v316`. Authenticated Instagram behavior still depends on the current site and must be accepted separately with disposable content.
+The 3.1 account-free regression matrix covers the PWA, extension, userscript, layout controls, and packaged apps. The service worker uses cache generation `insta-toolbox-v319`. Authenticated Instagram behavior still depends on the current site and must be accepted separately with disposable content.
 
-See [Contributing](CONTRIBUTING.md), [Maintainer Guide](docs/MAINTAINER_GUIDE.md), [3.1.6 compatibility](docs/compatibility/3.1.6.md), and [3.1.6 acceptance](docs/acceptance/3.1.6.md).
+See [Contributing](CONTRIBUTING.md), [Maintainer Guide](docs/MAINTAINER_GUIDE.md), [3.1.9 compatibility](docs/compatibility/3.1.9.md), and [3.1.9 acceptance](docs/acceptance/3.1.9.md).
 
 ## License and credit
 

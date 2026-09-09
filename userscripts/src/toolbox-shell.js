@@ -1974,9 +1974,16 @@
     try {
       const result = await engine.fetchFollowerComparison({
         username,
+        retryRateLimits: true,
         signal: controller.signal,
         onProgress(progress) {
           if (relationshipController !== controller) return;
+          if (progress.phase === 'cooldown') {
+            const seconds = Math.ceil(progress.remainingMs / 1000);
+            const clock = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+            setText('scan-detail', `Instagram rate limit. Retrying in ${clock}. ${progress.cooldownSource === 'server' ? 'Wait supplied by Instagram.' : 'Automatic backoff; Instagram gave no reset time.'} Stop cancels the retry.`);
+            return;
+          }
           if (progress.phase === 'resolving') {
             setText('scan-detail', `Finding the exact @${username} account…`);
             return;

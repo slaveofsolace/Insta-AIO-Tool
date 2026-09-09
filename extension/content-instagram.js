@@ -47,6 +47,7 @@
   const RELATIONSHIP_REQUEST_TIMEOUT_MS = 20_000;
   const RELATIONSHIP_REQUEST_ATTEMPTS = 3;
   const RELATIONSHIP_RETRY_BASE_MS = 1_000;
+  let pendingRelationshipCooldown = null;
 
   function normalizeUsername(value) {
     const username = String(value || '')
@@ -94,6 +95,44 @@
     const error = new Error(message);
     error.code = code;
     return error;
+  }
+
+  function relationshipRateLimit(response, now) {
+    const raw = String(response?.headers?.get?.('Retry-After') || '').trim();
+    let delayMs = null;
+    if (/^\d+$/.test(raw)) {
+      const seconds = Number(raw);
+      if (Number.isSafeInteger(seconds) && seconds <= Number.MAX_SAFE_INTEGER / 1000) delayMs = seconds * 1000;
+      else delayMs = Infinity;
+    } else if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), /i.test(raw)) {
+      const date = Date.parse(raw);
+      if (Number.isFinite(date)) delayMs = Math.max(0, date - now());
+    }
+    return Object.assign(relationshipError('rate-limited', 'Instagram asked this session to wait before loading more accounts.'), {
+      retryDelayMs: delayMs,
+      cooldownSource: delayMs === null ? 'fallback' : 'server',
+    });
+  }
+
+  async function waitForRelationshipCooldown(cooldown, { now, signal, sleepImpl, onProgress, username, listType, pages, found, expectedCount }) {
+    if (!cooldown || !pendingRelationshipCooldown || pendingRelationshipCooldown.retryAt <= now()) return;
+    const { retryAt, cooldownSource, attempt } = pendingRelationshipCooldown;
+    if (!Number.isFinite(retryAt) || retryAt >= cooldown.deadline) {
+      const message = Number.isFinite(retryAt) && retryAt <= 8.64e15
+        ? `Instagram is rate limiting this check. Next retry no earlier than ${new Date(retryAt).toISOString()}. This run has stopped; saved comparison unchanged.`
+        : 'Instagram requested a longer cooldown than this run supports. This run has stopped; saved comparison unchanged.';
+      throw Object.assign(relationshipError('rate-limited', message), { cooldownPending: true });
+    }
+    while (now() < retryAt) {
+      cooldown.assertActive();
+      const remainingMs = retryAt - now();
+      onProgress?.(Object.freeze({
+        phase: 'cooldown', username, listType, pages, found, expectedCount,
+        attempt, retryAt, remainingMs, cooldownSource,
+      }));
+      await sleepImpl(Math.min(1000, remainingMs), signal);
+    }
+    cooldown.assertActive();
   }
 
   function assertRelationshipRunActive(signal, startedAt, now, maxDurationMs) {
@@ -205,10 +244,12 @@
 
   async function fetchInstagramRelationshipJson(url, {
     clearTimer,
+    cooldown = null,
     expectedCount = null,
     fetchImpl,
     found = 0,
     listType = null,
+    now = Date.now,
     onProgress,
     pages = 0,
     random,
@@ -222,6 +263,8 @@
   }) {
     for (let attempt = 1; attempt <= requestAttempts; attempt += 1) {
       try {
+        cooldown?.assertActive();
+        await waitForRelationshipCooldown(cooldown, { now, signal, sleepImpl, onProgress, username, listType, pages, found, expectedCount });
         return await relationshipStepWithTimeout(async (attemptSignal) => {
           const response = await fetchImpl(url.href, {
             cache: 'no-store',
@@ -236,9 +279,10 @@
             referrerPolicy: 'strict-origin-when-cross-origin',
             signal: attemptSignal,
           });
+          cooldown?.assertActive();
           // Error pages can be HTML. Classify status and redirects before decoding.
           if (response.status === 429) {
-            throw relationshipError('rate-limited', 'Instagram is rate limiting this check. Wait before trying again.');
+            throw relationshipRateLimit(response, now);
           }
           const responsePath = response.url ? new URL(response.url, url).pathname : '';
           if (/^\/(challenge|checkpoint)(\/|$)/.test(responsePath)) {
@@ -260,7 +304,7 @@
           }
           const responseStop = relationshipResponseStop(data);
           if (response.status === 429 || responseStop === 'rate-limited') {
-            throw relationshipError('rate-limited', 'Instagram asked this session to wait before loading more accounts.');
+            throw relationshipRateLimit(response, now);
           }
           if (response.status === 401 || responseStop === 'session-expired') {
             throw relationshipError('session-expired', 'Instagram requires a fresh login.');
@@ -277,6 +321,21 @@
           return data;
         }, { clearTimer, setTimer, signal, timeoutMs: requestTimeoutMs });
       } catch (error) {
+        if (error?.code === 'rate-limited' && cooldown && !error.cooldownPending) {
+          cooldown.assertActive();
+          cooldown.attempts += 1;
+          const delayMs = Math.max(1000, error.retryDelayMs
+            ?? Math.min(60 * 60_000, 5 * 60_000 * (2 ** Math.min(cooldown.attempts - 1, 4))));
+          const retryAt = now() + delayMs;
+          pendingRelationshipCooldown = { retryAt, cooldownSource: error.cooldownSource || 'fallback', attempt: cooldown.attempts };
+          if (cooldown.attempts > 8) {
+            error.message = 'Instagram is still rate limiting this check. Automatic retries stopped; saved comparison unchanged.';
+            throw error;
+          }
+          await waitForRelationshipCooldown(cooldown, { now, signal, sleepImpl, onProgress, username, listType, pages, found, expectedCount });
+          attempt -= 1;
+          continue;
+        }
         let retryable = error?.code === 'request-timeout' || error?.code === 'network-error';
         if (signal?.aborted || error?.code === 'stopped') {
           throw relationshipError('stopped', 'Follower check stopped.');
@@ -414,6 +473,7 @@
 
   async function fetchRelationshipList(listType, userId, username, {
     clearTimer,
+    cooldown,
     fetchImpl,
     maxAccounts,
     maxDurationMs,
@@ -448,10 +508,12 @@
       if (nextMaxId) url.searchParams.set('max_id', nextMaxId);
       const data = await fetchInstagramRelationshipJson(url, {
         clearTimer,
+        cooldown,
         expectedCount,
         fetchImpl,
         found: accounts.size,
         listType,
+        now,
         onProgress,
         pages,
         random,
@@ -576,6 +638,7 @@
     requestAttempts = RELATIONSHIP_REQUEST_ATTEMPTS,
     requestTimeoutMs = RELATIONSHIP_REQUEST_TIMEOUT_MS,
     retryBaseMs = RELATIONSHIP_RETRY_BASE_MS,
+    retryRateLimits = false,
     signal = null,
     sleepImpl = relationshipDelay,
     setTimer = setTimeout,
@@ -601,8 +664,20 @@
     try {
       const startedAt = now();
       assertRelationshipRunActive(runSignal, startedAt, now, boundedDuration);
+      const initialPath = location.pathname;
+      const cooldown = retryRateLimits === true ? {
+        attempts: 0,
+        deadline: startedAt + boundedDuration,
+        assertActive() {
+          assertRelationshipRunActive(runSignal, startedAt, now, boundedDuration);
+          if (location.origin !== pageOrigin || location.pathname !== initialPath) {
+            throw relationshipError('profile-mismatch', 'The open profile changed. Follower check stopped.');
+          }
+        },
+      } : null;
       onProgress?.(Object.freeze({ found: 0, listType: null, pages: 0, phase: 'resolving', username }));
       const common = {
+        cooldown,
         fetchImpl,
         maxAccounts: boundedAccounts,
         maxDurationMs: boundedDuration,
