@@ -76,6 +76,11 @@
     list.replaceChildren();
 
     const categoryControl = query('[data-insta-toolbox-role="checker-category"]');
+    const summary = runtime.inspector.followerComparisonSummary(runtime.model.capture);
+    const categoryKeys = { 'not-following-me-back': 'notFollowingMeBack', 'i-do-not-follow-back': 'iDoNotFollowBack', mutuals: 'mutuals' };
+    for (const option of categoryControl?.options || []) {
+      option.textContent = summary.labels[categoryKeys[option.value]] || option.textContent;
+    }
     const searchControl = query('[data-insta-toolbox-role="checker-search"]');
     const result = shared.filterComparisonResults(
       comparison,
@@ -144,13 +149,13 @@
       ? 'followers'
       : 'following';
     const accounts = workspace[listType] || [];
-    const comparison = shared.compareCaptureWorkspace(workspace);
+    const comparison = shared.compareCaptureWorkspace(workspace, { allowPartial: true });
+    const summary = inspector.followerComparisonSummary(workspace);
     const batch = model.captureMeta;
     const followersVerified = workspace.verified?.followers === true;
     const followingVerified = workspace.verified?.following === true;
     const selectedVerified = workspace.verified?.[listType] === true;
-    const comparisonReady = followersVerified && followingVerified
-      && workspace.complete?.followers === true && workspace.complete?.following === true;
+    const comparisonReady = summary.available;
     const reportDownload = query('[data-insta-toolbox-role="comparison-report-download"]');
     const jsonDownload = query('[data-insta-toolbox-role="comparison-json-download"]');
     if (comparisonReady
@@ -191,11 +196,11 @@
       'followers', workspace.followers, followersVerified, followersComplete,
     ));
     setText('compare-step-detail', comparisonReady
-      ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} don't follow you back`
-      : followersVerified && followingVerified ? 'Waiting for two complete lists' : 'Scan both lists first');
+      ? `${formatCount(comparison.mutuals.length)} mutual · ${formatCount(comparison.notFollowingMeBack.length)} ${summary.labels.notFollowingMeBack.toLowerCase()}`
+      : 'Scan both lists to compare');
     const compareBadge = query('[data-insta-toolbox-role="compare-step-badge"]');
     if (compareBadge) {
-      compareBadge.textContent = comparisonComplete ? 'complete' : 'waiting';
+      compareBadge.textContent = comparisonComplete ? 'complete' : comparisonReady ? 'partial' : 'waiting';
       compareBadge.dataset.tone = comparisonComplete ? 'good' : 'neutral';
     }
     const authenticatedCheck = workspace.source?.followers === 'authenticated-web'
@@ -211,12 +216,12 @@
       setState(
         runtime,
         comparisonComplete ? `Mutual comparison complete${workspace.subjectUsername ? ` for @${workspace.subjectUsername}` : ''}` : 'Partial mutual comparison ready',
-        `Followers ${formatCount(workspace.followers.length)} · Following ${formatCount(workspace.following.length)} · Don't follow you back ${formatCount(comparison.notFollowingMeBack.length)}.`,
+        `Followers ${formatCount(workspace.followers.length)} · Following ${formatCount(workspace.following.length)} · ${summary.labels.notFollowingMeBack} ${formatCount(comparison.notFollowingMeBack.length)}.`,
         comparisonComplete ? 'good' : 'warning',
       );
     } else if (followersVerified || followingVerified) {
-      setState(runtime, 'Comparison withheld',
-        'Both lists must be complete to avoid false non-mutuals. Captured rows are under Advanced.', 'warning');
+      setState(runtime, 'No accounts captured',
+        'Run Check mutuals to load a comparison.', 'warning');
     } else {
       setState(
         runtime,
@@ -230,15 +235,15 @@
       checker.replaceChildren();
       const heading = document.createElement('h2');
       heading.textContent = comparisonReady
-        ? authenticatedCheck ? 'Account comparison' : 'Scanned-list comparison'
+        ? !summary.complete ? 'Partial comparison' : authenticatedCheck ? 'Account comparison' : 'Scanned-list comparison'
         : 'No comparison loaded';
       checker.append(heading);
       if (comparisonReady) {
         const facts = document.createElement('dl');
         for (const [label, value] of [
           ['Mutuals', comparison.mutuals.length],
-          ["Don't follow you back", comparison.notFollowingMeBack.length],
-          ["You don't follow back", comparison.iDoNotFollowBack.length],
+          [summary.labels.notFollowingMeBack, comparison.notFollowingMeBack.length],
+          [summary.labels.iDoNotFollowBack, comparison.iDoNotFollowBack.length],
         ]) {
           const term = document.createElement('dt');
           term.textContent = label;
@@ -247,11 +252,17 @@
           facts.append(term, detail);
         }
         checker.append(facts);
+        if (!summary.complete) {
+          const warning = document.createElement('p');
+          warning.className = 'insta-toolbox-note';
+          warning.textContent = summary.warning;
+          checker.append(warning);
+        }
       } else {
         const detail = document.createElement('p');
         detail.className = 'insta-toolbox-note';
         detail.textContent = followersVerified && followingVerified
-          ? 'Both lists must be complete before comparing. Run Check mutuals to load them.'
+          ? 'Run Check mutuals to load a comparison.'
           : 'Enter a username to compare Followers and Following.';
         checker.append(detail);
       }

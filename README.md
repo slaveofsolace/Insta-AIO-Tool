@@ -37,7 +37,7 @@ See [Installation](docs/INSTALLATION.md) for the extension, desktop apps, web ap
 
 ## What it does
 
-- **Mutual Checker** waits for two complete lists before comparing Followers and Following. Browse or search the results, or download a report. Incomplete captures stay under Advanced; missing entries are never labeled non-mutuals.
+- **Mutual Checker** compares the accounts Instagram returns. Browse, search, or download the results even when a list is partial. Partial results use “Not found” labels: a missing account may still be a mutual. [Why lists can be partial](docs/MUTUAL_CHECKER_PARTIAL_RESULTS.md).
 - **Follow / Unfollow** builds a finite target list, previews every target, and asks for confirmation before clicking.
 - **DM Unsend** works in the open conversation, confirms the thread and action, and reports only verified removals.
 - **Workspace** keeps local imports, comparisons, reviewed plans, ledgers, and exports in the PWA or desktop app.
@@ -53,11 +53,11 @@ Download files from the [latest release](https://github.com/slaveofsolace/Insta-
 | Surface | Release file | Use it when |
 | --- | --- | --- |
 | Tampermonkey | `insta-toolbox.user.js` | You want the simplest Instagram overlay install. |
-| Chrome extension | `Insta-Toolbox-Extension-3.1.10.zip` | You prefer an unpacked browser extension. |
-| Windows desktop | `Insta-Toolbox-Setup-3.1.10.exe` | You want one downloadable Windows installer. |
-| macOS desktop | `Insta-Toolbox-3.1.10-universal.dmg` | You want the recommended drag-to-Applications package for Intel or Apple Silicon. |
-| macOS portable | `Insta-Toolbox-3.1.10-universal.zip` | You prefer to extract the universal app directly. |
-| Web/PWA | `insta-toolbox-web-3.1.10.zip` | You want to self-host the local-first workspace. |
+| Chrome extension | `Insta-Toolbox-Extension-3.1.11.zip` | You prefer an unpacked browser extension. |
+| Windows desktop | `Insta-Toolbox-Setup-3.1.11.exe` | You want one downloadable Windows installer. |
+| macOS desktop | `Insta-Toolbox-3.1.11-universal.dmg` | You want the recommended drag-to-Applications package for Intel or Apple Silicon. |
+| macOS portable | `Insta-Toolbox-3.1.11-universal.zip` | You prefer to extract the universal app directly. |
+| Web/PWA | `insta-toolbox-web-3.1.11.zip` | You want to self-host the local-first workspace. |
 
 Windows packages are unsigned. macOS packages are ad-hoc signed, but not Developer ID signed or notarized. Confirm the checksum before opening a download.
 
@@ -68,13 +68,13 @@ Download `SHA256SUMS.txt` from the same release.
 Windows PowerShell:
 
 ```powershell
-Get-FileHash .\Insta-Toolbox-Setup-3.1.10.exe -Algorithm SHA256
+Get-FileHash .\Insta-Toolbox-Setup-3.1.11.exe -Algorithm SHA256
 ```
 
 macOS:
 
 ```sh
-shasum -a 256 Insta-Toolbox-3.1.10-universal.dmg
+shasum -a 256 Insta-Toolbox-3.1.11-universal.dmg
 ```
 
 Match the printed hash to the file's entry in `SHA256SUMS.txt`.
@@ -116,9 +116,9 @@ pnpm run qa:overlay:check
 pnpm run verify:repo-hygiene
 ```
 
-The 3.1 account-free regression matrix covers the PWA, extension, userscript, layout controls, and packaged apps. The service worker uses cache generation `insta-toolbox-v3110`. Authenticated Instagram behavior still depends on the current site and must be accepted separately with disposable content.
+The 3.1 account-free regression matrix covers the PWA, extension, userscript, layout controls, and packaged apps. The service worker uses cache generation `insta-toolbox-v3111`. Authenticated Instagram behavior still depends on the current site and must be accepted separately with disposable content.
 
-See [Contributing](CONTRIBUTING.md), [Maintainer Guide](docs/MAINTAINER_GUIDE.md), [3.1.10 compatibility](docs/compatibility/3.1.10.md), and [3.1.10 acceptance](docs/acceptance/3.1.10.md).
+See [Contributing](CONTRIBUTING.md), [Maintainer Guide](docs/MAINTAINER_GUIDE.md), [3.1.11 compatibility](docs/compatibility/3.1.11.md), and [3.1.11 acceptance](docs/acceptance/3.1.11.md).
 
 ## License and credit
 

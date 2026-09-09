@@ -794,12 +794,26 @@
     }
   }
 
+  function followerComparisonSummary(workspace) {
+    const completeList = (type) => workspace?.verified?.[type] === true && workspace?.complete?.[type] === true;
+    const complete = completeList('followers') && completeList('following');
+    const available = complete || ['followers', 'following'].some((type) => (
+      workspace?.verified?.[type] === true || (Array.isArray(workspace?.[type]) && workspace[type].length > 0)
+    ));
+    return {
+      available,
+      complete,
+      labels: {
+        mutuals: 'Mutuals',
+        notFollowingMeBack: complete ? "Don't follow you back" : 'Not found in followers',
+        iDoNotFollowBack: complete ? "You don't follow back" : 'Not found in following',
+      },
+      warning: complete ? '' : 'Partial comparison — captured accounts only. Someone missing from a list may still be a mutual. The missing accounts and the reason are unknown; check profiles before acting.',
+    };
+  }
+
   function followerComparisonRecord(workspace, comparison, generatedAt = new Date().toISOString()) {
-    if (!['followers', 'following'].every((type) => (
-      workspace?.verified?.[type] === true && workspace?.complete?.[type] === true
-    ))) {
-      throw relationshipError('incomplete-comparison', 'Both lists must be complete before comparing. Partial captures are available separately under Advanced.');
-    }
+    const summary = followerComparisonSummary(workspace);
     return {
       schemaVersion: 1,
       kind: 'insta-toolbox-comparison',
@@ -808,6 +822,9 @@
       source: workspace?.source && typeof workspace.source === 'object' ? workspace.source : {},
       complete: workspace?.complete && typeof workspace.complete === 'object' ? workspace.complete : {},
       verified: workspace?.verified && typeof workspace.verified === 'object' ? workspace.verified : {},
+      partial: !summary.complete,
+      labels: summary.labels,
+      warning: summary.warning,
       mutuals: Array.isArray(comparison?.mutuals) ? comparison.mutuals : [],
       notFollowingMeBack: Array.isArray(comparison?.notFollowingMeBack)
         ? comparison.notFollowingMeBack
@@ -839,14 +856,15 @@
       `Generated: ${record.generatedAt}`,
       `Source: ${source}`,
       `Completeness: ${fullyComplete ? 'Complete — both lists reached their verified end.' : 'Partial — one or both saved lists may omit accounts.'}`,
+      ...(record.warning ? [record.warning] : []),
       '',
       'SUMMARY',
       '-------',
       `Followers: ${followersCount.toLocaleString('en-US')}`,
       `Following: ${followingCount.toLocaleString('en-US')}`,
       `Mutual followers: ${record.mutuals.length.toLocaleString('en-US')}`,
-      `Not following you back: ${record.notFollowingMeBack.length.toLocaleString('en-US')}`,
-      `You do not follow back: ${record.iDoNotFollowBack.length.toLocaleString('en-US')}`,
+      `${fullyComplete ? 'Not following you back' : record.labels.notFollowingMeBack}: ${record.notFollowingMeBack.length.toLocaleString('en-US')}`,
+      `${fullyComplete ? 'You do not follow back' : record.labels.iDoNotFollowBack}: ${record.iDoNotFollowBack.length.toLocaleString('en-US')}`,
     ];
     const addSection = (title, accounts) => {
       lines.push('', title, '-'.repeat(title.length));
@@ -860,8 +878,8 @@
         lines.push(`${index + 1}. @${username}${displayName ? ` — ${displayName}` : ''}`);
       });
     };
-    addSection('NOT FOLLOWING YOU BACK', record.notFollowingMeBack);
-    addSection('YOU DO NOT FOLLOW BACK', record.iDoNotFollowBack);
+    addSection(fullyComplete ? 'NOT FOLLOWING YOU BACK' : record.labels.notFollowingMeBack.toUpperCase(), record.notFollowingMeBack);
+    addSection(fullyComplete ? 'YOU DO NOT FOLLOW BACK' : record.labels.iDoNotFollowBack.toUpperCase(), record.iDoNotFollowBack);
     addSection('MUTUAL FOLLOWERS', record.mutuals);
     lines.push('', 'Generated locally by Insta Toolbox. No account action was performed.', '');
     return lines.join('\r\n');
@@ -2237,6 +2255,7 @@
     fetchFollowerComparison,
     followerComparisonRecord,
     followerComparisonReport,
+    followerComparisonSummary,
     inspectPageContext,
     inspectProfile,
     inspectReviewedDmItem,

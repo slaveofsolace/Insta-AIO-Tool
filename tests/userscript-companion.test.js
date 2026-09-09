@@ -262,7 +262,7 @@ test('the movable panel and local follower comparison are preserved', () => {
   assert.match(shell, /event\.altKey.*event\.shiftKey.*event\.key\.toLowerCase\(\) !== 'i'/);
   assert.match(shell, /savePreferences\(\{ open: !preferences\.open \}\)/);
   assert.match(source, /instaToolboxManualQueueV1/);
-  assert.match(shell, /function compareCapture\(\)/);
+  assert.match(shell, /function compareCapture\(\{ allowPartial = false \} = \{\}\)/);
   assert.match(shell, /notFollowingMeBack/);
   assert.match(shell, /iDoNotFollowBack/);
 });

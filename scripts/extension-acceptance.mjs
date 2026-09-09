@@ -507,20 +507,29 @@ async function acceptIncompleteComparison(webContents, baseUrl) {
   const result = await waitForPageValue(webContents, `(() => {
     const shadow = document.querySelector('#insta-toolbox-sidecar-root').shadowRoot;
     const title = shadow.querySelector('[data-insta-toolbox-role="capture-state-title"]').textContent;
-    if (title !== 'Comparison withheld') return null;
+    if (title !== 'Partial mutual comparison ready') return null;
     return {
       title,
       rows: shadow.querySelectorAll('[data-insta-toolbox-role="checker-filtered-list"] li').length,
       browser: Boolean(shadow.querySelector('[data-insta-toolbox-role="checker-browser"]')),
-      report: shadow.querySelector('[data-insta-toolbox-role="comparison-report-download"]').getAttribute('href'),
-      json: shadow.querySelector('[data-insta-toolbox-role="comparison-json-download"]').getAttribute('href'),
+      report: Boolean(shadow.querySelector('[data-insta-toolbox-role="comparison-report-download"]').getAttribute('href')),
+      json: Boolean(shadow.querySelector('[data-insta-toolbox-role="comparison-json-download"]').getAttribute('href')),
       raw: Boolean(shadow.querySelector('[data-insta-toolbox-role="capture-download"]').getAttribute('href')),
+      warning: shadow.querySelector('[data-insta-toolbox-role="checker-result"]').textContent,
+      category: shadow.querySelector('[data-insta-toolbox-role="checker-category"]').selectedOptions[0].textContent,
     };
   })()`, 'extension incomplete comparison');
-  assert.deepEqual(result, { title: 'Comparison withheld', rows: 0, browser: false, report: null, json: null, raw: true });
+  assert.equal(result.title, 'Partial mutual comparison ready');
+  assert.ok(result.rows > 0);
+  assert.equal(result.browser, true);
+  assert.equal(result.report, true);
+  assert.equal(result.json, true);
+  assert.equal(result.raw, true);
+  assert.match(result.warning, /Someone missing from a list may still be a mutual/);
+  assert.equal(result.category, 'Not found in followers');
   await webContents.executeJavaScript(`new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 200))))`, true);
   await writeFile(path.join(resultsRoot, 'incomplete-comparison-extension.png'), (await webContents.capturePage()).toPNG());
-  console.log('Accepted incomplete extension comparison: no inferred non-mutuals or comparison download; raw capture retained.');
+  console.log('Accepted partial extension comparison: captured results and downloads remain available with uncertainty labels.');
 }
 
 async function acceptOverlayDmConfirmation(webContents, baseUrl) {
@@ -1651,11 +1660,12 @@ async function acceptUserscriptToolbox(webContents, baseUrl) {
       text: shadow.querySelector('[data-role="comparison"]').textContent,
     };
   })()`, true);
-  assert.equal(partialComparison.hidden, true);
-  assert.equal(partialComparison.rows, 0);
-  assert.equal(partialComparison.report, false);
-  assert.equal(partialComparison.downloads, 0);
-  assert.match(partialComparison.text, /Comparison withheld to avoid false non-mutuals/);
+  assert.equal(partialComparison.hidden, false);
+  assert.ok(partialComparison.rows > 0);
+  assert.equal(partialComparison.report, true);
+  assert.equal(partialComparison.downloads, 1);
+  assert.match(partialComparison.text, /Someone missing from a list may still be a mutual/);
+  assert.match(partialComparison.text, /not found in followers/i);
   await writeFile(path.join(resultsRoot, 'incomplete-comparison-userscript.png'), (await webContents.capturePage()).toPNG());
 
   const scanFixtureList = async (listType, values = null) => {

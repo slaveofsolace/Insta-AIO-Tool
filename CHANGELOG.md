@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.11 - 2026-09-08
+
+- Keep partial mutual comparisons visible, searchable, and downloadable.
+- Label uncertain differences as “Not found” and explain missing-data limits in the panel, text report, and JSON.
+- Preserve complete-list checks for comparison-based Follow / Unfollow runs.
+
 ## 3.1.10 - 2026-09-08
 
 - Read exact follower and following counters from verified profile headers when Instagram uses `#` links. This avoids unnecessary profile-metadata requests before and after a comparison.

@@ -1415,7 +1415,7 @@ test('follower comparison export provides a readable UTF-8 report and preserves 
   assert.equal(record.notFollowingMeBack[0].username, 'outgoing.only');
 });
 
-test('comparison exports refuse partial lists instead of publishing false non-mutuals', () => {
+test('partial comparison exports retain captured accounts with explicit uncertainty', () => {
   const inspector = createInspector();
   const workspace = {
     subjectUsername: 'demo.creator',
@@ -1426,11 +1426,41 @@ test('comparison exports refuse partial lists instead of publishing false non-mu
     source: { followers: 'authenticated-web', following: 'authenticated-web' },
   };
   const comparison = {
-    mutuals: [], notFollowingMeBack: [], iDoNotFollowBack: [],
+    mutuals: [], notFollowingMeBack: workspace.following, iDoNotFollowBack: workspace.followers,
   };
-  for (const method of ['followerComparisonReport', 'followerComparisonRecord']) {
-    assert.throws(() => inspector[method](workspace, comparison), (error) => error.code === 'incomplete-comparison');
-  }
+  const record = inspector.followerComparisonRecord(workspace, comparison);
+  assert.equal(record.schemaVersion, 1);
+  assert.equal(record.partial, true);
+  assert.equal(record.complete.followers, false);
+  assert.equal(record.notFollowingMeBack.length, 101);
+  assert.equal(record.labels.notFollowingMeBack, 'Not found in followers');
+  assert.match(record.warning, /may still be a mutual/);
+  assert.match(record.warning, /reason are unknown/);
+  const report = inspector.followerComparisonReport(workspace, comparison);
+  assert.match(report, /Completeness: Partial/);
+  assert.match(report, /NOT FOUND IN FOLLOWERS/);
+  assert.match(report, /1\. @following\.0/);
+  assert.doesNotMatch(report, /NOT FOLLOWING YOU BACK/);
   workspace.complete.followers = true;
   assert.match(inspector.followerComparisonReport(workspace, comparison), /Followers: 2,070\r\nFollowing: 101/);
+});
+
+test('comparison availability includes one-sided and unverified saved rows without claiming completeness', () => {
+  const inspector = createInspector();
+  for (const workspace of [
+    { followers: [{ username: 'captured' }], following: [] },
+    { followers: [], following: [{ username: 'captured' }], verified: { following: false } },
+    { followers: [], following: [], verified: { followers: true }, complete: { followers: false } },
+  ]) {
+    const summary = inspector.followerComparisonSummary(workspace);
+    assert.equal(summary.available, true);
+    assert.equal(summary.complete, false);
+    assert.equal(summary.labels.iDoNotFollowBack, 'Not found in following');
+    assert.match(summary.warning, /captured accounts only/);
+  }
+  assert.equal(inspector.followerComparisonSummary({}).available, false);
+  const empty = inspector.followerComparisonSummary({ verified: { followers: true, following: true }, complete: { followers: true, following: true } });
+  assert.equal(empty.available, true);
+  assert.equal(empty.complete, true);
+  assert.equal(empty.warning, '');
 });
