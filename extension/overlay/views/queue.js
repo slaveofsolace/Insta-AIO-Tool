@@ -235,7 +235,7 @@
       captureSubject && authenticatedUsername && captureSubject === authenticatedUsername,
     );
     const captureReady = captureBoundToAccount && requiredLists.every((listType) => (
-      workspace.verified?.[listType] === true && workspace.complete?.[listType] === true
+      workspace.verified?.[listType] === true
     ));
     if (!captureReady) {
       return {
@@ -243,12 +243,12 @@
         skipped: [{
           count: 0,
           reason: captureBoundToAccount
-            ? 'Mutual Checker data is partial. Run Mutual Checker again before creating account actions.'
+            ? 'Scan the required lists in Mutual Checker before creating account actions.'
             : 'Run Mutual Checker for your signed-in account before creating account actions.',
         }],
       };
     }
-    const comparison = shared.compareCaptureWorkspace(workspace);
+    const comparison = shared.compareCaptureWorkspace(workspace, { allowPartial: true });
     const list = source === 'i-do-not-follow-back'
       ? comparison.iDoNotFollowBack
       : source === 'not-following-me-back'
@@ -259,6 +259,7 @@
     return {
       pool: list.map((account) => account.username || account).filter(Boolean),
       skipped: [],
+      partial: requiredLists.some((listType) => workspace.complete?.[listType] !== true),
     };
   }
 
@@ -273,14 +274,16 @@
     const pool = targetSet.pool;
     const unique = [...new Set(pool)];
     const selected = unique.slice(0, requested);
+    const partial = targetSet.partial === true;
     return Object.freeze({
       action,
       omitted: Math.max(0, unique.length - selected.length),
       removed: Math.max(0, pool.length - unique.length),
       requested,
+      partial,
       selected: Object.freeze(selected),
       skipped: Object.freeze(targetSet.skipped),
-      signature: JSON.stringify({ action, requested, selected, source }),
+      signature: JSON.stringify({ action, requested, selected, source, partial }),
       source,
     });
   }
@@ -319,7 +322,7 @@
     setText('bot-review-title', `${draft.selected.length} target${draft.selected.length === 1 ? '' : 's'} ready to confirm`);
     setText(
       'bot-review-detail',
-      `Duplicates removed: ${draft.removed}. Outside this run: ${draft.omitted}. Skipped: ${draft.skipped.reduce((total, entry) => total + entry.count, 0)}. Every profile is rechecked before action.`,
+      `${draft.partial ? 'Partial comparison: some targets may still be mutuals. ' : ''}Duplicates removed: ${draft.removed}. Outside this run: ${draft.omitted}. Skipped: ${draft.skipped.reduce((total, entry) => total + entry.count, 0)}. Every profile is rechecked before action.`,
     );
     const list = query('[data-insta-toolbox-role="bot-review-list"]');
     if (!list) return;
@@ -389,7 +392,7 @@
       kind: 'account',
       action: reviewed.action,
       items,
-      description: `This opens and ${reviewed.action}s ${items.length} reviewed account${items.length === 1 ? '' : 's'}, one at a time, with randomised pacing. Each profile is verified before the action runs. This tab will navigate between profiles.`,
+      description: `${reviewed.partial ? 'Partial comparison: some targets may still be mutuals. ' : ''}This opens and ${reviewed.action}s ${items.length} reviewed account${items.length === 1 ? '' : 's'}, one at a time, with randomised pacing. Each profile is verified before the action runs. This tab will navigate between profiles.`,
     });
     if (started) invalidateBotReview(runtime);
   }

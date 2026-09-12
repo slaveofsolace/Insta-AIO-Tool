@@ -469,7 +469,7 @@ test('authenticated checker publishes a comparison only after persistence succee
   );
 });
 
-test('partial Mutual Checker data can be viewed but cannot seed account actions', () => {
+test('partial Mutual Checker data supplies review targets while retaining account and provenance checks', () => {
   const { queueView, shared } = loadQueueModules();
   const normalizeUsername = (value) => String(value || '').replace(/^@/, '').toLowerCase();
   const base = {
@@ -523,8 +523,9 @@ test('partial Mutual Checker data can be viewed but cannot seed account actions'
     assert.equal(visible.mutuals[0].username, 'mutual');
     for (const source of ['not-following-me-back', 'i-do-not-follow-back', directSource]) {
       const result = queueView.botTargets(runtime, source, source.includes('following-me') ? 'unfollow' : 'follow');
-      assert.deepEqual(JSON.parse(JSON.stringify(result.pool)), []);
-      assert.match(result.skipped[0].reason, /data is partial/i);
+      assert.ok(result.pool.length > 0, 'captured targets remain available for review');
+      assert.equal(result.partial, true);
+      assert.equal(result.skipped.length, 0);
     }
   }
 

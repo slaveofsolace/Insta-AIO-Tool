@@ -171,7 +171,7 @@ jobs:
             exit 1
           fi
           release_notes="$(cat <<'EOF'
-          Browse, search, and download Mutual Checker results even when Instagram returns a partial list. Verified partial results now explain viewer-age filtering as one known Instagram-side cause and link to Accounts Center. Includes the updated Tampermonkey script. Pagination, rate-limit cooldowns, and action confirmations remain unchanged.
+          Use partial Mutual Checker results to review Follow / Unfollow targets. The existing confirmation identifies partial data, and every profile's relationship is rechecked before acting. Partial results also explain viewer-age filtering as one possible cause and link to Accounts Center. Includes the updated Tampermonkey script.
 
           Cooldowns do not bypass Instagram restrictions or guarantee complete server responses. Without Retry-After, waits begin at five and ten minutes; the existing 20-minute run deadline still applies.
 

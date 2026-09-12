@@ -6,7 +6,7 @@ Results stay available when Instagram returns fewer accounts than expected. Brow
 - **Not found in followers:** captured following accounts absent from the captured followers list. If that list is partial, these accounts may still follow you.
 - **Not found in following:** captured followers absent from the captured following list. If that list is partial, you may still follow them.
 
-The report and JSON keep the partial status and warning. They do not turn missing records into confirmed relationship changes. Saved rows from older captures remain viewable; a fresh, complete check is required before comparison-based Follow / Unfollow runs.
+The report and JSON keep the partial status and warning. They do not turn missing records into confirmed relationship changes. Captured results can supply Follow / Unfollow targets even when partial. Review and confirmation show that some targets may still be mutuals. Each profile's current relationship is checked before acting. Older unverified captures need a fresh scan, and captures must belong to the signed-in account.
 
 ## Why a list can be partial
 

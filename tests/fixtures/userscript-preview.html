@@ -43,6 +43,7 @@
     <section role="dialog" aria-label="Following"><h2>Following</h2><a href="/mutual_friend/">mutual_friend</a><a href="/not_back/">not_back</a></section>
   </main>
   <script>
+    const partialRunFixture = new URLSearchParams(location.search).has('partial-run');
     globalThis.fixtureProfileClickCount = 0;
     globalThis.fixtureUnsentCount = 0;
     globalThis.fixtureConfirmMessage = '';
@@ -82,6 +83,23 @@
     globalThis.GM_getValue = (key, fallback) => structuredClone(
       Object.hasOwn(globalThis.fixtureGmStore, key) ? globalThis.fixtureGmStore[key] : fallback,
     );
+    if (partialRunFixture) {
+      const profile = document.createElement('a');
+      profile.href = '/demo_creator/';
+      profile.setAttribute('aria-label', 'Profile');
+      document.body.append(profile);
+      Object.assign(globalThis.fixtureGmStore.instaToolboxUserscriptStateV2, {
+        schemaVersion: 6,
+        capture: {
+          subjectUsername: 'demo_creator',
+          followers: [{ username: 'mutual_friend' }, { username: 'follower_only' }],
+          following: [{ username: 'mutual_friend' }, { username: 'not_back' }],
+          complete: { followers: false, following: true },
+          verified: { followers: true, following: true },
+          capturedAt: { followers: '2026-09-12T00:00:00.000Z', following: '2026-09-12T00:00:00.000Z' },
+        },
+      });
+    }
     globalThis.GM_setValue = (key, value) => {
       globalThis.fixtureGmStore[key] = structuredClone(value);
     };

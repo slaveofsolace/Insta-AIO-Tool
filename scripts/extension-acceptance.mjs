@@ -530,6 +530,65 @@ async function acceptIncompleteComparison(webContents, baseUrl) {
   await webContents.executeJavaScript(`new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 200))))`, true);
   await writeFile(path.join(resultsRoot, 'incomplete-comparison-extension.png'), (await webContents.capturePage()).toPNG());
   console.log('Accepted partial extension comparison: captured results and downloads remain available with uncertainty labels.');
+  await webContents.executeJavaScript(`(() => {
+    const profile = document.createElement('a');
+    profile.href = '/demo_creator/';
+    profile.setAttribute('aria-label', 'Profile');
+    document.body.append(profile);
+    const key = 'instaToolboxOverlayCaptureWorkspaceV2';
+    chrome.storage.local.set({ [key]: { ...globalThis.fixtureStorage[key], subjectUsername: 'demo_creator' } });
+  })()`, true);
+  await acceptPartialAccountReview(webContents, 'extension');
+}
+
+async function acceptPartialAccountReview(webContents, surface) {
+  const extension = surface === 'extension';
+  const host = extension ? '#insta-toolbox-sidecar-root' : '#insta-toolbox-userscript-root';
+  const role = extension ? 'data-insta-toolbox-role' : 'data-role';
+  const action = extension ? 'data-insta-toolbox-action' : 'data-action';
+  for (const mode of ['follow', 'unfollow']) {
+    await webContents.executeJavaScript(`(() => {
+      const shadow = document.querySelector(${JSON.stringify(host)}).shadowRoot;
+      shadow.querySelector(${JSON.stringify(extension ? '[data-insta-toolbox-section="queue"]' : '[data-view="account"]')}).click();
+      const select = (name, value) => {
+        const control = shadow.querySelector('[${role}="' + name + '"]');
+        control.value = value;
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      select('bot-action', ${JSON.stringify(mode)});
+      select('bot-source', ${JSON.stringify(mode === 'follow' ? 'i-do-not-follow-back' : 'not-following-me-back')});
+      shadow.querySelector('[${action}="${extension ? 'bot-review' : 'review-accounts'}"]').click();
+    })()`, true);
+    const review = await waitForPageValue(webContents, `(() => {
+      const shadow = document.querySelector(${JSON.stringify(host)}).shadowRoot;
+      const panel = shadow.querySelector('[${role}="${extension ? 'bot-review' : 'run-review'}"]');
+      if (panel.hidden) return null;
+      return {
+        text: panel.textContent,
+        targets: shadow.querySelectorAll('[${role}="${extension ? 'bot-review-list' : 'review-list'}"] li').length,
+      };
+    })()`, surface + ' partial ' + mode + ' review');
+    assert.ok(review.targets > 0);
+    assert.match(review.text, /Partial comparison: some targets may still be mutuals/);
+    await webContents.executeJavaScript(`document.querySelector(${JSON.stringify(host)}).shadowRoot.querySelector('[${action}="${extension ? 'bot-start' : 'run-accounts'}"]').click()`, true);
+    const confirmation = await waitForPageValue(webContents, `(() => {
+      const shadow = document.querySelector(${JSON.stringify(host)}).shadowRoot;
+      if (!shadow.querySelector('[${role}="action-confirmation"]').open) return null;
+      return { detail: shadow.querySelector('[${role}="confirm-detail"]').textContent,
+        targets: shadow.querySelectorAll('[${role}="confirm-items"] li').length };
+    })()`, surface + ' partial ' + mode + ' confirmation');
+    assert.match(confirmation.detail, /Partial comparison: some targets may still be mutuals/);
+    assert.equal(confirmation.targets, review.targets);
+    await webContents.executeJavaScript(`document.querySelector(${JSON.stringify(host)}).shadowRoot.querySelector('[${action}="confirm-cancel"]').click()`, true);
+    assert.equal(await webContents.executeJavaScript(extension ? 'globalThis.fixtureClickCount' : 'globalThis.fixtureProfileClickCount', true), 0);
+  }
+  console.log('Accepted ' + surface + ' partial Follow and Unfollow targets, uncertainty review, and zero-click cancellation.');
+}
+
+async function acceptUserscriptPartialAccountReview(webContents, baseUrl) {
+  await withTimeout(webContents.loadURL(baseUrl + '/userscript-fixture.html?partial-run=1'), 'partial userscript fixture load');
+  await waitForPageValue(webContents, `Boolean(document.querySelector('#insta-toolbox-userscript-root')?.shadowRoot)`, 'partial userscript injection');
+  await acceptPartialAccountReview(webContents, 'userscript');
 }
 
 async function acceptOverlayDmConfirmation(webContents, baseUrl) {
@@ -2337,6 +2396,7 @@ async function run() {
     await acceptThreadUnsend(overlay.window.webContents, overlayBaseUrl);
     await acceptToolboxLayout(overlay.window.webContents, overlayBaseUrl);
     await acceptUserscriptToolbox(overlay.window.webContents, overlayBaseUrl);
+    await acceptUserscriptPartialAccountReview(overlay.window.webContents, overlayBaseUrl);
     await acceptBackgroundComparison(background);
     await acceptPwaInstallability(pwa.window.webContents, pwaBaseUrl);
     assert.deepEqual(overlay.problems, [], 'extension fixture browser problems');
