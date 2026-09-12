@@ -97,7 +97,7 @@ CI actions are pinned to full commit SHAs. Pull requests receive dependency revi
 
 The 3.1 account-free matrix contains 414 tests, 45 overlay states, and 11 PWA states. Final pass links and hashes belong in [the 3.1.12 acceptance record](./acceptance/3.1.12.md). Fixtures do not prove current authenticated Instagram behavior.
 
-Partial mutual comparisons are available for read-only display and export with explicit uncertainty labels. Default comparison helpers still reject incomplete data for action composition. Schema-1 comparison exports preserve existing fields and add `partial`, `labels`, and `warning`; completeness flags are not promoted by downloading.
+Partial mutual comparisons are available for display, export, and Follow / Unfollow target review. Target reviews and their existing confirmation show an uncertainty notice; missing records are not proof of a non-mutual relationship. Captures must belong to the signed-in account, and each profile's current relationship is checked before acting. Schema-1 comparison exports preserve existing fields and add `partial`, `labels`, and `warning`; completeness flags are not promoted by downloading.
 
 ## License
 
