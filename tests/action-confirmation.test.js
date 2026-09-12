@@ -143,3 +143,25 @@ test('Cancel, Escape, expiry, and teardown settle fail closed exactly once', asy
   assert.equal(await destroyed, null);
   assert.equal(controller.isPending(), false);
 });
+
+test('a delayed close event cannot cancel a newly opened review', async () => {
+  const { api, roles, root } = fixture();
+  const dialog = roles.get('action-confirmation');
+  const controller = api.createController({ attribute: 'data-role', root });
+  dialog.close = function closeLater() { this.open = false; };
+  const first = controller.confirm({ binding: { action: 'follow' } });
+  controller.cancel();
+  assert.equal(await first, null);
+
+  const second = controller.confirm({ binding: { action: 'unfollow' } });
+  dialog.dispatch('close');
+  assert.equal(dialog.open, true);
+  assert.equal(controller.isPending(), true);
+  roles.get('confirm-accept').dispatch('click', { isTrusted: true });
+  assert.equal((await second).action, 'unfollow');
+
+  const third = controller.confirm({ binding: { action: 'follow' } });
+  dialog.close();
+  dialog.dispatch('close');
+  assert.equal(await third, null, 'closing the current review still cancels it');
+});

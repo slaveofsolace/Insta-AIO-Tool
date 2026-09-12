@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       tag:
-        description: Release tag, for example v3.1.11
+        description: Release tag, for example v3.1.12
         required: true
         type: string
 
@@ -110,7 +110,7 @@ jobs:
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
           test "$RELEASE_TAG" = "v$version"
-          test "$version" = "3.1.11"
+          test "$version" = "3.1.12"
           mkdir -p release
           copy_exact() {
             local name="$1"
@@ -171,7 +171,7 @@ jobs:
             exit 1
           fi
           release_notes="$(cat <<'EOF'
-          Browse, search, and download Mutual Checker results even when Instagram returns a partial list. Partial results use clear "Not found" labels and an uncertainty warning in both the panel and downloads. Includes the updated Tampermonkey script. Pagination, rate-limit cooldowns, and action confirmations remain unchanged.
+          Use partial Mutual Checker results to review Follow / Unfollow targets. The existing confirmation identifies partial data, and every profile's relationship is rechecked before acting. Partial results also explain viewer-age filtering as one possible cause and link to Accounts Center. Includes the updated Tampermonkey script.
 
           Cooldowns do not bypass Instagram restrictions or guarantee complete server responses. Without Retry-After, waits begin at five and ten minutes; the existing 20-minute run deadline still applies.
 
@@ -179,7 +179,7 @@ jobs:
 
           - The Windows installer is unsigned and may show a Microsoft SmartScreen warning.
           - The macOS packages are ad-hoc signed and are not Apple-notarized.
-          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.11 acceptance record for any separately recorded manual evidence.
+          - Automated CI does not claim current authenticated Instagram compatibility or a completed human screen-reader walkthrough. Consult the 3.1.12 acceptance record for any separately recorded manual evidence.
           EOF
           )"
           gh release create "$RELEASE_TAG" release/* \

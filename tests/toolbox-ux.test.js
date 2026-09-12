@@ -112,6 +112,9 @@ test('the checker is a sequence that reports completeness per list', () => {
   assert.match(shell, /accessible accounts found — partial/);
   assert.match(shell, /summary\.warning/);
   assert.match(shell, /Partial comparison/);
+  assert.match(shell, /summary\.ageFilterGuidance/);
+  assert.match(shell, /Open Accounts Center/);
+  assert.match(extensionCapture, /summary\.ageFilterGuidance/);
   assert.match(shell, /Scanned \$\{found\} \$\{listType\} — incomplete\./);
   assert.match(shell, /outcome\?\.reason === 'list-count-mismatch'/);
   assert.match(shell, /Instagram reports \$\{outcome\.expectedCount\}, so this capture stays incomplete/);
@@ -209,8 +212,8 @@ test('legacy checker rows are quarantined until an exact list dialog is rescanne
   assert.match(shell, /const requiresCountReconciledRescan = Number\(value\.schemaVersion\) < 4/);
   assert.match(shell, /schemaVersion: 6/);
   assert.match(shell, /verified: \{ followers: false, following: false \}/);
-  assert.match(shell, /'scanned-followers': \(\) => capturePool\(completeCapture\('followers'\)\)/);
-  assert.match(shell, /'scanned-following': \(\) => capturePool\(completeCapture\('following'\)\)/);
+  assert.match(shell, /'scanned-followers': \(\) => capturePool\(verifiedCapture\('followers'\)\)/);
+  assert.match(shell, /'scanned-following': \(\) => capturePool\(verifiedCapture\('following'\)\)/);
   assert.match(shell, /need a fresh scan before they can be used for runs/);
   assert.match(shell, /if \(observedTypes\.size !== 1\) continue/);
   assert.match(shell, /function reconciledRelationshipAccounts\(existing, incoming, complete\)/);
@@ -328,7 +331,7 @@ test('a partial scan is never presented as a complete comparison', () => {
   assert.match(shell, /compareStep\.dataset\.state = both \? \(complete \? 'done' : 'partial'\) : 'todo'/);
 });
 
-test('userscript displays partial comparisons without making them actionable', () => {
+test('userscript distinguishes complete comparisons from explicitly requested partial results', () => {
   const state = { capture: {
     followers: [{ username: 'mutual' }], following: [{ username: 'mutual' }, { username: 'missing' }],
     verified: { followers: true, following: true },
@@ -354,7 +357,7 @@ test('userscript displays partial comparisons without making them actionable', (
 });
 
 test('a run shows its targets and skip reasons before it starts', () => {
-  assert.match(shell, /function renderRunReview\(items, \{ omitted = 0, removed = 0, skippedReasons = \[\] \} = \{\}\)/);
+  assert.match(shell, /function renderRunReview\(items, \{ omitted = 0, removed = 0, skippedReasons = \[\], partial = false \} = \{\}\)/);
   assert.match(generated, /data-role="run-review"/);
   assert.match(shell, /function reviewAccountRun\(\)/);
   assert.match(shell, /renderRunReview\(plan\.items, plan\)/);
@@ -574,7 +577,7 @@ test('Mutual Checker filters stack inside a narrow custom panel', () => {
   );
 });
 
-test('partial Mutual Checker captures cannot become userscript action targets', () => {
+test('partial Mutual Checker captures produce reviewed targets with uncertainty bound to the plan', () => {
   const state = {
     capture: {
       subjectUsername: 'signed_in',
@@ -589,6 +592,7 @@ test('partial Mutual Checker captures cannot become userscript action targets', 
   const globals = {
     state,
     ACTIONABLE_STATUSES: new Set(['pending']),
+    verifiedCapture: (listType) => state.capture.verified[listType] ? state.capture[listType] : [],
     clampNumber: (value, _bounds, fallback) => Number(value) || fallback,
     completeCapture: (listType) => (
       state.capture.verified[listType] && state.capture.complete[listType]
@@ -614,12 +618,16 @@ test('partial Mutual Checker captures cannot become userscript action targets', 
   const accountRunPlan = loadShellFunction('accountRunPlan', globals);
 
   let plan = accountRunPlan();
-  assert.equal(plan.items.length, 0);
-  assert.match(plan.skippedReasons[0].reason, /data is partial/);
+  assert.equal(plan.items[0].username, 'unsafe_target');
+  assert.equal(plan.partial, true);
+  assert.equal(plan.skippedReasons.length, 0);
+  const partialSignature = plan.signature;
 
   state.capture.complete.followers = true;
   plan = accountRunPlan();
   assert.equal(plan.items[0].username, 'unsafe_target');
+  assert.equal(plan.partial, false);
+  assert.notEqual(plan.signature, partialSignature);
 
   state.capture.subjectUsername = 'other_person';
   plan = accountRunPlan();
@@ -630,10 +638,15 @@ test('partial Mutual Checker captures cannot become userscript action targets', 
   source = 'scanned-followers';
   state.capture.complete.followers = false;
   plan = accountRunPlan();
-  assert.equal(plan.items.length, 0);
+  assert.equal(plan.items[0].username, 'follower_one');
+  assert.equal(plan.partial, true);
   state.capture.complete.followers = true;
   plan = accountRunPlan();
   assert.equal(plan.items[0].username, 'follower_one');
+  state.capture.verified.followers = false;
+  plan = accountRunPlan();
+  assert.equal(plan.items.length, 0);
+  assert.match(plan.skippedReasons[0].reason, /Scan the required lists/);
 });
 
 test('failed manual scans replace the visible scanning message', async () => {

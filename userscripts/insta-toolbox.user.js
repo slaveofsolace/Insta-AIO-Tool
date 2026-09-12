@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-Toolbox
-// @version      3.1.11
+// @version      3.1.12
 // @description  Mutual Checker, Follow / Unfollow, and DM Unsend on Instagram.
 // @author       @slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-Toolbox
@@ -347,7 +347,8 @@
     }
 
     function onClose() {
-      if (pending) settle(false);
+      // A previous close event can arrive after the dialog has been reopened.
+      if (pending && !dialog.open) settle(false);
     }
 
     dialog?.addEventListener('cancel', onCancel);
@@ -2894,6 +2895,9 @@
     const available = complete || ['followers', 'following'].some((type) => (
       workspace?.verified?.[type] === true || (Array.isArray(workspace?.[type]) && workspace[type].length > 0)
     ));
+    const verifiedPartial = !complete && ['followers', 'following'].some((type) => (
+      workspace?.verified?.[type] === true && workspace?.complete?.[type] !== true
+    ));
     return {
       available,
       complete,
@@ -2903,6 +2907,12 @@
         iDoNotFollowBack: complete ? "You don't follow back" : 'Not found in following',
       },
       warning: complete ? '' : 'Partial comparison — captured accounts only. Someone missing from a list may still be a mutual. The missing accounts and the reason are unknown; check profiles before acting.',
+      ageFilterGuidance: verifiedPartial
+        ? 'Possible viewer-age filtering: Instagram may hide age-restricted accounts if the signed-in account has no birthday. Check Accounts Center, reload, and retry. Other causes are possible.'
+        : '',
+      accountsCenterUrl: verifiedPartial
+        ? 'https://accountscenter.instagram.com/personal_info'
+        : '',
     };
   }
 
@@ -2919,6 +2929,8 @@
       partial: !summary.complete,
       labels: summary.labels,
       warning: summary.warning,
+      ageFilterGuidance: summary.ageFilterGuidance,
+      accountsCenterUrl: summary.accountsCenterUrl,
       mutuals: Array.isArray(comparison?.mutuals) ? comparison.mutuals : [],
       notFollowingMeBack: Array.isArray(comparison?.notFollowingMeBack)
         ? comparison.notFollowingMeBack
@@ -2951,6 +2963,8 @@
       `Source: ${source}`,
       `Completeness: ${fullyComplete ? 'Complete — both lists reached their verified end.' : 'Partial — one or both saved lists may omit accounts.'}`,
       ...(record.warning ? [record.warning] : []),
+      ...(record.ageFilterGuidance ? [record.ageFilterGuidance] : []),
+      ...(record.accountsCenterUrl ? [`Accounts Center: ${record.accountsCenterUrl}`] : []),
       '',
       'SUMMARY',
       '-------',
@@ -5512,6 +5526,18 @@
       warning.className = 'notice';
       warning.textContent = summary.warning;
       result.append(warning);
+      if (summary.ageFilterGuidance) {
+        const guidance = document.createElement('p');
+        guidance.className = 'notice';
+        guidance.append(document.createTextNode(`${summary.ageFilterGuidance} `));
+        const link = document.createElement('a');
+        link.href = summary.accountsCenterUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open Accounts Center';
+        guidance.append(link);
+        result.append(guidance);
+      }
     }
 
     const unverified = ['followers', 'following']
@@ -6525,7 +6551,7 @@
 
   // --- Sections 4 and 5: show the targets before anything runs ------------
 
-  function renderRunReview(items, { omitted = 0, removed = 0, skippedReasons = [] } = {}) {
+  function renderRunReview(items, { omitted = 0, removed = 0, skippedReasons = [], partial = false } = {}) {
     const panel = query('[data-role="run-review"]');
     if (!panel) return;
     panel.hidden = !items.length;
@@ -6549,7 +6575,7 @@
     // count and a surprising one.
     setText(
       'review-skips',
-      `Duplicates or already-correct targets removed: ${removed}. Outside this run: ${omitted}. Protected or incompatible targets skipped: ${skippedReasons.reduce((total, entry) => total + entry.count, 0)}. Every profile is rechecked before action.`,
+      `${partial ? 'Partial comparison: some targets may still be mutuals. ' : ''}Duplicates or already-correct targets removed: ${removed}. Outside this run: ${omitted}. Protected or incompatible targets skipped: ${skippedReasons.reduce((total, entry) => total + entry.count, 0)}. Every profile is rechecked before action.`,
     );
   }
 
@@ -6595,7 +6621,7 @@
     const source = query('[data-role="bot-source"]')?.value || 'current-profile';
     const requestedCount = clampNumber(query('[data-role="bot-count"]')?.value, [1, 250], 20);
     const count = source === 'current-profile' ? 1 : requestedCount;
-    const comparison = compareCapture();
+    const comparison = compareCapture({ allowPartial: true });
     const names = (list) => (list || []).map((entry) => entry.username || entry).filter(Boolean);
     const skippedReasons = [];
     const requiredLists = source === 'scanned-followers'
@@ -6616,13 +6642,12 @@
       captureBoundToAccount
       && requiredLists.every((listType) => (
         state.capture.verified?.[listType] === true
-        && state.capture.complete?.[listType] === true
       ))
     );
     const capturePool = (list) => {
       if (captureReady) return names(list);
       const reason = captureBoundToAccount
-        ? 'Mutual Checker data is partial. Run Mutual Checker again before creating account actions.'
+        ? 'Scan the required lists in Mutual Checker before creating account actions.'
         : 'Run Mutual Checker for your signed-in account before creating account actions.';
       if (!skippedReasons.some((entry) => entry.reason === reason)) {
         skippedReasons.push({
@@ -6661,8 +6686,8 @@
       },
       'i-do-not-follow-back': () => capturePool(comparison.iDoNotFollowBack),
       'not-following-me-back': () => capturePool(comparison.notFollowingMeBack),
-      'scanned-followers': () => capturePool(completeCapture('followers')),
-      'scanned-following': () => capturePool(completeCapture('following')),
+      'scanned-followers': () => capturePool(verifiedCapture('followers')),
+      'scanned-following': () => capturePool(verifiedCapture('following')),
     };
     const pool = (pools[source] || pools['current-profile'])();
     let eligible = pool;
@@ -6673,14 +6698,16 @@
     }
     const unique = [...new Set(eligible)];
     const items = unique.slice(0, count).map((username) => ({ username }));
+    const partial = captureReady && requiredLists.some((listType) => state.capture.complete?.[listType] !== true);
     return Object.freeze({
       action,
       items: Object.freeze(items),
       omitted: Math.max(0, unique.length - items.length),
       removed: Math.max(0, pool.length - unique.length),
       requested: count,
+      partial,
       skippedReasons: Object.freeze(skippedReasons),
-      signature: JSON.stringify({ action, count, source, usernames: items.map((item) => item.username) }),
+      signature: JSON.stringify({ action, count, source, usernames: items.map((item) => item.username), partial }),
       source,
     });
   }
@@ -7034,7 +7061,7 @@
       const confirmation = await confirmRun({
         title: `${actionLabel} ${reviewed.items.length} reviewed account${reviewed.items.length === 1 ? '' : 's'}?`,
         message: 'Review the exact accounts before starting.',
-        detail: 'This tab will move between these exact profiles. Each account is revalidated before the action.',
+        detail: `${reviewed.partial ? 'Partial comparison: some targets may still be mutuals. ' : ''}This tab will move between these exact profiles. Each account is revalidated before the action.`,
         confirmLabel: `Start ${actionLabel}`,
         items: reviewed.items.map((item) => `@${item.username}`),
         facts: [

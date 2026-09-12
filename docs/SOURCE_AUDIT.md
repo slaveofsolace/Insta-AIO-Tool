@@ -83,7 +83,7 @@ Rejected:
 
 - Repeating a complete list scan to combine changing memberships
 - Treating a profile total as proof that every identity is available
-- Promoting partial rows into Follow / Unfollow targets
+- Treating partial differences as confirmed non-mutuals. Partial captures can supply explicitly reviewed Follow / Unfollow targets with an uncertainty notice.
 - Claiming the private web route is a stable public Instagram API
 
 ## instagram-dm-unsender
