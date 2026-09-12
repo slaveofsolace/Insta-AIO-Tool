@@ -130,7 +130,8 @@
     }
 
     function onClose() {
-      if (pending) settle(false);
+      // A previous close event can arrive after the dialog has been reopened.
+      if (pending && !dialog.open) settle(false);
     }
 
     dialog?.addEventListener('cancel', onCancel);
