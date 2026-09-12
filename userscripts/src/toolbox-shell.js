@@ -1090,6 +1090,18 @@
       warning.className = 'notice';
       warning.textContent = summary.warning;
       result.append(warning);
+      if (summary.ageFilterGuidance) {
+        const guidance = document.createElement('p');
+        guidance.className = 'notice';
+        guidance.append(document.createTextNode(`${summary.ageFilterGuidance} `));
+        const link = document.createElement('a');
+        link.href = summary.accountsCenterUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open Accounts Center';
+        guidance.append(link);
+        result.append(guidance);
+      }
     }
 
     const unverified = ['followers', 'following']

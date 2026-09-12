@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Insta Toolbox
 // @namespace    https://github.com/slaveofsolace/Insta-Toolbox
-// @version      3.1.11
+// @version      3.1.12
 // @description  Mutual Checker, Follow / Unfollow, and DM Unsend on Instagram.
 // @author       @slaveofsolace
 // @homepageURL  https://github.com/slaveofsolace/Insta-Toolbox
@@ -2894,6 +2894,9 @@
     const available = complete || ['followers', 'following'].some((type) => (
       workspace?.verified?.[type] === true || (Array.isArray(workspace?.[type]) && workspace[type].length > 0)
     ));
+    const verifiedPartial = !complete && ['followers', 'following'].some((type) => (
+      workspace?.verified?.[type] === true && workspace?.complete?.[type] !== true
+    ));
     return {
       available,
       complete,
@@ -2903,6 +2906,12 @@
         iDoNotFollowBack: complete ? "You don't follow back" : 'Not found in following',
       },
       warning: complete ? '' : 'Partial comparison — captured accounts only. Someone missing from a list may still be a mutual. The missing accounts and the reason are unknown; check profiles before acting.',
+      ageFilterGuidance: verifiedPartial
+        ? 'Possible viewer-age filtering: Instagram may hide age-restricted accounts if the signed-in account has no birthday. Check Accounts Center, reload, and retry. Other causes are possible.'
+        : '',
+      accountsCenterUrl: verifiedPartial
+        ? 'https://accountscenter.instagram.com/personal_info'
+        : '',
     };
   }
 
@@ -2919,6 +2928,8 @@
       partial: !summary.complete,
       labels: summary.labels,
       warning: summary.warning,
+      ageFilterGuidance: summary.ageFilterGuidance,
+      accountsCenterUrl: summary.accountsCenterUrl,
       mutuals: Array.isArray(comparison?.mutuals) ? comparison.mutuals : [],
       notFollowingMeBack: Array.isArray(comparison?.notFollowingMeBack)
         ? comparison.notFollowingMeBack
@@ -2951,6 +2962,8 @@
       `Source: ${source}`,
       `Completeness: ${fullyComplete ? 'Complete — both lists reached their verified end.' : 'Partial — one or both saved lists may omit accounts.'}`,
       ...(record.warning ? [record.warning] : []),
+      ...(record.ageFilterGuidance ? [record.ageFilterGuidance] : []),
+      ...(record.accountsCenterUrl ? [`Accounts Center: ${record.accountsCenterUrl}`] : []),
       '',
       'SUMMARY',
       '-------',
@@ -5512,6 +5525,18 @@
       warning.className = 'notice';
       warning.textContent = summary.warning;
       result.append(warning);
+      if (summary.ageFilterGuidance) {
+        const guidance = document.createElement('p');
+        guidance.className = 'notice';
+        guidance.append(document.createTextNode(`${summary.ageFilterGuidance} `));
+        const link = document.createElement('a');
+        link.href = summary.accountsCenterUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open Accounts Center';
+        guidance.append(link);
+        result.append(guidance);
+      }
     }
 
     const unverified = ['followers', 'following']

@@ -112,6 +112,9 @@ test('the checker is a sequence that reports completeness per list', () => {
   assert.match(shell, /accessible accounts found — partial/);
   assert.match(shell, /summary\.warning/);
   assert.match(shell, /Partial comparison/);
+  assert.match(shell, /summary\.ageFilterGuidance/);
+  assert.match(shell, /Open Accounts Center/);
+  assert.match(extensionCapture, /summary\.ageFilterGuidance/);
   assert.match(shell, /Scanned \$\{found\} \$\{listType\} — incomplete\./);
   assert.match(shell, /outcome\?\.reason === 'list-count-mismatch'/);
   assert.match(shell, /Instagram reports \$\{outcome\.expectedCount\}, so this capture stays incomplete/);

@@ -2,6 +2,12 @@
 
 This project uses [Semantic Versioning](https://semver.org/).
 
+## 3.1.12 - 2026-09-12
+
+- Keep verified partial comparisons visible while explaining viewer-age filtering as one known Instagram-side cause.
+- Link the signed-in account to Accounts Center and preserve the same guidance in text and JSON downloads.
+- Keep age filtering explicitly non-diagnostic because it does not explain every missing account.
+
 ## 3.1.11 - 2026-09-08
 
 - Keep partial mutual comparisons visible, searchable, and downloadable.

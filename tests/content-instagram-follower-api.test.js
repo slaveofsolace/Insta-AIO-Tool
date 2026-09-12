@@ -1436,8 +1436,13 @@ test('partial comparison exports retain captured accounts with explicit uncertai
   assert.equal(record.labels.notFollowingMeBack, 'Not found in followers');
   assert.match(record.warning, /may still be a mutual/);
   assert.match(record.warning, /reason are unknown/);
+  assert.match(record.ageFilterGuidance, /viewer-age filtering/);
+  assert.match(record.ageFilterGuidance, /signed-in account/);
+  assert.equal(record.accountsCenterUrl, 'https://accountscenter.instagram.com/personal_info');
   const report = inspector.followerComparisonReport(workspace, comparison);
   assert.match(report, /Completeness: Partial/);
+  assert.match(report, /Possible viewer-age filtering/);
+  assert.match(report, /Accounts Center: https:\/\/accountscenter\.instagram\.com\/personal_info/);
   assert.match(report, /NOT FOUND IN FOLLOWERS/);
   assert.match(report, /1\. @following\.0/);
   assert.doesNotMatch(report, /NOT FOLLOWING YOU BACK/);
@@ -1463,4 +1468,27 @@ test('comparison availability includes one-sided and unverified saved rows witho
   assert.equal(empty.available, true);
   assert.equal(empty.complete, true);
   assert.equal(empty.warning, '');
+  assert.equal(empty.ageFilterGuidance, '');
+  assert.equal(empty.accountsCenterUrl, '');
+});
+
+test('viewer-age guidance appears only for a verified partial capture', () => {
+  const inspector = createInspector();
+  const verifiedPartial = inspector.followerComparisonSummary({
+    followers: [{ username: 'visible.account' }],
+    following: [],
+    verified: { followers: true, following: true },
+    complete: { followers: false, following: true },
+  });
+  assert.match(verifiedPartial.ageFilterGuidance, /age-restricted accounts/);
+  assert.match(verifiedPartial.ageFilterGuidance, /Other causes are possible/);
+
+  const legacyRows = inspector.followerComparisonSummary({
+    followers: [{ username: 'legacy.account' }],
+    following: [],
+    verified: { followers: false, following: false },
+    complete: { followers: false, following: false },
+  });
+  assert.equal(legacyRows.ageFilterGuidance, '');
+  assert.equal(legacyRows.accountsCenterUrl, '');
 });

@@ -33,7 +33,7 @@ const evidenceRoot = path.join(
   repositoryRoot,
   'docs',
   'evidence',
-  'overlay-ui-3.1.11-2026-09-08',
+  'overlay-ui-3.1.12-2026-09-12',
   'after',
   process.platform,
 );
@@ -980,7 +980,7 @@ function fidelityLedger(results, performance) {
     capturedAt: new Date().toISOString(),
     platform: process.platform,
     source: {
-      current: `docs/evidence/overlay-ui-3.1.11-2026-09-08/after/${process.platform}`,
+      current: `docs/evidence/overlay-ui-3.1.12-2026-09-12/after/${process.platform}`,
     },
     comparison: [
     { area: 'shell', before: 'Default-open, visually dominant overlay panel', after: `Fresh collapsed launcher; standard open share ${(standard.metrics.panelAreaShare * 100).toFixed(2)}%`, status: 'MEASURED' },

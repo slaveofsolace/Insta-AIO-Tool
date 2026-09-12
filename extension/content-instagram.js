@@ -800,6 +800,9 @@
     const available = complete || ['followers', 'following'].some((type) => (
       workspace?.verified?.[type] === true || (Array.isArray(workspace?.[type]) && workspace[type].length > 0)
     ));
+    const verifiedPartial = !complete && ['followers', 'following'].some((type) => (
+      workspace?.verified?.[type] === true && workspace?.complete?.[type] !== true
+    ));
     return {
       available,
       complete,
@@ -809,6 +812,12 @@
         iDoNotFollowBack: complete ? "You don't follow back" : 'Not found in following',
       },
       warning: complete ? '' : 'Partial comparison — captured accounts only. Someone missing from a list may still be a mutual. The missing accounts and the reason are unknown; check profiles before acting.',
+      ageFilterGuidance: verifiedPartial
+        ? 'Possible viewer-age filtering: Instagram may hide age-restricted accounts if the signed-in account has no birthday. Check Accounts Center, reload, and retry. Other causes are possible.'
+        : '',
+      accountsCenterUrl: verifiedPartial
+        ? 'https://accountscenter.instagram.com/personal_info'
+        : '',
     };
   }
 
@@ -825,6 +834,8 @@
       partial: !summary.complete,
       labels: summary.labels,
       warning: summary.warning,
+      ageFilterGuidance: summary.ageFilterGuidance,
+      accountsCenterUrl: summary.accountsCenterUrl,
       mutuals: Array.isArray(comparison?.mutuals) ? comparison.mutuals : [],
       notFollowingMeBack: Array.isArray(comparison?.notFollowingMeBack)
         ? comparison.notFollowingMeBack
@@ -857,6 +868,8 @@
       `Source: ${source}`,
       `Completeness: ${fullyComplete ? 'Complete — both lists reached their verified end.' : 'Partial — one or both saved lists may omit accounts.'}`,
       ...(record.warning ? [record.warning] : []),
+      ...(record.ageFilterGuidance ? [record.ageFilterGuidance] : []),
+      ...(record.accountsCenterUrl ? [`Accounts Center: ${record.accountsCenterUrl}`] : []),
       '',
       'SUMMARY',
       '-------',

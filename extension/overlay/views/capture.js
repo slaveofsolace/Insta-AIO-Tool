@@ -257,6 +257,18 @@
           warning.className = 'insta-toolbox-note';
           warning.textContent = summary.warning;
           checker.append(warning);
+          if (summary.ageFilterGuidance) {
+            const guidance = document.createElement('p');
+            guidance.className = 'insta-toolbox-note';
+            guidance.append(document.createTextNode(`${summary.ageFilterGuidance} `));
+            const link = document.createElement('a');
+            link.href = summary.accountsCenterUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = 'Open Accounts Center';
+            guidance.append(link);
+            checker.append(guidance);
+          }
         }
       } else {
         const detail = document.createElement('p');
